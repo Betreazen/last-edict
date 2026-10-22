@@ -290,6 +290,150 @@
    "power": 1
   },
   {
+   "id": "test:growth/ember-colossus",
+   "hireCost": {
+    "gold": 5
+   },
+   "hitPoints": 70,
+   "xpForKill": 2,
+   "move": 0,
+   "negotiate": 0,
+   "damage": 3,
+   "power": 1
+  },
+  {
+   "id": "test:growth/ember-thief",
+   "hireCost": {
+    "gold": 5
+   },
+   "hitPoints": 9,
+   "xpForKill": 2,
+   "move": 0,
+   "negotiate": 0,
+   "damage": 3,
+   "power": 1
+  },
+  {
+   "id": "test:growth/ember-captain",
+   "hireCost": {
+    "gold": 5
+   },
+   "hitPoints": 14,
+   "xpForKill": 2,
+   "move": 0,
+   "negotiate": 0,
+   "damage": 3,
+   "power": 1
+  },
+  {
+   "id": "test:growth/ember-ranger",
+   "hireCost": {
+    "gold": 5
+   },
+   "hitPoints": 11,
+   "xpForKill": 2,
+   "move": 0,
+   "negotiate": 0,
+   "damage": 3,
+   "power": 1
+  },
+  {
+   "id": "test:growth/ember-sage",
+   "hireCost": {
+    "gold": 5
+   },
+   "hitPoints": 9,
+   "xpForKill": 2,
+   "move": 0,
+   "negotiate": 0,
+   "damage": 3,
+   "power": 1
+  },
+  {
+   "id": "test:growth/ember-warden",
+   "hireCost": {
+    "gold": 5
+   },
+   "hitPoints": 10,
+   "xpForKill": 2,
+   "move": 0,
+   "negotiate": 0,
+   "damage": 3,
+   "power": 1
+  },
+  {
+   "id": "test:growth/ember-footman",
+   "hireCost": {
+    "gold": 5
+   },
+   "hitPoints": 11,
+   "xpForKill": 2,
+   "move": 0,
+   "negotiate": 0,
+   "damage": 3,
+   "power": 1
+  },
+  {
+   "id": "test:growth/ember-bowman",
+   "hireCost": {
+    "gold": 5
+   },
+   "hitPoints": 5,
+   "xpForKill": 2,
+   "move": 0,
+   "negotiate": 0,
+   "damage": 3,
+   "power": 1
+  },
+  {
+   "id": "test:growth/ember-adept",
+   "hireCost": {
+    "gold": 5
+   },
+   "hitPoints": 5,
+   "xpForKill": 2,
+   "move": 0,
+   "negotiate": 0,
+   "damage": 3,
+   "power": 1
+  },
+  {
+   "id": "test:growth/ember-scorcher",
+   "hireCost": {
+    "gold": 5
+   },
+   "hitPoints": 5,
+   "xpForKill": 2,
+   "move": 0,
+   "negotiate": 0,
+   "damage": 3,
+   "power": 1
+  },
+  {
+   "id": "test:growth/ember-veteran",
+   "hireCost": {
+    "gold": 5
+   },
+   "hitPoints": 16,
+   "xpForKill": 2,
+   "move": 0,
+   "negotiate": 0,
+   "damage": 3,
+   "power": 1
+  },
+  {
+   "id": "test:growth/ember-marksman",
+   "hireCost": {
+    "gold": 5
+   },
+   "hitPoints": 7,
+   "xpForKill": 2,
+   "move": 0,
+   "negotiate": 0,
+   "damage": 3,
+   "power": 1
+  },
+  {
    "id": "test:growth/wild-wolf",
    "hireCost": {
     "gold": 5

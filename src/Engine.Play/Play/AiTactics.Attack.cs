@@ -153,14 +153,19 @@ public static partial class AiTactics
     }
 
     /// <summary>Подраса типа лидера (<c>0x5edb9c</c> → <c>IUsSoldier</c> слот <c>+0x10</c>) совпала, и это не
-    /// «нейтральная» подраса (<c>[0x837b00]</c>, <c>LSubRace</c> 5): такой отряд в кэш не идёт (<c>0x45ea2e</c>).</summary>
+    /// «нейтральная» подраса (<c>[0x837b00]</c>, <c>LSubRace</c> 5): такой отряд в кэш не идёт (<c>0x45ea2e</c>). У движка раса — одна на
+    /// игрока, и «та же подраса лидера» значит «свои»; в Last Edict (Э4) у игроков одной расы — разные стороны, и отряд другой стороны той же
+    /// расы — цель (<see cref="SameParty"/>).</summary>
     private static bool SameLeaderSubrace(GameSession session, MapStack a, MapStack b)
     {
         var book = session.Book!;
         int sa = session.Map.Units.TryGetValue(a.LeaderId, out var la) ? book.SubraceOf(la.TypeId) : 0;
         int sb = session.Map.Units.TryGetValue(b.LeaderId, out var lb) ? book.SubraceOf(lb.TypeId) : 0;
-        return sa != 0 && sa == sb && sa != NeutralSubrace;
+        return sa != 0 && sa == sb && sa != NeutralSubrace && SameParty(session, a.Owner, b.Owner);
     }
+
+    /// <summary>Хозяева — одна сторона дипломатии (у движка — одна раса; нейтралы стороны не имеют и между собой — одна).</summary>
+    private static bool SameParty(GameSession session, string a, string b) => session.PartyOf(a) == session.PartyOf(b);
 
     /// <summary><c>LSubRace</c> «нейтральный» — категория <c>0x837af8</c> (по ней же <c>0x5f7189</c> ищет игрока-нейтрала).</summary>
     private const int NeutralSubrace = 5;

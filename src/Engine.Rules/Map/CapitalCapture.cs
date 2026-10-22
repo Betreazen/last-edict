@@ -98,7 +98,7 @@ public static class CapitalCapture
 
     /// <summary>
     /// Сколько у захватчика живых соперников (<c>0x44120D</c>): игроки играбельной расы, кроме
-    /// самого захватчика, у которых <c>CAPT_BY</c> пуст. Погибающий в этот момент ещё в счёте —
+    /// самого захватчика и его команды (<see cref="Teams"/>, Э4), у которых <c>CAPT_BY</c> пуст. Погибающий в этот момент ещё в счёте —
     /// проверка идёт до записи его <c>CAPT_BY</c>.
     /// </summary>
     public static int LiveOpponents(MapState map, string captorId, EconomyRules rules)
@@ -106,7 +106,7 @@ public static class CapitalCapture
         ArgumentNullException.ThrowIfNull(map);
         ArgumentNullException.ThrowIfNull(rules);
         return map.Players.Values.Count(
-            p => !Same(p.Id, captorId) && p.CapturedBy.Length == 0
+            p => !Teams.SameTeam(map, p.Id, captorId) && p.CapturedBy.Length == 0
                  && rules.Races.TryGetValue(p.RaceId, out var race) && race.Playable);
     }
 

@@ -427,13 +427,16 @@ public sealed class BattleSim(BattleState state, IRng rng, RulesConstants consta
     /// характеристики на этот миг (<see cref="TurnOrder.Order"/> без построения — состояние не меняется, бросков нет). Ходы «Ждать» и дар атаки
     /// следующего раунда ещё не известны. Сторона пала — пусто: следующий раунд — лекари победителя или конец боя.</summary>
     public IReadOnlyList<BattleUnit> NextRound() =>
-        Winner is not null || Finished ? [] : TurnOrder.Order(state, RollsOf(state.Round + 1), constants, commit: false);
+        Winner is not null || Finished ? []
+        : TurnOrder.Order(state, _rolls.GetValueOrDefault(state.Round + 1) ?? NoRolls, constants, commit: false);   // взгляд — без записи
+
+    private static readonly IReadOnlyDictionary<string, int> NoRolls = new Dictionary<string, int>();
 
     /// <summary>Один вызов beforeBattleRound: номер раунда, сброс <see cref="BattleUnit.Waited"/>
     /// (<c>0x622078</c>) и одно построение очереди.
     /// <para><b>Инициатива на раунд вперёд (Р4, Р17).</b> Очередь раунда строится по случайным частям, брошенным в начале прошлого раунда
     /// (у первого раунда и у юнита без броска — бросок сейчас), и характеристикам на этот миг; следом бросается случайная часть следующего
-    /// раунда всем, кто встанет в его очередь (бой кончился этим построением — не бросается). Повторное построение того же раунда (раунд 1
+    /// раунда всем, кто встанет в его очередь (сторона пала — не бросается: следующий — раунд лекарей или конец). Повторное построение того же раунда (раунд 1
     /// строится дважды) бросков не тратит.</para> Удвоение раунда 1 — в <see cref="Run"/>; журнальный
     /// прогон С2 зовёт это на каждое событие round.
     /// <para><b>Предел раундов</b> (<see cref="BattleState.LimitRounds"/>, ранг 1 по коду, корпус слеп — боёв ИИ с ИИ дольше
@@ -460,8 +463,8 @@ public sealed class BattleSim(BattleState state, IRng rng, RulesConstants consta
                 u.Retreating = true;
                 u.Paralyzed = u.Petrified = u.DisableLong = false;
             }
-        // Случайная часть следующего раунда — сейчас (Р4); бой кончился этим построением — бросать нечего.
-        if (!Finished) TurnOrder.Roll(state, rng, constants, RollsOf(round + 1));
+        // Случайная часть следующего раунда — сейчас (Р4); сторона пала (дальше — лекари победителя или конец боя) — бросать нечего.
+        if (Winner is null && !Finished) TurnOrder.Roll(state, rng, constants, RollsOf(round + 1));
         return _queue;
     }
 

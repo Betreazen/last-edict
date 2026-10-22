@@ -30,7 +30,7 @@ public static partial class AiTactics
             var candidate = new AiGuardCandidate(
                 EffectiveOrder: OrderOf(s).Order, Distance: Cheb(self, (s.X, s.Y)), SameSubrace: Same(s.Subrace, stack.Subrace),
                 Inside: s.Inside.Length > 0, OnWater: session.IsWater(s.X, s.Y), Invisible: session.Invisible(s.Id),
-                Allied: Allied(session, stack.Owner, s.Owner), SameLeaderCategory: LeaderRaceType(session, s) == ownRace);
+                Allied: Allied(session, stack.Owner, s.Owner), SameLeaderCategory: LeaderRaceType(session, s) == ownRace && SameParty(session, stack.Owner, s.Owner));
             if (!AiTacticEval.GuardAdmits(candidate, selfWaterOnly, range)) continue;
             yield return (new AiTacticOption(AiActionType.Guard, stack.Id, s.Id, s.X, s.Y), AiTacticScore.Constant(AiActionType.Guard)!.Value);
         }

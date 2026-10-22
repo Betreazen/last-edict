@@ -7,6 +7,7 @@ namespace LastEdict.Data.Ui.Windows;
 /// <summary>
 /// Общее окна дипломатии (<c>CDiplomacyInterf</c>): игроки поля — сам игрок первым, затем до трёх других, ведущих дипломатию
 /// (играбельная раса, столица не взята; порядок id), и выбранный. Поле и панель читают его же; выбор меняет поле щелчком.
+/// <para>Больше трёх соперников (Р15, Э4) — страницы по три (<see cref="Page"/>, <see cref="Pages"/>): поле листает их стрелками.</para>
 /// </summary>
 public sealed class DiplomacyModel(WindowContext context, IReadOnlyDictionary<string, string> raceNames)
 {
@@ -16,18 +17,37 @@ public sealed class DiplomacyModel(WindowContext context, IReadOnlyDictionary<st
 
     public IReadOnlyDictionary<string, string> RaceNames => raceNames;
 
-    /// <summary>Игроки поля по слотам: [0] — сам игрок.</summary>
-    public IReadOnlyList<MapPlayer> Players
+    /// <summary>Все, с кем игрок ведёт дипломатию: играбельная раса, столица не взята, кроме него самого; порядок id.</summary>
+    public IReadOnlyList<MapPlayer> Others
     {
         get
         {
             var book = context.Session.RequireBook();
             bool Plays(MapPlayer p) => book.Economy.Races.TryGetValue(p.RaceId, out var r) && r.Playable && p.CapturedBy.Length == 0;
-            var self = context.Map.Players[context.Viewer];
-            return [self, .. context.Map.Players.Values.Where(p => !p.Id.Equals(self.Id, StringComparison.OrdinalIgnoreCase) && Plays(p))
-                                                        .OrderBy(p => p.Id, StringComparer.Ordinal).Take(Slots - 1)];
+            return [.. context.Map.Players.Values.Where(p => !p.Id.Equals(context.Viewer, StringComparison.OrdinalIgnoreCase) && Plays(p))
+                                                 .OrderBy(p => p.Id, StringComparer.Ordinal)];
         }
     }
+
+    /// <summary>Страниц соперников по <see cref="Slots"/> − 1; хотя бы одна.</summary>
+    public int Pages => Math.Max(1, (Others.Count + Slots - 2) / (Slots - 1));
+
+    /// <summary>Показанная страница соперников (0…<see cref="Pages"/> − 1); смена страницы снимает выбор на себя.</summary>
+    public int Page
+    {
+        get => Math.Clamp(_page, 0, Pages - 1);
+        set
+        {
+            _page = Math.Clamp(value, 0, Pages - 1);
+            Selected = 0;
+        }
+    }
+
+    private int _page;
+
+    /// <summary>Игроки поля по слотам: [0] — сам игрок, дальше — соперники страницы <see cref="Page"/>.</summary>
+    public IReadOnlyList<MapPlayer> Players =>
+        [context.Map.Players[context.Viewer], .. Others.Skip(Page * (Slots - 1)).Take(Slots - 1)];
 
     /// <summary>Выбранный слот (0 — сам игрок).</summary>
     public int Selected { get; set; }
@@ -100,7 +120,11 @@ public sealed class DiplomacyFieldLogic(DiplomacyModel model) : IWindowLogic
 
     public UiRequest? TakeRequest() => _requests.Take();
 
-    public string Summary => $"дипломатия выбран={model.SelectedPlayer.Id} игроков={model.Players.Count}";
+    public string Summary => $"дипломатия выбран={model.SelectedPlayer.Id} игроков={model.Players.Count} страница={model.Page + 1}/{model.Pages}";
+
+    /// <summary>Листание соперников (Р15): кнопки поверх поля внизу, есть только при нескольких страницах. Кадры — стрелки тенденции окна
+    /// (вверх — следующая страница); свой вид — Э5.</summary>
+    public const string NextPage = "BTN_PAGE_NEXT", PrevPage = "BTN_PAGE_PREV", PageText = "TXT_PAGE";
 
     /// <summary>Курсоры шкал — отдельные картинки поверх шкал (место — по значению отношения).</summary>
     public UiScreen Shape(UiScreen screen)
@@ -118,6 +142,14 @@ public sealed class DiplomacyFieldLogic(DiplomacyModel model) : IWindowLogic
                                       RingSize, RingSize),
                 });
             }
+        if (model.Pages > 1)
+            elements.AddRange([
+                new UiElement { Id = PrevPage, Kind = UiKind.Button, Rect = new UiRect(250, 562, 37, 37),
+                                Sprites = new UiSprites("DLG_ISO_DIPLO_ARROW_DOWN_N", "DLG_ISO_DIPLO_ARROW_DOWN_N", "DLG_ISO_DIPLO_ARROW_DOWN_N") },
+                new UiElement { Id = PageText, Kind = UiKind.Text, Rect = new UiRect(290, 570, 60, 20) },
+                new UiElement { Id = NextPage, Kind = UiKind.Button, Rect = new UiRect(353, 562, 37, 37),
+                                Sprites = new UiSprites("DLG_ISO_DIPLO_ARROW_UP_N", "DLG_ISO_DIPLO_ARROW_UP_N", "DLG_ISO_DIPLO_ARROW_UP_N") },
+            ]);
         var players = model.Players;
         for (int i = 1; i < DiplomacyModel.Slots; i++)
         {
@@ -138,6 +170,11 @@ public sealed class DiplomacyFieldLogic(DiplomacyModel model) : IWindowLogic
 
     public void Handle(UiEvent e, UiScreenState ui)
     {
+        ArgumentNullException.ThrowIfNull(ui);
+        if (e is not UiClicked { Element: NextPage or PrevPage } click) return;
+        model.Page = (model.Page + (click.Element == NextPage ? 1 : model.Pages - 1)) % model.Pages;
+        Refresh(ui);
+        model.Notify();
     }
 
     /// <summary>Правая кнопка над портретом слота — карточка его игрока (<see cref="PlayerCardLogic"/>, <c>0x48528f</c>…<c>0x48530e</c>), пока
@@ -185,6 +222,7 @@ public sealed class DiplomacyFieldLogic(DiplomacyModel model) : IWindowLogic
             if (ui.Screen.Elements.Any(e => e.Id == $"IMG_RACE{i + 1}{RingSuffix}"))
                 ui.SetImage($"IMG_RACE{i + 1}{RingSuffix}", i == model.Selected && i < players.Count
                     ? UiFrameRef.Added(i == 0 ? "DRAGDROP_BIGFACE_RIGHT" : "DRAGDROP_BIGFACE_LEFT") : null);
+        if (ui.Screen.Elements.Any(e => e.Id == PageText)) ui.SetText(PageText, $"{model.Page + 1}/{model.Pages}");
         ui.SetText("TXT_PLAYER_CUR", Line(players[0]));
         ui.SetText("TXT_PLAYER_SEL", model.Selected == 0 ? "" : Line(model.SelectedPlayer));
         for (int i = 1; i < DiplomacyModel.Slots; i++)

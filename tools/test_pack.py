@@ -32,12 +32,21 @@ def ref(kind: str, name: str) -> str:
 RACES = [
     ("sun", "human", "human", "life", "human", 0, 0, ["Aldric", "Bertha", "Cedric", "Dalia", "Edmund", "Freya"]),
     ("moon", "undead", "undead", "death", "undead", 1, 1, ["Morwen", "Nyx", "Orrin", "Pyra", "Quill", "Rook"]),
+    ("ember", "heretic", "heretic", "infernal", "heretic", 2, 3, ["Sable", "Tarn", "Ulric", "Vesna", "Wyre", "Xana"]),
 ]
+
+# Чем раса отличается: особый солдат (имя, атака), источник магии мудреца и адепта, подраса и смерть юнитов, мана казны.
+SPECIAL = {"sun": ("healer", ("heal", "life", "any", 25, 20, 100)), "moon": ("hexer", ("paralyze", "death", "any", 0, 40, 75)),
+           "ember": ("scorcher", ("poison", "fire", "any", 10, 45, 80))}
+MAGIC = {"sun": ("fire", "air"), "moon": ("death", "death"), "ember": ("fire", "fire")}
+SUBRACE_OF = {"sun": "human", "moon": "undead", "ember": "heretic"}
+MANA = {"sun": "Life", "moon": "Death", "ember": "Infernal"}
 
 # Юниты играбельной расы: (имя, роль, ветка, уровень, здоровье, броня, атака: (эффект, источник, досягаемость, урон/лечение,
 # инициатива, точность), опыт за гибель, опыт до уровня, цена найма, прочее).
 def race_units(race: str, mana: str) -> list[dict]:
-    special = ("heal", "life", "any", 25, 20, 100) if race == "sun" else ("paralyze", "death", "any", 0, 40, 75)
+    special_name, special = SPECIAL[race]
+    sage_source, adept_source = MAGIC[race]
     rows = [
         ("colossus", "guardian", "hero", 1, 700, 40, ("damage", "weapon", "adjacent", 90, 50, 85), 5000, 6000, 8000,
          {"move": 20, "scout": 4, "leadership": 6, "negotiate": 60, "regeneration": 40}),
@@ -47,14 +56,14 @@ def race_units(race: str, mana: str) -> list[dict]:
          {"move": 20, "scout": 4, "leadership": 4, "negotiate": 10, "leaderCategory": "fighter"}),
         ("ranger", "leader", "hero", 1, 110, 0, ("damage", "weapon", "any", 30, 60, 80), 45, 130, 420,
          {"move": 26, "scout": 6, "leadership": 3, "negotiate": 10, "leaderCategory": "explorer"}),
-        ("sage", "leader", "hero", 1, 90, 0, ("damage", "fire" if race == "sun" else "death", "all", 25, 40, 80), 50, 140, 480,
+        ("sage", "leader", "hero", 1, 90, 0, ("damage", sage_source, "all", 25, 40, 80), 50, 140, 480,
          {"move": 20, "scout": 4, "leadership": 3, "negotiate": 10, "leaderCategory": "mage"}),
         ("warden", "leader", "hero", 1, 100, 0, ("damage", "weapon", "any", 25, 50, 80), 45, 130, 400,
          {"move": 20, "scout": 4, "leadership": 3, "negotiate": 10, "leaderCategory": "rod"}),
         ("footman", "soldier", "fighter", 1, 110, 0, ("damage", "weapon", "adjacent", 28, 50, 80), 18, 85, 55, {}),
         ("bowman", "soldier", "archer", 1, 50, 0, ("damage", "weapon", "any", 22, 60, 80), 16, 75, 45, {}),
-        ("adept", "soldier", "mage", 1, 40, 0, ("damage", "air" if race == "sun" else "death", "all", 14, 40, 80), 18, 80, 50, {}),
-        ("healer" if race == "sun" else "hexer", "soldier", "special", 1, 55, 0, special, 18, 80, 50, {}),
+        ("adept", "soldier", "mage", 1, 40, 0, ("damage", adept_source, "all", 14, 40, 80), 18, 80, 50, {}),
+        (special_name, "soldier", "special", 1, 55, 0, special, 18, 80, 50, {}),
         ("veteran", "soldier", "fighter", 2, 160, 0, ("damage", "weapon", "adjacent", 45, 50, 85), 55, 400, 280,
          {"previousLevel": "footman", "upgradeBuilding": "barracks"}),
         ("marksman", "soldier", "archer", 2, 75, 0, ("damage", "weapon", "any", 38, 60, 85), 50, 380, 260,
@@ -78,13 +87,13 @@ def unit(race: str, prefix: str, mana: str, name: str, role: str, branch: str, l
     full = f"{prefix}-{name}"
     u = {
         "id": ref("unit", full), "role": role, "level": level, "race": ref("race", race),
-        "subrace": "human" if race == "sun" else "undead" if race == "moon" else "neutral",
+        "subrace": SUBRACE_OF.get(race, "neutral"),
         "branch": branch, "small": extra.pop("small", True), "male": True, "hireCost": {"gold": price},
         "attack": ref("attack", full), "attacksTwice": False, "hitPoints": hp, "armor": armor,
         "regeneration": extra.pop("regeneration", 5), "reviveCost": {"gold": max(50, price // 2)}, "healCost": {"gold": 1},
         "trainingCost": {"gold": 4}, "xpForKill": xp_kill, "xpForNextLevel": xp_next,
         "growth": {"early": ref("growth", full), "switchLevel": 10, "late": ref("growth", full)},
-        "deathAnimation": "human" if race == "sun" else "undead" if race == "moon" else "neutral",
+        "deathAnimation": SUBRACE_OF.get(race, "neutral"),
     }
     if "previousLevel" in extra:
         u["previousLevel"] = ref("unit", f"{prefix}-{extra.pop('previousLevel')}")
@@ -139,7 +148,7 @@ def build() -> dict[str, list[dict]]:
         races.append({
             "id": ref("race", name), "guardian": ref("unit", f"{name}-colossus"), "noble": ref("unit", f"{name}-thief"),
             "leaders": [ref("unit", f"{name}-{x}") for x in ("captain", "ranger", "sage", "warden")],
-            "soldiers": [ref("unit", f"{name}-{x}") for x in ("footman", "bowman", "adept", "healer" if name == "sun" else "hexer")],
+            "soldiers": [ref("unit", f"{name}-{x}") for x in ("footman", "bowman", "adept", SPECIAL[name][0])],
             "scout": 4, "capitalRegeneration": 30, "income": {"gold": 120, mana: 20}, "protection": ref("modifier", f"{name}-capital"),
             "kind": kind, "playable": True, "land": land, "turnOrder": order, "eventFlag": flag, "neutral": False,
             "heroNames": [{"text": h, "male": i % 2 == 0} for i, h in enumerate(heroes)],
@@ -155,7 +164,7 @@ def build() -> dict[str, list[dict]]:
         modifiers.append(modifier(f"{name}-ward", "spell: armor", [armor(20)]))
         spells += [
             {"id": spell_ids[0], "category": "attack", "level": 1, "castCost": {mana: 80}, "buyCost": {"gold": 250}, "area": 1,
-             "damageSource": "fire" if name == "sun" else "death", "damage": 30, "aiUse": "all"},
+             "damageSource": MAGIC[name][0], "damage": 30, "aiUse": "all"},
             {"id": spell_ids[1], "category": "boost", "level": 1, "castCost": {mana: 60}, "buyCost": {"gold": 200}, "area": 1,
              "modifier": ref("modifier", f"{name}-ward"), "aiUse": "all"},
         ]
@@ -257,13 +266,34 @@ MOD_JSON = {"id": MOD, "name": "Test pack (CC0)"}
 # Сценарий в формате порта (d2-port-scenario, src/Engine.Play/Play/ScenarioFile.cs): клетки, игроки, столицы с героем и стражем, деревни
 # нейтралов с охраной, нейтральные отряды. Раскладка — от зерна генератора (random.Random), файл лежит в репозитории готовым.
 # Клетка — байт: земля расы (1 Империя-род, 4 Нежить-род, 5 нейтралы) | грунт << 3 (0 равнина, 1 лес, 3 вода, 4 горы).
-LAND = {"sun": 1, "moon": 4, "wild": 5}
-SUBRACE = {"wild": 5, "sun": 1, "moon": 2}          # подраса отряда (перечень Subrace)
-KIND = {"sun": 0, "moon": 1, "wild": 4}             # род расы в отношениях (RaceKind)
+LAND = {"sun": 1, "moon": 4, "ember": 3, "wild": 5}
+SUBRACE = {"wild": 5, "sun": 1, "moon": 2, "ember": 3}   # подраса отряда (перечень Subrace)
+KIND = {"sun": 0, "moon": 1, "ember": 2, "wild": 4}       # род расы в отношениях (RaceKind)
+
+# Место карты: раса, угол столицы (у нейтралов — нет), сторона дипломатии (нет — род расы, как у карт оригинала), команда (нет — без
+# команды). Игрок — по номеру места.
+def seats(size: int, *extra: tuple) -> list[tuple]:
+    return [("wild", None, None, None), ("sun", (4, 4), None, None), ("moon", (size - 9, size - 9), None, None), *extra]
+
+
+def crowns(size: int) -> list[tuple]:
+    """Шесть игроков трёх рас — по двое одной расы, у каждого своя сторона; три команды по двое соседей, игроки одной расы — в разных
+    командах. Нейтралы — сторона 4, как род нейтралов."""
+    mid = size // 2 - 2
+    return [("wild", None, 4, None), ("sun", (4, 4), 10, "north"), ("moon", (size - 9, size - 9), 11, "east"),
+            ("ember", (size - 9, 4), 12, "east"), ("sun", (4, size - 9), 13, "south"), ("moon", (mid, 4), 14, "north"),
+            ("ember", (mid, size - 9), 15, "south")]
+
+
+# Слово отношений союзников команды (LastEdict.Rules.Map.Teams.TeamRaw): союз, мир 100, «ИИ не разорвёт».
+TEAM_RAW = 1 | (100 << 1) | (1 << 31)
+
+
 MAPS = [
-    # (имя, номер, сторона, зерно, деревень, нейтральных отрядов)
-    ("twin-fields", 901, 48, 11, 2, 10),
-    ("long-march", 902, 64, 23, 4, 16),
+    # (имя, номер, сторона, зерно, деревень, нейтральных отрядов, места)
+    ("twin-fields", 901, 48, 11, 2, 10, seats(48)),
+    ("long-march", 902, 64, 23, 4, 16, seats(64)),
+    ("six-crowns", 903, 72, 37, 6, 18, crowns(72)),
 ]
 NEUTRAL_GROUPS = [["wolf"], ["wolf", "wolf"], ["shaman", "wolf"], ["bat", "bat", "wolf"], ["chief", "shaman", "wolf"],
                   ["chief", "bat", "shaman", "wolf"]]
@@ -298,7 +328,7 @@ class MapBuilder:
             for xx in range(x, x + w):
                 self.plan.setdefault((xx, yy), []).append(oid)
 
-    def stack(self, owner: str, race: str, names: list[str], x: int, y: int, inside: str = "", move: int = 20, order: int = 2) -> str:
+    def stack(self, owner: str, seat: int, names: list[str], x: int, y: int, inside: str = "", move: int = 20, order: int = 2) -> str:
         sid = self.new_id("KC")
         ids = [self.unit(n) for n in names]
         cells = [2, 0, 4, 3, 1, 5]   # первый — в центр переднего ряда, дальше передний ряд, затем задний
@@ -306,27 +336,27 @@ class MapBuilder:
         for i in range(len(ids)):
             slots[cells[i]] = i
         self.stacks[sid] = {
-            "Id": sid, "Owner": owner, "Subrace": self.subrace(race), "LeaderId": ids[0], "LeaderAlive": True, "X": x, "Y": y,
+            "Id": sid, "Owner": owner, "Subrace": self.subrace(seat), "LeaderId": ids[0], "LeaderAlive": True, "X": x, "Y": y,
             "Move": move, "Inside": inside, "UnitIds": ids, "Slots": slots, "Items": [], "TemplateId": "", "Equipment": [""] * 7,
             "Order": order, "OrderTarget": "", "AiOrder": 1, "AiOrderTarget": "", "AiIgnore": False, "UpgradeCount": 0,
             "BattlesWon": 0, "CreationLevel": 1, "AiPriority": 3,
         }
         self.objects[sid] = {"Id": sid, "Kind": "KC", "X": x, "Y": y, "Resource": 0, "TypeId": ""}
         self.plan.setdefault((x, y), []).append(sid)
-        self.looks_stacks.append({"Id": sid, "X": x, "Y": y, "Owner": owner, "Subrace": self.subrace(race),
+        self.looks_stacks.append({"Id": sid, "X": x, "Y": y, "Owner": owner, "Subrace": self.subrace(seat),
                                   "LeaderType": self.units[ids[0]]["TypeId"], "LeaderAlive": True, "AnyAlive": True, "Facing": 0,
                                   "Inside": inside, "Invisible": False, "LeaderName": names[0].title()})
         return sid
 
-    def subrace(self, race: str) -> str:
-        return f"{self.p}SR{list(SUBRACE).index(race):04x}"
+    def subrace(self, seat: int) -> str:
+        return f"{self.p}SR{seat:04x}"
 
-    def fort(self, owner: str, race: str, x: int, y: int, capital: bool, name: str, guards: list[str], hero: list[str] | None) -> None:
+    def fort(self, owner: str, seat: int, x: int, y: int, capital: bool, name: str, guards: list[str], hero: list[str] | None) -> None:
         fid = self.new_id("FT")
         w = 5 if capital else 4
         self.objects[fid] = {"Id": fid, "Kind": "FT", "X": x, "Y": y, "Resource": 0, "TypeId": ""}
         self.cover(x, y, w, fid)
-        visitor = self.stack(owner, race, hero, x, y, inside=fid, order=1) if hero else ""
+        visitor = self.stack(owner, seat, hero, x, y, inside=fid, order=1) if hero else ""
         guard_ids = [self.unit(g) for g in guards]
         slots = [-1] * 6
         for i, cell in enumerate([2, 0, 4][:len(guard_ids)]):
@@ -336,7 +366,7 @@ class MapBuilder:
             "Id": fid, "Kind": "Capital" if capital else "Village", "RawKind": "Capital" if capital else "MidVillage", "X": x, "Y": y,
             "Name": name, "Description": "", "Owner": owner, "Cash": ZERO_BANK, "ItemId": "", "LooterId": "", "Items": [],
             "Guards": guard_ids, "GuardSlots": slots, "Resource": 0, "VisitorId": "", "Gone": False, "StackId": visitor,
-            "Subrace": self.subrace(race), "Size": None, "GrowthTurn": None, "RiotTurn": None, "RegenBonus": None,
+            "Subrace": self.subrace(seat), "Size": None, "GrowthTurn": None, "RiotTurn": None, "RegenBonus": None,
             "ProtectBonus": "", "Morale": None, "Visitors": [], "Stock": [], "Buys": None, "Mission": False, "Roster": [],
             "Spells": [], "AiPriority": 3, **city,
         })
@@ -349,11 +379,11 @@ def grid(size: int, value: int | bytes) -> dict:
     return {"w": size, "h": size, "data": base64.b64encode(data).decode("ascii")}
 
 
-def scenario(name: str, num: int, size: int, seed: int, villages: int, neutrals: int) -> dict:
+def scenario(name: str, num: int, size: int, seed: int, villages: int, neutrals: int, places: list[tuple]) -> dict:
     rnd = random.Random(seed)
     hp = {u["id"].split("/", 1)[1]: u["hitPoints"] for u in build()["units"]}
     b = MapBuilder(num, size, hp)
-    players = {"wild": f"S{num}PL0000", "sun": f"S{num}PL0001", "moon": f"S{num}PL0002"}
+    players = [f"S{num}PL{i:04x}" for i in range(len(places))]
     tiles = bytearray([LAND["wild"]] * (size * size))
 
     def put(x: int, y: int, ground: int, land: int = LAND["wild"]) -> None:
@@ -372,13 +402,15 @@ def scenario(name: str, num: int, size: int, seed: int, villages: int, neutrals:
     for i in range(0, size, 7):
         put(i, 0, 4)
         put(size - 1, i, 4)
-    corners = {"sun": (4, 4), "moon": (size - 9, size - 9)}
-    for race, (x, y) in corners.items():
+    for seat, (race, corner, _party, _team) in enumerate(places):
+        if corner is None:
+            continue
+        x, y = corner
         for yy in range(y - 2, y + 7):
             for xx in range(x - 2, x + 7):
                 put(xx, yy, 0, LAND[race])
-        b.fort(players[race], race, x, y, True, f"{race.title()} Keep", [f"{race}-colossus"],
-               [f"{race}-captain", f"{race}-footman", f"{race}-bowman"])
+        keep = f"{race.title()} Keep" if sum(1 for r, c, _, _t in places if r == race and c) == 1 else f"{race.title()} Keep {seat}"
+        b.fort(players[seat], seat, x, y, True, keep, [f"{race}-colossus"], [f"{race}-captain", f"{race}-footman", f"{race}-bowman"])
     taken = {(x, y) for (x, y) in b.plan}
     for i in range(villages):
         while True:
@@ -388,7 +420,7 @@ def scenario(name: str, num: int, size: int, seed: int, villages: int, neutrals:
         for xx in range(x, x + 4):
             for yy in range(y, y + 4):
                 put(xx, yy, 0)
-        b.fort(players["wild"], "wild", x, y, False, f"Hamlet {i + 1}", ["wild-wolf", "wild-shaman"], None)
+        b.fort(players[0], 0, x, y, False, f"Hamlet {i + 1}", ["wild-wolf", "wild-shaman"], None)
         taken |= {(xx, yy) for xx in range(x - 1, x + 5) for yy in range(y - 1, y + 5)}
     for i in range(neutrals):
         while True:
@@ -397,27 +429,42 @@ def scenario(name: str, num: int, size: int, seed: int, villages: int, neutrals:
                 break
         taken.add((x, y))
         group = NEUTRAL_GROUPS[min(len(NEUTRAL_GROUPS) - 1, i * len(NEUTRAL_GROUPS) // neutrals)]
-        b.stack(players["wild"], "wild", [f"wild-{u}" for u in group], x, y)
+        b.stack(players[0], 0, [f"wild-{u}" for u in group], x, y)
 
-    def player(race: str, num_: int) -> dict:
-        pid = players[race]
+    def player(seat: int) -> dict:
+        race, _corner, party, team = places[seat]
         gold = 0 if race == "wild" else 600
-        mana = {"sun": "Life", "moon": "Death"}.get(race)
+        mana = MANA.get(race)
         bank = dict(ZERO_BANK, Gold=gold, **({mana: 150} if mana else {}))
-        return {"Id": pid, "RaceId": ref("race", race), "LordId": ref("lord", f"{race}-lord") if race != "wild" else ref("lord", "sun-lord"), "Name": race.title(), "Face": 0, "IsHuman": False,
-                "Bank": bank, "FogId": f"S{num}FG{num_:04x}", "BuildingsId": f"S{num}PB{num_:04x}", "Buildings": [],
-                "SpellBank": ZERO_BANK, "QtyBreaks": 0, "Attitude": 1, "CapturedBy": "", "ConstructionTurn": 0, "ResearchTurn": 0,
-                "KnownSpells": [], "Spied": []}
+        same = sum(1 for r, c, _, _t in places if r == race and c)
+        title = race.title() if same <= 1 else f"{race.title()} {sum(1 for r, c, _, _t in places[:seat + 1] if r == race and c)}"
+        p = {"Id": players[seat], "RaceId": ref("race", race),
+             "LordId": ref("lord", f"{race}-lord") if race != "wild" else ref("lord", "sun-lord"), "Name": title, "Face": 0,
+             "IsHuman": False}
+        if party is not None:
+            p["Party"] = party
+        if team is not None:
+            p["Team"] = team
+        p.update({"Bank": bank, "FogId": f"S{num}FG{seat:04x}", "BuildingsId": f"S{num}PB{seat:04x}", "Buildings": [],
+                  "SpellBank": ZERO_BANK, "QtyBreaks": 0, "Attitude": 1, "CapturedBy": "", "ConstructionTurn": 0, "ResearchTurn": 0,
+                  "KnownSpells": [], "Spied": []})
+        return p
 
-    order = ["wild", "sun", "moon"]
-    subraces = {b.subrace(r): SUBRACE[r] for r in SUBRACE}
+    def side(seat: int) -> int:
+        race, _corner, party, _team = places[seat]
+        return KIND[race] if party is None else party
+
+    def raw(i: int, j: int) -> int:
+        team_i, team_j = places[i][3], places[j][3]
+        return TEAM_RAW if team_i is not None and team_i == team_j else 0
+
+    subraces = {b.subrace(i): SUBRACE[race] for i, (race, _c, _p, _t) in enumerate(places)}
     the_map = {
         "Size": size, "Tiles": grid(size, bytes(tiles)), "Stacks": b.stacks, "Units": b.units,
-        "Players": {players[r]: player(r, i) for i, r in enumerate(order)}, "Objects": b.objects,
+        "Players": {players[i]: player(i) for i in range(len(places))}, "Objects": b.objects,
         "Plan": [{"X": x, "Y": y, "Ids": ids} for (x, y), ids in sorted(b.plan.items(), key=lambda kv: (kv[0][1], kv[0][0]))],
-        "Fog": {f"S{num}FG{i:04x}": grid(size, 0) for i in range(len(order))}, "Turn": 0, "Rods": {}, "Sites": b.sites,
-        "Relations": [{"Race1": KIND["wild"], "Race2": KIND["sun"], "Raw": 0}, {"Race1": KIND["wild"], "Race2": KIND["moon"], "Raw": 0},
-                      {"Race1": KIND["sun"], "Race2": KIND["moon"], "Raw": 0}],
+        "Fog": {f"S{num}FG{i:04x}": grid(size, 0) for i in range(len(places))}, "Turn": 0, "Rods": {}, "Sites": b.sites,
+        "Relations": [{"Race1": side(i), "Race2": side(j), "Raw": raw(i, j)} for i in range(len(places)) for j in range(i + 1, len(places))],
         "TalismanCharges": {}, "SpellCasts": [], "ItemCasts": [], "SpellEffects": [], "ItemTypes": {},
         "Limits": {"MaxUnit": 3, "MaxSpell": 3, "MaxLeader": 10, "MaxCity": 5, "DifficultyScenario": 2, "DifficultyGame": 1,
                    "SuggestedLevel": 1},
@@ -427,7 +474,7 @@ def scenario(name: str, num: int, size: int, seed: int, villages: int, neutrals:
              "Crystals": [], "Bags": [], "Tombs": [], "Rods": [], "Landmarks": [], "Mountains": [], "Roads": [],
              "Stacks": b.looks_stacks, "Banners": {sr: i for i, sr in enumerate(subraces)}}
     events = {"Events": [], "Zones": {}, "Variables": {}, "Templates": {},
-              "SubraceOwners": {b.subrace(r): players[r] for r in SUBRACE}}
+              "SubraceOwners": {b.subrace(i): players[i] for i in range(len(places))}}
     return {"Format": "d2-port-scenario", "Version": 6, "Id": name, "Looks": looks, "Events": events}
 
 
@@ -438,8 +485,8 @@ def render() -> dict[Path, str]:
         stem = FILES[key]
         doc = {"$schema": SCHEMA.format(stem), key: entities}
         out[OUT / f"{stem}.json"] = json.dumps(doc, ensure_ascii=False, indent=1) + "\n"
-    for name, num, size, seed, villages, neutrals in MAPS:
-        doc = scenario(name, num, size, seed, villages, neutrals)
+    for name, num, size, seed, villages, neutrals, places in MAPS:
+        doc = scenario(name, num, size, seed, villages, neutrals, places)
         out[OUT / "scenarios" / f"{name}.json"] = json.dumps(doc, ensure_ascii=False, indent=1) + "\n"
     return out
 

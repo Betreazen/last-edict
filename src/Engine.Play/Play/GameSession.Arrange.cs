@@ -440,6 +440,7 @@ public sealed partial class GameSession
     public string? BreakAllianceBy(string playerId, string targetId, List<string>? report = null)
     {
         if (PartyOf(playerId) is null || PartyOf(targetId) is null) return "не ведёт дипломатию";
+        if (Teams.Unbreakable(Map, playerId, targetId)) return "союз команды не разорвать";
         if (!BreakAlliance(playerId, targetId)) return "союза нет";
         report?.Add($"{playerId} разрывает союз с {targetId}");
         if (!IsHuman(targetId)) Chat(targetId, playerId, AiMessage.PlayerBreakAlliance, report);

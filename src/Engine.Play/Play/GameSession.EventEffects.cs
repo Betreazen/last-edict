@@ -498,7 +498,7 @@ public sealed partial class GameSession
     public bool EventBattlesOnScreen { get; set; }
 
     /// <summary>Бой эффекта <c>L_BATTLE</c>, собранный (<see cref="StartBattle"/>) и ждущий экрана: сцена играет его на
-    /// <see cref="Rng"/> и отдаёт журнал в <see cref="FinishBattle"/> (проверка после боя — там). Нет — null.</summary>
+    /// <see cref="BattleRng"/> и отдаёт журнал в <see cref="FinishBattle"/> (проверка после боя — там). Нет — null.</summary>
     public BattleState? PendingEventBattle => _battle is { } b && ReferenceEquals(b.State, _eventBattle) ? b.State : null;
 
     private BattleState? _eventBattle;

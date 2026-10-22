@@ -98,6 +98,54 @@
    ]
   },
   {
+   "id": "test:modifier/ember-capital",
+   "scope": "unit",
+   "comment": "capital protection",
+   "elements": [
+    {
+     "type": "armor",
+     "number": 40,
+     "immuneLevel": 2
+    }
+   ]
+  },
+  {
+   "id": "test:modifier/ember-city",
+   "scope": "unit",
+   "comment": "city protection",
+   "elements": [
+    {
+     "type": "armor",
+     "number": 15,
+     "immuneLevel": 2
+    }
+   ]
+  },
+  {
+   "id": "test:modifier/ember-ward",
+   "scope": "unit",
+   "comment": "spell: armor",
+   "elements": [
+    {
+     "type": "armor",
+     "number": 20,
+     "immuneLevel": 2
+    }
+   ]
+  },
+  {
+   "id": "test:modifier/ember-skill-armor",
+   "scope": "unit",
+   "comment": "skill: armor",
+   "elements": [
+    {
+     "type": "armor",
+     "number": 10,
+     "immuneLevel": 2
+    }
+   ]
+  },
+  {
    "id": "test:modifier/wild-city",
    "scope": "unit",
    "comment": "neutral city protection",

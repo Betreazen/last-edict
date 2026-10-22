@@ -122,6 +122,66 @@
    "resourceMoney": 0
   },
   {
+   "id": "test:city/ember-1",
+   "race": "test:race/ember",
+   "size": 1,
+   "scout": 3,
+   "regeneration": 10,
+   "protection": "test:modifier/ember-city",
+   "growth": {
+    "gold": 150
+   },
+   "resourceMoney": 0
+  },
+  {
+   "id": "test:city/ember-2",
+   "race": "test:race/ember",
+   "size": 2,
+   "scout": 4,
+   "regeneration": 15,
+   "protection": "test:modifier/ember-city",
+   "growth": {
+    "gold": 200
+   },
+   "resourceMoney": 0
+  },
+  {
+   "id": "test:city/ember-3",
+   "race": "test:race/ember",
+   "size": 3,
+   "scout": 5,
+   "regeneration": 20,
+   "protection": "test:modifier/ember-city",
+   "growth": {
+    "gold": 250
+   },
+   "resourceMoney": 0
+  },
+  {
+   "id": "test:city/ember-4",
+   "race": "test:race/ember",
+   "size": 4,
+   "scout": 6,
+   "regeneration": 25,
+   "protection": "test:modifier/ember-city",
+   "growth": {
+    "gold": 300
+   },
+   "resourceMoney": 0
+  },
+  {
+   "id": "test:city/ember-5",
+   "race": "test:race/ember",
+   "size": 5,
+   "scout": 7,
+   "regeneration": 30,
+   "protection": "test:modifier/ember-city",
+   "growth": {
+    "gold": 350
+   },
+   "resourceMoney": 0
+  },
+  {
    "id": "test:city/wild-1",
    "race": "test:race/wild",
    "size": 1,

@@ -42,12 +42,14 @@ change what the original could not:
 
 | Feature | Disciples II | Last Edict |
 |---|---|---|
-| Turn order in battle | hidden | ✅ strip of portraits above the battlefield · 📋 exact for two rounds ahead |
+| Turn order in battle | hidden | ✅ strip of portraits above the battlefield, exact for the current and the next round |
 | Settings | 15 toggles, no window modes | ✅ window/fullscreen, vsync, frame cap, Alt+Enter, five audio buses · 📋 new settings window: tabs, key and gamepad remapping, language |
 | Rules data | binary tables fixed in the engine | ✅ typed JSON content with schemas and mod layers |
 | Game actions | direct calls | ✅ commands with a state hash — any game can be replayed from its journal |
-| Initiative | rolled each round | 📋 rolled a round ahead, effects applied live |
-| Players and races | up to 5 players, one per race | 📋 all races on one map, the same race twice, teams, more than five players |
+| Initiative | rolled each round | ✅ rolled a round ahead, effects applied live |
+| Random numbers | one generator for everything | ✅ separate streams for battles, AI, loot and the map — one AI change no longer reshuffles every battle |
+| Players and races | up to 5 players, one per race | ✅ the same race twice, teams with a shared victory, more than five players, races as mod content · 🚧 lobby and race choice screens |
+| Balance | by feel | ✅ headless simulator: thousands of AI games per seed, win rates by race, first move, snowballing |
 | Screen | 800×600 | 📋 any aspect ratio (16:9, 16:10, 21:9, 4:3), HD art |
 | Input | mouse and keyboard | 📋 full gamepad, Steam Deck |
 | Multiplayer | LAN of 2002 | 📋 friends' rooms via a relay, async games |
@@ -87,8 +89,8 @@ marked; hovering a portrait highlights the unit on the field.
 | E1 Quick wins — turn-order strip, technical settings, faster checks | ✅ done |
 | E2 Foundation — content schema, effect registry, commands and journal, assemblies | ✅ done |
 | E3 Separation — this repository, own test content, "port vs port" snapshots | ✅ done |
-| E4 Own rules — initiative a round ahead, separate random streams, five races, teams, more players, balance simulator | 📋 next |
-| E5 Screen and input — any aspect ratio, new settings window, gamepad and Steam Deck, HD art pipeline | 📋 |
+| E4 Own rules — initiative a round ahead, separate random streams, five races, teams, more players, balance simulator | ✅ done |
+| E5 Screen and input — any aspect ratio, new settings window, gamepad and Steam Deck, HD art pipeline | 📋 next |
 | E6 Building tree window and the Studio | 📋 |
 | E7 Play with friends | 📋 |
 
@@ -98,6 +100,9 @@ Decisions and details: [`docs/own-version-roadmap.md`](docs/own-version-roadmap.
 
 <!-- Новые записи — сверху: дата, что изменилось, снимки «было / стало» (порядок — docs/media.md). -->
 
+- **2026-10-22 — Own rules.** Initiative is rolled a round ahead and the turn-order strip shows two exact rounds; every system draws
+  from its own random stream; rules work on content ids, so a mod race needs no original ids; two players of the same race, teams with
+  a shared victory and six-player maps; a headless balance simulator (600 test-content games in under 90 s on 32 threads).
 - **2026-10-22 — Last Edict is born.** Separated from the reference port: no game data in the repository, own CC0 test content
   (`content/test-pack`), "port vs port" snapshots that stay identical to the reference, CI on the test content alone.
 - **2026-10-21 — Turn-order strip and modern settings.** Battle shows who acts next; window, fullscreen, vsync, frame cap and audio

@@ -48,12 +48,12 @@ public class BattleEndAndTurnRulesTests
         var queue = sim.BeginRound(2);
 
         Assert.Equal(["o"], queue.Select(u => u.Id));
-        Assert.Equal(4, rng.Used);                 // броски очереди — на обоих живых, и раунда вперёд (Р4) — тоже на обоих
+        Assert.Equal(2, rng.Used);                 // броски очереди — на обоих живых; сторона пала — раунд вперёд не бросается
         Assert.Empty(squire.Dots);                 // 0x627142: яды сняты
         Assert.False(sim.Finished);
         sim.BeginRound(3);
         Assert.True(sim.Finished);
-        Assert.Equal(4, rng.Used);                 // раунд 3 брошен заранее, бой кончился — следующий не бросается
+        Assert.Equal(4, rng.Used);                 // раунд 3 — бросок при построении, бой кончился — следующий не бросается
     }
 
     /// <summary>Раненых нет — лекарям ходить незачем: броски нового раунда потрачены, бой окончен (20260909-arena2 [313563]).</summary>

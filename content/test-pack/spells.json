@@ -58,6 +58,35 @@
    "area": 1,
    "modifier": "test:modifier/moon-ward",
    "aiUse": "all"
+  },
+  {
+   "id": "test:spell/ember-bolt",
+   "category": "attack",
+   "level": 1,
+   "castCost": {
+    "infernal": 80
+   },
+   "buyCost": {
+    "gold": 250
+   },
+   "area": 1,
+   "damageSource": "fire",
+   "damage": 30,
+   "aiUse": "all"
+  },
+  {
+   "id": "test:spell/ember-ward",
+   "category": "boost",
+   "level": 1,
+   "castCost": {
+    "infernal": 60
+   },
+   "buyCost": {
+    "gold": 200
+   },
+   "area": 1,
+   "modifier": "test:modifier/ember-ward",
+   "aiUse": "all"
   }
  ]
 }

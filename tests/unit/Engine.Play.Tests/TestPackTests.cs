@@ -15,7 +15,7 @@ public class TestPackTests
     public void TestPack_LoadsIntoRules()
     {
         var book = GameBook.Load(Dir);
-        Assert.Equal(3, book.Economy.Races.Count);
+        Assert.Equal(4, book.Economy.Races.Count);   // Солнце, Луна, Угли и нейтралы
         Assert.True(book.Rules.Units.Count > 20);
     }
 }
@@ -29,7 +29,7 @@ public class TestPackSnapshotTests
     private const int Battles = 12;
     private const uint Seed = 1;
 
-    public static TheoryData<string> Maps => new() { "twin-fields", "long-march" };
+    public static TheoryData<string> Maps => new() { "twin-fields", "long-march", "six-crowns" };
 
     [Theory]
     [MemberData(nameof(Maps))]

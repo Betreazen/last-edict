@@ -217,6 +217,114 @@
    "damage": 38
   },
   {
+   "id": "test:attack/ember-colossus",
+   "initiative": 50,
+   "source": "weapon",
+   "effect": "test:effect/damage",
+   "power": 85,
+   "reach": "adjacent",
+   "damage": 90
+  },
+  {
+   "id": "test:attack/ember-thief",
+   "initiative": 60,
+   "source": "weapon",
+   "effect": "test:effect/damage",
+   "power": 80,
+   "reach": "adjacent",
+   "damage": 20
+  },
+  {
+   "id": "test:attack/ember-captain",
+   "initiative": 50,
+   "source": "weapon",
+   "effect": "test:effect/damage",
+   "power": 80,
+   "reach": "adjacent",
+   "damage": 45
+  },
+  {
+   "id": "test:attack/ember-ranger",
+   "initiative": 60,
+   "source": "weapon",
+   "effect": "test:effect/damage",
+   "power": 80,
+   "reach": "any",
+   "damage": 30
+  },
+  {
+   "id": "test:attack/ember-sage",
+   "initiative": 40,
+   "source": "fire",
+   "effect": "test:effect/damage",
+   "power": 80,
+   "reach": "all",
+   "damage": 25
+  },
+  {
+   "id": "test:attack/ember-warden",
+   "initiative": 50,
+   "source": "weapon",
+   "effect": "test:effect/damage",
+   "power": 80,
+   "reach": "any",
+   "damage": 25
+  },
+  {
+   "id": "test:attack/ember-footman",
+   "initiative": 50,
+   "source": "weapon",
+   "effect": "test:effect/damage",
+   "power": 80,
+   "reach": "adjacent",
+   "damage": 28
+  },
+  {
+   "id": "test:attack/ember-bowman",
+   "initiative": 60,
+   "source": "weapon",
+   "effect": "test:effect/damage",
+   "power": 80,
+   "reach": "any",
+   "damage": 22
+  },
+  {
+   "id": "test:attack/ember-adept",
+   "initiative": 40,
+   "source": "fire",
+   "effect": "test:effect/damage",
+   "power": 80,
+   "reach": "all",
+   "damage": 14
+  },
+  {
+   "id": "test:attack/ember-scorcher",
+   "initiative": 45,
+   "source": "fire",
+   "effect": "test:effect/poison",
+   "power": 80,
+   "reach": "any",
+   "damage": 10
+  },
+  {
+   "id": "test:attack/ember-veteran",
+   "initiative": 50,
+   "source": "weapon",
+   "effect": "test:effect/damage",
+   "power": 85,
+   "reach": "adjacent",
+   "damage": 45
+  },
+  {
+   "id": "test:attack/ember-marksman",
+   "initiative": 60,
+   "source": "weapon",
+   "effect": "test:effect/damage",
+   "power": 85,
+   "reach": "any",
+   "damage": 38
+  },
+  {
    "id": "test:attack/wild-wolf",
    "initiative": 55,
    "source": "weapon",

@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using LastEdict.Data.Ui;
 using Godot;
 
 namespace LastEdict.Godot;
@@ -270,16 +269,6 @@ public static class SettingsTheme
 
     /// <summary>Текстура логического размера (точки — вдвое гуще, <see cref="ImageScales"/>).</summary>
     private static Texture2D Scaled(Image image, int scale) => ImageScales.Texture(ImageScales.With(image, scale));
-
-    /// <summary>Кадр описи интерфейса по имени (импорт); нет — null.</summary>
-    public static Texture2D? Frame(string name)
-    {
-        if (!GameData.Content.AssetsByName.TryGetValue(name, out var asset)) return null;
-        string path = UiAssets.PathOf(asset, GameData.UiAssetsRoot);
-        if (!File.Exists(path)) return null;
-        var image = Image.LoadFromFile(path);
-        return image is null ? null : ImageScales.Texture(ImageScales.With(image, asset.Factor));   // HD — логического размера (9-patch)
-    }
 
     private static FontFile? Font(string file)
     {

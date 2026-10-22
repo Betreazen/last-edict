@@ -1,0 +1,138 @@
+{
+ "$schema": "../../data/content/schema/races.schema.json",
+ "races": [
+  {
+   "id": "test:race/sun",
+   "legacyId": "t000rra001",
+   "guardian": "test:unit/sun-colossus",
+   "noble": "test:unit/sun-thief",
+   "leaders": [
+    "test:unit/sun-captain",
+    "test:unit/sun-ranger",
+    "test:unit/sun-sage",
+    "test:unit/sun-warden"
+   ],
+   "soldiers": [
+    "test:unit/sun-footman",
+    "test:unit/sun-bowman",
+    "test:unit/sun-adept",
+    "test:unit/sun-healer"
+   ],
+   "scout": 4,
+   "capitalRegeneration": 30,
+   "income": {
+    "gold": 120,
+    "life": 20
+   },
+   "protection": "test:modifier/sun-capital",
+   "kind": "human",
+   "playable": true,
+   "land": "human",
+   "turnOrder": 0,
+   "eventFlag": 0,
+   "neutral": false,
+   "heroNames": [
+    {
+     "text": "Aldric",
+     "male": true
+    },
+    {
+     "text": "Bertha",
+     "male": false
+    },
+    {
+     "text": "Cedric",
+     "male": true
+    },
+    {
+     "text": "Dalia",
+     "male": false
+    },
+    {
+     "text": "Edmund",
+     "male": true
+    },
+    {
+     "text": "Freya",
+     "male": false
+    }
+   ]
+  },
+  {
+   "id": "test:race/moon",
+   "legacyId": "t000rra002",
+   "guardian": "test:unit/moon-colossus",
+   "noble": "test:unit/moon-thief",
+   "leaders": [
+    "test:unit/moon-captain",
+    "test:unit/moon-ranger",
+    "test:unit/moon-sage",
+    "test:unit/moon-warden"
+   ],
+   "soldiers": [
+    "test:unit/moon-footman",
+    "test:unit/moon-bowman",
+    "test:unit/moon-adept",
+    "test:unit/moon-hexer"
+   ],
+   "scout": 4,
+   "capitalRegeneration": 30,
+   "income": {
+    "gold": 120,
+    "death": 20
+   },
+   "protection": "test:modifier/moon-capital",
+   "kind": "undead",
+   "playable": true,
+   "land": "undead",
+   "turnOrder": 1,
+   "eventFlag": 1,
+   "neutral": false,
+   "heroNames": [
+    {
+     "text": "Morwen",
+     "male": true
+    },
+    {
+     "text": "Nyx",
+     "male": false
+    },
+    {
+     "text": "Orrin",
+     "male": true
+    },
+    {
+     "text": "Pyra",
+     "male": false
+    },
+    {
+     "text": "Quill",
+     "male": true
+    },
+    {
+     "text": "Rook",
+     "male": false
+    }
+   ]
+  },
+  {
+   "id": "test:race/wild",
+   "legacyId": "t000rra003",
+   "income": {
+    "gold": 50
+   },
+   "kind": "neutral",
+   "playable": false,
+   "land": "neutral",
+   "turnOrder": 5,
+   "eventFlag": 4,
+   "neutral": true,
+   "heroNames": [
+    {
+     "text": "Wilds",
+     "male": true
+    }
+   ]
+  }
+ ]
+}

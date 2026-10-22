@@ -1,0 +1,59 @@
+{
+ "$schema": "../../data/content/schema/lords.schema.json",
+ "lords": [
+  {
+   "id": "test:lord/sun-lord",
+   "legacyId": "t000LRa001",
+   "race": "test:race/sun",
+   "category": "warrior",
+   "buildings": [
+    "test:building/sun-barracks",
+    "test:building/sun-range",
+    "test:building/sun-guild",
+    "test:building/sun-temple",
+    "test:building/sun-tower"
+   ],
+   "research": [
+    {
+     "spell": "test:spell/sun-bolt",
+     "cost": {
+      "life": 150
+     }
+    },
+    {
+     "spell": "test:spell/sun-ward",
+     "cost": {
+      "life": 150
+     }
+    }
+   ]
+  },
+  {
+   "id": "test:lord/moon-lord",
+   "legacyId": "t000LRa002",
+   "race": "test:race/moon",
+   "category": "warrior",
+   "buildings": [
+    "test:building/moon-barracks",
+    "test:building/moon-range",
+    "test:building/moon-guild",
+    "test:building/moon-temple",
+    "test:building/moon-tower"
+   ],
+   "research": [
+    {
+     "spell": "test:spell/moon-bolt",
+     "cost": {
+      "death": 150
+     }
+    },
+    {
+     "spell": "test:spell/moon-ward",
+     "cost": {
+      "death": 150
+     }
+    }
+   ]
+  }
+ ]
+}

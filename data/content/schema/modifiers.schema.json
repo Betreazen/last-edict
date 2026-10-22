@@ -1,0 +1,134 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "Disciples: modifier",
+ "type": "object",
+ "properties": {
+  "$schema": {
+   "type": "string"
+  },
+  "modifiers": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "description": "Устойчивый id «мод:вид/имя» — по нему ссылаются другие сущности и моды.",
+      "type": "string"
+     },
+     "legacyId": {
+      "description": "Id оригинала (Gunits.UNIT_ID и т. п.): по нему сущность находят сохранения, карты и журналы. У новых сущностей модов — нет.",
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "scope": {
+      "enum": [
+       "unit",
+       "stack",
+       "attack"
+      ]
+     },
+     "comment": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "elements": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "type": {
+         "enum": [
+          "qtyTarget",
+          "scoutingRange",
+          "leadership",
+          "power",
+          "qtyDamage",
+          "armor",
+          "hp",
+          "moveAllowance",
+          "initiative",
+          "moveAbility",
+          "leaderAbility",
+          "immunity",
+          "regeneration",
+          "immunityclass",
+          "attackDrain",
+          "fastRetreat",
+          "lowerCost"
+         ]
+        },
+        "description": {
+         "type": [
+          "string",
+          "null"
+         ]
+        },
+        "percent": {
+         "type": [
+          "integer",
+          "null"
+         ]
+        },
+        "number": {
+         "type": [
+          "integer",
+          "null"
+         ]
+        },
+        "ability": {
+         "type": [
+          "integer",
+          "null"
+         ]
+        },
+        "immunity": {
+         "type": [
+          "integer",
+          "null"
+         ]
+        },
+        "immuneLevel": {
+         "type": [
+          "integer",
+          "null"
+         ]
+        },
+        "move": {
+         "type": [
+          "integer",
+          "null"
+         ]
+        },
+        "immunityClass": {
+         "type": [
+          "integer",
+          "null"
+         ]
+        },
+        "immunityClassLevel": {
+         "type": [
+          "integer",
+          "null"
+         ]
+        }
+       },
+       "additionalProperties": false
+      }
+     }
+    },
+    "required": [
+     "id"
+    ],
+    "additionalProperties": false
+   }
+  }
+ },
+ "required": [
+  "modifiers"
+ ],
+ "additionalProperties": false
+}

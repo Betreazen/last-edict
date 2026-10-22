@@ -1,0 +1,270 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "Disciples: ai",
+ "type": "object",
+ "properties": {
+  "$schema": {
+   "type": "string"
+  },
+  "ai": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "description": "Устойчивый id «мод:вид/имя» — по нему ссылаются другие сущности и моды.",
+      "type": "string"
+     },
+     "legacyId": {
+      "description": "Id оригинала (Gunits.UNIT_ID и т. п.): по нему сущность находят сохранения, карты и журналы. У новых сущностей модов — нет.",
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "attitude": {
+      "enum": [
+       "small",
+       "medium",
+       "large",
+       "humongous",
+       "smallNoResources",
+       "mediumNoResources",
+       "mediumNoResourcesRuins"
+      ]
+     },
+     "nameText": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "descriptionText": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "budget": {
+      "type": "object",
+      "properties": {
+       "units": {
+        "type": "integer"
+       },
+       "leaders": {
+        "type": "integer"
+       },
+       "capital": {
+        "type": "integer"
+       },
+       "cities": {
+        "type": "integer"
+       },
+       "spellCast": {
+        "type": "integer"
+       },
+       "spellResearch": {
+        "type": "integer"
+       },
+       "tacticPurse": {
+        "description": "Доля казны в кошелёк тактики.",
+        "type": "integer"
+       }
+      },
+      "additionalProperties": false
+     },
+     "leaders": {
+      "type": "object",
+      "properties": {
+       "fighterMin": {
+        "type": "integer"
+       },
+       "fighterMax": {
+        "type": "integer"
+       },
+       "fighterPercent": {
+        "type": "integer"
+       },
+       "thiefMin": {
+        "type": "integer"
+       },
+       "thiefMax": {
+        "type": "integer"
+       },
+       "thiefPercent": {
+        "type": "integer"
+       },
+       "rodMin": {
+        "type": "integer"
+       },
+       "rodMax": {
+        "type": "integer"
+       },
+       "rodPercent": {
+        "type": "integer"
+       }
+      },
+      "additionalProperties": false
+     },
+     "weights": {
+      "type": "object",
+      "properties": {
+       "citiesNeutral": {
+        "type": "integer"
+       },
+       "citiesRival": {
+        "type": "integer"
+       },
+       "citiesPlayer": {
+        "type": "integer"
+       },
+       "stacksNeutral": {
+        "type": "integer"
+       },
+       "stacksRival": {
+        "type": "integer"
+       },
+       "stacksPlayer": {
+        "type": "integer"
+       },
+       "bags": {
+        "type": "integer"
+       },
+       "ruins": {
+        "type": "integer"
+       },
+       "towers": {
+        "type": "integer"
+       },
+       "merchants": {
+        "type": "integer"
+       },
+       "hireUnits": {
+        "type": "integer"
+       },
+       "hireMercenaries": {
+        "type": "integer"
+       },
+       "heal": {
+        "type": "integer"
+       },
+       "plantRod": {
+        "type": "integer"
+       },
+       "attackRod": {
+        "type": "integer"
+       },
+       "neutralCities": {
+        "type": "integer"
+       },
+       "neutralStacks": {
+        "type": "integer"
+       },
+       "trainers": {
+        "type": "integer"
+       },
+       "objectMove": {
+        "type": "integer"
+       }
+      },
+      "additionalProperties": false
+     },
+     "cheats": {
+      "type": "object",
+      "properties": {
+       "resourcePercent": {
+        "description": "Доход ИИ в процентах.",
+        "type": "array",
+        "items": {
+         "type": "integer"
+        }
+       },
+       "xpPercent": {
+        "description": "Прибавка опыта юнитам ИИ в процентах.",
+        "type": "array",
+        "items": {
+         "type": "integer"
+        }
+       }
+      },
+      "additionalProperties": false
+     },
+     "stayMinHp": {
+      "description": "Юнит в крепости ниже этого процента здоровья держит отряд на лечении.",
+      "type": "integer"
+     },
+     "healMinHp": {
+      "description": "Ниже этого процента здоровья юнит считается раненым.",
+      "type": "integer"
+     },
+     "spells": {
+      "type": "object",
+      "properties": {
+       "castChance": {
+        "type": "integer"
+       },
+       "castChance2": {
+        "type": "integer"
+       },
+       "castDoubleMin": {
+        "type": "integer"
+       },
+       "levelChance": {
+        "type": "array",
+        "items": {
+         "type": "integer"
+        }
+       },
+       "highWeight": {
+        "type": "integer"
+       },
+       "highChance": {
+        "type": "integer"
+       },
+       "mediumWeight": {
+        "type": "integer"
+       },
+       "mediumChance": {
+        "type": "integer"
+       },
+       "lowWeight": {
+        "type": "integer"
+       },
+       "lowChance": {
+        "type": "integer"
+       },
+       "levelPower": {
+        "description": "Сила по уровням заклинания, от пятого ко второму.",
+        "type": "array",
+        "items": {
+         "type": "integer"
+        }
+       },
+       "criticalWeight": {
+        "type": "array",
+        "items": {
+         "type": "integer"
+        }
+       },
+       "criticalChance": {
+        "type": "array",
+        "items": {
+         "type": "integer"
+        }
+       }
+      },
+      "additionalProperties": false
+     }
+    },
+    "required": [
+     "id"
+    ],
+    "additionalProperties": false
+   }
+  }
+ },
+ "required": [
+  "ai"
+ ],
+ "additionalProperties": false
+}

@@ -1,0 +1,185 @@
+{
+ "$schema": "../../data/content/schema/cities.schema.json",
+ "cities": [
+  {
+   "id": "test:city/sun-1",
+   "race": "test:race/sun",
+   "size": 1,
+   "scout": 3,
+   "regeneration": 10,
+   "protection": "test:modifier/sun-city",
+   "growth": {
+    "gold": 150
+   },
+   "resourceMoney": 0
+  },
+  {
+   "id": "test:city/sun-2",
+   "race": "test:race/sun",
+   "size": 2,
+   "scout": 4,
+   "regeneration": 15,
+   "protection": "test:modifier/sun-city",
+   "growth": {
+    "gold": 200
+   },
+   "resourceMoney": 0
+  },
+  {
+   "id": "test:city/sun-3",
+   "race": "test:race/sun",
+   "size": 3,
+   "scout": 5,
+   "regeneration": 20,
+   "protection": "test:modifier/sun-city",
+   "growth": {
+    "gold": 250
+   },
+   "resourceMoney": 0
+  },
+  {
+   "id": "test:city/sun-4",
+   "race": "test:race/sun",
+   "size": 4,
+   "scout": 6,
+   "regeneration": 25,
+   "protection": "test:modifier/sun-city",
+   "growth": {
+    "gold": 300
+   },
+   "resourceMoney": 0
+  },
+  {
+   "id": "test:city/sun-5",
+   "race": "test:race/sun",
+   "size": 5,
+   "scout": 7,
+   "regeneration": 30,
+   "protection": "test:modifier/sun-city",
+   "growth": {
+    "gold": 350
+   },
+   "resourceMoney": 0
+  },
+  {
+   "id": "test:city/moon-1",
+   "race": "test:race/moon",
+   "size": 1,
+   "scout": 3,
+   "regeneration": 10,
+   "protection": "test:modifier/moon-city",
+   "growth": {
+    "gold": 150
+   },
+   "resourceMoney": 0
+  },
+  {
+   "id": "test:city/moon-2",
+   "race": "test:race/moon",
+   "size": 2,
+   "scout": 4,
+   "regeneration": 15,
+   "protection": "test:modifier/moon-city",
+   "growth": {
+    "gold": 200
+   },
+   "resourceMoney": 0
+  },
+  {
+   "id": "test:city/moon-3",
+   "race": "test:race/moon",
+   "size": 3,
+   "scout": 5,
+   "regeneration": 20,
+   "protection": "test:modifier/moon-city",
+   "growth": {
+    "gold": 250
+   },
+   "resourceMoney": 0
+  },
+  {
+   "id": "test:city/moon-4",
+   "race": "test:race/moon",
+   "size": 4,
+   "scout": 6,
+   "regeneration": 25,
+   "protection": "test:modifier/moon-city",
+   "growth": {
+    "gold": 300
+   },
+   "resourceMoney": 0
+  },
+  {
+   "id": "test:city/moon-5",
+   "race": "test:race/moon",
+   "size": 5,
+   "scout": 7,
+   "regeneration": 30,
+   "protection": "test:modifier/moon-city",
+   "growth": {
+    "gold": 350
+   },
+   "resourceMoney": 0
+  },
+  {
+   "id": "test:city/wild-1",
+   "race": "test:race/wild",
+   "size": 1,
+   "scout": 3,
+   "regeneration": 10,
+   "protection": "test:modifier/wild-city",
+   "growth": {
+    "gold": 150
+   },
+   "resourceMoney": 0
+  },
+  {
+   "id": "test:city/wild-2",
+   "race": "test:race/wild",
+   "size": 2,
+   "scout": 4,
+   "regeneration": 15,
+   "protection": "test:modifier/wild-city",
+   "growth": {
+    "gold": 200
+   },
+   "resourceMoney": 0
+  },
+  {
+   "id": "test:city/wild-3",
+   "race": "test:race/wild",
+   "size": 3,
+   "scout": 5,
+   "regeneration": 20,
+   "protection": "test:modifier/wild-city",
+   "growth": {
+    "gold": 250
+   },
+   "resourceMoney": 0
+  },
+  {
+   "id": "test:city/wild-4",
+   "race": "test:race/wild",
+   "size": 4,
+   "scout": 6,
+   "regeneration": 25,
+   "protection": "test:modifier/wild-city",
+   "growth": {
+    "gold": 300
+   },
+   "resourceMoney": 0
+  },
+  {
+   "id": "test:city/wild-5",
+   "race": "test:race/wild",
+   "size": 5,
+   "scout": 7,
+   "regeneration": 30,
+   "protection": "test:modifier/wild-city",
+   "growth": {
+    "gold": 350
+   },
+   "resourceMoney": 0
+  }
+ ]
+}

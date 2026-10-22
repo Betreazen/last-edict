@@ -1,0 +1,60 @@
+{
+  "note": "снимок 28.09 (corpus/20260928-shots): окно из главного меню — кнопки партии спрятаны (0x4bf5a4, в порте MapOptionsLogic inGame=false); флажки и счётчики — как на снимке (настройки game-dev)",
+  "checked": [
+    "TOG_AUTOSAVE",
+    "TOG_ISOHIGHLIGHT",
+    "TOG_HIGHALPHA",
+    "TOG_SHOWTURNSUMMARY"
+  ],
+  "hidden": [
+    "BTN_SAVE",
+    "BTN_LOAD",
+    "BTN_EXPORT",
+    "BTN_QUIT"
+  ],
+  "spins": {
+    "SPIN_MOVEMENT_SPEED": [
+      3,
+      2
+    ],
+    "SPIN_OPPONENT_SPEED": [
+      3,
+      2
+    ],
+    "SPIN_SCROLL_SPEED": [
+      3,
+      2
+    ],
+    "SPIN_BATTLE_SPEED": [
+      3,
+      2
+    ],
+    "SPIN_FX_VOLUME": [
+      4,
+      0
+    ],
+    "SPIN_MUSIC_VOLUME": [
+      4,
+      0
+    ],
+    "SPIN_ACKNO": [
+      4,
+      0
+    ],
+    "SPIN_AUDIORGN": [
+      4,
+      0
+    ]
+  },
+  "mask": [
+    {
+      "rect": [
+        418,
+        380,
+        30,
+        65
+      ],
+      "why": "курсор мыши на снимке"
+    }
+  ]
+}

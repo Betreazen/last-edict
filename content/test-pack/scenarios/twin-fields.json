@@ -1,0 +1,2256 @@
+{
+ "Format": "d2-port-scenario",
+ "Version": 5,
+ "Id": "twin-fields",
+ "Looks": {
+  "Map": {
+   "Size": 48,
+   "Tiles": {
+    "w": 48,
+    "h": 48,
+    "data": "JQUFBQUFBSUFBQUFBQUlBQUFBQUFJQUFBQUFBSUFBQUFBQUlBQ0NDQ0NJQUFBQUlBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQ0NDQ0NDQUFBQUFBQUBAQEBAQEBAQEFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUNDQ0NDQUFBQUFBQUBAQEBAQEBAQEFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUNDQ0NDQUFBQUFBQUBAQEBAQEBAQENBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUBAQEBAQEBAQENDQ0FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUBAQEBAQEBAQENDQ0FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUBAQEBAQEBAQENDQ0FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUlBQUBAQEBAQEBAQEFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUBAQEBAQEBAQEFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFDQ0NDQ0FBQUFBQUBAQEBAQEBAQENDQ0NBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFDQ0NDQ0FBQUFBQUFBQUFBQUFBQ0NDQ0NBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFDQ0NDQ0FBQUFBQUFBQUFBQUFBQ0NDQ0NBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUlBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUNDQ0NDQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUNDQ0NDQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUNDQ0NDQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUlBQUFBQUFBQUFBQUFBQUFBQUFBQUFBR0dHR0FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBR0dHR0FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBR0dHR0FBQUFBQUFBQUFDQ0NDQ0FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFDQ0NDQ0FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFDQ0NDQ0FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFDQ0NDQ0FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFDQ0NDQ0FBQUFBQUFBQUFBQUFBQUlBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFDQ0NDQ0NDQ0FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFDQ0NDQ0FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFDQ0NDQ0FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUNDQ0NDQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUNDQ0NDQUFBQUFBQUFBQUFBQUFBQUlBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUNDQ0NDQ0NDQ0FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFDQ0NDQ0FBQQEBAQEBAQEBAUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFDQ0NDQ0FBQQEBAQEBAQEBA0NBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQQEBAQEBAQEBA0NBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUNDQ0NDQUFBQUFBQQEBAQEBAQEBA0NBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUNDQ0NDQUFBQUFBQQEBAQEBAQEBAUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUNDQ0NDQUFBQUFBQQEBAQEBAQEBAUlBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUNDQ0NDQQEBAQEBAQEBAUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUNDQ0NDQQEBAQEBAQEBAUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUNDQ0NDQQEBAQEBAQEBAUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUF"
+   },
+   "Stacks": {
+    "S901KC0000": {
+     "Id": "S901KC0000",
+     "Owner": "S901PL0001",
+     "Subrace": "S901SR0001",
+     "LeaderId": "S901UN0000",
+     "LeaderAlive": true,
+     "X": 4,
+     "Y": 4,
+     "Move": 20,
+     "Inside": "S901FT0000",
+     "UnitIds": [
+      "S901UN0000",
+      "S901UN0001",
+      "S901UN0002"
+     ],
+     "Slots": [
+      1,
+      -1,
+      0,
+      -1,
+      2,
+      -1
+     ],
+     "Items": [],
+     "TemplateId": "",
+     "Equipment": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     "Order": 1,
+     "OrderTarget": "",
+     "AiOrder": 1,
+     "AiOrderTarget": "",
+     "AiIgnore": false,
+     "UpgradeCount": 0,
+     "BattlesWon": 0,
+     "CreationLevel": 1,
+     "AiPriority": 3
+    },
+    "S901KC0001": {
+     "Id": "S901KC0001",
+     "Owner": "S901PL0002",
+     "Subrace": "S901SR0002",
+     "LeaderId": "S901UN0004",
+     "LeaderAlive": true,
+     "X": 39,
+     "Y": 39,
+     "Move": 20,
+     "Inside": "S901FT0001",
+     "UnitIds": [
+      "S901UN0004",
+      "S901UN0005",
+      "S901UN0006"
+     ],
+     "Slots": [
+      1,
+      -1,
+      0,
+      -1,
+      2,
+      -1
+     ],
+     "Items": [],
+     "TemplateId": "",
+     "Equipment": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     "Order": 1,
+     "OrderTarget": "",
+     "AiOrder": 1,
+     "AiOrderTarget": "",
+     "AiIgnore": false,
+     "UpgradeCount": 0,
+     "BattlesWon": 0,
+     "CreationLevel": 1,
+     "AiPriority": 3
+    },
+    "S901KC0002": {
+     "Id": "S901KC0002",
+     "Owner": "S901PL0000",
+     "Subrace": "S901SR0000",
+     "LeaderId": "S901UN000c",
+     "LeaderAlive": true,
+     "X": 39,
+     "Y": 2,
+     "Move": 20,
+     "Inside": "",
+     "UnitIds": [
+      "S901UN000c"
+     ],
+     "Slots": [
+      -1,
+      -1,
+      0,
+      -1,
+      -1,
+      -1
+     ],
+     "Items": [],
+     "TemplateId": "",
+     "Equipment": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     "Order": 2,
+     "OrderTarget": "",
+     "AiOrder": 1,
+     "AiOrderTarget": "",
+     "AiIgnore": false,
+     "UpgradeCount": 0,
+     "BattlesWon": 0,
+     "CreationLevel": 1,
+     "AiPriority": 3
+    },
+    "S901KC0003": {
+     "Id": "S901KC0003",
+     "Owner": "S901PL0000",
+     "Subrace": "S901SR0000",
+     "LeaderId": "S901UN000d",
+     "LeaderAlive": true,
+     "X": 30,
+     "Y": 21,
+     "Move": 20,
+     "Inside": "",
+     "UnitIds": [
+      "S901UN000d"
+     ],
+     "Slots": [
+      -1,
+      -1,
+      0,
+      -1,
+      -1,
+      -1
+     ],
+     "Items": [],
+     "TemplateId": "",
+     "Equipment": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     "Order": 2,
+     "OrderTarget": "",
+     "AiOrder": 1,
+     "AiOrderTarget": "",
+     "AiIgnore": false,
+     "UpgradeCount": 0,
+     "BattlesWon": 0,
+     "CreationLevel": 1,
+     "AiPriority": 3
+    },
+    "S901KC0004": {
+     "Id": "S901KC0004",
+     "Owner": "S901PL0000",
+     "Subrace": "S901SR0000",
+     "LeaderId": "S901UN000e",
+     "LeaderAlive": true,
+     "X": 29,
+     "Y": 38,
+     "Move": 20,
+     "Inside": "",
+     "UnitIds": [
+      "S901UN000e",
+      "S901UN000f"
+     ],
+     "Slots": [
+      1,
+      -1,
+      0,
+      -1,
+      -1,
+      -1
+     ],
+     "Items": [],
+     "TemplateId": "",
+     "Equipment": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     "Order": 2,
+     "OrderTarget": "",
+     "AiOrder": 1,
+     "AiOrderTarget": "",
+     "AiIgnore": false,
+     "UpgradeCount": 0,
+     "BattlesWon": 0,
+     "CreationLevel": 1,
+     "AiPriority": 3
+    },
+    "S901KC0005": {
+     "Id": "S901KC0005",
+     "Owner": "S901PL0000",
+     "Subrace": "S901SR0000",
+     "LeaderId": "S901UN0010",
+     "LeaderAlive": true,
+     "X": 13,
+     "Y": 34,
+     "Move": 20,
+     "Inside": "",
+     "UnitIds": [
+      "S901UN0010",
+      "S901UN0011"
+     ],
+     "Slots": [
+      1,
+      -1,
+      0,
+      -1,
+      -1,
+      -1
+     ],
+     "Items": [],
+     "TemplateId": "",
+     "Equipment": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     "Order": 2,
+     "OrderTarget": "",
+     "AiOrder": 1,
+     "AiOrderTarget": "",
+     "AiIgnore": false,
+     "UpgradeCount": 0,
+     "BattlesWon": 0,
+     "CreationLevel": 1,
+     "AiPriority": 3
+    },
+    "S901KC0006": {
+     "Id": "S901KC0006",
+     "Owner": "S901PL0000",
+     "Subrace": "S901SR0000",
+     "LeaderId": "S901UN0012",
+     "LeaderAlive": true,
+     "X": 15,
+     "Y": 41,
+     "Move": 20,
+     "Inside": "",
+     "UnitIds": [
+      "S901UN0012",
+      "S901UN0013"
+     ],
+     "Slots": [
+      1,
+      -1,
+      0,
+      -1,
+      -1,
+      -1
+     ],
+     "Items": [],
+     "TemplateId": "",
+     "Equipment": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     "Order": 2,
+     "OrderTarget": "",
+     "AiOrder": 1,
+     "AiOrderTarget": "",
+     "AiIgnore": false,
+     "UpgradeCount": 0,
+     "BattlesWon": 0,
+     "CreationLevel": 1,
+     "AiPriority": 3
+    },
+    "S901KC0007": {
+     "Id": "S901KC0007",
+     "Owner": "S901PL0000",
+     "Subrace": "S901SR0000",
+     "LeaderId": "S901UN0014",
+     "LeaderAlive": true,
+     "X": 19,
+     "Y": 32,
+     "Move": 20,
+     "Inside": "",
+     "UnitIds": [
+      "S901UN0014",
+      "S901UN0015",
+      "S901UN0016"
+     ],
+     "Slots": [
+      1,
+      -1,
+      0,
+      -1,
+      2,
+      -1
+     ],
+     "Items": [],
+     "TemplateId": "",
+     "Equipment": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     "Order": 2,
+     "OrderTarget": "",
+     "AiOrder": 1,
+     "AiOrderTarget": "",
+     "AiIgnore": false,
+     "UpgradeCount": 0,
+     "BattlesWon": 0,
+     "CreationLevel": 1,
+     "AiPriority": 3
+    },
+    "S901KC0008": {
+     "Id": "S901KC0008",
+     "Owner": "S901PL0000",
+     "Subrace": "S901SR0000",
+     "LeaderId": "S901UN0017",
+     "LeaderAlive": true,
+     "X": 1,
+     "Y": 43,
+     "Move": 20,
+     "Inside": "",
+     "UnitIds": [
+      "S901UN0017",
+      "S901UN0018",
+      "S901UN0019"
+     ],
+     "Slots": [
+      1,
+      -1,
+      0,
+      -1,
+      2,
+      -1
+     ],
+     "Items": [],
+     "TemplateId": "",
+     "Equipment": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     "Order": 2,
+     "OrderTarget": "",
+     "AiOrder": 1,
+     "AiOrderTarget": "",
+     "AiIgnore": false,
+     "UpgradeCount": 0,
+     "BattlesWon": 0,
+     "CreationLevel": 1,
+     "AiPriority": 3
+    },
+    "S901KC0009": {
+     "Id": "S901KC0009",
+     "Owner": "S901PL0000",
+     "Subrace": "S901SR0000",
+     "LeaderId": "S901UN001a",
+     "LeaderAlive": true,
+     "X": 6,
+     "Y": 30,
+     "Move": 20,
+     "Inside": "",
+     "UnitIds": [
+      "S901UN001a",
+      "S901UN001b",
+      "S901UN001c"
+     ],
+     "Slots": [
+      1,
+      -1,
+      0,
+      -1,
+      2,
+      -1
+     ],
+     "Items": [],
+     "TemplateId": "",
+     "Equipment": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     "Order": 2,
+     "OrderTarget": "",
+     "AiOrder": 1,
+     "AiOrderTarget": "",
+     "AiIgnore": false,
+     "UpgradeCount": 0,
+     "BattlesWon": 0,
+     "CreationLevel": 1,
+     "AiPriority": 3
+    },
+    "S901KC000a": {
+     "Id": "S901KC000a",
+     "Owner": "S901PL0000",
+     "Subrace": "S901SR0000",
+     "LeaderId": "S901UN001d",
+     "LeaderAlive": true,
+     "X": 42,
+     "Y": 18,
+     "Move": 20,
+     "Inside": "",
+     "UnitIds": [
+      "S901UN001d",
+      "S901UN001e",
+      "S901UN001f"
+     ],
+     "Slots": [
+      1,
+      -1,
+      0,
+      -1,
+      2,
+      -1
+     ],
+     "Items": [],
+     "TemplateId": "",
+     "Equipment": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     "Order": 2,
+     "OrderTarget": "",
+     "AiOrder": 1,
+     "AiOrderTarget": "",
+     "AiIgnore": false,
+     "UpgradeCount": 0,
+     "BattlesWon": 0,
+     "CreationLevel": 1,
+     "AiPriority": 3
+    },
+    "S901KC000b": {
+     "Id": "S901KC000b",
+     "Owner": "S901PL0000",
+     "Subrace": "S901SR0000",
+     "LeaderId": "S901UN0020",
+     "LeaderAlive": true,
+     "X": 27,
+     "Y": 36,
+     "Move": 20,
+     "Inside": "",
+     "UnitIds": [
+      "S901UN0020",
+      "S901UN0021",
+      "S901UN0022",
+      "S901UN0023"
+     ],
+     "Slots": [
+      1,
+      -1,
+      0,
+      3,
+      2,
+      -1
+     ],
+     "Items": [],
+     "TemplateId": "",
+     "Equipment": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     "Order": 2,
+     "OrderTarget": "",
+     "AiOrder": 1,
+     "AiOrderTarget": "",
+     "AiIgnore": false,
+     "UpgradeCount": 0,
+     "BattlesWon": 0,
+     "CreationLevel": 1,
+     "AiPriority": 3
+    }
+   },
+   "Units": {
+    "S901UN0000": {
+     "Id": "S901UN0000",
+     "TypeId": "T000UUA003",
+     "Level": 1,
+     "Hp": 140,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S901UN0001": {
+     "Id": "S901UN0001",
+     "TypeId": "T000UUA007",
+     "Level": 1,
+     "Hp": 110,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S901UN0002": {
+     "Id": "S901UN0002",
+     "TypeId": "T000UUA008",
+     "Level": 1,
+     "Hp": 50,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S901UN0003": {
+     "Id": "S901UN0003",
+     "TypeId": "T000UUA001",
+     "Level": 1,
+     "Hp": 700,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S901UN0004": {
+     "Id": "S901UN0004",
+     "TypeId": "T000UUA00F",
+     "Level": 1,
+     "Hp": 140,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S901UN0005": {
+     "Id": "S901UN0005",
+     "TypeId": "T000UUA013",
+     "Level": 1,
+     "Hp": 110,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S901UN0006": {
+     "Id": "S901UN0006",
+     "TypeId": "T000UUA014",
+     "Level": 1,
+     "Hp": 50,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S901UN0007": {
+     "Id": "S901UN0007",
+     "TypeId": "T000UUA00D",
+     "Level": 1,
+     "Hp": 700,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S901UN0008": {
+     "Id": "S901UN0008",
+     "TypeId": "T000UUA019",
+     "Level": 1,
+     "Hp": 70,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S901UN0009": {
+     "Id": "S901UN0009",
+     "TypeId": "T000UUA01B",
+     "Level": 1,
+     "Hp": 45,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S901UN000a": {
+     "Id": "S901UN000a",
+     "TypeId": "T000UUA019",
+     "Level": 1,
+     "Hp": 70,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S901UN000b": {
+     "Id": "S901UN000b",
+     "TypeId": "T000UUA01B",
+     "Level": 1,
+     "Hp": 45,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S901UN000c": {
+     "Id": "S901UN000c",
+     "TypeId": "T000UUA019",
+     "Level": 1,
+     "Hp": 70,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S901UN000d": {
+     "Id": "S901UN000d",
+     "TypeId": "T000UUA019",
+     "Level": 1,
+     "Hp": 70,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S901UN000e": {
+     "Id": "S901UN000e",
+     "TypeId": "T000UUA019",
+     "Level": 1,
+     "Hp": 70,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S901UN000f": {
+     "Id": "S901UN000f",
+     "TypeId": "T000UUA019",
+     "Level": 1,
+     "Hp": 70,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S901UN0010": {
+     "Id": "S901UN0010",
+     "TypeId": "T000UUA019",
+     "Level": 1,
+     "Hp": 70,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S901UN0011": {
+     "Id": "S901UN0011",
+     "TypeId": "T000UUA019",
+     "Level": 1,
+     "Hp": 70,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S901UN0012": {
+     "Id": "S901UN0012",
+     "TypeId": "T000UUA01B",
+     "Level": 1,
+     "Hp": 45,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S901UN0013": {
+     "Id": "S901UN0013",
+     "TypeId": "T000UUA019",
+     "Level": 1,
+     "Hp": 70,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S901UN0014": {
+     "Id": "S901UN0014",
+     "TypeId": "T000UUA01D",
+     "Level": 1,
+     "Hp": 40,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S901UN0015": {
+     "Id": "S901UN0015",
+     "TypeId": "T000UUA01D",
+     "Level": 1,
+     "Hp": 40,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S901UN0016": {
+     "Id": "S901UN0016",
+     "TypeId": "T000UUA019",
+     "Level": 1,
+     "Hp": 70,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S901UN0017": {
+     "Id": "S901UN0017",
+     "TypeId": "T000UUA01D",
+     "Level": 1,
+     "Hp": 40,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S901UN0018": {
+     "Id": "S901UN0018",
+     "TypeId": "T000UUA01D",
+     "Level": 1,
+     "Hp": 40,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S901UN0019": {
+     "Id": "S901UN0019",
+     "TypeId": "T000UUA019",
+     "Level": 1,
+     "Hp": 70,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S901UN001a": {
+     "Id": "S901UN001a",
+     "TypeId": "T000UUA01C",
+     "Level": 1,
+     "Hp": 150,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S901UN001b": {
+     "Id": "S901UN001b",
+     "TypeId": "T000UUA01B",
+     "Level": 1,
+     "Hp": 45,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S901UN001c": {
+     "Id": "S901UN001c",
+     "TypeId": "T000UUA019",
+     "Level": 1,
+     "Hp": 70,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S901UN001d": {
+     "Id": "S901UN001d",
+     "TypeId": "T000UUA01C",
+     "Level": 1,
+     "Hp": 150,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S901UN001e": {
+     "Id": "S901UN001e",
+     "TypeId": "T000UUA01B",
+     "Level": 1,
+     "Hp": 45,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S901UN001f": {
+     "Id": "S901UN001f",
+     "TypeId": "T000UUA019",
+     "Level": 1,
+     "Hp": 70,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S901UN0020": {
+     "Id": "S901UN0020",
+     "TypeId": "T000UUA01C",
+     "Level": 1,
+     "Hp": 150,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S901UN0021": {
+     "Id": "S901UN0021",
+     "TypeId": "T000UUA01D",
+     "Level": 1,
+     "Hp": 40,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S901UN0022": {
+     "Id": "S901UN0022",
+     "TypeId": "T000UUA01B",
+     "Level": 1,
+     "Hp": 45,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S901UN0023": {
+     "Id": "S901UN0023",
+     "TypeId": "T000UUA019",
+     "Level": 1,
+     "Hp": 70,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    }
+   },
+   "Players": {
+    "S901PL0000": {
+     "Id": "S901PL0000",
+     "RaceId": "T000RRA003",
+     "LordId": "T000LRA001",
+     "Name": "Wild",
+     "Face": 0,
+     "IsHuman": false,
+     "Bank": {
+      "Gold": 0,
+      "Infernal": 0,
+      "Life": 0,
+      "Death": 0,
+      "Runic": 0,
+      "Grove": 0
+     },
+     "FogId": "S901FG0000",
+     "BuildingsId": "S901PB0000",
+     "Buildings": [],
+     "SpellBank": {
+      "Gold": 0,
+      "Infernal": 0,
+      "Life": 0,
+      "Death": 0,
+      "Runic": 0,
+      "Grove": 0
+     },
+     "QtyBreaks": 0,
+     "Attitude": 1,
+     "CapturedBy": "",
+     "ConstructionTurn": 0,
+     "ResearchTurn": 0,
+     "KnownSpells": [],
+     "Spied": []
+    },
+    "S901PL0001": {
+     "Id": "S901PL0001",
+     "RaceId": "T000RRA001",
+     "LordId": "T000LRA001",
+     "Name": "Sun",
+     "Face": 0,
+     "IsHuman": false,
+     "Bank": {
+      "Gold": 600,
+      "Infernal": 0,
+      "Life": 150,
+      "Death": 0,
+      "Runic": 0,
+      "Grove": 0
+     },
+     "FogId": "S901FG0001",
+     "BuildingsId": "S901PB0001",
+     "Buildings": [],
+     "SpellBank": {
+      "Gold": 0,
+      "Infernal": 0,
+      "Life": 0,
+      "Death": 0,
+      "Runic": 0,
+      "Grove": 0
+     },
+     "QtyBreaks": 0,
+     "Attitude": 1,
+     "CapturedBy": "",
+     "ConstructionTurn": 0,
+     "ResearchTurn": 0,
+     "KnownSpells": [],
+     "Spied": []
+    },
+    "S901PL0002": {
+     "Id": "S901PL0002",
+     "RaceId": "T000RRA002",
+     "LordId": "T000LRA002",
+     "Name": "Moon",
+     "Face": 0,
+     "IsHuman": false,
+     "Bank": {
+      "Gold": 600,
+      "Infernal": 0,
+      "Life": 0,
+      "Death": 150,
+      "Runic": 0,
+      "Grove": 0
+     },
+     "FogId": "S901FG0002",
+     "BuildingsId": "S901PB0002",
+     "Buildings": [],
+     "SpellBank": {
+      "Gold": 0,
+      "Infernal": 0,
+      "Life": 0,
+      "Death": 0,
+      "Runic": 0,
+      "Grove": 0
+     },
+     "QtyBreaks": 0,
+     "Attitude": 1,
+     "CapturedBy": "",
+     "ConstructionTurn": 0,
+     "ResearchTurn": 0,
+     "KnownSpells": [],
+     "Spied": []
+    }
+   },
+   "Objects": {
+    "S901FT0000": {
+     "Id": "S901FT0000",
+     "Kind": "FT",
+     "X": 4,
+     "Y": 4,
+     "Resource": 0,
+     "TypeId": ""
+    },
+    "S901KC0000": {
+     "Id": "S901KC0000",
+     "Kind": "KC",
+     "X": 4,
+     "Y": 4,
+     "Resource": 0,
+     "TypeId": ""
+    },
+    "S901FT0001": {
+     "Id": "S901FT0001",
+     "Kind": "FT",
+     "X": 39,
+     "Y": 39,
+     "Resource": 0,
+     "TypeId": ""
+    },
+    "S901KC0001": {
+     "Id": "S901KC0001",
+     "Kind": "KC",
+     "X": 39,
+     "Y": 39,
+     "Resource": 0,
+     "TypeId": ""
+    },
+    "S901FT0002": {
+     "Id": "S901FT0002",
+     "Kind": "FT",
+     "X": 35,
+     "Y": 6,
+     "Resource": 0,
+     "TypeId": ""
+    },
+    "S901FT0003": {
+     "Id": "S901FT0003",
+     "Kind": "FT",
+     "X": 14,
+     "Y": 17,
+     "Resource": 0,
+     "TypeId": ""
+    },
+    "S901KC0002": {
+     "Id": "S901KC0002",
+     "Kind": "KC",
+     "X": 39,
+     "Y": 2,
+     "Resource": 0,
+     "TypeId": ""
+    },
+    "S901KC0003": {
+     "Id": "S901KC0003",
+     "Kind": "KC",
+     "X": 30,
+     "Y": 21,
+     "Resource": 0,
+     "TypeId": ""
+    },
+    "S901KC0004": {
+     "Id": "S901KC0004",
+     "Kind": "KC",
+     "X": 29,
+     "Y": 38,
+     "Resource": 0,
+     "TypeId": ""
+    },
+    "S901KC0005": {
+     "Id": "S901KC0005",
+     "Kind": "KC",
+     "X": 13,
+     "Y": 34,
+     "Resource": 0,
+     "TypeId": ""
+    },
+    "S901KC0006": {
+     "Id": "S901KC0006",
+     "Kind": "KC",
+     "X": 15,
+     "Y": 41,
+     "Resource": 0,
+     "TypeId": ""
+    },
+    "S901KC0007": {
+     "Id": "S901KC0007",
+     "Kind": "KC",
+     "X": 19,
+     "Y": 32,
+     "Resource": 0,
+     "TypeId": ""
+    },
+    "S901KC0008": {
+     "Id": "S901KC0008",
+     "Kind": "KC",
+     "X": 1,
+     "Y": 43,
+     "Resource": 0,
+     "TypeId": ""
+    },
+    "S901KC0009": {
+     "Id": "S901KC0009",
+     "Kind": "KC",
+     "X": 6,
+     "Y": 30,
+     "Resource": 0,
+     "TypeId": ""
+    },
+    "S901KC000a": {
+     "Id": "S901KC000a",
+     "Kind": "KC",
+     "X": 42,
+     "Y": 18,
+     "Resource": 0,
+     "TypeId": ""
+    },
+    "S901KC000b": {
+     "Id": "S901KC000b",
+     "Kind": "KC",
+     "X": 27,
+     "Y": 36,
+     "Resource": 0,
+     "TypeId": ""
+    }
+   },
+   "Plan": [
+    {
+     "X": 39,
+     "Y": 2,
+     "Ids": [
+      "S901KC0002"
+     ]
+    },
+    {
+     "X": 4,
+     "Y": 4,
+     "Ids": [
+      "S901FT0000",
+      "S901KC0000"
+     ]
+    },
+    {
+     "X": 5,
+     "Y": 4,
+     "Ids": [
+      "S901FT0000"
+     ]
+    },
+    {
+     "X": 6,
+     "Y": 4,
+     "Ids": [
+      "S901FT0000"
+     ]
+    },
+    {
+     "X": 7,
+     "Y": 4,
+     "Ids": [
+      "S901FT0000"
+     ]
+    },
+    {
+     "X": 8,
+     "Y": 4,
+     "Ids": [
+      "S901FT0000"
+     ]
+    },
+    {
+     "X": 4,
+     "Y": 5,
+     "Ids": [
+      "S901FT0000"
+     ]
+    },
+    {
+     "X": 5,
+     "Y": 5,
+     "Ids": [
+      "S901FT0000"
+     ]
+    },
+    {
+     "X": 6,
+     "Y": 5,
+     "Ids": [
+      "S901FT0000"
+     ]
+    },
+    {
+     "X": 7,
+     "Y": 5,
+     "Ids": [
+      "S901FT0000"
+     ]
+    },
+    {
+     "X": 8,
+     "Y": 5,
+     "Ids": [
+      "S901FT0000"
+     ]
+    },
+    {
+     "X": 4,
+     "Y": 6,
+     "Ids": [
+      "S901FT0000"
+     ]
+    },
+    {
+     "X": 5,
+     "Y": 6,
+     "Ids": [
+      "S901FT0000"
+     ]
+    },
+    {
+     "X": 6,
+     "Y": 6,
+     "Ids": [
+      "S901FT0000"
+     ]
+    },
+    {
+     "X": 7,
+     "Y": 6,
+     "Ids": [
+      "S901FT0000"
+     ]
+    },
+    {
+     "X": 8,
+     "Y": 6,
+     "Ids": [
+      "S901FT0000"
+     ]
+    },
+    {
+     "X": 35,
+     "Y": 6,
+     "Ids": [
+      "S901FT0002"
+     ]
+    },
+    {
+     "X": 36,
+     "Y": 6,
+     "Ids": [
+      "S901FT0002"
+     ]
+    },
+    {
+     "X": 37,
+     "Y": 6,
+     "Ids": [
+      "S901FT0002"
+     ]
+    },
+    {
+     "X": 38,
+     "Y": 6,
+     "Ids": [
+      "S901FT0002"
+     ]
+    },
+    {
+     "X": 4,
+     "Y": 7,
+     "Ids": [
+      "S901FT0000"
+     ]
+    },
+    {
+     "X": 5,
+     "Y": 7,
+     "Ids": [
+      "S901FT0000"
+     ]
+    },
+    {
+     "X": 6,
+     "Y": 7,
+     "Ids": [
+      "S901FT0000"
+     ]
+    },
+    {
+     "X": 7,
+     "Y": 7,
+     "Ids": [
+      "S901FT0000"
+     ]
+    },
+    {
+     "X": 8,
+     "Y": 7,
+     "Ids": [
+      "S901FT0000"
+     ]
+    },
+    {
+     "X": 35,
+     "Y": 7,
+     "Ids": [
+      "S901FT0002"
+     ]
+    },
+    {
+     "X": 36,
+     "Y": 7,
+     "Ids": [
+      "S901FT0002"
+     ]
+    },
+    {
+     "X": 37,
+     "Y": 7,
+     "Ids": [
+      "S901FT0002"
+     ]
+    },
+    {
+     "X": 38,
+     "Y": 7,
+     "Ids": [
+      "S901FT0002"
+     ]
+    },
+    {
+     "X": 4,
+     "Y": 8,
+     "Ids": [
+      "S901FT0000"
+     ]
+    },
+    {
+     "X": 5,
+     "Y": 8,
+     "Ids": [
+      "S901FT0000"
+     ]
+    },
+    {
+     "X": 6,
+     "Y": 8,
+     "Ids": [
+      "S901FT0000"
+     ]
+    },
+    {
+     "X": 7,
+     "Y": 8,
+     "Ids": [
+      "S901FT0000"
+     ]
+    },
+    {
+     "X": 8,
+     "Y": 8,
+     "Ids": [
+      "S901FT0000"
+     ]
+    },
+    {
+     "X": 35,
+     "Y": 8,
+     "Ids": [
+      "S901FT0002"
+     ]
+    },
+    {
+     "X": 36,
+     "Y": 8,
+     "Ids": [
+      "S901FT0002"
+     ]
+    },
+    {
+     "X": 37,
+     "Y": 8,
+     "Ids": [
+      "S901FT0002"
+     ]
+    },
+    {
+     "X": 38,
+     "Y": 8,
+     "Ids": [
+      "S901FT0002"
+     ]
+    },
+    {
+     "X": 35,
+     "Y": 9,
+     "Ids": [
+      "S901FT0002"
+     ]
+    },
+    {
+     "X": 36,
+     "Y": 9,
+     "Ids": [
+      "S901FT0002"
+     ]
+    },
+    {
+     "X": 37,
+     "Y": 9,
+     "Ids": [
+      "S901FT0002"
+     ]
+    },
+    {
+     "X": 38,
+     "Y": 9,
+     "Ids": [
+      "S901FT0002"
+     ]
+    },
+    {
+     "X": 14,
+     "Y": 17,
+     "Ids": [
+      "S901FT0003"
+     ]
+    },
+    {
+     "X": 15,
+     "Y": 17,
+     "Ids": [
+      "S901FT0003"
+     ]
+    },
+    {
+     "X": 16,
+     "Y": 17,
+     "Ids": [
+      "S901FT0003"
+     ]
+    },
+    {
+     "X": 17,
+     "Y": 17,
+     "Ids": [
+      "S901FT0003"
+     ]
+    },
+    {
+     "X": 14,
+     "Y": 18,
+     "Ids": [
+      "S901FT0003"
+     ]
+    },
+    {
+     "X": 15,
+     "Y": 18,
+     "Ids": [
+      "S901FT0003"
+     ]
+    },
+    {
+     "X": 16,
+     "Y": 18,
+     "Ids": [
+      "S901FT0003"
+     ]
+    },
+    {
+     "X": 17,
+     "Y": 18,
+     "Ids": [
+      "S901FT0003"
+     ]
+    },
+    {
+     "X": 42,
+     "Y": 18,
+     "Ids": [
+      "S901KC000a"
+     ]
+    },
+    {
+     "X": 14,
+     "Y": 19,
+     "Ids": [
+      "S901FT0003"
+     ]
+    },
+    {
+     "X": 15,
+     "Y": 19,
+     "Ids": [
+      "S901FT0003"
+     ]
+    },
+    {
+     "X": 16,
+     "Y": 19,
+     "Ids": [
+      "S901FT0003"
+     ]
+    },
+    {
+     "X": 17,
+     "Y": 19,
+     "Ids": [
+      "S901FT0003"
+     ]
+    },
+    {
+     "X": 14,
+     "Y": 20,
+     "Ids": [
+      "S901FT0003"
+     ]
+    },
+    {
+     "X": 15,
+     "Y": 20,
+     "Ids": [
+      "S901FT0003"
+     ]
+    },
+    {
+     "X": 16,
+     "Y": 20,
+     "Ids": [
+      "S901FT0003"
+     ]
+    },
+    {
+     "X": 17,
+     "Y": 20,
+     "Ids": [
+      "S901FT0003"
+     ]
+    },
+    {
+     "X": 30,
+     "Y": 21,
+     "Ids": [
+      "S901KC0003"
+     ]
+    },
+    {
+     "X": 6,
+     "Y": 30,
+     "Ids": [
+      "S901KC0009"
+     ]
+    },
+    {
+     "X": 19,
+     "Y": 32,
+     "Ids": [
+      "S901KC0007"
+     ]
+    },
+    {
+     "X": 13,
+     "Y": 34,
+     "Ids": [
+      "S901KC0005"
+     ]
+    },
+    {
+     "X": 27,
+     "Y": 36,
+     "Ids": [
+      "S901KC000b"
+     ]
+    },
+    {
+     "X": 29,
+     "Y": 38,
+     "Ids": [
+      "S901KC0004"
+     ]
+    },
+    {
+     "X": 39,
+     "Y": 39,
+     "Ids": [
+      "S901FT0001",
+      "S901KC0001"
+     ]
+    },
+    {
+     "X": 40,
+     "Y": 39,
+     "Ids": [
+      "S901FT0001"
+     ]
+    },
+    {
+     "X": 41,
+     "Y": 39,
+     "Ids": [
+      "S901FT0001"
+     ]
+    },
+    {
+     "X": 42,
+     "Y": 39,
+     "Ids": [
+      "S901FT0001"
+     ]
+    },
+    {
+     "X": 43,
+     "Y": 39,
+     "Ids": [
+      "S901FT0001"
+     ]
+    },
+    {
+     "X": 39,
+     "Y": 40,
+     "Ids": [
+      "S901FT0001"
+     ]
+    },
+    {
+     "X": 40,
+     "Y": 40,
+     "Ids": [
+      "S901FT0001"
+     ]
+    },
+    {
+     "X": 41,
+     "Y": 40,
+     "Ids": [
+      "S901FT0001"
+     ]
+    },
+    {
+     "X": 42,
+     "Y": 40,
+     "Ids": [
+      "S901FT0001"
+     ]
+    },
+    {
+     "X": 43,
+     "Y": 40,
+     "Ids": [
+      "S901FT0001"
+     ]
+    },
+    {
+     "X": 15,
+     "Y": 41,
+     "Ids": [
+      "S901KC0006"
+     ]
+    },
+    {
+     "X": 39,
+     "Y": 41,
+     "Ids": [
+      "S901FT0001"
+     ]
+    },
+    {
+     "X": 40,
+     "Y": 41,
+     "Ids": [
+      "S901FT0001"
+     ]
+    },
+    {
+     "X": 41,
+     "Y": 41,
+     "Ids": [
+      "S901FT0001"
+     ]
+    },
+    {
+     "X": 42,
+     "Y": 41,
+     "Ids": [
+      "S901FT0001"
+     ]
+    },
+    {
+     "X": 43,
+     "Y": 41,
+     "Ids": [
+      "S901FT0001"
+     ]
+    },
+    {
+     "X": 39,
+     "Y": 42,
+     "Ids": [
+      "S901FT0001"
+     ]
+    },
+    {
+     "X": 40,
+     "Y": 42,
+     "Ids": [
+      "S901FT0001"
+     ]
+    },
+    {
+     "X": 41,
+     "Y": 42,
+     "Ids": [
+      "S901FT0001"
+     ]
+    },
+    {
+     "X": 42,
+     "Y": 42,
+     "Ids": [
+      "S901FT0001"
+     ]
+    },
+    {
+     "X": 43,
+     "Y": 42,
+     "Ids": [
+      "S901FT0001"
+     ]
+    },
+    {
+     "X": 1,
+     "Y": 43,
+     "Ids": [
+      "S901KC0008"
+     ]
+    },
+    {
+     "X": 39,
+     "Y": 43,
+     "Ids": [
+      "S901FT0001"
+     ]
+    },
+    {
+     "X": 40,
+     "Y": 43,
+     "Ids": [
+      "S901FT0001"
+     ]
+    },
+    {
+     "X": 41,
+     "Y": 43,
+     "Ids": [
+      "S901FT0001"
+     ]
+    },
+    {
+     "X": 42,
+     "Y": 43,
+     "Ids": [
+      "S901FT0001"
+     ]
+    },
+    {
+     "X": 43,
+     "Y": 43,
+     "Ids": [
+      "S901FT0001"
+     ]
+    }
+   ],
+   "Fog": {
+    "S901FG0000": {
+     "w": 48,
+     "h": 48,
+     "data": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    },
+    "S901FG0001": {
+     "w": 48,
+     "h": 48,
+     "data": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    },
+    "S901FG0002": {
+     "w": 48,
+     "h": 48,
+     "data": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    }
+   },
+   "Turn": 0,
+   "Rods": {},
+   "Sites": [
+    {
+     "Id": "S901FT0000",
+     "Kind": "Capital",
+     "RawKind": "Capital",
+     "X": 4,
+     "Y": 4,
+     "Name": "Sun Keep",
+     "Description": "",
+     "Owner": "S901PL0001",
+     "Cash": {
+      "Gold": 0,
+      "Infernal": 0,
+      "Life": 0,
+      "Death": 0,
+      "Runic": 0,
+      "Grove": 0
+     },
+     "ItemId": "",
+     "LooterId": "",
+     "Items": [],
+     "Guards": [
+      "S901UN0003"
+     ],
+     "GuardSlots": [
+      -1,
+      -1,
+      0,
+      -1,
+      -1,
+      -1
+     ],
+     "Resource": 0,
+     "VisitorId": "",
+     "Gone": false,
+     "StackId": "S901KC0000",
+     "Subrace": "S901SR0001",
+     "Size": null,
+     "GrowthTurn": null,
+     "RiotTurn": null,
+     "RegenBonus": null,
+     "ProtectBonus": "",
+     "Morale": null,
+     "Visitors": [],
+     "Stock": [],
+     "Buys": null,
+     "Mission": false,
+     "Roster": [],
+     "Spells": [],
+     "AiPriority": 3
+    },
+    {
+     "Id": "S901FT0001",
+     "Kind": "Capital",
+     "RawKind": "Capital",
+     "X": 39,
+     "Y": 39,
+     "Name": "Moon Keep",
+     "Description": "",
+     "Owner": "S901PL0002",
+     "Cash": {
+      "Gold": 0,
+      "Infernal": 0,
+      "Life": 0,
+      "Death": 0,
+      "Runic": 0,
+      "Grove": 0
+     },
+     "ItemId": "",
+     "LooterId": "",
+     "Items": [],
+     "Guards": [
+      "S901UN0007"
+     ],
+     "GuardSlots": [
+      -1,
+      -1,
+      0,
+      -1,
+      -1,
+      -1
+     ],
+     "Resource": 0,
+     "VisitorId": "",
+     "Gone": false,
+     "StackId": "S901KC0001",
+     "Subrace": "S901SR0002",
+     "Size": null,
+     "GrowthTurn": null,
+     "RiotTurn": null,
+     "RegenBonus": null,
+     "ProtectBonus": "",
+     "Morale": null,
+     "Visitors": [],
+     "Stock": [],
+     "Buys": null,
+     "Mission": false,
+     "Roster": [],
+     "Spells": [],
+     "AiPriority": 3
+    },
+    {
+     "Id": "S901FT0002",
+     "Kind": "Village",
+     "RawKind": "MidVillage",
+     "X": 35,
+     "Y": 6,
+     "Name": "Hamlet 1",
+     "Description": "",
+     "Owner": "S901PL0000",
+     "Cash": {
+      "Gold": 0,
+      "Infernal": 0,
+      "Life": 0,
+      "Death": 0,
+      "Runic": 0,
+      "Grove": 0
+     },
+     "ItemId": "",
+     "LooterId": "",
+     "Items": [],
+     "Guards": [
+      "S901UN0008",
+      "S901UN0009"
+     ],
+     "GuardSlots": [
+      1,
+      -1,
+      0,
+      -1,
+      -1,
+      -1
+     ],
+     "Resource": 0,
+     "VisitorId": "",
+     "Gone": false,
+     "StackId": "",
+     "Subrace": "S901SR0000",
+     "Size": 1,
+     "GrowthTurn": 0,
+     "RiotTurn": 0,
+     "RegenBonus": 0,
+     "ProtectBonus": "",
+     "Morale": 0,
+     "Visitors": [],
+     "Stock": [],
+     "Buys": null,
+     "Mission": false,
+     "Roster": [],
+     "Spells": [],
+     "AiPriority": 3
+    },
+    {
+     "Id": "S901FT0003",
+     "Kind": "Village",
+     "RawKind": "MidVillage",
+     "X": 14,
+     "Y": 17,
+     "Name": "Hamlet 2",
+     "Description": "",
+     "Owner": "S901PL0000",
+     "Cash": {
+      "Gold": 0,
+      "Infernal": 0,
+      "Life": 0,
+      "Death": 0,
+      "Runic": 0,
+      "Grove": 0
+     },
+     "ItemId": "",
+     "LooterId": "",
+     "Items": [],
+     "Guards": [
+      "S901UN000a",
+      "S901UN000b"
+     ],
+     "GuardSlots": [
+      1,
+      -1,
+      0,
+      -1,
+      -1,
+      -1
+     ],
+     "Resource": 0,
+     "VisitorId": "",
+     "Gone": false,
+     "StackId": "",
+     "Subrace": "S901SR0000",
+     "Size": 1,
+     "GrowthTurn": 0,
+     "RiotTurn": 0,
+     "RegenBonus": 0,
+     "ProtectBonus": "",
+     "Morale": 0,
+     "Visitors": [],
+     "Stock": [],
+     "Buys": null,
+     "Mission": false,
+     "Roster": [],
+     "Spells": [],
+     "AiPriority": 3
+    }
+   ],
+   "Relations": [
+    {
+     "Race1": 4,
+     "Race2": 0,
+     "Raw": 0
+    },
+    {
+     "Race1": 4,
+     "Race2": 1,
+     "Raw": 0
+    },
+    {
+     "Race1": 0,
+     "Race2": 1,
+     "Raw": 0
+    }
+   ],
+   "TalismanCharges": {},
+   "SpellCasts": [],
+   "ItemCasts": [],
+   "SpellEffects": [],
+   "ItemTypes": {},
+   "Limits": {
+    "MaxUnit": 3,
+    "MaxSpell": 3,
+    "MaxLeader": 10,
+    "MaxCity": 5,
+    "DifficultyScenario": 2,
+    "DifficultyGame": 1,
+    "SuggestedLevel": 1
+   },
+   "Subraces": {
+    "S901SR0000": 5,
+    "S901SR0001": 1,
+    "S901SR0002": 2
+   },
+   "Destroyed": [],
+   "Tombs": [],
+   "MapSeed": 87109
+  },
+  "TreeImage": {
+   "w": 48,
+   "h": 48,
+   "data": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+  },
+  "TreeGroup": {
+   "w": 48,
+   "h": 48,
+   "data": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+  },
+  "Forts": [
+   {
+    "Id": "S901FT0000",
+    "Capital": true,
+    "X": 4,
+    "Y": 4,
+    "Owner": "S901PL0001",
+    "Level": 0,
+    "Riot": false,
+    "Garrison": "S901KC0000"
+   },
+   {
+    "Id": "S901FT0001",
+    "Capital": true,
+    "X": 39,
+    "Y": 39,
+    "Owner": "S901PL0002",
+    "Level": 0,
+    "Riot": false,
+    "Garrison": "S901KC0001"
+   },
+   {
+    "Id": "S901FT0002",
+    "Capital": false,
+    "X": 35,
+    "Y": 6,
+    "Owner": "S901PL0000",
+    "Level": 1,
+    "Riot": false,
+    "Garrison": ""
+   },
+   {
+    "Id": "S901FT0003",
+    "Capital": false,
+    "X": 14,
+    "Y": 17,
+    "Owner": "S901PL0000",
+    "Level": 1,
+    "Riot": false,
+    "Garrison": ""
+   }
+  ],
+  "Ruins": [],
+  "Sites": [],
+  "Crystals": [],
+  "Bags": [],
+  "Tombs": [],
+  "Rods": [],
+  "Landmarks": [],
+  "Mountains": [],
+  "Roads": [],
+  "Stacks": [
+   {
+    "Id": "S901KC0000",
+    "X": 4,
+    "Y": 4,
+    "Owner": "S901PL0001",
+    "Subrace": "S901SR0001",
+    "LeaderType": "T000UUA003",
+    "LeaderAlive": true,
+    "AnyAlive": true,
+    "Facing": 0,
+    "Inside": "S901FT0000",
+    "Invisible": false,
+    "LeaderName": "Sun-Captain"
+   },
+   {
+    "Id": "S901KC0001",
+    "X": 39,
+    "Y": 39,
+    "Owner": "S901PL0002",
+    "Subrace": "S901SR0002",
+    "LeaderType": "T000UUA00F",
+    "LeaderAlive": true,
+    "AnyAlive": true,
+    "Facing": 0,
+    "Inside": "S901FT0001",
+    "Invisible": false,
+    "LeaderName": "Moon-Captain"
+   },
+   {
+    "Id": "S901KC0002",
+    "X": 39,
+    "Y": 2,
+    "Owner": "S901PL0000",
+    "Subrace": "S901SR0000",
+    "LeaderType": "T000UUA019",
+    "LeaderAlive": true,
+    "AnyAlive": true,
+    "Facing": 0,
+    "Inside": "",
+    "Invisible": false,
+    "LeaderName": "Wild-Wolf"
+   },
+   {
+    "Id": "S901KC0003",
+    "X": 30,
+    "Y": 21,
+    "Owner": "S901PL0000",
+    "Subrace": "S901SR0000",
+    "LeaderType": "T000UUA019",
+    "LeaderAlive": true,
+    "AnyAlive": true,
+    "Facing": 0,
+    "Inside": "",
+    "Invisible": false,
+    "LeaderName": "Wild-Wolf"
+   },
+   {
+    "Id": "S901KC0004",
+    "X": 29,
+    "Y": 38,
+    "Owner": "S901PL0000",
+    "Subrace": "S901SR0000",
+    "LeaderType": "T000UUA019",
+    "LeaderAlive": true,
+    "AnyAlive": true,
+    "Facing": 0,
+    "Inside": "",
+    "Invisible": false,
+    "LeaderName": "Wild-Wolf"
+   },
+   {
+    "Id": "S901KC0005",
+    "X": 13,
+    "Y": 34,
+    "Owner": "S901PL0000",
+    "Subrace": "S901SR0000",
+    "LeaderType": "T000UUA019",
+    "LeaderAlive": true,
+    "AnyAlive": true,
+    "Facing": 0,
+    "Inside": "",
+    "Invisible": false,
+    "LeaderName": "Wild-Wolf"
+   },
+   {
+    "Id": "S901KC0006",
+    "X": 15,
+    "Y": 41,
+    "Owner": "S901PL0000",
+    "Subrace": "S901SR0000",
+    "LeaderType": "T000UUA01B",
+    "LeaderAlive": true,
+    "AnyAlive": true,
+    "Facing": 0,
+    "Inside": "",
+    "Invisible": false,
+    "LeaderName": "Wild-Shaman"
+   },
+   {
+    "Id": "S901KC0007",
+    "X": 19,
+    "Y": 32,
+    "Owner": "S901PL0000",
+    "Subrace": "S901SR0000",
+    "LeaderType": "T000UUA01D",
+    "LeaderAlive": true,
+    "AnyAlive": true,
+    "Facing": 0,
+    "Inside": "",
+    "Invisible": false,
+    "LeaderName": "Wild-Bat"
+   },
+   {
+    "Id": "S901KC0008",
+    "X": 1,
+    "Y": 43,
+    "Owner": "S901PL0000",
+    "Subrace": "S901SR0000",
+    "LeaderType": "T000UUA01D",
+    "LeaderAlive": true,
+    "AnyAlive": true,
+    "Facing": 0,
+    "Inside": "",
+    "Invisible": false,
+    "LeaderName": "Wild-Bat"
+   },
+   {
+    "Id": "S901KC0009",
+    "X": 6,
+    "Y": 30,
+    "Owner": "S901PL0000",
+    "Subrace": "S901SR0000",
+    "LeaderType": "T000UUA01C",
+    "LeaderAlive": true,
+    "AnyAlive": true,
+    "Facing": 0,
+    "Inside": "",
+    "Invisible": false,
+    "LeaderName": "Wild-Chief"
+   },
+   {
+    "Id": "S901KC000a",
+    "X": 42,
+    "Y": 18,
+    "Owner": "S901PL0000",
+    "Subrace": "S901SR0000",
+    "LeaderType": "T000UUA01C",
+    "LeaderAlive": true,
+    "AnyAlive": true,
+    "Facing": 0,
+    "Inside": "",
+    "Invisible": false,
+    "LeaderName": "Wild-Chief"
+   },
+   {
+    "Id": "S901KC000b",
+    "X": 27,
+    "Y": 36,
+    "Owner": "S901PL0000",
+    "Subrace": "S901SR0000",
+    "LeaderType": "T000UUA01C",
+    "LeaderAlive": true,
+    "AnyAlive": true,
+    "Facing": 0,
+    "Inside": "",
+    "Invisible": false,
+    "LeaderName": "Wild-Chief"
+   }
+  ],
+  "Banners": {
+   "S901SR0000": 0,
+   "S901SR0001": 1,
+   "S901SR0002": 2
+  }
+ },
+ "Events": {
+  "Events": [],
+  "Zones": {},
+  "Variables": {},
+  "Templates": {},
+  "SubraceOwners": {
+   "S901SR0000": "S901PL0000",
+   "S901SR0001": "S901PL0001",
+   "S901SR0002": "S901PL0002"
+  }
+ }
+}

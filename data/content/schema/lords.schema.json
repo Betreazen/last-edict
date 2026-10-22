@@ -1,0 +1,100 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "Disciples: lord",
+ "type": "object",
+ "properties": {
+  "$schema": {
+   "type": "string"
+  },
+  "lords": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "description": "Устойчивый id «мод:вид/имя» — по нему ссылаются другие сущности и моды.",
+      "type": "string"
+     },
+     "legacyId": {
+      "description": "Id оригинала (Gunits.UNIT_ID и т. п.): по нему сущность находят сохранения, карты и журналы. У новых сущностей модов — нет.",
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "race": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "category": {
+      "enum": [
+       "mage",
+       "warrior",
+       "diplomat"
+      ]
+     },
+     "nameText": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "descriptionText": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "picture": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "buildings": {
+      "description": "Постройки столицы, доступные лорду (GbuiList), по порядку таблицы.",
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "research": {
+      "description": "Заклинания, которые лорд может исследовать (GspellR), по порядку таблицы.",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "spell": {
+         "type": "string"
+        },
+        "cost": {
+         "type": [
+          "object",
+          "null"
+         ],
+         "additionalProperties": {
+          "type": "integer"
+         }
+        }
+       },
+       "required": [
+        "spell"
+       ],
+       "additionalProperties": false
+      }
+     }
+    },
+    "required": [
+     "id"
+    ],
+    "additionalProperties": false
+   }
+  }
+ },
+ "required": [
+  "lords"
+ ],
+ "additionalProperties": false
+}

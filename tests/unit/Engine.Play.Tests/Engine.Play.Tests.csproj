@@ -1,0 +1,74 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+    <RunSettingsFilePath>$(MSBuildThisFileDirectory)../../tests.runsettings</RunSettingsFilePath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" />
+    <PackageReference Include="Xunit.SkippableFact" Version="1.5.85" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Классы тестов — долгие первыми (tests/Shared/LongestFirst.cs, время — tests/test-durations.json). -->
+    <Compile Include="../../Shared/LongestFirst.cs" Link="Shared/LongestFirst.cs" />
+    <Compile Include="../../Shared/ImportedData.cs" Link="Shared/ImportedData.cs" />
+    <Compile Include="../../Shared/RepoPaths.cs" Link="Shared/RepoPaths.cs" />
+    <!-- Снимки «порт против порта» (tests/Shared/PortSnapshot.cs): файлы читаются и переписываются прямо в tests/snapshots. -->
+    <Compile Include="../../Shared/PortSnapshot.cs" Link="Shared/PortSnapshot.cs" />
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>SnapshotsDir</_Parameter1>
+      <_Parameter2>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)../../snapshots'))</_Parameter2>
+    </AssemblyAttribute>
+    <!-- Своё мини-содержимое с чистой лицензией (content/test-pack, tools/test_pack.py): снимки и проверки CI без данных игры. -->
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>TestPackDir</_Parameter1>
+      <_Parameter2>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)../../../content/test-pack'))</_Parameter2>
+    </AssemblyAttribute>
+    <None Include="../../test-durations.json" Link="test-durations.json" CopyToOutputDirectory="PreserveNewest" />
+    <AssemblyAttribute Include="Xunit.TestCollectionOrdererAttribute">
+      <_Parameter1>D2.Tests.LongestFirst</_Parameter1>
+      <_Parameter2>$(AssemblyName)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <Using Include="D2.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Engine.Play\Engine.Play.csproj" />
+    <ProjectReference Include="..\..\..\src\Game.UiModel\Game.UiModel.csproj" />
+    <ProjectReference Include="..\..\..\src\Import.Legacy\Import.Legacy.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="golden/**" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../../corpus/sample/**" Link="corpus/sample/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../../data/ui/**" Link="data/ui/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../../data/video/**" Link="data/video/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../../data/game/**" Link="data/game/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../../data/gfx/**" Link="data/gfx/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../../data/map/**" Link="data/map/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../../data/rules/**" Link="data/rules/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../../data/content/**" Link="data/content/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../../data/scenarios/**" Link="data/scenarios/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../../data/sound/**" Link="data/sound/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../../data/music/**" Link="data/music/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Пример мода (mods/) кладётся рядом с data/ целиком, с подкаталогами: GameContentTests проверяет
+         наложение на тех же файлах, что читает игра. -->
+    <None Include="../../../mods/**" Link="mods/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

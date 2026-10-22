@@ -1,0 +1,13 @@
+<Project Sdk="Godot.NET.Sdk/4.7.2">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../src/Engine.Play/Engine.Play.csproj" />
+    <ProjectReference Include="../src/Game.UiModel/Game.UiModel.csproj" />
+    <ProjectReference Include="../src/Import.Legacy/Import.Legacy.csproj" />
+    <ProjectReference Include="..\src\Engine.Rules\Engine.Rules.csproj" />
+  </ItemGroup>
+</Project>

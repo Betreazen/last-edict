@@ -1,0 +1,1119 @@
+{
+ "$schema": "../../data/content/schema/units.schema.json",
+ "units": [
+  {
+   "id": "test:unit/sun-colossus",
+   "legacyId": "t000uua001",
+   "role": "guardian",
+   "level": 1,
+   "race": "test:race/sun",
+   "subrace": "human",
+   "branch": "hero",
+   "small": true,
+   "male": true,
+   "hireCost": {
+    "gold": 8000
+   },
+   "attack": "test:attack/sun-colossus",
+   "attacksTwice": false,
+   "hitPoints": 700,
+   "armor": 40,
+   "regeneration": 40,
+   "reviveCost": {
+    "gold": 4000
+   },
+   "healCost": {
+    "gold": 1
+   },
+   "trainingCost": {
+    "gold": 4
+   },
+   "xpForKill": 5000,
+   "xpForNextLevel": 6000,
+   "growth": {
+    "early": "test:growth/sun-colossus",
+    "switchLevel": 10,
+    "late": "test:growth/sun-colossus"
+   },
+   "deathAnimation": "human",
+   "move": 20,
+   "scout": 4,
+   "leadership": 6,
+   "negotiate": 60
+  },
+  {
+   "id": "test:unit/sun-thief",
+   "legacyId": "t000uua002",
+   "role": "noble",
+   "level": 1,
+   "race": "test:race/sun",
+   "subrace": "human",
+   "branch": "noble",
+   "small": true,
+   "male": true,
+   "hireCost": {
+    "gold": 180
+   },
+   "attack": "test:attack/sun-thief",
+   "attacksTwice": false,
+   "hitPoints": 90,
+   "armor": 0,
+   "regeneration": 5,
+   "reviveCost": {
+    "gold": 90
+   },
+   "healCost": {
+    "gold": 1
+   },
+   "trainingCost": {
+    "gold": 4
+   },
+   "xpForKill": 20,
+   "xpForNextLevel": 90,
+   "growth": {
+    "early": "test:growth/sun-thief",
+    "switchLevel": 10,
+    "late": "test:growth/sun-thief"
+   },
+   "deathAnimation": "human",
+   "move": 24,
+   "scout": 5,
+   "leadership": 1,
+   "negotiate": 15,
+   "leaderCategory": "noble"
+  },
+  {
+   "id": "test:unit/sun-captain",
+   "legacyId": "t000uua003",
+   "role": "leader",
+   "level": 1,
+   "race": "test:race/sun",
+   "subrace": "human",
+   "branch": "hero",
+   "small": true,
+   "male": true,
+   "hireCost": {
+    "gold": 450
+   },
+   "attack": "test:attack/sun-captain",
+   "attacksTwice": false,
+   "hitPoints": 140,
+   "armor": 0,
+   "regeneration": 5,
+   "reviveCost": {
+    "gold": 225
+   },
+   "healCost": {
+    "gold": 1
+   },
+   "trainingCost": {
+    "gold": 4
+   },
+   "xpForKill": 55,
+   "xpForNextLevel": 140,
+   "growth": {
+    "early": "test:growth/sun-captain",
+    "switchLevel": 10,
+    "late": "test:growth/sun-captain"
+   },
+   "deathAnimation": "human",
+   "move": 20,
+   "scout": 4,
+   "leadership": 4,
+   "negotiate": 10,
+   "leaderCategory": "fighter"
+  },
+  {
+   "id": "test:unit/sun-ranger",
+   "legacyId": "t000uua004",
+   "role": "leader",
+   "level": 1,
+   "race": "test:race/sun",
+   "subrace": "human",
+   "branch": "hero",
+   "small": true,
+   "male": true,
+   "hireCost": {
+    "gold": 420
+   },
+   "attack": "test:attack/sun-ranger",
+   "attacksTwice": false,
+   "hitPoints": 110,
+   "armor": 0,
+   "regeneration": 5,
+   "reviveCost": {
+    "gold": 210
+   },
+   "healCost": {
+    "gold": 1
+   },
+   "trainingCost": {
+    "gold": 4
+   },
+   "xpForKill": 45,
+   "xpForNextLevel": 130,
+   "growth": {
+    "early": "test:growth/sun-ranger",
+    "switchLevel": 10,
+    "late": "test:growth/sun-ranger"
+   },
+   "deathAnimation": "human",
+   "move": 26,
+   "scout": 6,
+   "leadership": 3,
+   "negotiate": 10,
+   "leaderCategory": "explorer"
+  },
+  {
+   "id": "test:unit/sun-sage",
+   "legacyId": "t000uua005",
+   "role": "leader",
+   "level": 1,
+   "race": "test:race/sun",
+   "subrace": "human",
+   "branch": "hero",
+   "small": true,
+   "male": true,
+   "hireCost": {
+    "gold": 480
+   },
+   "attack": "test:attack/sun-sage",
+   "attacksTwice": false,
+   "hitPoints": 90,
+   "armor": 0,
+   "regeneration": 5,
+   "reviveCost": {
+    "gold": 240
+   },
+   "healCost": {
+    "gold": 1
+   },
+   "trainingCost": {
+    "gold": 4
+   },
+   "xpForKill": 50,
+   "xpForNextLevel": 140,
+   "growth": {
+    "early": "test:growth/sun-sage",
+    "switchLevel": 10,
+    "late": "test:growth/sun-sage"
+   },
+   "deathAnimation": "human",
+   "move": 20,
+   "scout": 4,
+   "leadership": 3,
+   "negotiate": 10,
+   "leaderCategory": "mage"
+  },
+  {
+   "id": "test:unit/sun-warden",
+   "legacyId": "t000uua006",
+   "role": "leader",
+   "level": 1,
+   "race": "test:race/sun",
+   "subrace": "human",
+   "branch": "hero",
+   "small": true,
+   "male": true,
+   "hireCost": {
+    "gold": 400
+   },
+   "attack": "test:attack/sun-warden",
+   "attacksTwice": false,
+   "hitPoints": 100,
+   "armor": 0,
+   "regeneration": 5,
+   "reviveCost": {
+    "gold": 200
+   },
+   "healCost": {
+    "gold": 1
+   },
+   "trainingCost": {
+    "gold": 4
+   },
+   "xpForKill": 45,
+   "xpForNextLevel": 130,
+   "growth": {
+    "early": "test:growth/sun-warden",
+    "switchLevel": 10,
+    "late": "test:growth/sun-warden"
+   },
+   "deathAnimation": "human",
+   "move": 20,
+   "scout": 4,
+   "leadership": 3,
+   "negotiate": 10,
+   "leaderCategory": "rod"
+  },
+  {
+   "id": "test:unit/sun-footman",
+   "legacyId": "t000uua007",
+   "role": "soldier",
+   "level": 1,
+   "race": "test:race/sun",
+   "subrace": "human",
+   "branch": "fighter",
+   "small": true,
+   "male": true,
+   "hireCost": {
+    "gold": 55
+   },
+   "attack": "test:attack/sun-footman",
+   "attacksTwice": false,
+   "hitPoints": 110,
+   "armor": 0,
+   "regeneration": 5,
+   "reviveCost": {
+    "gold": 50
+   },
+   "healCost": {
+    "gold": 1
+   },
+   "trainingCost": {
+    "gold": 4
+   },
+   "xpForKill": 18,
+   "xpForNextLevel": 85,
+   "growth": {
+    "early": "test:growth/sun-footman",
+    "switchLevel": 10,
+    "late": "test:growth/sun-footman"
+   },
+   "deathAnimation": "human"
+  },
+  {
+   "id": "test:unit/sun-bowman",
+   "legacyId": "t000uua008",
+   "role": "soldier",
+   "level": 1,
+   "race": "test:race/sun",
+   "subrace": "human",
+   "branch": "archer",
+   "small": true,
+   "male": true,
+   "hireCost": {
+    "gold": 45
+   },
+   "attack": "test:attack/sun-bowman",
+   "attacksTwice": false,
+   "hitPoints": 50,
+   "armor": 0,
+   "regeneration": 5,
+   "reviveCost": {
+    "gold": 50
+   },
+   "healCost": {
+    "gold": 1
+   },
+   "trainingCost": {
+    "gold": 4
+   },
+   "xpForKill": 16,
+   "xpForNextLevel": 75,
+   "growth": {
+    "early": "test:growth/sun-bowman",
+    "switchLevel": 10,
+    "late": "test:growth/sun-bowman"
+   },
+   "deathAnimation": "human"
+  },
+  {
+   "id": "test:unit/sun-adept",
+   "legacyId": "t000uua009",
+   "role": "soldier",
+   "level": 1,
+   "race": "test:race/sun",
+   "subrace": "human",
+   "branch": "mage",
+   "small": true,
+   "male": true,
+   "hireCost": {
+    "gold": 50
+   },
+   "attack": "test:attack/sun-adept",
+   "attacksTwice": false,
+   "hitPoints": 40,
+   "armor": 0,
+   "regeneration": 5,
+   "reviveCost": {
+    "gold": 50
+   },
+   "healCost": {
+    "gold": 1
+   },
+   "trainingCost": {
+    "gold": 4
+   },
+   "xpForKill": 18,
+   "xpForNextLevel": 80,
+   "growth": {
+    "early": "test:growth/sun-adept",
+    "switchLevel": 10,
+    "late": "test:growth/sun-adept"
+   },
+   "deathAnimation": "human"
+  },
+  {
+   "id": "test:unit/sun-healer",
+   "legacyId": "t000uua00a",
+   "role": "soldier",
+   "level": 1,
+   "race": "test:race/sun",
+   "subrace": "human",
+   "branch": "special",
+   "small": true,
+   "male": true,
+   "hireCost": {
+    "gold": 50
+   },
+   "attack": "test:attack/sun-healer",
+   "attacksTwice": false,
+   "hitPoints": 55,
+   "armor": 0,
+   "regeneration": 5,
+   "reviveCost": {
+    "gold": 50
+   },
+   "healCost": {
+    "gold": 1
+   },
+   "trainingCost": {
+    "gold": 4
+   },
+   "xpForKill": 18,
+   "xpForNextLevel": 80,
+   "growth": {
+    "early": "test:growth/sun-healer",
+    "switchLevel": 10,
+    "late": "test:growth/sun-healer"
+   },
+   "deathAnimation": "human"
+  },
+  {
+   "id": "test:unit/sun-veteran",
+   "legacyId": "t000uua00b",
+   "role": "soldier",
+   "level": 2,
+   "race": "test:race/sun",
+   "subrace": "human",
+   "branch": "fighter",
+   "small": true,
+   "male": true,
+   "hireCost": {
+    "gold": 280
+   },
+   "attack": "test:attack/sun-veteran",
+   "attacksTwice": false,
+   "hitPoints": 160,
+   "armor": 0,
+   "regeneration": 5,
+   "reviveCost": {
+    "gold": 140
+   },
+   "healCost": {
+    "gold": 1
+   },
+   "trainingCost": {
+    "gold": 4
+   },
+   "xpForKill": 55,
+   "xpForNextLevel": 400,
+   "growth": {
+    "early": "test:growth/sun-veteran",
+    "switchLevel": 10,
+    "late": "test:growth/sun-veteran"
+   },
+   "deathAnimation": "human",
+   "previousLevel": "test:unit/sun-footman",
+   "upgradeBuilding": "test:building/sun-barracks"
+  },
+  {
+   "id": "test:unit/sun-marksman",
+   "legacyId": "t000uua00c",
+   "role": "soldier",
+   "level": 2,
+   "race": "test:race/sun",
+   "subrace": "human",
+   "branch": "archer",
+   "small": true,
+   "male": true,
+   "hireCost": {
+    "gold": 260
+   },
+   "attack": "test:attack/sun-marksman",
+   "attacksTwice": false,
+   "hitPoints": 75,
+   "armor": 0,
+   "regeneration": 5,
+   "reviveCost": {
+    "gold": 130
+   },
+   "healCost": {
+    "gold": 1
+   },
+   "trainingCost": {
+    "gold": 4
+   },
+   "xpForKill": 50,
+   "xpForNextLevel": 380,
+   "growth": {
+    "early": "test:growth/sun-marksman",
+    "switchLevel": 10,
+    "late": "test:growth/sun-marksman"
+   },
+   "deathAnimation": "human",
+   "previousLevel": "test:unit/sun-bowman",
+   "upgradeBuilding": "test:building/sun-range"
+  },
+  {
+   "id": "test:unit/moon-colossus",
+   "legacyId": "t000uua00d",
+   "role": "guardian",
+   "level": 1,
+   "race": "test:race/moon",
+   "subrace": "undead",
+   "branch": "hero",
+   "small": true,
+   "male": true,
+   "hireCost": {
+    "gold": 8000
+   },
+   "attack": "test:attack/moon-colossus",
+   "attacksTwice": false,
+   "hitPoints": 700,
+   "armor": 40,
+   "regeneration": 40,
+   "reviveCost": {
+    "gold": 4000
+   },
+   "healCost": {
+    "gold": 1
+   },
+   "trainingCost": {
+    "gold": 4
+   },
+   "xpForKill": 5000,
+   "xpForNextLevel": 6000,
+   "growth": {
+    "early": "test:growth/moon-colossus",
+    "switchLevel": 10,
+    "late": "test:growth/moon-colossus"
+   },
+   "deathAnimation": "undead",
+   "move": 20,
+   "scout": 4,
+   "leadership": 6,
+   "negotiate": 60
+  },
+  {
+   "id": "test:unit/moon-thief",
+   "legacyId": "t000uua00e",
+   "role": "noble",
+   "level": 1,
+   "race": "test:race/moon",
+   "subrace": "undead",
+   "branch": "noble",
+   "small": true,
+   "male": true,
+   "hireCost": {
+    "gold": 180
+   },
+   "attack": "test:attack/moon-thief",
+   "attacksTwice": false,
+   "hitPoints": 90,
+   "armor": 0,
+   "regeneration": 5,
+   "reviveCost": {
+    "gold": 90
+   },
+   "healCost": {
+    "gold": 1
+   },
+   "trainingCost": {
+    "gold": 4
+   },
+   "xpForKill": 20,
+   "xpForNextLevel": 90,
+   "growth": {
+    "early": "test:growth/moon-thief",
+    "switchLevel": 10,
+    "late": "test:growth/moon-thief"
+   },
+   "deathAnimation": "undead",
+   "move": 24,
+   "scout": 5,
+   "leadership": 1,
+   "negotiate": 15,
+   "leaderCategory": "noble"
+  },
+  {
+   "id": "test:unit/moon-captain",
+   "legacyId": "t000uua00f",
+   "role": "leader",
+   "level": 1,
+   "race": "test:race/moon",
+   "subrace": "undead",
+   "branch": "hero",
+   "small": true,
+   "male": true,
+   "hireCost": {
+    "gold": 450
+   },
+   "attack": "test:attack/moon-captain",
+   "attacksTwice": false,
+   "hitPoints": 140,
+   "armor": 0,
+   "regeneration": 5,
+   "reviveCost": {
+    "gold": 225
+   },
+   "healCost": {
+    "gold": 1
+   },
+   "trainingCost": {
+    "gold": 4
+   },
+   "xpForKill": 55,
+   "xpForNextLevel": 140,
+   "growth": {
+    "early": "test:growth/moon-captain",
+    "switchLevel": 10,
+    "late": "test:growth/moon-captain"
+   },
+   "deathAnimation": "undead",
+   "move": 20,
+   "scout": 4,
+   "leadership": 4,
+   "negotiate": 10,
+   "leaderCategory": "fighter"
+  },
+  {
+   "id": "test:unit/moon-ranger",
+   "legacyId": "t000uua010",
+   "role": "leader",
+   "level": 1,
+   "race": "test:race/moon",
+   "subrace": "undead",
+   "branch": "hero",
+   "small": true,
+   "male": true,
+   "hireCost": {
+    "gold": 420
+   },
+   "attack": "test:attack/moon-ranger",
+   "attacksTwice": false,
+   "hitPoints": 110,
+   "armor": 0,
+   "regeneration": 5,
+   "reviveCost": {
+    "gold": 210
+   },
+   "healCost": {
+    "gold": 1
+   },
+   "trainingCost": {
+    "gold": 4
+   },
+   "xpForKill": 45,
+   "xpForNextLevel": 130,
+   "growth": {
+    "early": "test:growth/moon-ranger",
+    "switchLevel": 10,
+    "late": "test:growth/moon-ranger"
+   },
+   "deathAnimation": "undead",
+   "move": 26,
+   "scout": 6,
+   "leadership": 3,
+   "negotiate": 10,
+   "leaderCategory": "explorer"
+  },
+  {
+   "id": "test:unit/moon-sage",
+   "legacyId": "t000uua011",
+   "role": "leader",
+   "level": 1,
+   "race": "test:race/moon",
+   "subrace": "undead",
+   "branch": "hero",
+   "small": true,
+   "male": true,
+   "hireCost": {
+    "gold": 480
+   },
+   "attack": "test:attack/moon-sage",
+   "attacksTwice": false,
+   "hitPoints": 90,
+   "armor": 0,
+   "regeneration": 5,
+   "reviveCost": {
+    "gold": 240
+   },
+   "healCost": {
+    "gold": 1
+   },
+   "trainingCost": {
+    "gold": 4
+   },
+   "xpForKill": 50,
+   "xpForNextLevel": 140,
+   "growth": {
+    "early": "test:growth/moon-sage",
+    "switchLevel": 10,
+    "late": "test:growth/moon-sage"
+   },
+   "deathAnimation": "undead",
+   "move": 20,
+   "scout": 4,
+   "leadership": 3,
+   "negotiate": 10,
+   "leaderCategory": "mage"
+  },
+  {
+   "id": "test:unit/moon-warden",
+   "legacyId": "t000uua012",
+   "role": "leader",
+   "level": 1,
+   "race": "test:race/moon",
+   "subrace": "undead",
+   "branch": "hero",
+   "small": true,
+   "male": true,
+   "hireCost": {
+    "gold": 400
+   },
+   "attack": "test:attack/moon-warden",
+   "attacksTwice": false,
+   "hitPoints": 100,
+   "armor": 0,
+   "regeneration": 5,
+   "reviveCost": {
+    "gold": 200
+   },
+   "healCost": {
+    "gold": 1
+   },
+   "trainingCost": {
+    "gold": 4
+   },
+   "xpForKill": 45,
+   "xpForNextLevel": 130,
+   "growth": {
+    "early": "test:growth/moon-warden",
+    "switchLevel": 10,
+    "late": "test:growth/moon-warden"
+   },
+   "deathAnimation": "undead",
+   "move": 20,
+   "scout": 4,
+   "leadership": 3,
+   "negotiate": 10,
+   "leaderCategory": "rod"
+  },
+  {
+   "id": "test:unit/moon-footman",
+   "legacyId": "t000uua013",
+   "role": "soldier",
+   "level": 1,
+   "race": "test:race/moon",
+   "subrace": "undead",
+   "branch": "fighter",
+   "small": true,
+   "male": true,
+   "hireCost": {
+    "gold": 55
+   },
+   "attack": "test:attack/moon-footman",
+   "attacksTwice": false,
+   "hitPoints": 110,
+   "armor": 0,
+   "regeneration": 5,
+   "reviveCost": {
+    "gold": 50
+   },
+   "healCost": {
+    "gold": 1
+   },
+   "trainingCost": {
+    "gold": 4
+   },
+   "xpForKill": 18,
+   "xpForNextLevel": 85,
+   "growth": {
+    "early": "test:growth/moon-footman",
+    "switchLevel": 10,
+    "late": "test:growth/moon-footman"
+   },
+   "deathAnimation": "undead"
+  },
+  {
+   "id": "test:unit/moon-bowman",
+   "legacyId": "t000uua014",
+   "role": "soldier",
+   "level": 1,
+   "race": "test:race/moon",
+   "subrace": "undead",
+   "branch": "archer",
+   "small": true,
+   "male": true,
+   "hireCost": {
+    "gold": 45
+   },
+   "attack": "test:attack/moon-bowman",
+   "attacksTwice": false,
+   "hitPoints": 50,
+   "armor": 0,
+   "regeneration": 5,
+   "reviveCost": {
+    "gold": 50
+   },
+   "healCost": {
+    "gold": 1
+   },
+   "trainingCost": {
+    "gold": 4
+   },
+   "xpForKill": 16,
+   "xpForNextLevel": 75,
+   "growth": {
+    "early": "test:growth/moon-bowman",
+    "switchLevel": 10,
+    "late": "test:growth/moon-bowman"
+   },
+   "deathAnimation": "undead"
+  },
+  {
+   "id": "test:unit/moon-adept",
+   "legacyId": "t000uua015",
+   "role": "soldier",
+   "level": 1,
+   "race": "test:race/moon",
+   "subrace": "undead",
+   "branch": "mage",
+   "small": true,
+   "male": true,
+   "hireCost": {
+    "gold": 50
+   },
+   "attack": "test:attack/moon-adept",
+   "attacksTwice": false,
+   "hitPoints": 40,
+   "armor": 0,
+   "regeneration": 5,
+   "reviveCost": {
+    "gold": 50
+   },
+   "healCost": {
+    "gold": 1
+   },
+   "trainingCost": {
+    "gold": 4
+   },
+   "xpForKill": 18,
+   "xpForNextLevel": 80,
+   "growth": {
+    "early": "test:growth/moon-adept",
+    "switchLevel": 10,
+    "late": "test:growth/moon-adept"
+   },
+   "deathAnimation": "undead"
+  },
+  {
+   "id": "test:unit/moon-hexer",
+   "legacyId": "t000uua016",
+   "role": "soldier",
+   "level": 1,
+   "race": "test:race/moon",
+   "subrace": "undead",
+   "branch": "special",
+   "small": true,
+   "male": true,
+   "hireCost": {
+    "gold": 50
+   },
+   "attack": "test:attack/moon-hexer",
+   "attacksTwice": false,
+   "hitPoints": 55,
+   "armor": 0,
+   "regeneration": 5,
+   "reviveCost": {
+    "gold": 50
+   },
+   "healCost": {
+    "gold": 1
+   },
+   "trainingCost": {
+    "gold": 4
+   },
+   "xpForKill": 18,
+   "xpForNextLevel": 80,
+   "growth": {
+    "early": "test:growth/moon-hexer",
+    "switchLevel": 10,
+    "late": "test:growth/moon-hexer"
+   },
+   "deathAnimation": "undead"
+  },
+  {
+   "id": "test:unit/moon-veteran",
+   "legacyId": "t000uua017",
+   "role": "soldier",
+   "level": 2,
+   "race": "test:race/moon",
+   "subrace": "undead",
+   "branch": "fighter",
+   "small": true,
+   "male": true,
+   "hireCost": {
+    "gold": 280
+   },
+   "attack": "test:attack/moon-veteran",
+   "attacksTwice": false,
+   "hitPoints": 160,
+   "armor": 0,
+   "regeneration": 5,
+   "reviveCost": {
+    "gold": 140
+   },
+   "healCost": {
+    "gold": 1
+   },
+   "trainingCost": {
+    "gold": 4
+   },
+   "xpForKill": 55,
+   "xpForNextLevel": 400,
+   "growth": {
+    "early": "test:growth/moon-veteran",
+    "switchLevel": 10,
+    "late": "test:growth/moon-veteran"
+   },
+   "deathAnimation": "undead",
+   "previousLevel": "test:unit/moon-footman",
+   "upgradeBuilding": "test:building/moon-barracks"
+  },
+  {
+   "id": "test:unit/moon-marksman",
+   "legacyId": "t000uua018",
+   "role": "soldier",
+   "level": 2,
+   "race": "test:race/moon",
+   "subrace": "undead",
+   "branch": "archer",
+   "small": true,
+   "male": true,
+   "hireCost": {
+    "gold": 260
+   },
+   "attack": "test:attack/moon-marksman",
+   "attacksTwice": false,
+   "hitPoints": 75,
+   "armor": 0,
+   "regeneration": 5,
+   "reviveCost": {
+    "gold": 130
+   },
+   "healCost": {
+    "gold": 1
+   },
+   "trainingCost": {
+    "gold": 4
+   },
+   "xpForKill": 50,
+   "xpForNextLevel": 380,
+   "growth": {
+    "early": "test:growth/moon-marksman",
+    "switchLevel": 10,
+    "late": "test:growth/moon-marksman"
+   },
+   "deathAnimation": "undead",
+   "previousLevel": "test:unit/moon-bowman",
+   "upgradeBuilding": "test:building/moon-range"
+  },
+  {
+   "id": "test:unit/wild-wolf",
+   "legacyId": "t000uua019",
+   "role": "neutralSoldier",
+   "level": 1,
+   "race": "test:race/wild",
+   "subrace": "neutral",
+   "branch": "fighter",
+   "small": true,
+   "male": true,
+   "hireCost": {
+    "gold": 60
+   },
+   "attack": "test:attack/wild-wolf",
+   "attacksTwice": false,
+   "hitPoints": 70,
+   "armor": 0,
+   "regeneration": 5,
+   "reviveCost": {
+    "gold": 50
+   },
+   "healCost": {
+    "gold": 1
+   },
+   "trainingCost": {
+    "gold": 4
+   },
+   "xpForKill": 15,
+   "xpForNextLevel": 80,
+   "growth": {
+    "early": "test:growth/wild-wolf",
+    "switchLevel": 10,
+    "late": "test:growth/wild-wolf"
+   },
+   "deathAnimation": "neutral"
+  },
+  {
+   "id": "test:unit/wild-ogre",
+   "legacyId": "t000uua01a",
+   "role": "neutralSoldier",
+   "level": 2,
+   "race": "test:race/wild",
+   "subrace": "neutral",
+   "branch": "fighter",
+   "small": false,
+   "male": true,
+   "hireCost": {
+    "gold": 350
+   },
+   "attack": "test:attack/wild-ogre",
+   "attacksTwice": false,
+   "hitPoints": 260,
+   "armor": 10,
+   "regeneration": 5,
+   "reviveCost": {
+    "gold": 175
+   },
+   "healCost": {
+    "gold": 1
+   },
+   "trainingCost": {
+    "gold": 4
+   },
+   "xpForKill": 80,
+   "xpForNextLevel": 300,
+   "growth": {
+    "early": "test:growth/wild-ogre",
+    "switchLevel": 10,
+    "late": "test:growth/wild-ogre"
+   },
+   "deathAnimation": "neutral"
+  },
+  {
+   "id": "test:unit/wild-shaman",
+   "legacyId": "t000uua01b",
+   "role": "neutralSoldier",
+   "level": 1,
+   "race": "test:race/wild",
+   "subrace": "neutral",
+   "branch": "mage",
+   "small": true,
+   "male": true,
+   "hireCost": {
+    "gold": 70
+   },
+   "attack": "test:attack/wild-shaman",
+   "attacksTwice": false,
+   "hitPoints": 45,
+   "armor": 0,
+   "regeneration": 5,
+   "reviveCost": {
+    "gold": 50
+   },
+   "healCost": {
+    "gold": 1
+   },
+   "trainingCost": {
+    "gold": 4
+   },
+   "xpForKill": 20,
+   "xpForNextLevel": 90,
+   "growth": {
+    "early": "test:growth/wild-shaman",
+    "switchLevel": 10,
+    "late": "test:growth/wild-shaman"
+   },
+   "deathAnimation": "neutral"
+  },
+  {
+   "id": "test:unit/wild-chief",
+   "legacyId": "t000uua01c",
+   "role": "neutralLeader",
+   "level": 2,
+   "race": "test:race/wild",
+   "subrace": "neutral",
+   "branch": "hero",
+   "small": true,
+   "male": true,
+   "hireCost": {
+    "gold": 400
+   },
+   "attack": "test:attack/wild-chief",
+   "attacksTwice": false,
+   "hitPoints": 150,
+   "armor": 0,
+   "regeneration": 5,
+   "reviveCost": {
+    "gold": 200
+   },
+   "healCost": {
+    "gold": 1
+   },
+   "trainingCost": {
+    "gold": 4
+   },
+   "xpForKill": 70,
+   "xpForNextLevel": 250,
+   "growth": {
+    "early": "test:growth/wild-chief",
+    "switchLevel": 10,
+    "late": "test:growth/wild-chief"
+   },
+   "deathAnimation": "neutral",
+   "move": 18,
+   "scout": 4,
+   "leadership": 4,
+   "leaderCategory": "fighter"
+  },
+  {
+   "id": "test:unit/wild-bat",
+   "legacyId": "t000uua01d",
+   "role": "neutralSoldier",
+   "level": 1,
+   "race": "test:race/wild",
+   "subrace": "neutral",
+   "branch": "fighter",
+   "small": true,
+   "male": true,
+   "hireCost": {
+    "gold": 40
+   },
+   "attack": "test:attack/wild-bat",
+   "attacksTwice": false,
+   "hitPoints": 40,
+   "armor": 0,
+   "regeneration": 5,
+   "reviveCost": {
+    "gold": 50
+   },
+   "healCost": {
+    "gold": 1
+   },
+   "trainingCost": {
+    "gold": 4
+   },
+   "xpForKill": 12,
+   "xpForNextLevel": 70,
+   "growth": {
+    "early": "test:growth/wild-bat",
+    "switchLevel": 10,
+    "late": "test:growth/wild-bat"
+   },
+   "deathAnimation": "neutral"
+  }
+ ]
+}

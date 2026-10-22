@@ -1,0 +1,25 @@
+; Engine configuration file.
+; Каждая настройка объяснена в docs/godot-architecture.md, раздел «Настройки проекта».
+config_version=5
+
+[application]
+config/name="Disciples"
+run/main_scene="res://scenes/boot/Boot.tscn"
+config/features=PackedStringArray("4.7", "C#")
+
+[autoload]
+GameData="*res://autoload/GameData.cs"
+
+[display]
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/size/window_width_override=1280
+window/size/window_height_override=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[dotnet]
+project/assembly_name="D2.Godot"
+
+[rendering]
+textures/canvas_textures/default_texture_filter=0

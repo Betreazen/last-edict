@@ -1,0 +1,115 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "Disciples: effect",
+ "type": "object",
+ "properties": {
+  "$schema": {
+   "type": "string"
+  },
+  "effects": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "description": "Устойчивый id «мод:вид/имя» — по нему ссылаются другие сущности и моды.",
+      "type": "string"
+     },
+     "legacyId": {
+      "description": "Id оригинала (Gunits.UNIT_ID и т. п.): по нему сущность находят сохранения, карты и журналы. У новых сущностей модов — нет.",
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "behavior": {
+      "description": "Поведение — код эффекта в реестре: damage, drain, drainOverflow, paralyze, petrify, fear, heal, boostDamage, lowerDamage, lowerInitiative, poison, frostbite, blister, revive, cure, summon, drainLevel, giveAttack, doppelganger, transformSelf, transformOther, bestowWards, shatter или поведение мода с кодом.",
+      "type": "string"
+     },
+     "ai": {
+      "description": "Подсказки ИИ: множители силы отряда и приоритета цели.",
+      "type": "object",
+      "properties": {
+       "classFactor": {
+        "type": "number",
+        "default": 1
+       },
+       "classFactorAlt": {
+        "type": "number",
+        "default": 1
+       },
+       "secondFactor": {
+        "type": "number",
+        "default": 1
+       },
+       "fullPower": {
+        "type": "boolean",
+        "default": false
+       },
+       "infiniteCounts": {
+        "type": "boolean",
+        "default": false
+       },
+       "xpFactor": {
+        "type": "integer",
+        "default": 1
+       },
+       "xpRank": {
+        "type": [
+         "integer",
+         "null"
+        ],
+        "default": null
+       }
+      },
+      "additionalProperties": false
+     },
+     "looks": {
+      "description": "Строки и звуки показа: имя класса, подпись действия, звук второй атаки, звук тика.",
+      "type": "object",
+      "properties": {
+       "nameText": {
+        "type": [
+         "string",
+         "null"
+        ],
+        "default": null
+       },
+       "actionText": {
+        "type": [
+         "string",
+         "null"
+        ],
+        "default": null
+       },
+       "sound": {
+        "type": [
+         "string",
+         "null"
+        ],
+        "default": null
+       },
+       "tickSound": {
+        "type": [
+         "string",
+         "null"
+        ],
+        "default": null
+       }
+      },
+      "additionalProperties": false
+     }
+    },
+    "required": [
+     "id",
+     "behavior"
+    ],
+    "additionalProperties": false
+   }
+  }
+ },
+ "required": [
+  "effects"
+ ],
+ "additionalProperties": false
+}

@@ -1,0 +1,305 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "Disciples: globals",
+ "type": "object",
+ "properties": {
+  "$schema": {
+   "type": "string"
+  },
+  "globals": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "description": "Устойчивый id «мод:вид/имя» — по нему ссылаются другие сущности и моды.",
+      "type": "string"
+     },
+     "legacyId": {
+      "description": "Id оригинала (Gunits.UNIT_ID и т. п.): по нему сущность находят сохранения, карты и журналы. У новых сущностей модов — нет.",
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "battle": {
+      "type": "object",
+      "properties": {
+       "initiativeRandom": {
+        "description": "Случайная прибавка к инициативе (0…).",
+        "type": "integer"
+       },
+       "damageRandom": {
+        "description": "Случайная прибавка к урону.",
+        "type": "integer"
+       },
+       "rounds": {
+        "type": "integer"
+       },
+       "break": {
+        "type": "integer"
+       },
+       "breakModifier": {
+        "type": "integer"
+       },
+       "boostDamagePercent": {
+        "description": "Усиление урона по уровням, %.",
+        "type": "array",
+        "items": {
+         "type": "integer"
+        }
+       },
+       "lowerDamagePercent": {
+        "description": "Ослабление урона по уровням, %.",
+        "type": "array",
+        "items": {
+         "type": "integer"
+        }
+       },
+       "lowerInitiativePercent": {
+        "description": "Замедление инициативы, %.",
+        "type": "integer"
+       },
+       "defendBonus": {
+        "description": "Прибавка брони при защите, %.",
+        "type": "integer"
+       }
+      },
+      "additionalProperties": false
+     },
+     "thieves": {
+      "type": "object",
+      "properties": {
+       "morale": {
+        "type": "array",
+        "items": {
+         "type": "integer"
+        }
+       },
+       "spyDiscovery": {
+        "description": "Шанс раскрыть шпиона в начале хода, %.",
+        "type": "integer"
+       },
+       "poisonStack": {
+        "type": "integer"
+       },
+       "poisonCity": {
+        "type": "integer"
+       },
+       "bribe": {
+        "type": "integer"
+       },
+       "stealRace": {
+        "type": "integer"
+       },
+       "stealNeutral": {
+        "type": "integer"
+       },
+       "riotMin": {
+        "type": "integer"
+       },
+       "riotMax": {
+        "type": "integer"
+       },
+       "riotDamage": {
+        "type": "integer"
+       }
+      },
+      "additionalProperties": false
+     },
+     "land": {
+      "type": "object",
+      "properties": {
+       "capturePercent": {
+        "type": "integer"
+       },
+       "capital": {
+        "type": "integer"
+       },
+       "cities": {
+        "type": "array",
+        "items": {
+         "type": "integer"
+        }
+       },
+       "rodCost": {
+        "type": [
+         "object",
+         "null"
+        ],
+        "additionalProperties": {
+         "type": "integer"
+        }
+       },
+       "rodRange": {
+        "type": "integer"
+       }
+      },
+      "additionalProperties": false
+     },
+     "diplomacy": {
+      "type": "object",
+      "properties": {
+       "peace": {
+        "type": "integer"
+       },
+       "war": {
+        "type": "integer"
+       },
+       "neutral": {
+        "type": "integer"
+       },
+       "goldPerPoint": {
+        "type": "integer"
+       },
+       "makeAlly": {
+        "type": "integer"
+       },
+       "attackStack": {
+        "type": "integer"
+       },
+       "attackFort": {
+        "type": "integer"
+       },
+       "attackAtPeace": {
+        "type": "integer"
+       },
+       "rodDestroyed": {
+        "type": "integer"
+       },
+       "refuseAlly": {
+        "type": "integer"
+       },
+       "breakAlly": {
+        "type": "integer"
+       },
+       "nobleAction": {
+        "type": "integer"
+       },
+       "allianceBreakChance": {
+        "type": "integer"
+       },
+       "allianceBreakTurn": {
+        "type": "integer"
+       }
+      },
+      "additionalProperties": false
+     },
+     "difficulty": {
+      "type": "object",
+      "properties": {
+       "startBankPercent": {
+        "description": "Стартовая казна человека, %.",
+        "type": "array",
+        "items": {
+         "type": "integer"
+        }
+       },
+       "incomePercent": {
+        "description": "Надбавка дохода, %.",
+        "type": "array",
+        "items": {
+         "type": "integer"
+        }
+       }
+      },
+      "additionalProperties": false
+     },
+     "ai": {
+      "type": "object",
+      "properties": {
+       "cityArmor": {
+        "description": "Броня деревень по уровням для оценки силы.",
+        "type": "array",
+        "items": {
+         "type": "integer"
+        }
+       },
+       "capitalArmor": {
+        "type": "integer"
+       },
+       "guardRange": {
+        "type": "integer"
+       },
+       "partyRange": {
+        "type": "integer"
+       },
+       "locationRange": {
+        "type": "integer"
+       },
+       "constructionUrgency": {
+        "type": "integer"
+       }
+      },
+      "additionalProperties": false
+     },
+     "economy": {
+      "type": "object",
+      "properties": {
+       "sellRatio": {
+        "type": "integer"
+       },
+       "crystalProfit": {
+        "type": "integer"
+       },
+       "ruinRegeneration": {
+        "type": "integer"
+       }
+      },
+      "additionalProperties": false
+     },
+     "heroes": {
+      "type": "object",
+      "properties": {
+       "weaponMaster": {
+        "type": "integer"
+       },
+       "maxAbilities": {
+        "type": "integer"
+       },
+       "warlordRegeneration": {
+        "description": "Прибавка лечения лорда-воина.",
+        "type": "integer"
+       },
+       "talismanCharges": {
+        "type": "integer"
+       }
+      },
+      "additionalProperties": false
+     },
+     "spells": {
+      "type": "object",
+      "properties": {
+       "areaPowerPercent": {
+        "description": "Сила по расстоянию от центра, %.",
+        "type": "array",
+        "items": {
+         "type": "integer"
+        }
+       },
+       "gainOnCapture": {
+        "description": "Доля заклинаний, получаемых со взятой столицей, %.",
+        "type": "integer"
+       }
+      },
+      "additionalProperties": false
+     },
+     "tutorial": {
+      "type": [
+       "string",
+       "null"
+      ]
+     }
+    },
+    "required": [
+     "id"
+    ],
+    "additionalProperties": false
+   }
+  }
+ },
+ "required": [
+  "globals"
+ ],
+ "additionalProperties": false
+}

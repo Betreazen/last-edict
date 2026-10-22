@@ -1,0 +1,51 @@
+# Стиль проекта как он есть (не шаблон по умолчанию): плотный код — однострочные case, операторы и блоки в одну строку.
+# Концы строк не задаются: в git LF, в рабочей копии Windows — CRLF (core.autocrlf); кодировка — как у файла (часть с BOM).
+root = true
+
+[*]
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+
+[*.{json,yml,yaml,xml,csproj,props,targets,slnx}]
+indent_size = 2
+
+[*.cs]
+csharp_preserve_single_line_statements = true
+csharp_preserve_single_line_blocks = true
+csharp_new_line_before_members_in_object_initializers = false
+csharp_new_line_before_members_in_anonymous_types = false
+csharp_indent_case_contents_when_block = false
+
+# Анализаторы (включаются под CI, Directory.Build.props). Приглушённое — с причиной.
+# Имена из предметной области: поля журнала зонда и движка (Object, Ptr, Impl, DestroyedStack, IRng.Next).
+dotnet_diagnostic.CA1711.severity = none
+dotnet_diagnostic.CA1716.severity = none
+dotnet_diagnostic.CA1720.severity = none
+# Подчёркивания в именах тестов (Метод_Условие) — соглашение проекта.
+dotnet_diagnostic.CA1707.severity = none
+# Тесты и скрипты Godot живут в глобальном пространстве имён.
+dotnet_diagnostic.CA1050.severity = none
+# Подсказки скорости и стиля — повод для профиля, а не для красной сборки (сначала замер, потом правка).
+dotnet_diagnostic.CA1805.severity = suggestion
+dotnet_diagnostic.CA1822.severity = suggestion
+dotnet_diagnostic.CA1826.severity = suggestion
+dotnet_diagnostic.CA1827.severity = suggestion
+dotnet_diagnostic.CA1846.severity = suggestion
+dotnet_diagnostic.CA1859.severity = suggestion
+dotnet_diagnostic.CA1861.severity = suggestion
+dotnet_diagnostic.CA1862.severity = suggestion
+# Открытые поля — у записей данных и снимков журнала.
+dotnet_diagnostic.CA1051.severity = suggestion
+
+# Тесты: целые числа в харнессах разбираются и печатаются без культуры — для int она ничего не меняет.
+[{tests/unit/Engine.Play.Tests,tests/unit/Engine.Rules.Tests,tests}/**.cs]
+dotnet_diagnostic.CA1305.severity = none
+
+# Godot: переопределения _Input/_UnhandledInput называют параметр не @event, как в базовом классе.
+[godot/**.cs]
+dotnet_diagnostic.CA1725.severity = none
+
+# Сгенерированный разборщик .sg (Kaitai).
+[src/Import.Legacy.Formats/Sg/Sg.g.cs]
+generated_code = true

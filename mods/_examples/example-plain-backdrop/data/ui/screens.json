@@ -1,0 +1,42 @@
+[
+  {
+    "Id": "DLG_ACTION_RESULT",
+    "Design": { "X": 0, "Y": 0, "Width": 800, "Height": 600 },
+    "Background": "EXAMPLE_BACKDROP",
+    "Cursor": "_CUDEFAUL",
+    "Elements": [
+      {
+        "Id": "BTN_YES",
+        "Kind": "Button",
+        "Rect": { "X": 376, "Y": 480, "Width": 49, "Height": 94 },
+        "Anchor": "Bottom",
+        "Sprites": {
+          "Normal": "DLG_ACTION_RESULT_SEAL_OK_N",
+          "Hover": "DLG_ACTION_RESULT_SEAL_OK_H",
+          "Pressed": "DLG_ACTION_RESULT_SEAL_OK_C",
+          "Disabled": "DLG_ACTION_RESULT_SEAL_OK_N"
+        },
+        "TextId": "X100TA0020",
+        "Hotkeys": [13, 27]
+      },
+      {
+        "Id": "IMG_ACTION",
+        "Kind": "Image",
+        "Rect": { "X": 275, "Y": 110, "Width": 250, "Height": 250 },
+        "Anchor": "Center"
+      },
+      {
+        "Id": "TXT_ACTION_RESULT",
+        "Kind": "Text",
+        "Rect": { "X": 200, "Y": 60, "Width": 400, "Height": 40 },
+        "Anchor": "Top"
+      },
+      {
+        "Id": "TXT_ACTION_RESULT_2",
+        "Kind": "Text",
+        "Rect": { "X": 200, "Y": 380, "Width": 400, "Height": 80 },
+        "Anchor": "Center"
+      }
+    ]
+  }
+]

@@ -1,0 +1,141 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "Disciples: attack",
+ "type": "object",
+ "properties": {
+  "$schema": {
+   "type": "string"
+  },
+  "attacks": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "description": "Устойчивый id «мод:вид/имя» — по нему ссылаются другие сущности и моды.",
+      "type": "string"
+     },
+     "legacyId": {
+      "description": "Id оригинала (Gunits.UNIT_ID и т. п.): по нему сущность находят сохранения, карты и журналы. У новых сущностей модов — нет.",
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "nameText": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "descriptionText": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "initiative": {
+      "type": "integer"
+     },
+     "source": {
+      "enum": [
+       "weapon",
+       "mind",
+       "life",
+       "death",
+       "fire",
+       "water",
+       "earth",
+       "air"
+      ]
+     },
+     "effect": {
+      "description": "Что делает атака — эффект (base:effect/damage, base:effect/heal…). В таблице оригинала — класс CLASS.",
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "power": {
+      "description": "Точность в процентах.",
+      "type": "integer"
+     },
+     "reach": {
+      "enum": [
+       "all",
+       "any",
+       "adjacent"
+      ]
+     },
+     "heal": {
+      "type": [
+       "integer",
+       "null"
+      ]
+     },
+     "damage": {
+      "type": [
+       "integer",
+       "null"
+      ]
+     },
+     "level": {
+      "description": "Уровень эффекта (усиления, ослабления).",
+      "type": [
+       "integer",
+       "null"
+      ]
+     },
+     "altAttack": {
+      "description": "Запасная атака: ею бьёт двойник и превращённый в себя.",
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "infinite": {
+      "description": "Эффект действует до конца боя.",
+      "type": [
+       "boolean",
+       "null"
+      ]
+     },
+     "wardCount": {
+      "type": [
+       "integer",
+       "null"
+      ]
+     },
+     "wards": {
+      "description": "Обереги, которые атака даёт цели.",
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "criticalHit": {
+      "type": [
+       "boolean",
+       "null"
+      ]
+     },
+     "units": {
+      "description": "В кого превращает или кого призывает атака (Gtransf), по порядку таблицы.",
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     }
+    },
+    "required": [
+     "id"
+    ],
+    "additionalProperties": false
+   }
+  }
+ },
+ "required": [
+  "attacks"
+ ],
+ "additionalProperties": false
+}

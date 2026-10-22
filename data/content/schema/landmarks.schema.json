@@ -1,0 +1,70 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "Disciples: landmark",
+ "type": "object",
+ "properties": {
+  "$schema": {
+   "type": "string"
+  },
+  "landmarks": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "description": "Устойчивый id «мод:вид/имя» — по нему ссылаются другие сущности и моды.",
+      "type": "string"
+     },
+     "legacyId": {
+      "description": "Id оригинала (Gunits.UNIT_ID и т. п.): по нему сущность находят сохранения, карты и журналы. У новых сущностей модов — нет.",
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "nameText": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "descriptionText": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "width": {
+      "type": "integer"
+     },
+     "height": {
+      "type": "integer"
+     },
+     "mountain": {
+      "description": "Клетки ориентира не растит земля.",
+      "type": [
+       "boolean",
+       "null"
+      ]
+     },
+     "category": {
+      "enum": [
+       "misc",
+       "building",
+       "structure",
+       "terrain"
+      ]
+     }
+    },
+    "required": [
+     "id"
+    ],
+    "additionalProperties": false
+   }
+  }
+ },
+ "required": [
+  "landmarks"
+ ],
+ "additionalProperties": false
+}

@@ -1,0 +1,132 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "Disciples: item",
+ "type": "object",
+ "properties": {
+  "$schema": {
+   "type": "string"
+  },
+  "items": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "description": "Устойчивый id «мод:вид/имя» — по нему ссылаются другие сущности и моды.",
+      "type": "string"
+     },
+     "legacyId": {
+      "description": "Id оригинала (Gunits.UNIT_ID и т. п.): по нему сущность находят сохранения, карты и журналы. У новых сущностей модов — нет.",
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "category": {
+      "enum": [
+       "armor",
+       "jewel",
+       "weapon",
+       "banner",
+       "potionBoost",
+       "potionHeal",
+       "potionRevive",
+       "potionPermanent",
+       "scroll",
+       "wand",
+       "valuable",
+       "orb",
+       "talisman",
+       "travelItem",
+       "special"
+      ]
+     },
+     "nameText": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "descriptionText": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "image": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "value": {
+      "type": [
+       "object",
+       "null"
+      ],
+      "additionalProperties": {
+       "type": "integer"
+      }
+     },
+     "equipModifier": {
+      "description": "Действует, пока предмет надет.",
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "potionModifier": {
+      "description": "Действие зелья.",
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "potionHeal": {
+      "type": [
+       "integer",
+       "null"
+      ]
+     },
+     "spell": {
+      "description": "Заклинание свитка или посоха.",
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "useCost": {
+      "type": [
+       "object",
+       "null"
+      ],
+      "additionalProperties": {
+       "type": "integer"
+      }
+     },
+     "attack": {
+      "description": "Атака сферы или талисмана.",
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "unit": {
+      "type": [
+       "string",
+       "null"
+      ]
+     }
+    },
+    "required": [
+     "id"
+    ],
+    "additionalProperties": false
+   }
+  }
+ },
+ "required": [
+  "items"
+ ],
+ "additionalProperties": false
+}

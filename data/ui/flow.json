@@ -1,0 +1,2741 @@
+{
+  "Sources": [
+    "20260919-human/passive-001.jsonl",
+    "20260918-probe65/passive-001.jsonl",
+    "20260920-ui/passive-001.jsonl",
+    "20260921-ui/passive-001.jsonl",
+    "20260921-ui/passive-002.jsonl",
+    "20260921-ui/passive-003.jsonl",
+    "20260921-ui/passive-004.jsonl",
+    "20260922-ui/passive-001.jsonl"
+  ],
+  "EngineScreens": [
+    {
+      "Id": "CAnimInterf",
+      "Kind": "fullscreen"
+    },
+    {
+      "Id": "CBatEncyclopediaInterf",
+      "Kind": "popup"
+    },
+    {
+      "Id": "CEncyclopediaPopup",
+      "Kind": "popup"
+    },
+    {
+      "Id": "CLoadingIntf",
+      "Kind": "fullscreen"
+    },
+    {
+      "Id": "CMenuFullScreenAnimSnd",
+      "Kind": "fullscreen"
+    },
+    {
+      "Id": "CMenuHotseatLobbyLoaderInterf",
+      "Kind": "fullscreen"
+    },
+    {
+      "Id": "CMenuLoadSendMessageInterf",
+      "Kind": "fullscreen"
+    },
+    {
+      "Id": "CMenuQuickLoad",
+      "Kind": "menu"
+    }
+  ],
+  "Screens": [
+    {
+      "Id": "CAnimInterf",
+      "Phases": [
+        "Menu"
+      ]
+    },
+    {
+      "Id": "CBatEncyclopediaInterf",
+      "Phases": [
+        "Battle"
+      ],
+      "Edges": [
+        {
+          "Action": "Close",
+          "Seen": 30
+        }
+      ]
+    },
+    {
+      "Id": "CEncyclopediaPopup",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Action": "Close",
+          "Seen": 193
+        }
+      ]
+    },
+    {
+      "Id": "CLoadingIntf",
+      "Phases": [
+        "Menu"
+      ]
+    },
+    {
+      "Id": "CMenuFullScreenAnimSnd",
+      "Phases": [
+        "Menu"
+      ]
+    },
+    {
+      "Id": "CMenuHotseatLobbyLoaderInterf",
+      "Phases": [
+        "Game"
+      ]
+    },
+    {
+      "Id": "CMenuLoadSendMessageInterf",
+      "Phases": [
+        "Game"
+      ]
+    },
+    {
+      "Id": "CMenuQuickLoad",
+      "Phases": [
+        "Game"
+      ]
+    },
+    {
+      "Id": "DLG_ACTION_RESULT",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_YES",
+          "Action": "Goto",
+          "Target": "DLG_ITEM",
+          "Seen": 4
+        },
+        {
+          "Element": "BTN_YES",
+          "Action": "Close",
+          "Seen": 15
+        }
+      ]
+    },
+    {
+      "Id": "DLG_BATTLE_A",
+      "Phases": [
+        "Battle"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_CLOSE",
+          "Action": "Goto",
+          "Target": "DLG_BEGIN_TURN",
+          "Phase": "Game",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_CLOSE",
+          "Action": "Goto",
+          "Target": "DLG_MESSAGE_BOX",
+          "Phase": "Game",
+          "Message": "X005TA0055",
+          "Seen": 3
+        },
+        {
+          "Element": "BTN_CLOSE",
+          "Action": "Goto",
+          "Target": "DLG_MESSAGE_BOX",
+          "Phase": "Game",
+          "Message": "X005TA0611",
+          "Seen": 4
+        },
+        {
+          "Element": "BTN_CLOSE",
+          "Action": "Goto",
+          "Target": "DLG_MESSAGE_BOX",
+          "Phase": "Game",
+          "Message": "X005TA0761",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_CLOSE",
+          "Action": "Goto",
+          "Target": "DLG_MESSAGE_BOX",
+          "Phase": "Game",
+          "Message": "X005TA0775",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_CLOSE",
+          "Action": "Close",
+          "Phase": "Game",
+          "Seen": 56
+        },
+        {
+          "Element": "BTN_DEFEND",
+          "Action": "None",
+          "Seen": 5
+        },
+        {
+          "Element": "TOG_AUTOBATTLE",
+          "Action": "None",
+          "Seen": 63
+        },
+        {
+          "Action": "Open",
+          "Target": "CBatEncyclopediaInterf",
+          "Seen": 32
+        }
+      ]
+    },
+    {
+      "Id": "DLG_BEGIN_TURN",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_OK",
+          "Action": "Goto",
+          "Target": "DLG_EVENT_POPUP",
+          "Seen": 2
+        },
+        {
+          "Element": "BTN_OK",
+          "Action": "Goto",
+          "Target": "DLG_GETINFO_BOX",
+          "Seen": 28
+        },
+        {
+          "Element": "BTN_OK",
+          "Action": "Goto",
+          "Target": "DLG_TURNSUMMARY",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_OK",
+          "Action": "Goto",
+          "Target": "DLG_UPGRADE_LEADER",
+          "Seen": 6
+        },
+        {
+          "Element": "BTN_OK",
+          "Action": "Close",
+          "Seen": 141
+        }
+      ]
+    },
+    {
+      "Id": "DLG_BUILD_STRUCTURE",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_CLOSE",
+          "Action": "Close",
+          "Seen": 9
+        },
+        {
+          "Element": "TOG_ARCHER",
+          "Action": "Panel",
+          "Target": "DLG_E_ARCHER",
+          "Seen": 1
+        },
+        {
+          "Element": "TOG_ARCHER",
+          "Action": "Panel",
+          "Target": "DLG_F_ARCHER",
+          "Seen": 1
+        },
+        {
+          "Element": "TOG_ARCHER",
+          "Action": "Panel",
+          "Target": "DLG_H_ARCHER",
+          "Seen": 1
+        },
+        {
+          "Element": "TOG_ARCHER",
+          "Action": "Panel",
+          "Target": "DLG_M_ARCHER",
+          "Seen": 4
+        },
+        {
+          "Element": "TOG_ARCHER",
+          "Action": "Panel",
+          "Target": "DLG_U_ARCHER",
+          "Seen": 1
+        },
+        {
+          "Element": "TOG_FIGHTER",
+          "Action": "Panel",
+          "Target": "DLG_E_FIGHTER",
+          "Seen": 1
+        },
+        {
+          "Element": "TOG_FIGHTER",
+          "Action": "Panel",
+          "Target": "DLG_F_FIGHTER",
+          "Seen": 1
+        },
+        {
+          "Element": "TOG_FIGHTER",
+          "Action": "Panel",
+          "Target": "DLG_H_FIGHTER",
+          "Seen": 1
+        },
+        {
+          "Element": "TOG_FIGHTER",
+          "Action": "Panel",
+          "Target": "DLG_M_FIGHTER",
+          "Seen": 4
+        },
+        {
+          "Element": "TOG_FIGHTER",
+          "Action": "Panel",
+          "Target": "DLG_U_FIGHTER",
+          "Seen": 1
+        },
+        {
+          "Element": "TOG_MAGE",
+          "Action": "Panel",
+          "Target": "DLG_E_MAGE",
+          "Seen": 1
+        },
+        {
+          "Element": "TOG_MAGE",
+          "Action": "Panel",
+          "Target": "DLG_F_MAGE",
+          "Seen": 1
+        },
+        {
+          "Element": "TOG_MAGE",
+          "Action": "Panel",
+          "Target": "DLG_H_MAGE",
+          "Seen": 2
+        },
+        {
+          "Element": "TOG_MAGE",
+          "Action": "Panel",
+          "Target": "DLG_M_MAGE",
+          "Seen": 5
+        },
+        {
+          "Element": "TOG_MAGE",
+          "Action": "Panel",
+          "Target": "DLG_U_MAGE",
+          "Seen": 1
+        },
+        {
+          "Element": "TOG_OTHER",
+          "Action": "Panel",
+          "Target": "DLG_E_SPECIAL",
+          "Seen": 1
+        },
+        {
+          "Element": "TOG_OTHER",
+          "Action": "Panel",
+          "Target": "DLG_F_SPECIAL",
+          "Seen": 1
+        },
+        {
+          "Element": "TOG_OTHER",
+          "Action": "Panel",
+          "Target": "DLG_H_SPECIAL",
+          "Seen": 1
+        },
+        {
+          "Element": "TOG_OTHER",
+          "Action": "Panel",
+          "Target": "DLG_M_SPECIAL",
+          "Seen": 3
+        },
+        {
+          "Element": "TOG_OTHER",
+          "Action": "Panel",
+          "Target": "DLG_U_SPECIAL",
+          "Seen": 1
+        },
+        {
+          "Element": "TOG_SPECIAL",
+          "Action": "Panel",
+          "Target": "DLG_E_OTHER",
+          "Seen": 1
+        },
+        {
+          "Element": "TOG_SPECIAL",
+          "Action": "Panel",
+          "Target": "DLG_F_OTHER",
+          "Seen": 1
+        },
+        {
+          "Element": "TOG_SPECIAL",
+          "Action": "Panel",
+          "Target": "DLG_H_OTHER",
+          "Seen": 2
+        },
+        {
+          "Element": "TOG_SPECIAL",
+          "Action": "Panel",
+          "Target": "DLG_M_OTHER",
+          "Seen": 5
+        },
+        {
+          "Element": "TOG_SPECIAL",
+          "Action": "Panel",
+          "Target": "DLG_U_OTHER",
+          "Seen": 1
+        },
+        {
+          "Action": "Open",
+          "Target": "CEncyclopediaPopup",
+          "Seen": 26
+        },
+        {
+          "Action": "Open",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0239",
+          "Seen": 1
+        },
+        {
+          "Action": "Open",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0240",
+          "Seen": 13
+        }
+      ]
+    },
+    {
+      "Id": "DLG_CAPITAL",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_BACK",
+          "Action": "Goto",
+          "Target": "DLG_STRATEGIC",
+          "Seen": 33
+        },
+        {
+          "Element": "BTN_BUILD_STRUCTURE",
+          "Action": "Open",
+          "Target": "DLG_BUILD_STRUCTURE",
+          "Seen": 22
+        },
+        {
+          "Element": "BTN_RESEARCH_SPELL",
+          "Action": "Open",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0405",
+          "Seen": 3
+        },
+        {
+          "Element": "BTN_RESEARCH_SPELL",
+          "Action": "Open",
+          "Target": "DLG_RESEARCH_SPELL",
+          "Seen": 9
+        },
+        {
+          "Element": "BTN_UNITS",
+          "Action": "Open",
+          "Target": "DLG_CITY_STACK",
+          "Seen": 18
+        },
+        {
+          "Action": "Open",
+          "Target": "DLG_CITY_STACK",
+          "Seen": 3
+        }
+      ]
+    },
+    {
+      "Id": "DLG_CARRY_ITEM_LEADER",
+      "Phases": [
+        "Menu"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_CLOSE",
+          "Action": "Open",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0295",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_CLOSE",
+          "Action": "Open",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0297",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_LEADER_DOWN",
+          "Action": "None",
+          "Seen": 2
+        },
+        {
+          "Element": "LBOX_ITEMS",
+          "Action": "None",
+          "Seen": 10
+        },
+        {
+          "Element": "LBOX_LEADER",
+          "Action": "None",
+          "Seen": 5
+        }
+      ]
+    },
+    {
+      "Id": "DLG_CAST_SPELL",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_CAST_SPELL",
+          "Action": "Goto",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0702",
+          "Seen": 2
+        },
+        {
+          "Element": "BTN_CAST_SPELL",
+          "Action": "Close",
+          "Seen": 6
+        },
+        {
+          "Element": "BTN_CLOSE",
+          "Action": "Close",
+          "Seen": 3
+        },
+        {
+          "Element": "LBOX_SPELL_LIST",
+          "Action": "Goto",
+          "Target": "DLG_GIVE_ITEM_SPELL",
+          "Seen": 1
+        },
+        {
+          "Element": "LBOX_SPELL_LIST",
+          "Action": "None",
+          "Seen": 21
+        },
+        {
+          "Element": "TOG_LEVEL2",
+          "Action": "None",
+          "Seen": 2
+        },
+        {
+          "Element": "TOG_LEVEL4",
+          "Action": "None",
+          "Seen": 1
+        },
+        {
+          "Element": "TOG_LEVEL5",
+          "Action": "None",
+          "Seen": 1
+        }
+      ]
+    },
+    {
+      "Id": "DLG_CHAT",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_CLOSE",
+          "Action": "Close",
+          "Seen": 7
+        },
+        {
+          "Element": "BTN_SEND",
+          "Action": "None",
+          "Seen": 8
+        }
+      ]
+    },
+    {
+      "Id": "DLG_CHAT_AI",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_OK",
+          "Action": "Goto",
+          "Target": "DLG_BEGIN_TURN",
+          "Seen": 2
+        },
+        {
+          "Element": "BTN_OK",
+          "Action": "Goto",
+          "Target": "DLG_CHAT_AI",
+          "Seen": 4
+        },
+        {
+          "Element": "BTN_OK",
+          "Action": "Goto",
+          "Target": "DLG_DIPLO_BOX",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_OK",
+          "Action": "Close",
+          "Seen": 22
+        }
+      ]
+    },
+    {
+      "Id": "DLG_CHOOSE_LORD",
+      "Phases": [
+        "Menu"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_BACK",
+          "Action": "Goto",
+          "Target": "DLG_MAIN_MENU",
+          "Via": "DLG_MENU_TRANS",
+          "Seen": 6
+        },
+        {
+          "Element": "BTN_CONTINUE",
+          "Action": "Goto",
+          "Target": "DLG_SCENARIO_BRIEFING",
+          "Via": "DLG_WAIT",
+          "Phase": "Game",
+          "Seen": 23
+        },
+        {
+          "Element": "BTN_CONTINUE",
+          "Action": "None",
+          "Seen": 2
+        },
+        {
+          "Element": "BTN_IMPORT_LEADER",
+          "Action": "Open",
+          "Target": "DLG_IMPORT_LEADER",
+          "Seen": 5
+        },
+        {
+          "Element": "TOG_LORD_DIPLOMAT",
+          "Action": "None",
+          "Seen": 8
+        },
+        {
+          "Element": "TOG_LORD_MAGE",
+          "Action": "None",
+          "Seen": 4
+        },
+        {
+          "Element": "TOG_LORD_WARRIOR",
+          "Action": "None",
+          "Seen": 1
+        },
+        {
+          "Action": "Goto",
+          "Target": "DLG_SCENARIO_BRIEFING",
+          "Via": "DLG_WAIT",
+          "Phase": "Game",
+          "Seen": 2
+        }
+      ]
+    },
+    {
+      "Id": "DLG_CHOOSE_RACE",
+      "Phases": [
+        "Menu"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_BACK",
+          "Action": "Goto",
+          "Target": "DLG_MAIN_MENU",
+          "Via": "DLG_MENU_TRANS",
+          "Seen": 2
+        },
+        {
+          "Element": "BTN_CONTINUE",
+          "Action": "Goto",
+          "Target": "DLG_CHOOSE_LORD",
+          "Via": "DLG_MENU_TRANS",
+          "Seen": 31
+        },
+        {
+          "Element": "BTN_PREV",
+          "Action": "None",
+          "Seen": 8
+        }
+      ]
+    },
+    {
+      "Id": "DLG_CHOOSE_SKIRMISH",
+      "Phases": [
+        "Menu"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_BACK",
+          "Action": "Goto",
+          "Target": "DLG_MAIN_MENU",
+          "Via": "DLG_MENU_TRANS",
+          "Seen": 3
+        },
+        {
+          "Element": "BTN_GAME_LIST_DOWN",
+          "Action": "None",
+          "Seen": 1389
+        },
+        {
+          "Element": "BTN_GAME_LIST_UP",
+          "Action": "None",
+          "Seen": 171
+        },
+        {
+          "Element": "BTN_LOAD",
+          "Action": "Goto",
+          "Target": "DLG_CHOOSE_RACE",
+          "Via": "DLG_MENU_TRANS",
+          "Seen": 24
+        },
+        {
+          "Element": "TLBOX_GAME_SLOT",
+          "Action": "None",
+          "Seen": 1606
+        }
+      ]
+    },
+    {
+      "Id": "DLG_CINEMATIC",
+      "Phases": [
+        "Menu"
+      ],
+      "Edges": [
+        {
+          "Action": "Goto",
+          "Target": "DLG_MAIN_MENU",
+          "Via": "DLG_MENU_TRANS",
+          "Seen": 1
+        }
+      ]
+    },
+    {
+      "Id": "DLG_CITY_STACK",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_CLOSE",
+          "Action": "Close",
+          "Seen": 23
+        },
+        {
+          "Element": "BTN_EXIT_CITY",
+          "Action": "Goto",
+          "Target": "DLG_STRATEGIC",
+          "Seen": 14
+        },
+        {
+          "Element": "BTN_GROW_CITY",
+          "Action": "Open",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0216",
+          "Seen": 1
+        },
+        {
+          "Element": "MLBOX_LINVENTORY",
+          "Action": "None",
+          "Seen": 2
+        },
+        {
+          "Element": "MLBOX_RINVENTORY",
+          "Action": "None",
+          "Seen": 19
+        },
+        {
+          "Element": "TOG_HEAL",
+          "Action": "None",
+          "Seen": 4
+        },
+        {
+          "Element": "TOG_PAPERDOLL",
+          "Action": "Panel",
+          "Target": "DLG_PAPERDOLL",
+          "Seen": 3
+        },
+        {
+          "Element": "TOG_PAPERDOLL",
+          "Action": "None",
+          "Seen": 2
+        },
+        {
+          "Element": "TOG_REVIVE",
+          "Action": "None",
+          "Seen": 1
+        },
+        {
+          "Action": "Open",
+          "Target": "CEncyclopediaPopup",
+          "Seen": 18
+        },
+        {
+          "Action": "Open",
+          "Target": "DLG_HIRE_LEADER_2",
+          "Seen": 17
+        },
+        {
+          "Action": "Open",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0226",
+          "Seen": 1
+        },
+        {
+          "Action": "Open",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0227",
+          "Seen": 3
+        },
+        {
+          "Action": "Open",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0509",
+          "Seen": 1
+        }
+      ]
+    },
+    {
+      "Id": "DLG_CREDITS",
+      "Phases": [
+        "Menu"
+      ],
+      "Edges": [
+        {
+          "Action": "Goto",
+          "Target": "DLG_MAIN_MENU",
+          "Via": "DLG_MENU_TRANS",
+          "Seen": 1
+        }
+      ]
+    },
+    {
+      "Id": "DLG_DIPLOMACY",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_BACK",
+          "Action": "Goto",
+          "Target": "DLG_STRATEGIC",
+          "Seen": 6
+        },
+        {
+          "Element": "BTN_GIVE_RESS",
+          "Action": "Open",
+          "Target": "DLG_GIVE_RESOURCE",
+          "Seen": 2
+        },
+        {
+          "Element": "BTN_TRADE_ITEM",
+          "Action": "Open",
+          "Target": "DLG_TRADE_ITEM",
+          "Seen": 4
+        },
+        {
+          "Element": "BTN_TRADE_SPELL",
+          "Action": "Open",
+          "Target": "DLG_CAST_SPELL",
+          "Seen": 1
+        },
+        {
+          "Action": "Open",
+          "Target": "CEncyclopediaPopup",
+          "Seen": 2
+        }
+      ]
+    },
+    {
+      "Id": "DLG_DIPLO_BOX",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_OK",
+          "Action": "Goto",
+          "Target": "DLG_CHAT_AI",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_OK2",
+          "Action": "Goto",
+          "Target": "DLG_CHAT_AI",
+          "Seen": 1
+        }
+      ]
+    },
+    {
+      "Id": "DLG_END_WIN_LOSE_",
+      "Phases": [
+        "Menu"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_CLOSE",
+          "Action": "Goto",
+          "Target": "DLG_FAKE_CARRY_OVER",
+          "Seen": 2
+        },
+        {
+          "Element": "BTN_CLOSE",
+          "Action": "Goto",
+          "Target": "DLG_MAIN_MENU",
+          "Via": "CAnimInterf",
+          "Seen": 2
+        },
+        {
+          "Element": "BTN_CLOSE",
+          "Action": "Goto",
+          "Target": "DLG_MAIN_MENU",
+          "Via": "DLG_WAIT",
+          "Seen": 2
+        }
+      ]
+    },
+    {
+      "Id": "DLG_EVENT_POPUP",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_RIGHTSIDE",
+          "Action": "Goto",
+          "Target": "DLG_EVENT_POPUP",
+          "Seen": 42
+        },
+        {
+          "Element": "BTN_RIGHTSIDE",
+          "Action": "Close",
+          "Seen": 34
+        },
+        {
+          "Element": "BTN_RIGHTSIDE",
+          "Action": "None",
+          "Seen": 76
+        }
+      ]
+    },
+    {
+      "Id": "DLG_EXCHANGE",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_CLOSE",
+          "Action": "Close",
+          "Seen": 2
+        },
+        {
+          "Element": "MLBOX_LINVENTORY",
+          "Action": "None",
+          "Seen": 2
+        },
+        {
+          "Element": "MLBOX_RINVENTORY",
+          "Action": "None",
+          "Seen": 1
+        },
+        {
+          "Action": "Open",
+          "Target": "CEncyclopediaPopup",
+          "Seen": 2
+        }
+      ]
+    },
+    {
+      "Id": "DLG_FAKE_CARRY_OVER",
+      "Phases": [
+        "Menu"
+      ]
+    },
+    {
+      "Id": "DLG_GETINFO_BOX",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_CLOSE",
+          "Action": "Goto",
+          "Target": "DLG_EVENT_POPUP",
+          "Seen": 19
+        },
+        {
+          "Element": "BTN_CLOSE",
+          "Action": "Goto",
+          "Target": "DLG_UPGRADE_LEADER",
+          "Seen": 9
+        },
+        {
+          "Element": "BTN_CLOSE",
+          "Action": "Close",
+          "Seen": 4
+        }
+      ]
+    },
+    {
+      "Id": "DLG_GIVE_ITEM_SPELL",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_DOWN",
+          "Action": "None",
+          "Seen": 6
+        },
+        {
+          "Element": "BTN_OK",
+          "Action": "Goto",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0037",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_OK",
+          "Action": "Goto",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0038",
+          "Seen": 2
+        }
+      ]
+    },
+    {
+      "Id": "DLG_GIVE_RESOURCE",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_OK",
+          "Action": "Goto",
+          "Target": "DLG_CHAT_AI",
+          "Seen": 2
+        },
+        {
+          "Element": "BTN_UP",
+          "Action": "None",
+          "Seen": 14
+        }
+      ]
+    },
+    {
+      "Id": "DLG_HIRE_LEADER_2",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_CLOSE",
+          "Action": "Close",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_HIRE_LEADER",
+          "Action": "Open",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0285",
+          "Seen": 7
+        },
+        {
+          "Element": "BTN_HIRE_LEADER",
+          "Action": "Open",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0451",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_HIRE_LEADER",
+          "Action": "Goto",
+          "Target": "DLG_GETINFO_BOX",
+          "Seen": 4
+        },
+        {
+          "Element": "BTN_HIRE_LEADER",
+          "Action": "Close",
+          "Seen": 5
+        },
+        {
+          "Element": "LBOX_LEADER",
+          "Action": "None",
+          "Seen": 29
+        }
+      ]
+    },
+    {
+      "Id": "DLG_HOST",
+      "Phases": [
+        "Menu"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_BACK",
+          "Action": "Goto",
+          "Target": "DLG_MAIN_MENU",
+          "Via": "DLG_MENU_TRANS",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_LOAD",
+          "Action": "None",
+          "Seen": 1
+        },
+        {
+          "Action": "Goto",
+          "Target": "DLG_LOBBY",
+          "Seen": 1
+        }
+      ]
+    },
+    {
+      "Id": "DLG_HOTSEAT",
+      "Phases": [
+        "Menu"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_LOAD_SKIRMISH",
+          "Action": "Goto",
+          "Target": "DLG_LOAD",
+          "Via": "DLG_MENU_TRANS",
+          "Seen": 2
+        },
+        {
+          "Element": "BTN_NEW_SKIRMISH",
+          "Action": "Goto",
+          "Target": "DLG_HOTSEAT_NEW",
+          "Via": "DLG_MENU_TRANS",
+          "Seen": 3
+        }
+      ]
+    },
+    {
+      "Id": "DLG_HOTSEAT_LOBBY",
+      "Phases": [
+        "Menu"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_CANCEL",
+          "Action": "Goto",
+          "Target": "DLG_MAIN_MENU",
+          "Via": "DLG_MENU_TRANS",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_OK",
+          "Action": "Goto",
+          "Target": "CMenuHotseatLobbyLoaderInterf",
+          "Via": "DLG_WAIT",
+          "Phase": "Game",
+          "Seen": 1
+        }
+      ]
+    },
+    {
+      "Id": "DLG_HOTSEAT_LOBBY_RACE",
+      "Phases": [
+        "Menu"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_LORD",
+          "Action": "None",
+          "Seen": 1
+        },
+        {
+          "Element": "TOG_PLAYERTYPE",
+          "Action": "None",
+          "Seen": 2
+        }
+      ]
+    },
+    {
+      "Id": "DLG_HOTSEAT_NEW",
+      "Phases": [
+        "Menu"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_BACK",
+          "Action": "Goto",
+          "Target": "DLG_MAIN_MENU",
+          "Via": "DLG_MENU_TRANS",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_GAME_LIST_DOWN",
+          "Action": "None",
+          "Seen": 38
+        },
+        {
+          "Element": "BTN_LOAD",
+          "Action": "Goto",
+          "Target": "DLG_HOTSEAT_LOBBY",
+          "Via": "DLG_MENU_TRANS",
+          "Seen": 2
+        },
+        {
+          "Element": "TLBOX_GAME_SLOT",
+          "Action": "None",
+          "Seen": 39
+        }
+      ]
+    },
+    {
+      "Id": "DLG_HOTSEAT_POPUP",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_OK",
+          "Action": "Goto",
+          "Target": "DLG_BEGIN_TURN",
+          "Seen": 8
+        }
+      ]
+    },
+    {
+      "Id": "DLG_IMPORT_LEADER",
+      "Phases": [
+        "Menu"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_CANCEL",
+          "Action": "Close",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_OK",
+          "Action": "Open",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0736",
+          "Seen": 4
+        },
+        {
+          "Element": "BTN_VIEW_LEADER",
+          "Action": "Open",
+          "Target": "DLG_VIEW_EXPLEAD",
+          "Seen": 1
+        },
+        {
+          "Element": "LBOX_LEADERS",
+          "Action": "None",
+          "Seen": 7
+        }
+      ]
+    },
+    {
+      "Id": "DLG_ISO_LAND",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_INCOME",
+          "Action": "Open",
+          "Target": "DLG_BEGIN_TURN",
+          "Seen": 4
+        },
+        {
+          "Element": "BTN_RES_PAL",
+          "Action": "Panel",
+          "Target": "DLG_ISO_PAL",
+          "Seen": 2
+        }
+      ]
+    },
+    {
+      "Id": "DLG_ISO_PAL",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_OPTIONS",
+          "Action": "Open",
+          "Target": "DLG_OPTIONS",
+          "Seen": 35
+        },
+        {
+          "Element": "BTN_QUESTLOG",
+          "Action": "Open",
+          "Target": "DLG_QUEST_LOG",
+          "Seen": 3
+        },
+        {
+          "Element": "BTN_REPORT",
+          "Action": "Goto",
+          "Target": "DLG_SCENARIO_BRIEFING",
+          "Seen": 2
+        },
+        {
+          "Element": "BTN_RES_PAL",
+          "Action": "Panel",
+          "Target": "DLG_ISO_LAND",
+          "Seen": 2
+        },
+        {
+          "Element": "TOG_BANNERS",
+          "Action": "None",
+          "Seen": 4
+        }
+      ]
+    },
+    {
+      "Id": "DLG_ITEM",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_OK",
+          "Action": "Goto",
+          "Target": "DLG_ITEM",
+          "Seen": 11
+        },
+        {
+          "Element": "BTN_OK",
+          "Action": "Close",
+          "Seen": 18
+        }
+      ]
+    },
+    {
+      "Id": "DLG_LEADER_PICKER",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_CANCEL",
+          "Action": "Goto",
+          "Target": "DLG_END_WIN_LOSE_",
+          "Phase": "Menu",
+          "Seen": 3
+        },
+        {
+          "Element": "BTN_OK",
+          "Action": "Open",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0726",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_OK",
+          "Action": "Goto",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0727",
+          "Seen": 3
+        },
+        {
+          "Element": "LBOX_LEADERS",
+          "Action": "None",
+          "Seen": 1
+        }
+      ]
+    },
+    {
+      "Id": "DLG_LOAD",
+      "Phases": [
+        "Menu"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_BACK",
+          "Action": "Goto",
+          "Target": "DLG_MAIN_MENU",
+          "Via": "DLG_MENU_TRANS",
+          "Seen": 3
+        },
+        {
+          "Element": "BTN_LOAD",
+          "Action": "Open",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X006TA0033",
+          "Seen": 1
+        }
+      ]
+    },
+    {
+      "Id": "DLG_LOAD_CUSTOM_TOURNEMENT",
+      "Phases": [
+        "Menu"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_BACK",
+          "Action": "Goto",
+          "Target": "DLG_MAIN_MENU",
+          "Via": "DLG_MENU_TRANS",
+          "Seen": 1
+        }
+      ]
+    },
+    {
+      "Id": "DLG_LOAD_GAME",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_LOAD",
+          "Action": "Open",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0402",
+          "Seen": 5
+        },
+        {
+          "Element": "TLBOX_GAME_LIST",
+          "Action": "None",
+          "Seen": 9
+        }
+      ]
+    },
+    {
+      "Id": "DLG_LOAD_NEW_MULTI",
+      "Phases": [
+        "Menu"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_BACK",
+          "Action": "Goto",
+          "Target": "DLG_MAIN_MENU",
+          "Via": "DLG_MENU_TRANS",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_HOST",
+          "Action": "Goto",
+          "Target": "DLG_HOST",
+          "Via": "DLG_MENU_TRANS",
+          "Seen": 2
+        },
+        {
+          "Element": "BTN_JOIN",
+          "Action": "Goto",
+          "Target": "DLG_SESSION",
+          "Via": "DLG_MENU_TRANS",
+          "Seen": 5
+        },
+        {
+          "Element": "BTN_LOAD",
+          "Action": "Goto",
+          "Target": "DLG_LOAD_SKIRMISH",
+          "Via": "DLG_MENU_TRANS",
+          "Seen": 2
+        }
+      ]
+    },
+    {
+      "Id": "DLG_LOAD_SKIRMISH",
+      "Phases": [
+        "Menu"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_LOAD",
+          "Action": "None",
+          "Seen": 2
+        },
+        {
+          "Action": "Goto",
+          "Target": "DLG_LOBBY",
+          "Seen": 2
+        }
+      ]
+    },
+    {
+      "Id": "DLG_LOAD_TOURNEMENT",
+      "Phases": [
+        "Menu"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_BACK",
+          "Action": "Goto",
+          "Target": "DLG_MAIN_MENU",
+          "Via": "DLG_MENU_TRANS",
+          "Seen": 1
+        }
+      ]
+    },
+    {
+      "Id": "DLG_LOBBY",
+      "Phases": [
+        "Menu"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_GOLD_R",
+          "Action": "None",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_LORD",
+          "Action": "None",
+          "Seen": 3
+        },
+        {
+          "Element": "BTN_MANA_R",
+          "Action": "None",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_OK",
+          "Action": "Goto",
+          "Target": "DLG_SCENARIO_BRIEFING",
+          "Via": "DLG_WAIT",
+          "Phase": "Game",
+          "Seen": 3
+        },
+        {
+          "Element": "BTN_PLAYER_L",
+          "Action": "None",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_PLAYER_R",
+          "Action": "None",
+          "Seen": 1
+        }
+      ]
+    },
+    {
+      "Id": "DLG_MAGE",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_CLOSE",
+          "Action": "Close",
+          "Seen": 2
+        },
+        {
+          "Element": "BTN_KNOWN_SPELL",
+          "Action": "Open",
+          "Target": "DLG_CAST_SPELL",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_MAGE_INV_DOWN",
+          "Action": "None",
+          "Seen": 6
+        },
+        {
+          "Element": "BTN_MAGE_INV_UP",
+          "Action": "None",
+          "Seen": 3
+        },
+        {
+          "Element": "LBOX_MAGE_INV",
+          "Action": "Open",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0108",
+          "Seen": 1
+        },
+        {
+          "Element": "LBOX_MAGE_INV",
+          "Action": "None",
+          "Seen": 9
+        },
+        {
+          "Element": "LBOX_SPELL",
+          "Action": "None",
+          "Seen": 2
+        }
+      ]
+    },
+    {
+      "Id": "DLG_MAIN_MENU",
+      "Phases": [
+        "Menu"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_CREDITS",
+          "Action": "Goto",
+          "Target": "DLG_CREDITS",
+          "Via": "CAnimInterf",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_INTRO",
+          "Action": "Goto",
+          "Target": "DLG_CINEMATIC",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_MULTI",
+          "Action": "Goto",
+          "Target": "DLG_PROTOCOL",
+          "Via": "DLG_MENU_TRANS",
+          "Seen": 17
+        },
+        {
+          "Element": "BTN_OPTIONS",
+          "Action": "Open",
+          "Target": "DLG_OPTIONS",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_QUIT",
+          "Action": "Close",
+          "Seen": 4
+        },
+        {
+          "Element": "BTN_SINGLE",
+          "Action": "Goto",
+          "Target": "DLG_SINGLE_PLAYER",
+          "Via": "DLG_MENU_TRANS",
+          "Seen": 41
+        },
+        {
+          "Element": "BTN_TUTORIAL",
+          "Action": "None",
+          "Seen": 12
+        }
+      ]
+    },
+    {
+      "Id": "DLG_MANAGE_STACK",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_CLOSE",
+          "Action": "Close",
+          "Seen": 32
+        },
+        {
+          "Element": "BTN_DOWN_INVENTORY",
+          "Action": "None",
+          "Seen": 25
+        },
+        {
+          "Element": "BTN_PICK_UP_DROP",
+          "Action": "Close",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_UP_INVENTORY",
+          "Action": "None",
+          "Seen": 2
+        },
+        {
+          "Element": "MLBOX_INVENTORY",
+          "Action": "None",
+          "Seen": 71
+        },
+        {
+          "Action": "Open",
+          "Target": "CEncyclopediaPopup",
+          "Seen": 53
+        },
+        {
+          "Action": "Open",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0214",
+          "Seen": 1
+        },
+        {
+          "Action": "Open",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0592",
+          "Seen": 1
+        },
+        {
+          "Action": "Open",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0858",
+          "Seen": 1
+        },
+        {
+          "Action": "Close",
+          "Seen": 5
+        }
+      ]
+    },
+    {
+      "Id": "DLG_MENU_TRANS",
+      "Phases": [
+        "Menu"
+      ]
+    },
+    {
+      "Id": "DLG_MERCENARIES",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_BACK",
+          "Action": "Close",
+          "Seen": 3
+        },
+        {
+          "Element": "BTN_LIST_DOWN",
+          "Action": "None",
+          "Seen": 12
+        },
+        {
+          "Element": "BTN_LIST_UP",
+          "Action": "None",
+          "Seen": 5
+        },
+        {
+          "Element": "LBOX_UNIT_LIST",
+          "Action": "None",
+          "Seen": 19
+        },
+        {
+          "Action": "Open",
+          "Target": "CEncyclopediaPopup",
+          "Seen": 2
+        },
+        {
+          "Action": "Open",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0129",
+          "Seen": 2
+        }
+      ]
+    },
+    {
+      "Id": "DLG_MERCHANT",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_CLOSE",
+          "Action": "Close",
+          "Seen": 5
+        },
+        {
+          "Element": "BTN_LINVENTORY_DOWN",
+          "Action": "None",
+          "Seen": 4
+        },
+        {
+          "Element": "BTN_LINVENTORY_UP",
+          "Action": "None",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_RINVENTORY_DOWN",
+          "Action": "None",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_RINVENTORY_UP",
+          "Action": "None",
+          "Seen": 1
+        },
+        {
+          "Element": "MLBOX_LINVENTORY",
+          "Action": "Open",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0102",
+          "Seen": 2
+        },
+        {
+          "Element": "MLBOX_LINVENTORY",
+          "Action": "None",
+          "Seen": 3
+        },
+        {
+          "Element": "MLBOX_RINVENTORY",
+          "Action": "Open",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0103",
+          "Seen": 4
+        },
+        {
+          "Element": "MLBOX_RINVENTORY",
+          "Action": "None",
+          "Seen": 6
+        },
+        {
+          "Action": "Open",
+          "Target": "CEncyclopediaPopup",
+          "Seen": 3
+        },
+        {
+          "Action": "Open",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0102",
+          "Seen": 1
+        },
+        {
+          "Action": "Open",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0103",
+          "Seen": 1
+        }
+      ]
+    },
+    {
+      "Id": "DLG_MESSAGE_BOX",
+      "Phases": [
+        "Menu",
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_NO",
+          "Action": "Close",
+          "Seen": 5
+        },
+        {
+          "Element": "BTN_OK",
+          "Action": "Goto",
+          "Target": "DLG_BEGIN_TURN",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_OK",
+          "Action": "Goto",
+          "Target": "DLG_END_WIN_LOSE_",
+          "Phase": "Menu",
+          "Seen": 3
+        },
+        {
+          "Element": "BTN_OK",
+          "Action": "Goto",
+          "Target": "DLG_ITEM",
+          "Seen": 2
+        },
+        {
+          "Element": "BTN_OK",
+          "Action": "Goto",
+          "Target": "DLG_LEADER_PICKER",
+          "Seen": 3
+        },
+        {
+          "Element": "BTN_OK",
+          "Action": "Close",
+          "Seen": 29
+        },
+        {
+          "Element": "BTN_YES",
+          "Action": "Goto",
+          "Target": "DLG_BATTLE_A",
+          "Phase": "Battle",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_YES",
+          "Action": "Goto",
+          "Target": "DLG_CHAT_AI",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_YES",
+          "Action": "Goto",
+          "Target": "DLG_LEADER_PICKER",
+          "Seen": 3
+        },
+        {
+          "Element": "BTN_YES",
+          "Action": "Goto",
+          "Target": "DLG_MAIN_MENU",
+          "Via": "DLG_WAIT",
+          "Phase": "Menu",
+          "Seen": 21
+        },
+        {
+          "Element": "BTN_YES",
+          "Action": "Goto",
+          "Target": "DLG_SCENARIO_BRIEFING",
+          "Via": "DLG_WAIT",
+          "Phase": "Game",
+          "Seen": 7
+        },
+        {
+          "Element": "BTN_YES",
+          "Action": "Goto",
+          "Target": "DLG_TRAINING_CONFIRM",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_YES",
+          "Action": "Close",
+          "Seen": 75
+        }
+      ]
+    },
+    {
+      "Id": "DLG_NEW_CUSTOM_TOURNEMENT",
+      "Phases": [
+        "Menu"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_BACK",
+          "Action": "Goto",
+          "Target": "DLG_MAIN_MENU",
+          "Via": "DLG_MENU_TRANS",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_LOAD",
+          "Action": "Goto",
+          "Target": "DLG_CHOOSE_RACE",
+          "Via": "DLG_MENU_TRANS",
+          "Seen": 7
+        },
+        {
+          "Element": "TLBOX_GAME_SLOT",
+          "Action": "None",
+          "Seen": 19
+        }
+      ]
+    },
+    {
+      "Id": "DLG_OFFER",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_ACCEPT",
+          "Action": "Goto",
+          "Target": "DLG_CHAT_AI",
+          "Seen": 1
+        }
+      ]
+    },
+    {
+      "Id": "DLG_OPTIONS",
+      "Phases": [
+        "Menu",
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_CLOSE",
+          "Action": "Close",
+          "Seen": 10
+        },
+        {
+          "Element": "BTN_LOAD",
+          "Action": "Open",
+          "Target": "DLG_LOAD_GAME",
+          "Seen": 5
+        },
+        {
+          "Element": "BTN_QUIT",
+          "Action": "Open",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0089",
+          "Seen": 21
+        },
+        {
+          "Element": "BTN_SAVE",
+          "Action": "Open",
+          "Target": "DLG_SAVE_GAME",
+          "Seen": 1
+        },
+        {
+          "Element": "TOG_CONFIRM_EOT",
+          "Action": "None",
+          "Seen": 1
+        },
+        {
+          "Element": "TOG_PATHBATTLE",
+          "Action": "None",
+          "Seen": 1
+        },
+        {
+          "Element": "TOG_SHOWTURNSUMMARY",
+          "Action": "None",
+          "Seen": 1
+        }
+      ]
+    },
+    {
+      "Id": "DLG_PICKUP_DROP",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_BACK",
+          "Action": "Close",
+          "Seen": 1
+        },
+        {
+          "Element": "MLBOX_RINVENTORY",
+          "Action": "None",
+          "Seen": 1
+        }
+      ]
+    },
+    {
+      "Id": "DLG_PROTOCOL",
+      "Phases": [
+        "Menu"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_BACK",
+          "Action": "Goto",
+          "Target": "DLG_MAIN_MENU",
+          "Via": "DLG_MENU_TRANS",
+          "Seen": 2
+        },
+        {
+          "Element": "BTN_CONTINUE",
+          "Action": "Goto",
+          "Target": "DLG_HOTSEAT",
+          "Via": "DLG_MENU_TRANS",
+          "Seen": 5
+        },
+        {
+          "Element": "BTN_CONTINUE",
+          "Action": "Goto",
+          "Target": "DLG_LOAD_NEW_MULTI",
+          "Via": "DLG_MENU_TRANS",
+          "Seen": 5
+        },
+        {
+          "Element": "BTN_CONTINUE",
+          "Action": "None",
+          "Seen": 5
+        },
+        {
+          "Element": "TLBOX_PROTOCOL",
+          "Action": "None",
+          "Seen": 11
+        },
+        {
+          "Action": "Goto",
+          "Target": "DLG_LOAD_NEW_MULTI",
+          "Via": "DLG_MENU_TRANS",
+          "Seen": 5
+        }
+      ]
+    },
+    {
+      "Id": "DLG_QUEST_LOG",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_CLOSE",
+          "Action": "Close",
+          "Seen": 3
+        }
+      ]
+    },
+    {
+      "Id": "DLG_RESEARCH_SPELL",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_CLOSE",
+          "Action": "Close",
+          "Seen": 9
+        },
+        {
+          "Element": "BTN_NEXT_PAGE",
+          "Action": "None",
+          "Seen": 4
+        },
+        {
+          "Element": "BTN_RESEARCH_SPELL",
+          "Action": "Open",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0056",
+          "Seen": 3
+        },
+        {
+          "Element": "BTN_RESEARCH_SPELL",
+          "Action": "Open",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0058",
+          "Seen": 5
+        },
+        {
+          "Element": "BTN_RESEARCH_SPELL",
+          "Action": "Open",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0059",
+          "Seen": 2
+        },
+        {
+          "Element": "BTN_RESEARCH_SPELL",
+          "Action": "Open",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0252",
+          "Seen": 2
+        },
+        {
+          "Element": "LBOX_SPELL_LIST",
+          "Action": "None",
+          "Seen": 38
+        },
+        {
+          "Element": "TOG_LEVEL1",
+          "Action": "None",
+          "Seen": 1
+        },
+        {
+          "Element": "TOG_LEVEL2",
+          "Action": "None",
+          "Seen": 2
+        },
+        {
+          "Element": "TOG_LEVEL3",
+          "Action": "None",
+          "Seen": 8
+        },
+        {
+          "Element": "TOG_LEVEL4",
+          "Action": "None",
+          "Seen": 5
+        },
+        {
+          "Element": "TOG_LEVEL5",
+          "Action": "None",
+          "Seen": 5
+        },
+        {
+          "Action": "Open",
+          "Target": "CEncyclopediaPopup",
+          "Seen": 2
+        }
+      ]
+    },
+    {
+      "Id": "DLG_SAVE_GAME",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_CLOSE",
+          "Action": "Close",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_DELETE_SLOT",
+          "Action": "Open",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0659",
+          "Seen": 1
+        }
+      ]
+    },
+    {
+      "Id": "DLG_SCENARIO_BRIEFING",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_CONTINUE",
+          "Action": "Goto",
+          "Target": "DLG_STRATEGIC",
+          "Seen": 31
+        },
+        {
+          "Element": "BTN_CONTINUE",
+          "Action": "Goto",
+          "Target": "DLG_STRATEGIC",
+          "Message": "X005TA0079",
+          "Seen": 5
+        },
+        {
+          "Element": "BTN_CONTINUE",
+          "Action": "Goto",
+          "Target": "DLG_STRATEGIC",
+          "Message": "X005TA0828",
+          "Seen": 2
+        }
+      ]
+    },
+    {
+      "Id": "DLG_SESSION",
+      "Phases": [
+        "Menu"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_BACK",
+          "Action": "Goto",
+          "Target": "DLG_MAIN_MENU",
+          "Via": "DLG_MENU_TRANS",
+          "Seen": 4
+        },
+        {
+          "Element": "BTN_BACK",
+          "Action": "None",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_REFRESH",
+          "Action": "None",
+          "Seen": 3
+        },
+        {
+          "Action": "Goto",
+          "Target": "DLG_MAIN_MENU",
+          "Via": "DLG_MENU_TRANS",
+          "Seen": 1
+        }
+      ]
+    },
+    {
+      "Id": "DLG_SINGLE_PLAYER",
+      "Phases": [
+        "Menu"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_BACK",
+          "Action": "Goto",
+          "Target": "DLG_MAIN_MENU",
+          "Via": "DLG_MENU_TRANS",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_LOAD_CUSTOM",
+          "Action": "Goto",
+          "Target": "DLG_LOAD_CUSTOM_TOURNEMENT",
+          "Via": "DLG_MENU_TRANS",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_LOAD_SKIRMISH",
+          "Action": "Goto",
+          "Target": "DLG_LOAD",
+          "Via": "DLG_MENU_TRANS",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_LOAD_TOURNEMENT",
+          "Action": "Goto",
+          "Target": "DLG_LOAD_TOURNEMENT",
+          "Via": "DLG_MENU_TRANS",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_NEW_CUSTOM",
+          "Action": "Goto",
+          "Target": "DLG_NEW_CUSTOM_TOURNEMENT",
+          "Via": "DLG_MENU_TRANS",
+          "Seen": 8
+        },
+        {
+          "Element": "BTN_NEW_SKIRMISH",
+          "Action": "Goto",
+          "Target": "DLG_CHOOSE_SKIRMISH",
+          "Via": "DLG_MENU_TRANS",
+          "Seen": 27
+        },
+        {
+          "Element": "BTN_NEW_TOURNEMENT",
+          "Action": "Goto",
+          "Target": "DLG_CHOOSE_RACE",
+          "Via": "DLG_MENU_TRANS",
+          "Seen": 2
+        }
+      ]
+    },
+    {
+      "Id": "DLG_STEAL_ITEM",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_YES",
+          "Action": "Goto",
+          "Target": "DLG_ACTION_RESULT",
+          "Seen": 1
+        },
+        {
+          "Element": "MLBOX_LIST",
+          "Action": "None",
+          "Seen": 3
+        },
+        {
+          "Action": "Open",
+          "Target": "CEncyclopediaPopup",
+          "Seen": 1
+        }
+      ]
+    },
+    {
+      "Id": "DLG_STEAL_SPELL",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_YES",
+          "Action": "Goto",
+          "Target": "DLG_ACTION_RESULT",
+          "Seen": 3
+        },
+        {
+          "Element": "MLBOX_LIST",
+          "Action": "None",
+          "Seen": 5
+        },
+        {
+          "Action": "Open",
+          "Target": "CEncyclopediaPopup",
+          "Seen": 4
+        }
+      ]
+    },
+    {
+      "Id": "DLG_STRATEGIC",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_CAPITAL",
+          "Action": "Goto",
+          "Target": "DLG_CAPITAL",
+          "Seen": 12
+        },
+        {
+          "Element": "BTN_CAST_SPELL",
+          "Action": "Open",
+          "Target": "DLG_CAST_SPELL",
+          "Seen": 10
+        },
+        {
+          "Element": "BTN_CAST_SPELL",
+          "Action": "Open",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0406",
+          "Seen": 2
+        },
+        {
+          "Element": "BTN_DIPLOMACY",
+          "Action": "Goto",
+          "Target": "DLG_DIPLOMACY",
+          "Seen": 6
+        },
+        {
+          "Element": "BTN_DROP_ROD",
+          "Action": "Panel",
+          "Target": "DLG_DROP_BAG",
+          "Seen": 12
+        },
+        {
+          "Element": "BTN_END_TURN",
+          "Action": "Open",
+          "Target": "DLG_CHAT_AI",
+          "Seen": 12
+        },
+        {
+          "Element": "BTN_END_TURN",
+          "Action": "Open",
+          "Target": "DLG_DIPLO_BOX",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_END_TURN",
+          "Action": "Open",
+          "Target": "DLG_HOTSEAT_POPUP",
+          "Seen": 7
+        },
+        {
+          "Element": "BTN_END_TURN",
+          "Action": "Open",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0000",
+          "Seen": 5
+        },
+        {
+          "Element": "BTN_END_TURN",
+          "Action": "Open",
+          "Target": "DLG_OFFER",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_END_TURN",
+          "Action": "Panel",
+          "Target": "DLG_STRAT_WAIT",
+          "Seen": 119
+        },
+        {
+          "Element": "BTN_EXCHANGE",
+          "Action": "Panel",
+          "Target": "DLG_DROP_BAG",
+          "Seen": 2
+        },
+        {
+          "Element": "BTN_NEXT_LEADER",
+          "Action": "None",
+          "Seen": 363
+        },
+        {
+          "Action": "Open",
+          "Target": "CEncyclopediaPopup",
+          "Seen": 149
+        },
+        {
+          "Action": "Open",
+          "Target": "DLG_ACTION_RESULT",
+          "Seen": 2
+        },
+        {
+          "Action": "Open",
+          "Target": "DLG_BATTLE_A",
+          "Phase": "Battle",
+          "Seen": 65
+        },
+        {
+          "Action": "Open",
+          "Target": "DLG_BEGIN_TURN",
+          "Seen": 134
+        },
+        {
+          "Action": "Open",
+          "Target": "DLG_CHAT",
+          "Seen": 7
+        },
+        {
+          "Action": "Open",
+          "Target": "DLG_CHAT_AI",
+          "Seen": 8
+        },
+        {
+          "Action": "Open",
+          "Target": "DLG_CITY_STACK",
+          "Seen": 16
+        },
+        {
+          "Action": "Open",
+          "Target": "DLG_EVENT_POPUP",
+          "Seen": 4
+        },
+        {
+          "Action": "Open",
+          "Target": "DLG_EXCHANGE",
+          "Seen": 2
+        },
+        {
+          "Action": "Open",
+          "Target": "DLG_ITEM",
+          "Seen": 12
+        },
+        {
+          "Action": "Open",
+          "Target": "DLG_MAGE",
+          "Seen": 2
+        },
+        {
+          "Action": "Open",
+          "Target": "DLG_MANAGE_STACK",
+          "Seen": 38
+        },
+        {
+          "Action": "Open",
+          "Target": "DLG_MERCHANT",
+          "Seen": 5
+        },
+        {
+          "Action": "Open",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0247",
+          "Seen": 1
+        },
+        {
+          "Action": "Open",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0265",
+          "Seen": 11
+        },
+        {
+          "Action": "Open",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0272",
+          "Seen": 10
+        },
+        {
+          "Action": "Open",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0501",
+          "Seen": 2
+        },
+        {
+          "Action": "Open",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0536",
+          "Seen": 1
+        },
+        {
+          "Action": "Open",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0611",
+          "Seen": 1
+        },
+        {
+          "Action": "Open",
+          "Target": "DLG_PICKUP_DROP",
+          "Seen": 1
+        },
+        {
+          "Action": "Open",
+          "Target": "DLG_THIEF_ACTIONS",
+          "Seen": 19
+        },
+        {
+          "Action": "Open",
+          "Target": "DLG_THIEF_NOACTIONS",
+          "Seen": 1
+        },
+        {
+          "Action": "Open",
+          "Target": "DLG_TRAINING_CAMP",
+          "Seen": 1
+        },
+        {
+          "Action": "Goto",
+          "Target": "DLG_CAPITAL",
+          "Seen": 26
+        }
+      ]
+    },
+    {
+      "Id": "DLG_THIEF_ACTIONS",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_CANCEL",
+          "Action": "Open",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0766",
+          "Seen": 2
+        },
+        {
+          "Element": "BTN_OK",
+          "Action": "Open",
+          "Target": "DLG_STEAL_ITEM",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_OK",
+          "Action": "Open",
+          "Target": "DLG_STEAL_SPELL",
+          "Seen": 2
+        },
+        {
+          "Element": "BTN_OK",
+          "Action": "Goto",
+          "Target": "DLG_ACTION_RESULT",
+          "Seen": 13
+        },
+        {
+          "Element": "TLBOX_ACTIONS",
+          "Action": "Open",
+          "Target": "DLG_STEAL_SPELL",
+          "Seen": 1
+        },
+        {
+          "Element": "TLBOX_ACTIONS",
+          "Action": "None",
+          "Seen": 6
+        }
+      ]
+    },
+    {
+      "Id": "DLG_THIEF_NOACTIONS",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_OK",
+          "Action": "Close",
+          "Seen": 1
+        }
+      ]
+    },
+    {
+      "Id": "DLG_TRADE_ITEM",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_CLOSE",
+          "Action": "Close",
+          "Seen": 2
+        },
+        {
+          "Element": "BTN_TRADE",
+          "Action": "Goto",
+          "Target": "DLG_GIVE_ITEM_SPELL",
+          "Seen": 2
+        },
+        {
+          "Element": "MLBOX_RINVENTORY",
+          "Action": "None",
+          "Seen": 4
+        },
+        {
+          "Element": "TLBOX_CITY_LISTING",
+          "Action": "None",
+          "Seen": 7
+        }
+      ]
+    },
+    {
+      "Id": "DLG_TRAINING_CAMP",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_BACK",
+          "Action": "Close",
+          "Seen": 1
+        },
+        {
+          "Element": "TOG_TRAINING",
+          "Action": "None",
+          "Seen": 1
+        },
+        {
+          "Action": "Open",
+          "Target": "CEncyclopediaPopup",
+          "Seen": 1
+        },
+        {
+          "Action": "Open",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0377",
+          "Seen": 1
+        }
+      ]
+    },
+    {
+      "Id": "DLG_TRAINING_CONFIRM",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_OK",
+          "Action": "Close",
+          "Seen": 1
+        }
+      ]
+    },
+    {
+      "Id": "DLG_TURNSUMMARY",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_OK",
+          "Action": "Close",
+          "Seen": 1
+        }
+      ]
+    },
+    {
+      "Id": "DLG_UPGRADE_LEADER",
+      "Phases": [
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_OK",
+          "Action": "Goto",
+          "Target": "DLG_EVENT_POPUP",
+          "Seen": 9
+        },
+        {
+          "Element": "BTN_OK",
+          "Action": "Goto",
+          "Target": "DLG_UPGRADE_LEADER",
+          "Seen": 12
+        },
+        {
+          "Element": "BTN_OK",
+          "Action": "Close",
+          "Seen": 6
+        },
+        {
+          "Element": "TLBOX_BONUS_LIST",
+          "Action": "None",
+          "Seen": 33
+        }
+      ]
+    },
+    {
+      "Id": "DLG_VIEW_EXPLEAD",
+      "Phases": [
+        "Menu"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_CLOSE",
+          "Action": "Close",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_DOWN_ABILITIES",
+          "Action": "None",
+          "Seen": 1
+        },
+        {
+          "Element": "BTN_UP_ABILITIES",
+          "Action": "None",
+          "Seen": 1
+        },
+        {
+          "Element": "LBOX_ITEM_ICON",
+          "Action": "None",
+          "Seen": 2
+        }
+      ]
+    },
+    {
+      "Id": "DLG_WAIT",
+      "Phases": [
+        "Menu",
+        "Game"
+      ]
+    }
+  ]
+}

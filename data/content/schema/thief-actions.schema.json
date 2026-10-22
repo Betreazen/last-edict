@@ -1,0 +1,71 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "Disciples: thief-action",
+ "type": "object",
+ "properties": {
+  "$schema": {
+   "type": "string"
+  },
+  "thiefActions": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "description": "Устойчивый id «мод:вид/имя» — по нему ссылаются другие сущности и моды.",
+      "type": "string"
+     },
+     "legacyId": {
+      "description": "Id оригинала (Gunits.UNIT_ID и т. п.): по нему сущность находят сохранения, карты и журналы. У новых сущностей модов — нет.",
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "kind": {
+      "enum": [
+       "poisonStack",
+       "spy",
+       "stealItem",
+       "assassinate",
+       "misfit",
+       "duel",
+       "poisonCity",
+       "stealSpell",
+       "bribe",
+       "stealGold",
+       "stealMerchant",
+       "stealMage",
+       "spyRuin",
+       "riotCity"
+      ]
+     },
+     "chance": {
+      "description": "Шанс успеха в процентах.",
+      "type": "integer"
+     },
+     "nameText": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "descriptionText": {
+      "type": [
+       "string",
+       "null"
+      ]
+     }
+    },
+    "required": [
+     "id"
+    ],
+    "additionalProperties": false
+   }
+  }
+ },
+ "required": [
+  "thiefActions"
+ ],
+ "additionalProperties": false
+}

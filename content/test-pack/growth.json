@@ -1,0 +1,382 @@
+{
+ "$schema": "../../data/content/schema/growth.schema.json",
+ "growth": [
+  {
+   "id": "test:growth/sun-colossus",
+   "legacyId": "t000DUa001",
+   "hireCost": {
+    "gold": 5
+   },
+   "hitPoints": 70,
+   "xpForKill": 2,
+   "move": 0,
+   "negotiate": 0,
+   "damage": 3,
+   "power": 1
+  },
+  {
+   "id": "test:growth/sun-thief",
+   "legacyId": "t000DUa002",
+   "hireCost": {
+    "gold": 5
+   },
+   "hitPoints": 9,
+   "xpForKill": 2,
+   "move": 0,
+   "negotiate": 0,
+   "damage": 3,
+   "power": 1
+  },
+  {
+   "id": "test:growth/sun-captain",
+   "legacyId": "t000DUa003",
+   "hireCost": {
+    "gold": 5
+   },
+   "hitPoints": 14,
+   "xpForKill": 2,
+   "move": 0,
+   "negotiate": 0,
+   "damage": 3,
+   "power": 1
+  },
+  {
+   "id": "test:growth/sun-ranger",
+   "legacyId": "t000DUa004",
+   "hireCost": {
+    "gold": 5
+   },
+   "hitPoints": 11,
+   "xpForKill": 2,
+   "move": 0,
+   "negotiate": 0,
+   "damage": 3,
+   "power": 1
+  },
+  {
+   "id": "test:growth/sun-sage",
+   "legacyId": "t000DUa005",
+   "hireCost": {
+    "gold": 5
+   },
+   "hitPoints": 9,
+   "xpForKill": 2,
+   "move": 0,
+   "negotiate": 0,
+   "damage": 3,
+   "power": 1
+  },
+  {
+   "id": "test:growth/sun-warden",
+   "legacyId": "t000DUa006",
+   "hireCost": {
+    "gold": 5
+   },
+   "hitPoints": 10,
+   "xpForKill": 2,
+   "move": 0,
+   "negotiate": 0,
+   "damage": 3,
+   "power": 1
+  },
+  {
+   "id": "test:growth/sun-footman",
+   "legacyId": "t000DUa007",
+   "hireCost": {
+    "gold": 5
+   },
+   "hitPoints": 11,
+   "xpForKill": 2,
+   "move": 0,
+   "negotiate": 0,
+   "damage": 3,
+   "power": 1
+  },
+  {
+   "id": "test:growth/sun-bowman",
+   "legacyId": "t000DUa008",
+   "hireCost": {
+    "gold": 5
+   },
+   "hitPoints": 5,
+   "xpForKill": 2,
+   "move": 0,
+   "negotiate": 0,
+   "damage": 3,
+   "power": 1
+  },
+  {
+   "id": "test:growth/sun-adept",
+   "legacyId": "t000DUa009",
+   "hireCost": {
+    "gold": 5
+   },
+   "hitPoints": 5,
+   "xpForKill": 2,
+   "move": 0,
+   "negotiate": 0,
+   "damage": 3,
+   "power": 1
+  },
+  {
+   "id": "test:growth/sun-healer",
+   "legacyId": "t000DUa00a",
+   "hireCost": {
+    "gold": 5
+   },
+   "hitPoints": 5,
+   "xpForKill": 2,
+   "move": 0,
+   "negotiate": 0,
+   "damage": 3,
+   "power": 1
+  },
+  {
+   "id": "test:growth/sun-veteran",
+   "legacyId": "t000DUa00b",
+   "hireCost": {
+    "gold": 5
+   },
+   "hitPoints": 16,
+   "xpForKill": 2,
+   "move": 0,
+   "negotiate": 0,
+   "damage": 3,
+   "power": 1
+  },
+  {
+   "id": "test:growth/sun-marksman",
+   "legacyId": "t000DUa00c",
+   "hireCost": {
+    "gold": 5
+   },
+   "hitPoints": 7,
+   "xpForKill": 2,
+   "move": 0,
+   "negotiate": 0,
+   "damage": 3,
+   "power": 1
+  },
+  {
+   "id": "test:growth/moon-colossus",
+   "legacyId": "t000DUa00d",
+   "hireCost": {
+    "gold": 5
+   },
+   "hitPoints": 70,
+   "xpForKill": 2,
+   "move": 0,
+   "negotiate": 0,
+   "damage": 3,
+   "power": 1
+  },
+  {
+   "id": "test:growth/moon-thief",
+   "legacyId": "t000DUa00e",
+   "hireCost": {
+    "gold": 5
+   },
+   "hitPoints": 9,
+   "xpForKill": 2,
+   "move": 0,
+   "negotiate": 0,
+   "damage": 3,
+   "power": 1
+  },
+  {
+   "id": "test:growth/moon-captain",
+   "legacyId": "t000DUa00f",
+   "hireCost": {
+    "gold": 5
+   },
+   "hitPoints": 14,
+   "xpForKill": 2,
+   "move": 0,
+   "negotiate": 0,
+   "damage": 3,
+   "power": 1
+  },
+  {
+   "id": "test:growth/moon-ranger",
+   "legacyId": "t000DUa010",
+   "hireCost": {
+    "gold": 5
+   },
+   "hitPoints": 11,
+   "xpForKill": 2,
+   "move": 0,
+   "negotiate": 0,
+   "damage": 3,
+   "power": 1
+  },
+  {
+   "id": "test:growth/moon-sage",
+   "legacyId": "t000DUa011",
+   "hireCost": {
+    "gold": 5
+   },
+   "hitPoints": 9,
+   "xpForKill": 2,
+   "move": 0,
+   "negotiate": 0,
+   "damage": 3,
+   "power": 1
+  },
+  {
+   "id": "test:growth/moon-warden",
+   "legacyId": "t000DUa012",
+   "hireCost": {
+    "gold": 5
+   },
+   "hitPoints": 10,
+   "xpForKill": 2,
+   "move": 0,
+   "negotiate": 0,
+   "damage": 3,
+   "power": 1
+  },
+  {
+   "id": "test:growth/moon-footman",
+   "legacyId": "t000DUa013",
+   "hireCost": {
+    "gold": 5
+   },
+   "hitPoints": 11,
+   "xpForKill": 2,
+   "move": 0,
+   "negotiate": 0,
+   "damage": 3,
+   "power": 1
+  },
+  {
+   "id": "test:growth/moon-bowman",
+   "legacyId": "t000DUa014",
+   "hireCost": {
+    "gold": 5
+   },
+   "hitPoints": 5,
+   "xpForKill": 2,
+   "move": 0,
+   "negotiate": 0,
+   "damage": 3,
+   "power": 1
+  },
+  {
+   "id": "test:growth/moon-adept",
+   "legacyId": "t000DUa015",
+   "hireCost": {
+    "gold": 5
+   },
+   "hitPoints": 5,
+   "xpForKill": 2,
+   "move": 0,
+   "negotiate": 0,
+   "damage": 3,
+   "power": 1
+  },
+  {
+   "id": "test:growth/moon-hexer",
+   "legacyId": "t000DUa016",
+   "hireCost": {
+    "gold": 5
+   },
+   "hitPoints": 5,
+   "xpForKill": 2,
+   "move": 0,
+   "negotiate": 0,
+   "damage": 3,
+   "power": 1
+  },
+  {
+   "id": "test:growth/moon-veteran",
+   "legacyId": "t000DUa017",
+   "hireCost": {
+    "gold": 5
+   },
+   "hitPoints": 16,
+   "xpForKill": 2,
+   "move": 0,
+   "negotiate": 0,
+   "damage": 3,
+   "power": 1
+  },
+  {
+   "id": "test:growth/moon-marksman",
+   "legacyId": "t000DUa018",
+   "hireCost": {
+    "gold": 5
+   },
+   "hitPoints": 7,
+   "xpForKill": 2,
+   "move": 0,
+   "negotiate": 0,
+   "damage": 3,
+   "power": 1
+  },
+  {
+   "id": "test:growth/wild-wolf",
+   "legacyId": "t000DUa019",
+   "hireCost": {
+    "gold": 5
+   },
+   "hitPoints": 7,
+   "xpForKill": 2,
+   "move": 0,
+   "negotiate": 0,
+   "damage": 3,
+   "power": 1
+  },
+  {
+   "id": "test:growth/wild-ogre",
+   "legacyId": "t000DUa01a",
+   "hireCost": {
+    "gold": 5
+   },
+   "hitPoints": 26,
+   "xpForKill": 2,
+   "move": 0,
+   "negotiate": 0,
+   "damage": 3,
+   "power": 1
+  },
+  {
+   "id": "test:growth/wild-shaman",
+   "legacyId": "t000DUa01b",
+   "hireCost": {
+    "gold": 5
+   },
+   "hitPoints": 5,
+   "xpForKill": 2,
+   "move": 0,
+   "negotiate": 0,
+   "damage": 3,
+   "power": 1
+  },
+  {
+   "id": "test:growth/wild-chief",
+   "legacyId": "t000DUa01c",
+   "hireCost": {
+    "gold": 5
+   },
+   "hitPoints": 15,
+   "xpForKill": 2,
+   "move": 0,
+   "negotiate": 0,
+   "damage": 3,
+   "power": 1
+  },
+  {
+   "id": "test:growth/wild-bat",
+   "legacyId": "t000DUa01d",
+   "hireCost": {
+    "gold": 5
+   },
+   "hitPoints": 5,
+   "xpForKill": 2,
+   "move": 0,
+   "negotiate": 0,
+   "damage": 3,
+   "power": 1
+  }
+ ]
+}

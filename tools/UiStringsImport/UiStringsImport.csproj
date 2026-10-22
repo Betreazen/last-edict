@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>D2.Tools.UiStringsImport</RootNamespace>
+    <AssemblyName>UiStringsImport</AssemblyName>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Engine.Play\Engine.Play.csproj" />
+    <ProjectReference Include="..\..\src\Game.UiModel\Game.UiModel.csproj" />
+  </ItemGroup>
+
+</Project>

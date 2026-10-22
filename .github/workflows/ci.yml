@@ -1,0 +1,31 @@
+# Сборка и тесты без данных игры: движок проверяется на своём content/test-pack (Р3, docs/own-version-roadmap.md §3.7).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: windows-latest
+    env:
+      CI: "true"
+      DOTNET_NOLOGO: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: Build (analyzers, warnings as errors)
+        run: dotnet build LastEdict.sln -c Release
+      - name: Tests (content/test-pack, snapshots)
+        run: dotnet test LastEdict.sln -c Release --no-build --logger "console;verbosity=minimal"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Python tools
+        run: |
+          python -m pip install --quiet pytest
+          python tools/test_pack.py --check
+          python -m pytest -q tests

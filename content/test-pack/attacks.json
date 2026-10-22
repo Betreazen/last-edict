@@ -1,0 +1,294 @@
+{
+ "$schema": "../../data/content/schema/attacks.schema.json",
+ "attacks": [
+  {
+   "id": "test:attack/sun-colossus",
+   "legacyId": "t000aaa001",
+   "initiative": 50,
+   "source": "weapon",
+   "effect": "test:effect/damage",
+   "power": 85,
+   "reach": "adjacent",
+   "damage": 90
+  },
+  {
+   "id": "test:attack/sun-thief",
+   "legacyId": "t000aaa002",
+   "initiative": 60,
+   "source": "weapon",
+   "effect": "test:effect/damage",
+   "power": 80,
+   "reach": "adjacent",
+   "damage": 20
+  },
+  {
+   "id": "test:attack/sun-captain",
+   "legacyId": "t000aaa003",
+   "initiative": 50,
+   "source": "weapon",
+   "effect": "test:effect/damage",
+   "power": 80,
+   "reach": "adjacent",
+   "damage": 45
+  },
+  {
+   "id": "test:attack/sun-ranger",
+   "legacyId": "t000aaa004",
+   "initiative": 60,
+   "source": "weapon",
+   "effect": "test:effect/damage",
+   "power": 80,
+   "reach": "any",
+   "damage": 30
+  },
+  {
+   "id": "test:attack/sun-sage",
+   "legacyId": "t000aaa005",
+   "initiative": 40,
+   "source": "fire",
+   "effect": "test:effect/damage",
+   "power": 80,
+   "reach": "all",
+   "damage": 25
+  },
+  {
+   "id": "test:attack/sun-warden",
+   "legacyId": "t000aaa006",
+   "initiative": 50,
+   "source": "weapon",
+   "effect": "test:effect/damage",
+   "power": 80,
+   "reach": "any",
+   "damage": 25
+  },
+  {
+   "id": "test:attack/sun-footman",
+   "legacyId": "t000aaa007",
+   "initiative": 50,
+   "source": "weapon",
+   "effect": "test:effect/damage",
+   "power": 80,
+   "reach": "adjacent",
+   "damage": 28
+  },
+  {
+   "id": "test:attack/sun-bowman",
+   "legacyId": "t000aaa008",
+   "initiative": 60,
+   "source": "weapon",
+   "effect": "test:effect/damage",
+   "power": 80,
+   "reach": "any",
+   "damage": 22
+  },
+  {
+   "id": "test:attack/sun-adept",
+   "legacyId": "t000aaa009",
+   "initiative": 40,
+   "source": "air",
+   "effect": "test:effect/damage",
+   "power": 80,
+   "reach": "all",
+   "damage": 14
+  },
+  {
+   "id": "test:attack/sun-healer",
+   "legacyId": "t000aaa00a",
+   "initiative": 20,
+   "source": "life",
+   "effect": "test:effect/heal",
+   "power": 100,
+   "reach": "any",
+   "heal": 25
+  },
+  {
+   "id": "test:attack/sun-veteran",
+   "legacyId": "t000aaa00b",
+   "initiative": 50,
+   "source": "weapon",
+   "effect": "test:effect/damage",
+   "power": 85,
+   "reach": "adjacent",
+   "damage": 45
+  },
+  {
+   "id": "test:attack/sun-marksman",
+   "legacyId": "t000aaa00c",
+   "initiative": 60,
+   "source": "weapon",
+   "effect": "test:effect/damage",
+   "power": 85,
+   "reach": "any",
+   "damage": 38
+  },
+  {
+   "id": "test:attack/moon-colossus",
+   "legacyId": "t000aaa00d",
+   "initiative": 50,
+   "source": "weapon",
+   "effect": "test:effect/damage",
+   "power": 85,
+   "reach": "adjacent",
+   "damage": 90
+  },
+  {
+   "id": "test:attack/moon-thief",
+   "legacyId": "t000aaa00e",
+   "initiative": 60,
+   "source": "weapon",
+   "effect": "test:effect/damage",
+   "power": 80,
+   "reach": "adjacent",
+   "damage": 20
+  },
+  {
+   "id": "test:attack/moon-captain",
+   "legacyId": "t000aaa00f",
+   "initiative": 50,
+   "source": "weapon",
+   "effect": "test:effect/damage",
+   "power": 80,
+   "reach": "adjacent",
+   "damage": 45
+  },
+  {
+   "id": "test:attack/moon-ranger",
+   "legacyId": "t000aaa010",
+   "initiative": 60,
+   "source": "weapon",
+   "effect": "test:effect/damage",
+   "power": 80,
+   "reach": "any",
+   "damage": 30
+  },
+  {
+   "id": "test:attack/moon-sage",
+   "legacyId": "t000aaa011",
+   "initiative": 40,
+   "source": "death",
+   "effect": "test:effect/damage",
+   "power": 80,
+   "reach": "all",
+   "damage": 25
+  },
+  {
+   "id": "test:attack/moon-warden",
+   "legacyId": "t000aaa012",
+   "initiative": 50,
+   "source": "weapon",
+   "effect": "test:effect/damage",
+   "power": 80,
+   "reach": "any",
+   "damage": 25
+  },
+  {
+   "id": "test:attack/moon-footman",
+   "legacyId": "t000aaa013",
+   "initiative": 50,
+   "source": "weapon",
+   "effect": "test:effect/damage",
+   "power": 80,
+   "reach": "adjacent",
+   "damage": 28
+  },
+  {
+   "id": "test:attack/moon-bowman",
+   "legacyId": "t000aaa014",
+   "initiative": 60,
+   "source": "weapon",
+   "effect": "test:effect/damage",
+   "power": 80,
+   "reach": "any",
+   "damage": 22
+  },
+  {
+   "id": "test:attack/moon-adept",
+   "legacyId": "t000aaa015",
+   "initiative": 40,
+   "source": "death",
+   "effect": "test:effect/damage",
+   "power": 80,
+   "reach": "all",
+   "damage": 14
+  },
+  {
+   "id": "test:attack/moon-hexer",
+   "legacyId": "t000aaa016",
+   "initiative": 40,
+   "source": "death",
+   "effect": "test:effect/paralyze",
+   "power": 75,
+   "reach": "any"
+  },
+  {
+   "id": "test:attack/moon-veteran",
+   "legacyId": "t000aaa017",
+   "initiative": 50,
+   "source": "weapon",
+   "effect": "test:effect/damage",
+   "power": 85,
+   "reach": "adjacent",
+   "damage": 45
+  },
+  {
+   "id": "test:attack/moon-marksman",
+   "legacyId": "t000aaa018",
+   "initiative": 60,
+   "source": "weapon",
+   "effect": "test:effect/damage",
+   "power": 85,
+   "reach": "any",
+   "damage": 38
+  },
+  {
+   "id": "test:attack/wild-wolf",
+   "legacyId": "t000aaa019",
+   "initiative": 55,
+   "source": "weapon",
+   "effect": "test:effect/damage",
+   "power": 80,
+   "reach": "adjacent",
+   "damage": 22
+  },
+  {
+   "id": "test:attack/wild-ogre",
+   "legacyId": "t000aaa01a",
+   "initiative": 25,
+   "source": "weapon",
+   "effect": "test:effect/damage",
+   "power": 75,
+   "reach": "adjacent",
+   "damage": 60
+  },
+  {
+   "id": "test:attack/wild-shaman",
+   "legacyId": "t000aaa01b",
+   "initiative": 45,
+   "source": "earth",
+   "effect": "test:effect/poison",
+   "power": 80,
+   "reach": "any",
+   "damage": 12
+  },
+  {
+   "id": "test:attack/wild-chief",
+   "legacyId": "t000aaa01c",
+   "initiative": 50,
+   "source": "weapon",
+   "effect": "test:effect/damage",
+   "power": 80,
+   "reach": "adjacent",
+   "damage": 50
+  },
+  {
+   "id": "test:attack/wild-bat",
+   "legacyId": "t000aaa01d",
+   "initiative": 70,
+   "source": "death",
+   "effect": "test:effect/drain",
+   "power": 80,
+   "reach": "adjacent",
+   "damage": 18
+  }
+ ]
+}

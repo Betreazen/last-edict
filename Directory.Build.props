@@ -1,0 +1,26 @@
+<Project>
+  <!-- Общие настройки всех проектов (src, tests, tools, godot). Целевой фреймворк — в каждом csproj: у проекта Godot свой SDK.
+       Анализаторы и стиль включаются только под CI (переменная окружения CI=true, её ставят GitHub Actions и др.;
+       локально — `$env:CI='true'; dotnet build -c Release`): в цикле правки они не мешают и не замедляют сборку. -->
+  <PropertyGroup>
+    <Deterministic>true</Deterministic>
+    <NuGetAudit>true</NuGetAudit>
+    <NuGetAuditMode>all</NuGetAuditMode>
+    <!-- Уязвимость в чужом пакете не ломает сборку: проверяется отдельным шагом (dotnet package list, ключ vulnerable). -->
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1901;NU1902;NU1903;NU1904</WarningsNotAsErrors>
+  </PropertyGroup>
+
+  <!-- Debug тоже с оптимизацией JIT: игру запускают через Godot без экспорта, а он грузит Debug-сборку (godot/.godot/mono/temp/bin/Debug).
+       Без оптимизации плотные циклы (туман, A*, ход ИИ) в игре в разы медленнее, чем в замерах Release. Символы отладки остаются. -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug' Or '$(Configuration)' == ''">
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(CI)' == 'true'">
+    <!-- Закреплено на 10.0: новый SDK не добавит правил сам. -->
+    <AnalysisLevel>10.0-recommended</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+</Project>

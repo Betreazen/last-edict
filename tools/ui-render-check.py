@@ -1,0 +1,3634 @@
+#!/usr/bin/env python3
+"""ui-render-check.py — сборка экранов порта в PNG без окна и без глаз.
+
+Гоняет сцену godot/scenes/ui/UiScreen.tscn в headless по списку экранов. Моды при этом выключены
+(--no-mods): проверка отвечает за базовый набор данных, а не за то, что лежит в mods/. Сцена сама печатает одну
+строку на экран (нарисовано / пропущено / доля маджентовых точек / доля непрозрачных / текст) и возвращает 1,
+если кадра не нашлось или маджента осталась. Скрипт добавляет к этому три проверки:
+
+* картинка не пустая — экран из одних прозрачных точек собрался бы «успешно», а показывать было бы нечего;
+* каждому TextId нашлась строка локализации — кроме заведомо отсутствующих (KNOWN_MISSING ниже);
+* разметка оформления разобрана вся — непонятая директива попадает в `unknown=` и валит проверку.
+
+Отдельным шагом проверяется шрифт: режим сцены `--ink` растеризует русский образец в кэш глифов и печатает
+число закрашенных точек до и после. Снимка экрана в headless не бывает, поэтому кириллица проверяется так.
+
+Последний шаг — живые элементы: сцена прогоняет сценарий ввода (`--input`) настоящим путём, через вьюпорт
+и масштаб окна, и печатает на каждый шаг события и сменившиеся кадры спрайтов. Ожидания — в INPUT_CASES:
+щелчок в точку должен дать ровно такие события и такой кадр. И переходы по графу экранов (сцена UiFlow.tscn,
+FLOW_CASES): после каждого щелчка стек экранов должен стать ровно таким.
+
+Godot берётся из переменной GODOT (по умолчанию C:\\Tools\\bin\\godot.cmd), PNG кладутся в .cache/ui-check
+(этот каталог в .gitignore).
+
+Запуск:
+  python tools/ui-render-check.py                 # семь экранов по умолчанию + шрифт
+  python tools/ui-render-check.py DLG_CITY ...    # свой список
+"""
+from __future__ import annotations
+
+import argparse
+import inspect
+import os
+import json
+import queue
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+import threading
+import time
+from collections.abc import Callable, Iterator
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from contextlib import contextmanager
+from functools import partial
+from pathlib import Path
+
+# Семь экранов: маленький диалог, боевой экран (58 элементов), самый большой по элементам (77), городской,
+# книга заклинаний и два с настоящими подписями — главное меню (8 надписей) и выбор одиночной игры (6).
+# У всех семи вся графика есть в описи — проверка обязана быть зелёной.
+SCREENS = ["DLG_ACTION_RESULT", "DLG_BATTLE_A", "DLG_OPTIONS", "DLG_CITY_STACK", "DLG_CAST_SPELL",
+           "DLG_MAIN_MENU", "DLG_SINGLE_PLAYER"]
+
+# Ниже этой доли непрозрачных точек считаем, что экран не собрался: даже у самого дырявого из них
+# заполнено больше четверти.
+MIN_OPAQUE = 0.05
+
+# Идентификаторы, которых нет ни в одной таблице строк игры (проверено пересчётом TApp.dbf, Tglobal.dbf
+# и TAppEdit.dbf — 8 из 167 на весь набор экранов). Это не пропажа перевода, а мусор в самой разметке:
+#   * DLG_BATTLE_A_* — в поле подсказки записано имя кадра, а не строка;
+#   * 255 — число вместо идентификатора;
+#   * Login, Register — английские литералы в CustomLobby.dlg, которые игра не переводила.
+# Всё остальное отсутствующее — дефект импорта строк, и проверка обязана падать.
+KNOWN_MISSING = {
+    "255",
+    "DLG_BATTLE_A_LITEMSBG", "DLG_BATTLE_A_LUNITGROUP", "DLG_BATTLE_A_MAINCOMBATBG",
+    "DLG_BATTLE_A_RITEMSBG", "DLG_BATTLE_A_RUNITGROUP",
+    "Login", "Register",
+}
+
+# Образец для проверки покрытия кириллицы: игра локализована на русский, и без этих букв порт молча
+# нарисовал бы пустые прямоугольники.
+INK_SAMPLE = "Русский текст ЁЙЩЪ"
+
+# Живые элементы: экран, --items, шаги и ожидание на каждый шаг — события (через запятую, «-» — ни одного)
+# и, если задано, «элемент:кадр», который должен оказаться среди сменившихся. Само поведение — модель
+# UiScreenState, её проверяет dotnet test; здесь — что сцена доносит до неё ввод и меняет кадры спрайтов.
+INPUT_CASES = [
+    ("DLG_MAIN_MENU", None, [
+        ("move BTN_SINGLE", "-", "BTN_SINGLE:DLG_MAIN_MENU_MAIN01BH"),
+        ("press BTN_SINGLE", "-", "BTN_SINGLE:DLG_MAIN_MENU_MAIN01BC"),
+        ("move 10,10", "-", "BTN_SINGLE:DLG_MAIN_MENU_MAIN01BN"),
+        ("release 10,10", "-", None),
+        ("click BTN_QUIT", "Clicked:BTN_QUIT", "BTN_QUIT:DLG_MAIN_MENU_MAIN05BH"),
+    ]),
+    ("DLG_OPTIONS", "SPIN_ACKNO=3", [
+        ("click TOG_AUTOSAVE", "Toggled:TOG_AUTOSAVE=1", "TOG_AUTOSAVE:_MENU_CRYSTAL_N"),
+        ("click BTN_ACKNORIGHT", "Clicked:BTN_ACKNORIGHT,Spin:SPIN_ACKNO=1", None),
+        ("click BTN_ACKNORIGHT", "Clicked:BTN_ACKNORIGHT,Spin:SPIN_ACKNO=2", None),
+        # Последнее значение — стрелка гаснет (0x539e6a) и не жмётся.
+        ("click BTN_ACKNORIGHT", "-", None),
+        ("key 27", "Clicked:BTN_CLOSE", None),
+    ]),
+    ("DLG_CHOOSE_LORD", None, [
+        ("click TOG_LORD_MAGE", "Group:RAD_LORD=1:TOG_LORD_MAGE", "TOG_LORD_WARRIOR:DLG_CHOOSE_LORD_WARRIORD"),
+        ("click TOG_LORD_MAGE", "-", None),
+    ]),
+    # Подсказка только рисуется: щелчок в точку под ней (рамка подсказки — ниже и левее мыши) доходит до кнопки. Четвёртое поле —
+    # показанная подсказка (иначе проверка ничего не проверяла бы).
+    ("DLG_ACTION_RESULT", None, [
+        ("move BTN_YES", "-", None),
+        ("wait 300", "-", None, "Закрыть"),
+        ("click 444,510", "Clicked:BTN_YES", None),
+    ]),
+    # Над картой подсказки нет (прогон 11.10, замечание 6): у IMG_MAIN вида карты в поле подсказки «255» — не id строки, движок такую
+    # подсказку не ставит (0x5c868e); прежде порт показывал «255» над всей картой.
+    ("DLG_ISO_VIEW", None, [
+        ("move 300,300", "-", None),
+        ("wait 300", "-", None, "-"),
+    ]),
+    ("DLG_LOAD_GAME", "TLBOX_GAME_LIST=30", [
+        ("click 60,130", "Selected:TLBOX_GAME_LIST=0", None),
+        ("key 40", "Clicked:BTN_LIST_DOWN,Selected:TLBOX_GAME_LIST=1", None),
+        ("key 34", "Clicked:BTN_PG_DN,Selected:TLBOX_GAME_LIST=18", None),
+        # 17 строк на странице (место 300 точек, строка — шаг шрифта Normal 17): выбор 18 прокрутил список до пункта 2 — он теперь в
+        # первой строке.
+        ("double 60,130", "Selected:TLBOX_GAME_LIST=2,Confirmed:TLBOX_GAME_LIST=2", None),
+        # Кнопка подтверждения списка — одно событие (партия 16.10: два события — два действия).
+        ("key 13", "Clicked:BTN_LOAD", None),
+    ]),
+]
+
+# Переходы по графу экранов (сцена UiFlow.tscn): шаги и ожидаемый стек после каждого («>» — снизу вверх,
+# «-» — стек пуст, игра окончена). Проверяет, что щелчок доходит до верхнего экрана, событие — до навигатора,
+# а узлы экранов — до стека. Сами правила стека проверяет dotnet test (UiNavigatorTests).
+# Третье поле шага, если есть, — сколько узлов экранов построено к этому шагу (Goto на тот же экран обязан
+# строить его заново, со свежим состоянием).
+FLOW_CASES = [
+    # Выбор исхода — логика экрана (есть ли ещё предметы); без неё «ОК» закрывает окно (в журналах чаще), поэтому
+    # переход на себя оставлен модом-приспособлением tools/ui-check-mods/self-goto — заодно проверяется слой модов.
+    ("ОК в окне предмета", "DLG_ITEM", [
+        ("key 13", "DLG_ITEM", 2),
+    ]),
+    ("до брифинга", None, [
+        ("click BTN_SINGLE", "DLG_SINGLE_PLAYER"),
+        ("click BTN_NEW_SKIRMISH", "DLG_CHOOSE_SKIRMISH"),
+        ("key 13", "DLG_CHOOSE_RACE"),
+        ("key 13", "DLG_CHOOSE_LORD"),
+        ("key 13", "DLG_SCENARIO_BRIEFING"),
+    ]),
+    # Лобби «горячего стула» (docs/day-cycle.md §8, §11): «Далее» без двух людей — окно X006TA0032, без имени — X005TA0344;
+    # затем партия.
+    ("лобби горячего стула", None, [
+        ("click BTN_MULTI", "DLG_PROTOCOL"),
+        ("click BTN_CONTINUE", "DLG_HOTSEAT"),
+        ("click BTN_NEW_SKIRMISH", "DLG_HOTSEAT_NEW"),
+        ("click BTN_LOAD", "DLG_HOTSEAT_LOBBY"),
+        ("click BTN_OK", "DLG_HOTSEAT_LOBBY>DLG_MESSAGE_BOX"),
+        ("click BTN_OK", "DLG_HOTSEAT_LOBBY"),
+        ("click TOG_PLAYERTYPE_1", "DLG_HOTSEAT_LOBBY"),
+        ("type A", "DLG_HOTSEAT_LOBBY"),
+        ("click TOG_PLAYERTYPE_2", "DLG_HOTSEAT_LOBBY"),
+        ("click BTN_OK", "DLG_HOTSEAT_LOBBY>DLG_MESSAGE_BOX"),
+        ("click BTN_OK", "DLG_HOTSEAT_LOBBY"),
+        ("click EDT_NAME_2", "DLG_HOTSEAT_LOBBY"),
+        ("type B", "DLG_HOTSEAT_LOBBY"),
+        ("click BTN_GOLD_UP", "DLG_HOTSEAT_LOBBY"),
+        ("click BTN_OK", "GAME"),
+    ]),
+    # Титры — пустая страница (решение пользователя 28.09), любой щелчок или клавиша — в главное меню (переход без элемента).
+    ("титры", None, [
+        ("click BTN_CREDITS", "DLG_CREDITS"),
+        ("key 13", "DLG_MAIN_MENU"),
+        ("click BTN_CREDITS", "DLG_CREDITS"),
+        ("click 400,300", "DLG_MAIN_MENU"),
+    ]),
+    ("назад и окно поверх", None, [
+        ("click BTN_SINGLE", "DLG_SINGLE_PLAYER"),
+        ("click BTN_BACK", "DLG_MAIN_MENU"),
+        ("click BTN_OPTIONS", "DLG_MAIN_MENU>DLG_OPTIONS"),
+        ("click 637,34", "DLG_MAIN_MENU>DLG_OPTIONS"),  # кнопка главного меню под окном — ввод не доходит
+        ("key 27", "DLG_MAIN_MENU"),
+        ("click BTN_QUIT", "-"),
+    ]),
+    # Окно загрузки из меню (DLG_LOAD, «Одиночная игра» → «Загрузить»): Esc и «Назад» — в главное меню. Окно загрузки в партии
+    # (DLG_LOAD_GAME) — в autosave(): Esc и «Назад» возвращают к настройкам (пометка 4 прогона 14.10).
+    ("загрузка из меню: Esc и Назад", None, [
+        ("click BTN_SINGLE", "DLG_SINGLE_PLAYER"),
+        ("click BTN_LOAD_SKIRMISH", "DLG_LOAD"),
+        ("key 27", "DLG_MAIN_MENU"),
+        ("click BTN_SINGLE", "DLG_SINGLE_PLAYER"),
+        ("click BTN_LOAD_SKIRMISH", "DLG_LOAD"),
+        ("click BTN_BACK", "DLG_MAIN_MENU"),
+    ]),
+]
+
+FLOW = re.compile(r"flow step=\d+ do=\S+ at=\S+ events=\S+ go=\S+ stack=(?P<stack>\S+) phase=(?P<phase>\S+) "
+                  r"quit=\d built=(?P<built>\d+) video=(?P<video>\S+)(?: vrect=(?P<vrect>\S+))?")
+
+# Логика экранов «новой игры» (сцена UiFlow.tscn с --probe): шаги и ожидания по содержимому элементов верхнего
+# экрана после шага — (номер шага с 1, элемент, поле probe, значение). Сама логика проверена dotnet test
+# (MenuLogicTests); здесь — что сцена её вызывает, передаёт ей ввод и показывает результат, включая ролики смены.
+CONTENT_STEPS = ["click BTN_SINGLE", "click BTN_NEW_SKIRMISH", "key 40", "key 13", "key 39", "key 13",
+                 "click BTN_FACE", "click BTN_FACE", "click EDIT_LORD_NAME", "key 8", "type Z", "key 13"]
+CONTENT_EXPECT = [
+    (1, None, "video", "TRANS_MAIN2SINGLE"),
+    (2, "TLBOX_GAME_SLOT", "items", "33@0"),
+    (2, "IMG_RACE_1", "frame", "GODHU"),   # значок 45×73 — ровно клетка (0x4f1095)
+    (3, "TLBOX_GAME_SLOT", "items", "33@1"),
+    (3, "TXT_MAP_SIZE", "text", r"Размер_карты:\n_96_х_96"),
+    (4, None, "video", "TRANS_NEWQUEST2GOD"),
+    (4, "UNDERLAY", "frame", "DLG_CHOOSE_RACE_GODHU_BG"),   # картинка расы — под рамкой (седьмой круг)
+    (4, "BACKGROUND", "frame", "DLG_CHOOSE_RACE_BG_CHOOSE_RACE"),
+    (5, "UNDERLAY", "frame", "DLG_CHOOSE_RACE_GODUN_BG"),
+    (5, "BACKGROUND", "video", "GOD_HU2UN#1"),
+    (6, None, "video", "TRANS_GOD2LORD_UN"),
+    (6, "UNDERLAY", "frame", "DLG_CHOOSE_LORD_UNDEAD_BG"),
+    (6, "BACKGROUND", "frame", "DLG_CHOOSE_LORD_BG1TRANS"),
+    (6, "TXT_TITLE", "text", "Выберите_лорда"),
+    (6, "TXT_DIFF", "text", "Средне"),
+    (6, "BTN_FACE", "frame", "FACE_UN_0"),        # в покое лицо неподвижное (снимок 28.09)
+    (6, "BTN_FACE", "video", "-"),
+    (7, "BTN_FACE", "frame", "FACE_UN_1"),        # смена: неподвижное новое лицо под разовым роликом старого
+    (7, "BTN_FACE", "video", "FACE_UN_0#1"),
+    (8, "BTN_FACE", "frame", "FACE_UN_1"),        # нажатие во время ролика не принято (0x4e6945, [+0x44])
+    (8, "BTN_FACE", "video", "FACE_UN_0#1"),
+    (12, "IMG_BRIEFING", "video", "BRIEF2U#1"),
+]
+PROBES = sorted({e[1] for e in CONTENT_EXPECT if e[1]})
+PROBE = re.compile(r"probe screen=\S+ id=(?P<id>\S+) text=(?P<text>\S+) frame=(?P<frame>\S+) "
+                   r"video=(?P<video>\S+) items=(?P<items>\S+)")
+
+INPUT = re.compile(r"input step=\d+ do=\S+ at=\S+ hover=\S+ events=(?P<events>\S+) changed=(?P<changed>\S+)(?: tip=(?P<tip>\S+))?")
+
+LINE = re.compile(
+    r"screen=(?P<screen>\S+) drawn=(?P<drawn>\d+) skipped=(?P<skipped>\d+) "
+    r"magenta=(?P<magenta>[\d.]+) opaque=(?P<opaque>[\d.]+) lang=(?P<lang>\S+) "
+    r"textids=(?P<textids>\d+) strings=(?P<strings>\d+) nostring=(?P<nostring>\d+) "
+    r"captions=(?P<captions>\d+) missing=(?P<missing>\S+) unknown=(?P<unknown>\S+)"
+)
+INK = re.compile(r"ink font=(?P<font>\S+) size=(?P<size>\d+) chars=(?P<chars>\d+) "
+                 r"nochar=(?P<nochar>\d+) ink0=(?P<ink0>\d+) ink1=(?P<ink1>\d+)")
+
+
+# Необработанное исключение C# Godot не роняет — движок пишет ошибку и крутит цикл дальше (docs/godot-notes.md),
+# так что сцена без Quit висела бы вечно. Прогон одной сцены укладывается в секунды.
+RUN_TIMEOUT = 120
+
+
+def no_synth(repo: Path, name: str) -> tuple[bool, str] | None:
+    """Синтетические карты порта (слой mods/port-synth) в публичное дерево не входят (docs/publishing.md): проверки на них там пропускаются
+    с причиной, а не падают. В рабочем репозитории слой есть — None, проверка идёт."""
+    if (repo / "mods" / "port-synth" / "mod.json").is_file():
+        return None
+    return True, f"{name}: пропуск — нет синтетических карт (mods/port-synth вне публичного дерева)"
+
+
+# Шаг, который идёт в этом потоке: `calls` — время его запусков Godot (пишет godot(), читает timed()), `extra` — переменные окружения
+# шага (scene_env). os.environ шаги не трогают: шаги идут параллельно, а его видят все потоки.
+_STEP = threading.local()
+
+# Слоты — сколько Godot идёт разом (-j). У слота свой APPDATA: у Godot на Windows user:// лежит в %APPDATA%\Godot\app_userdata, так у
+# процессов, идущих разом, свои настройки, сохранения и журналы зонда. Нет слотов (0) — запуск без очереди и в общем APPDATA.
+_SLOTS: queue.Queue[int] = queue.Queue()
+_SLOT_HOMES: list[Path] = []
+
+# Запуски Godot внутри шага разом (godot_all): потоки только ждут процессы, число процессов держат слоты.
+_INNER = ThreadPoolExecutor(max_workers=64)
+
+
+def set_slots(repo: Path, count: int) -> None:
+    """Слоты запусков Godot, у каждого чистый APPDATA на прогон проверки."""
+    for i in range(count):
+        home = repo / ".cache" / "ui-check" / "workers" / f"w{i}"
+        shutil.rmtree(home, ignore_errors=True)
+        (home / "appdata").mkdir(parents=True)
+        _SLOT_HOMES.append(home / "appdata")
+        _SLOTS.put(i)
+
+
+@contextmanager
+def scene_env(**extra: str) -> Iterator[None]:
+    """Переменные окружения для запусков Godot внутри блока — только у этого шага."""
+    saved = getattr(_STEP, "extra", {})
+    _STEP.extra = {**saved, **extra}
+    try:
+        yield
+    finally:
+        _STEP.extra = saved
+
+
+def child_env(slot: int | None = None) -> dict[str, str]:
+    """Окружение дочернего процесса: общее, слота и шага. D2_VERBOSE=1 — болтливый вывод сцен (aimove, walked, fx…, godot/autoload/GameLog.cs)
+    печатается и в сценах без --check и --input, как прежде: шаги разбирают эти строки."""
+    return {**os.environ, "D2_VERBOSE": "1", "D2_COMMAND_AUDIT": "1", **({"APPDATA": str(_SLOT_HOMES[slot])} if slot is not None else {}),
+            **getattr(_STEP, "extra", {})}
+
+
+# Аудит команд (docs/game-commands.md §3): места, где сцена меняла партию мимо GameSession.Execute, — строки «command-audit» всех запусков.
+_AUDIT: dict[str, str] = {}
+_AUDIT_LOCK = threading.Lock()
+
+
+def note_audit(out: str) -> None:
+    with _AUDIT_LOCK:
+        for line in out.splitlines():
+            if line.startswith("command-audit "):
+                _AUDIT.setdefault(line[len("command-audit "):].strip(), getattr(_STEP, "name", "?"))
+
+
+def godot_all(repo: Path, runs: list[tuple]) -> list[tuple[int, str]]:
+    """Независимые запуски одного шага разом: (аргументы, сцена[, окружение]) → (код, вывод) в том же порядке. Время и окружение
+    шага переходят в потоки запусков."""
+    calls, extra, name = getattr(_STEP, "calls", None), dict(getattr(_STEP, "extra", {})), getattr(_STEP, "name", "?")
+
+    def one(run: tuple) -> tuple[int, str]:
+        _STEP.extra, _STEP.name = {**extra, **(run[2] if len(run) > 2 else {})}, name
+        if calls is not None:
+            _STEP.calls = calls
+        return godot(repo, run[0], run[1])
+    return list(_INNER.map(one, runs))
+
+
+def kill_tree(proc: subprocess.Popen) -> None:
+    """Снять процесс с потомками: godot.cmd и консольный Godot запускают настоящий Godot дочерним процессом, и kill() одного родителя
+    оставил бы его висеть с открытыми трубами вывода."""
+    if os.name == "nt":
+        subprocess.run(["taskkill", "/T", "/F", "/PID", str(proc.pid)], capture_output=True, check=False)
+    else:
+        proc.kill()
+
+
+_TOOLS_LOCK = threading.Lock()
+_TOOLS_BUILT: set[str] = set()
+
+
+def dotnet_tool(repo: Path, name: str) -> list[str]:
+    """Команда готовой сборки инструмента tools/<name>: один `dotnet build` (Release) за прогон проверки — `dotnet run --project`
+    собирал бы его на каждом шаге."""
+    with _TOOLS_LOCK:
+        if name not in _TOOLS_BUILT:
+            built = subprocess.run(["dotnet", "build", str(repo / "tools" / name), "-c", "Release", "-nologo", "-v", "q"],
+                                   capture_output=True, text=True, encoding="utf-8", errors="replace")
+            if built.returncode != 0:
+                raise RuntimeError(f"сборка tools/{name} упала:\n{built.stdout[-3000:]}{built.stderr[-2000:]}")
+            _TOOLS_BUILT.add(name)
+    return ["dotnet", str(repo / "tools" / name / "bin" / "Release" / "net10.0" / f"{name}.dll")]
+
+
+def godot(repo: Path, extra: list[str], scene: str = "res://scenes/ui/UiScreen.tscn") -> tuple[int, str]:
+    slot = _SLOTS.get() if _SLOT_HOMES else None
+    t0 = time.monotonic()
+    try:
+        return _godot(repo, extra, scene, slot)
+    finally:
+        if slot is not None:
+            _SLOTS.put(slot)
+        if getattr(_STEP, "calls", None) is not None:
+            _STEP.calls.append(time.monotonic() - t0)
+
+
+def _godot(repo: Path, extra: list[str], scene: str, slot: int | None) -> tuple[int, str]:
+    exe = os.environ.get("GODOT", r"C:\Tools\bin\godot.cmd")
+    proc = subprocess.Popen([exe, "--headless", "--path", str(repo / "godot"), scene,
+                             "--", *([] if "--mods" in extra else ["--no-mods"]), *extra],
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8", errors="replace",
+                            env=child_env(slot))
+    try:
+        out, err = proc.communicate(timeout=RUN_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        kill_tree(proc)
+        out, err = proc.communicate()
+        return 124, f"таймаут {RUN_TIMEOUT} с — сцена не вышла (исключение C#?)\n{out or ''}{err or ''}"
+    note_audit(out or "")
+    return proc.returncode, (out or "") + (err or "")
+
+
+def items(field: str) -> list[str]:
+    """Список из строки итога: «-» значит пусто."""
+    return [] if field == "-" else field.split(",")
+
+
+def run(repo: Path, screen: str) -> tuple[bool, str]:
+    png = repo / ".cache" / "ui-check" / f"{screen}.png"
+    png.parent.mkdir(parents=True, exist_ok=True)
+    code, out = godot(repo, ["--screen", screen, "--png", str(png)])
+    match = next((m for m in LINE.finditer(out)), None)
+    if match is None:
+        return False, f"{screen}: сцена не напечатала итог (код {code})\n{out.strip()}"
+
+    line = match.group(0)
+    if code != 0:
+        return False, f"{line}  <-- код {code}\n{out.strip()}"
+    if float(match["opaque"]) < MIN_OPAQUE:
+        return False, f"{line}  <-- пусто: непрозрачных меньше {MIN_OPAQUE}"
+
+    unexpected = [i for i in items(match["missing"]) if i not in KNOWN_MISSING]
+    if unexpected:
+        return False, f"{line}  <-- нет строк: {', '.join(unexpected)}"
+    unknown = items(match["unknown"])
+    if unknown:
+        return False, f"{line}  <-- неразобранная разметка: {', '.join(unknown)}"
+    return True, f"{line}  -> {png.name}"
+
+
+def ink(repo: Path) -> tuple[bool, str]:
+    code, out = godot(repo, ["--ink", "--text", INK_SAMPLE])
+    match = next((m for m in INK.finditer(out)), None)
+    if match is None:
+        return False, f"шрифт: сцена не напечатала итог (код {code})\n{out.strip()}"
+    line = match.group(0)
+    if code != 0 or int(match["nochar"]) > 0:
+        return False, f"{line}  <-- код {code}, нет глифов {match['nochar']}\n{out.strip()}"
+    if int(match["ink1"]) <= int(match["ink0"]):
+        return False, f"{line}  <-- кириллица не нарисовалась: ink1 не больше ink0"
+    return True, f"{line}  -> кириллица есть ({match['chars']} символов)"
+
+
+LINES = re.compile(r"^lines face=(?P<face>\S+) size=\d+ font=\S+ ascent=\S+ spacing=\S+ pitch=(?P<pitch>[\d.]+) want=(?P<want>\d+)$",
+                   re.MULTILINE)
+
+# Шаг строки растровых шрифтов оригинала — высота ячейки плюс межстрочный интервал из заголовка Interf/*.mft (u32 height, u32 lineSpacing);
+# снимки 28.09: базовые линии строк через 17 точек у Normal (окно летописи, сообщение). Нет копии игры — таблица этих же чисел.
+MFT_PITCH = {"small": 16, "normal": 17, "medbold": 17, "medium": 18, "menu": 18, "large": 18, "vlarge": 25}
+
+
+def mft_pitch() -> tuple[dict[str, int], str]:
+    """Шаг строки по заголовкам MFT из копии игры (D2_GAME_DIR/Interf), иначе — таблица."""
+    game = os.environ.get("D2_GAME_DIR")
+    folder = Path(game) / "Interf" if game else None
+    if folder is None or not folder.is_dir():
+        return MFT_PITCH, "таблица"
+    got = {}
+    for name in MFT_PITCH:
+        path = folder / f"{name}.mft"
+        if not path.exists():
+            return MFT_PITCH, "таблица"
+        data = path.read_bytes()
+        name_len = int.from_bytes(data[8:12], "little")
+        at = 12 + name_len
+        got[name] = int.from_bytes(data[at:at + 4], "little") + int.from_bytes(data[at + 4:at + 8], "little")
+    return got, "Interf/*.mft"
+
+
+def lines(repo: Path) -> tuple[bool, str]:
+    """Межстрочный шаг подписей порта (ответ пользователя 11.10, снимок 12: строки карточки города налезали) — у каждого начертания
+    data/ui/fonts.json подпись в три строки идёт с шагом растрового шрифта оригинала (UiFont.Line → LabelSettings.LineSpacing)."""
+    code, out = godot(repo, ["--lines"])
+    want, source = mft_pitch()
+    got = {m["face"].lower(): (float(m["pitch"]), int(m["want"])) for m in LINES.finditer(out)}
+    bad = [f"{face} {got.get(face)} ≠ {pitch}" for face, pitch in want.items()
+           if face not in got or abs(got[face][0] - pitch) > 0.01 or got[face][1] != pitch]
+    if code != 0 or CSHARP_ERROR in out or bad:
+        return False, f"шаг строки: код {code}, {'; '.join(bad)}\n{out.strip()}"
+    return True, "шаг строки как у оригинала (" + source + "): " + ", ".join(f"{f} {int(p)}" for f, (p, _) in got.items())
+
+
+TABS = re.compile(r"^tabs tab=(?P<tab>\d+) width=(?P<width>[\d.]+) want=(?P<want>[\d.]+) без_места=(?P<none>[\d.]+) слитно=(?P<joined>[\d.]+)$",
+                  re.MULTILINE)
+
+
+def tabs(repo: Path) -> tuple[bool, str]:
+    """Табуляция подписи (прогон 2 пользователя 11.10, снимок 33: «Уровень:1», «Опыт:0» слитно) — строка карточки воина X005TA0423 с местом
+    табуляции \\s110;: значение начинается с точки 110 (ширина «Уровень:», табуляция, «1» = 110 + ширина «1»). Без места табуляции
+    знак табуляции шрифтом почти не рисуется — ширина как у слитного «Уровень:1»: это и было причиной."""
+    code, out = godot(repo, ["--tabs"])
+    m = TABS.search(out)
+    if code != 0 or CSHARP_ERROR in out or m is None or int(m["tab"]) != 110 or abs(float(m["width"]) - float(m["want"])) > 0.01:
+        return False, f"табуляция: код {code}\n{out.strip()}"
+    return True, (f"табуляция: «Уровень:\\t1» — {float(m['width']):.0f} = 110 + «1»; без места табуляции было {float(m['none']):.0f} "
+                  f"(слитно {float(m['joined']):.0f})")
+
+
+LABEL = re.compile(r"^label (?P<id>\S+) место=(?P<box>\S+) верх=(?P<top>-?\d+) строк=(?P<lines>\d+) выс=(?P<h>\d+)$", re.MULTILINE)
+
+# Верх блока строк от верха места — по снимку оригинала 28.09 CCapitalInterf-58839 (верх ячейки первой строки; глифы Normal — с 4-й
+# строки ячейки): имя героя в плашке 18 точек — 0, «Скорость: 20 / 20» (две строки) в 85 — 25, ресурсы в 25 — 4. До исправления — 5,
+# 27, 4.
+TEXT_BLOCK_EXPECT = {"DLG_CAPITAL/TXT_LEADER_NAME": (0, 18), "DLG_CAPITAL/TXT_LEADER_STATS": (25, 60), "DLG_ISO_RESPOPUP/TXT_GOLD": (4, 21)}
+
+
+def text_block(repo: Path) -> tuple[bool, str]:
+    """Положение строк подписи по вертикали (прогон 3 пользователя 11.10, пункт 2): правило движка 0x52ad04 (D2.Data.Ui.UiTextBlock) —
+    блок = строки × шаг шрифта, середина с отбрасыванием дроби, не влез — от верха; подпись не растёт по шрифту темы. Экран карты
+    столицы на сохранении снимка 28.09 (без окна), --labels: верх блока и высота подписи. Нет корпуса — пропуск."""
+    sg = corpus_dir(repo) / "20260928-shots" / "dyhanie-smerti-human-t01-002.sg"
+    if not sg.exists():
+        return True, "строки подписей: пропуск — нет корпуса"
+    code, out = godot(repo, ["--sg", str(sg), "--check", "--clicks", "panel click BTN_CAPITAL", "--labels"],
+                      "res://scenes/map/MapScreen.tscn")
+    got = {m["id"]: (int(m["top"]), int(m["h"])) for m in LABEL.finditer(out)}
+    bad = [f"{k} {got.get(k)} ≠ {v}" for k, v in TEXT_BLOCK_EXPECT.items() if got.get(k) != v]
+    if code != 0 or CSHARP_ERROR in out or bad:
+        return False, f"строки подписей: код {code}, {'; '.join(bad)}\n{out.strip()}"
+    return True, ("строки подписей как у оригинала: " + ", ".join(f"{k.split('/')[1]} верх {v[0]}" for k, v in TEXT_BLOCK_EXPECT.items()))
+
+
+STAGE = re.compile(r"^stage показ=(?P<mode>\S+) буфер=(?P<w>\d+)x(?P<h>\d+) масштаб=(?P<scale>[\d.]+) угол=(?P<x>-?\d+),(?P<y>-?\d+) "
+                   r"фильтр=(?P<filter>\S+)$", re.MULTILINE)
+
+# Показ в окне 1280×720 (D2.Data.Ui.ScreenFit): чёткий — буфер 2133×1200 (экраны в нём ×2), сжатие 0,6 по площади; целый — 1067×600
+# точка в точку, рамка 106,60.
+SCALED_FLOW = {"sharp": ("2133", "1200", "0.6", "area"), "integer": ("1067", "600", "1", "nearest")}
+
+
+def scaled_flow(repo: Path) -> tuple[bool, str]:
+    """Щелчки через показ (прогон 3, пункт 1): проход «назад и окно поверх» и лобби горячего стула при чётком и целом масштабе с окном
+    1280×720 (--window-size: у headless окно 64×64). События идут настоящим путём — в корневой вьюпорт в точках окна и обратным
+    переводом показа в буфер: стек после каждого щелчка тот же, что и при прежнем масштабе."""
+    cases = [c for c in FLOW_CASES if c[0] in ("назад и окно поверх", "лобби горячего стула")]
+    for mode, want in SCALED_FLOW.items():
+        for name, start, steps in cases:
+            extra = ["--scale", mode, "--window-size", "1280x720"]
+            ok, message = flow(repo, name, start, steps, extra)
+            if not ok:
+                return False, f"показ {mode}: {message}"
+        code, out = godot(repo, ["--scale", mode, "--window-size", "1280x720", "--input", "wait 1"], "res://scenes/ui/UiFlow.tscn")
+        m = STAGE.search(out)
+        if m is None or (m["w"], m["h"], m["scale"], m["filter"]) != want:
+            return False, f"показ {mode}: {m.group(0) if m else 'нет строки stage'} — ожидалось буфер {want[0]}x{want[1]} масштаб {want[2]} {want[3]}"
+    return True, "показ: щелчки доходят при чётком (буфер 2133×1200, сжатие 0,6) и целом (1067×600 в рамке) масштабе"
+
+
+def strokes(repo: Path, window: bool) -> tuple[bool, str]:
+    """Толщина линий растра после масштаба 1,2 (прогон 3, пункт 1; tools/stroke-check.py): у «чёткого» и «целого» вес каждой линии в
+    точку разметки одинаков, у прежнего — то 0,83, то 1,67. Без --window — модель показа по раскладке сцены; с --window — снимки окна."""
+    proc = subprocess.run([sys.executable, str(repo / "tools" / "stroke-check.py"), *(["--window"] if window else [])],
+                          capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=600, env=child_env())
+    out = proc.stdout.strip()
+    lines = [l for l in out.splitlines() if l.startswith("stroke ") and "итог" not in l]
+    if proc.returncode != 0:
+        return False, f"толщина линий: {out}\n{proc.stderr}"
+    return True, "толщина линий (" + ("окно" if window else "модель") + "): " + "; ".join(
+        " ".join(l.split()[1:2] + [w for w in l.split() if w.startswith("разброс=")]) for l in lines)
+
+
+def live(repo: Path, screen: str, counts: str | None, steps: list) -> tuple[bool, str]:
+    extra = ["--screen", screen, "--input", "; ".join(step[0] for step in steps)]
+    if counts:
+        extra += ["--items", counts]
+    code, out = godot(repo, extra)
+    got = list(INPUT.finditer(out))
+    if code != 0 or len(got) != len(steps):
+        return False, f"{screen}: ввод — код {code}, шагов {len(got)} из {len(steps)}\n{out.strip()}"
+    for step, match in zip(steps, got):
+        action, events, frame = step[:3]
+        if len(step) > 3 and match["tip"] != step[3]:
+            return False, f"{screen}: после «{action}» подсказка {match['tip']}, ожидалась {step[3]}"
+        if match["events"] != events:
+            return False, f"{screen}: «{action}» дал {match['events']}, ожидалось {events}"
+        if frame is not None and frame not in items(match["changed"]):
+            return False, f"{screen}: «{action}» сменил кадры {match['changed']}, ожидался {frame}"
+    return True, f"{screen}: ввод — {len(steps)} шагов, события и кадры как ожидалось"
+
+
+def flow(repo: Path, name: str, start: str | None, steps: list, more: list[str] | None = None) -> tuple[bool, str]:
+    # Окна загрузки читают каталог сохранений — свой пустой, а не сохранения пользователя.
+    saves = repo / ".cache" / "ui-check" / "flow-saves"
+    saves.mkdir(parents=True, exist_ok=True)
+    extra = ["--input", "; ".join(step[0] for step in steps), "--saves", str(saves), *(more or [])]
+    if start:
+        extra += ["--start", start, "--mods", "../tools/ui-check-mods"]
+    code, out = godot(repo, extra, "res://scenes/ui/UiFlow.tscn")
+    got = list(FLOW.finditer(out))
+    if code != 0 or len(got) != len(steps):
+        return False, f"граф «{name}»: код {code}, шагов {len(got)} из {len(steps)}\n{out.strip()}"
+    for step, match in zip(steps, got):
+        action, stack = step[0], step[1]
+        if match["stack"] != stack:
+            return False, f"граф «{name}»: после «{action}» стек {match['stack']}, ожидался {stack}"
+        if len(step) > 2 and int(match["built"]) != step[2]:
+            return False, f"граф «{name}»: после «{action}» построено экранов {match['built']}, ожидалось {step[2]}"
+    return True, f"граф «{name}»: {len(steps)} шагов, стек как ожидалось (фаза в конце {got[-1]['phase']})"
+
+
+# Ролики «Вступления» (D2.Data.Menu.CinematicLogic): шаг сценария → (стек, ролик IMG_FULL, ролик IMG_ANIM, рамка IMG_ANIM_OVER, фон, ролик
+# смены). Таймер показа — раз в 1000 мс от открытия (0x4c66be): пропуск (левая кнопка 0x4c6668, Enter/пробел/Esc 0x4c668f) действует на
+# ближайшем тике; конец показа — главное меню через TRANS_INTRO2MAIN (0x4ea1f3(1), 0x4eb909).
+CINEMATIC_STEPS = [
+    ("wait 999", "DLG_CINEMATIC", "SF#1", "-", "-", "-", "-"),             # запуск: SF без рамки, фон пуст (CIntroAnim, первый ролик)
+    ("click 400,300", "DLG_CINEMATIC", "SF#1", "-", "-", "-", "-"),        # пропуск — ещё до тика
+    ("wait 1", "DLG_CINEMATIC", "-", "INTRO#2", "_CINEMATIC_OVER", "_CINEMATIC", "-"),   # тик 1000: INTRO в рамке
+    ("wait 1500", "DLG_CINEMATIC", "-", "INTRO#2", "_CINEMATIC_OVER", "_CINEMATIC", "-"),
+    ("key 32", "DLG_CINEMATIC", "-", "INTRO#2", "_CINEMATIC_OVER", "_CINEMATIC", "-"),
+    ("wait 499", "DLG_CINEMATIC", "-", "INTRO#2", "_CINEMATIC_OVER", "_CINEMATIC", "-"),
+    ("wait 1", "DLG_MAIN_MENU", None, None, None, None, "TRANS_INTRO2MAIN"),   # тик 3000 — меню
+    ("click BTN_INTRO", "DLG_CINEMATIC", "-", "INTRO#1", "_CINEMATIC_OVER", "_CINEMATIC", "-"),   # «Вступление» — один INTRO в рамке
+    ("key 65", "DLG_CINEMATIC", "-", "INTRO#1", "_CINEMATIC_OVER", "_CINEMATIC", "-"),          # прочие клавиши не пропускают
+    ("wait 1000", "DLG_CINEMATIC", "-", "INTRO#1", "_CINEMATIC_OVER", "_CINEMATIC", "-"),
+    ("key 27", "DLG_CINEMATIC", "-", "INTRO#1", "_CINEMATIC_OVER", "_CINEMATIC", "-"),
+    ("wait 1000", "DLG_MAIN_MENU", None, None, None, None, "TRANS_INTRO2MAIN"),
+]
+
+
+def cinematic(repo: Path) -> tuple[bool, str]:
+    """Ролики «Вступления» (CIntroAnim 0x4c6af3, CAnimInterf 0x4c635a, CMenuFullScreenAnimSnd 0x4daba0): при запуске (--intro) — заставка
+    SF без рамки, затем INTRO в рамке DLG_CINEMATIC (фон _CINEMATIC, рамка _CINEMATIC_OVER поверх ролика); кнопка «Вступление» — INTRO в
+    рамке; пропуск — левая кнопка, Enter, пробел, Esc, на ближайшем секундном тике; конец — меню через TRANS_INTRO2MAIN; музыка меню
+    затихает до ролика «Вступления» (music stop)."""
+    extra = ["--intro", "--input", "; ".join(s[0] for s in CINEMATIC_STEPS), "--probe", "IMG_FULL,IMG_ANIM,IMG_ANIM_OVER,BACKGROUND"]
+    code, out = godot(repo, extra, "res://scenes/ui/UiFlow.tscn")
+    steps: list[dict] = []
+    for line in out.splitlines():
+        if (m := FLOW.search(line)) is not None:
+            steps.append({"stack": m["stack"], "video": m["video"], "probes": {}})
+        elif (p := PROBE.search(line)) is not None and steps:
+            steps[-1]["probes"][p["id"]] = p.groupdict()
+    if code != 0 or len(steps) != len(CINEMATIC_STEPS):
+        return False, f"вступление: код {code}, шагов {len(steps)} из {len(CINEMATIC_STEPS)}\n{out.strip()}"
+    for (action, stack, full, anim, over, back, video), got in zip(CINEMATIC_STEPS, steps):
+        probes = got["probes"]
+        seen = (got["stack"], got["video"])
+        if stack == "DLG_CINEMATIC":
+            seen += (probes.get("IMG_FULL", {}).get("video"), probes.get("IMG_ANIM", {}).get("video"),
+                     probes.get("IMG_ANIM_OVER", {}).get("frame"), probes.get("BACKGROUND", {}).get("frame"))
+            want = (stack, video, full, anim, over, back)
+        else:
+            want = (stack, video)
+        if seen != want:
+            return False, f"вступление: после «{action}» {seen}, ожидалось {want}"
+    if "music stop" not in out:
+        return False, "вступление: музыка меню не затихла перед роликом «Вступления»"
+    return True, "вступление: запуск SF → INTRO в рамке → меню (TRANS_INTRO2MAIN), «Вступление» — INTRO, пропуск на секундном тике"
+
+
+def content(repo: Path) -> tuple[bool, str]:
+    """Цепочка «новой игры» с содержимым экранов: строки flow step и probe по шагам."""
+    extra = ["--input", "; ".join(CONTENT_STEPS), "--probe", ",".join(PROBES)]
+    code, out = godot(repo, extra, "res://scenes/ui/UiFlow.tscn")
+    steps: list[dict] = []
+    for line in out.splitlines():
+        if (m := FLOW.search(line)) is not None:
+            steps.append({"video": m["video"], "vrect": m["vrect"], "stack": m["stack"], "probes": {}})
+        elif (p := PROBE.search(line)) is not None and steps:
+            steps[-1]["probes"][p["id"]] = p.groupdict()
+    if code != 0 or len(steps) != len(CONTENT_STEPS):
+        return False, f"логика новой игры: код {code}, шагов {len(steps)} из {len(CONTENT_STEPS)}\n{out.strip()}"
+    for step, element, field, expected in CONTENT_EXPECT:
+        got = steps[step - 1]
+        value = got["video"] if element is None else got["probes"].get(element, {}).get(field)
+        if value != expected:
+            where = "ролик смены" if element is None else f"{element}.{field}"
+            return False, f"логика новой игры: шаг {step} «{CONTENT_STEPS[step - 1]}»: {where} = {value}, ожидалось {expected}"
+    # Ролик смены — на месте экрана 800×600, а не во всё окно (CMenuFullScreenAnim 0x4da85c — по центру, без растяжения): 4:3 и по
+    # центру окна, как экраны (UiScreenView.Letterbox); поля окна — чёрные (GameData, цвет очистки).
+    for i, got in enumerate(steps, 1):
+        if got["video"] == "-":
+            continue
+        rect = re.fullmatch(r"(-?\d+),(-?\d+),(\d+)x(\d+)", got["vrect"] or "")
+        if rect is None or int(rect[3]) * 3 != int(rect[4]) * 4 or (int(rect[1]) != 0 and int(rect[2]) != 0):
+            return False, f"логика новой игры: шаг {i}: ролик {got['video']} в {got['vrect']}, ожидалось место экрана 4:3 по центру"
+    if "flow clear=000000" not in out:
+        return False, "логика новой игры: поля окна не чёрные (нет строки flow clear=000000)"
+    if out.count("fx Midgard/CHNGFACE ") != 1:   # смена лица лорда — звук CHNGFACE, второе нажатие во время ролика беззвучно (docs/ai-screen.md §12)
+        return False, f"логика новой игры: звук CHNGFACE {out.count('fx Midgard/CHNGFACE ')} раз, ожидался 1"
+    return True, (f"логика новой игры: {len(CONTENT_STEPS)} шагов до {steps[-1]['stack']}, "
+                  f"{len(CONTENT_EXPECT)} проверок содержимого и роликов, ролики смены 4:3 по центру "
+                  f"({next(s['vrect'] for s in steps if s['video'] != '-')}), поля чёрные, звук смены лица")
+
+
+GROUND = re.compile(r"ground scenario=\S+ size=(?P<size>\d+) seed=\d+ types=\S+ image=\S+ "
+                    r"painted=(?P<painted>[\d.]+) magenta=(?P<magenta>\d+)")
+
+
+def ground(repo: Path) -> tuple[bool, str]:
+    """Земля Tutorial из собранной графики (сцена dev/GroundTest): вся карта закрашена, мадженты нет. Нужны
+    assets/gfx (tools/gfx-assets) и копия игры (сценарий читается стендом из Exports)."""
+    png = repo / ".cache" / "ui-check" / "ground-Tutorial.png"
+    code, out = godot(repo, ["--scenario", "Tutorial", "--png", str(png)], "res://scenes/dev/GroundTest.tscn")
+    match = GROUND.search(out)
+    if code != 0 or match is None:
+        return False, f"земля: код {code}\n{out.strip()}"
+    return True, f"{match.group(0)}  -> {png.name}"
+
+
+MAPSCREEN = re.compile(r"mapscreen map=\S+ viewer=\S+ screens=(?P<screens>\d+) ground_ready=(?P<ready>\w+) "
+                       r"sprites=(?P<sprites>\d+) minimap=(?P<minimap>\d+) лидер=(?P<leader>\S+) "
+                       r"ходы=(?P<left>\d+)/(?P<max>\d+) день=(?P<turn>\d+)")
+
+# Ход на Tutorial: отряд стоит в (24, 2) — выбрать его, показать путь на соседнюю клетку, пойти, кончить ход.
+MAP_CLICKS = "24,2;25,3;25,3;end"
+
+
+def mapscreen(repo: Path) -> tuple[bool, str]:
+    """Экран карты (сцена map/MapScreen) на Tutorial: пять экранов собраны, земля под камерой готова, объекты и
+    мини-карта нарисованы, а щелчки проходят весь ход — выбрать отряд, показать путь, пойти и кончить ход (день
+    становится вторым, очки хода возвращаются). Имена картинок на всех 33 картах проверяет dotnet test."""
+    # Игрок S001PL0000 в сценарии — ИИ; проверка ведёт его человеком (иначе его сценарные приказы ИИ двигают отряд после «end»).
+    code, out = godot(repo, ["--scenario", "Tutorial", "--check", "--player", "S001PL0000", "--humans", "S001PL0000", "--clicks", MAP_CLICKS],
+                      "res://scenes/map/MapScreen.tscn")
+    match = MAPSCREEN.search(out)
+    if (code != 0 or match is None or match["ready"] != "True" or int(match["screens"]) != 5
+            or int(match["sprites"]) == 0 or int(match["minimap"]) != 1 or match["leader"] == "-"
+            or int(match["turn"]) < 1 or "walked S001KC0004 " not in out or not re.search(r"^aiturn .* ошибка=0", out, re.M)):
+        return False, f"экран карты: код {code}\n{out.strip()}"
+    # Узел звука один (GameAudio.Of дважды в одном кадре создавал второй); графика карты во вьюпорте — точками (1 = Nearest у
+    # корня MapView, а фильтр SubViewport по умолчанию — Linear).
+    extra = re.search(r" звук=(?P<audio>\d+) фильтр=(?P<filter>\d+) ", out)
+    if extra is None or extra["audio"] != "1" or extra["filter"] != "1":
+        return False, f"экран карты: узлов звука/фильтр {extra.group(0) if extra else '-'} (ожидалось звук=1 фильтр=1)"
+    return True, match.group(0)
+
+
+def leader_face(repo: Path) -> tuple[bool, str]:
+    """Портрет лидера в панели команд (пометка 1 прогона 14.10): «Arrival of the Pilgrims» выдаёт отряд Karasten с лидером-ассасином
+    G000UU5354 — своего FACE в Faces.ff у типа нет, движок (0x5b1e6a) берёт базовый тип BASE_UNIT G000UU0154. Строка выбора отряда
+    печатает, какая картинка в слоте портрета."""
+    code, out = godot(repo, ["--scenario", "Arrival of the Pilgrims", "--check", "--player", "S143PL0001", "--clicks",
+                             "select S143KC004b"], "res://scenes/map/MapScreen.tscn")
+    line = re.search(r"^panel select S143KC004b .*$", out, re.MULTILINE)
+    if code != 0 or line is None or " портрет=1 лицо=G000UU0154FACE " not in line.group(0) + " ":
+        return False, f"портрет лидера: код {code}\n{line.group(0) if line else out.strip()}"
+    message = "портрет лидера: ассасин сценария (G000UU5354) — G000UU0154FACE по базовому типу"
+    # Павший лидер (партия 17.10, пометка 3 — BI2): панель отряда 0x48d8f3 — состояние 10, маска-череп MASKDEADS поверх лица, без красной
+    # доли; портрет панели отражён (setLeftSide(0), снимок оригинала 4,9 против 37,4 без отражения). Сохранение оригинала дня 3 Кланов:
+    # у S073KC0003 лидер пал (LEADR_ALIV 0), S073KC0002 — живой и здоровый. «отражённое=» — разница с отражённым исходным лицом
+    # (0 — ни маски, ни доли), «сырое=» — с неотражённым.
+    sg = corpus_dir(repo) / "20260919-human" / "rastlennaya-vlast-dwarf-t03-008.sg"
+    if not sg.exists():
+        return True, message + "; павший — пропуск: нет корпуса"
+    code, out = godot(repo, ["--sg", str(sg), "--check", "--player", "S073PL000c", "--clicks", "select S073KC0003;select S073KC0002"],
+                      "res://scenes/map/MapScreen.tscn")
+    face = {m["stack"]: m for m in re.finditer(r"^panel select (?P<stack>\S+) .* портрет=(?P<shown>\d) .* отражено=(?P<mirror>\d) "
+                                                r"павший=(?P<dead>\d) маска=(?P<mask>\S+) доля=(?P<share>\d+) значки=\S+ "
+                                                r"сырое=(?P<raw>[\d.]+) отражённое=(?P<flip>[\d.]+) ", out, re.M)}
+    dead, live = face.get("S073KC0003"), face.get("S073KC0002")
+    if (code != 0 or dead is None or live is None or dead["shown"] != "1" or dead["dead"] != "1" or dead["mask"] != "MASKDEADS"
+            or dead["share"] != "100" or float(dead["flip"]) < 10 or live["dead"] != "0" or live["mask"] != "-"
+            or float(live["flip"]) != 0 or float(live["raw"]) < 5 or dead["mirror"] != "1" or live["mirror"] != "1"):
+        return False, f"портрет павшего лидера: код {code}\n{out.strip()}"
+    return True, (f"{message}; павший S073KC0003 — {dead['mask']}, доля {dead['share']}, разница с лицом {dead['flip']}; живой S073KC0002 — "
+                  f"отражён (с отражённым лицом {live['flip']}, с исходным {live['raw']})")
+
+
+MAPBATTLE = re.compile(r"mapbattle end winner=(?P<winner>\S+) attacker_alive=(?P<a>\d) defender_alive=(?P<d>\d) turns=(?P<turns>\d+)")
+
+
+def mapbattle(repo: Path) -> tuple[bool, str]:
+    """Бой с карты (пункт 6): на Tutorial отряд человека выходит из столицы к нейтралу на (42,18) — путь кончается
+    рядом, отряд нападает, бой доигрывается автобоем, проигравший снят с карты, карта возвращается."""
+    code, out = godot(repo, ["--scenario", "Tutorial", "--check", "--player", "S001PL0009", "--clicks", "30,9;42,18;42,18"],
+                      "res://scenes/map/MapScreen.tscn")
+    battle = MAPBATTLE.search(out)
+    screen = MAPSCREEN.search(out)
+    if (code != 0 or battle is None or screen is None or battle["winner"] == "-"
+            or int(battle["a"]) + int(battle["d"]) != 1):
+        return False, f"бой с карты: код {code}\n{out.strip()}"
+    # Подпись крупного портрета (0x5e97dc): у героя человека — его имя «Джагар» (перевод Руссобит-М, data/scenarios/lang/ru;
+    # в сценарии — «Jagare»), у нейтрала — своё или имя типа, пустых нет.
+    opened = re.search(r"battle open .* подпись=(?P<caption>\S+) имена=(?P<names>\S+)", out)
+    if (opened is None or not opened["caption"].startswith("Джагар|") or "S001UN0001:Джагар" not in opened["names"].split(",")
+            or any(n.endswith(":-") for n in opened["names"].split(","))):
+        return False, f"бой с карты: подпись крупного портрета {opened.group(0) if opened else '-'}"
+    # Конец боя — на экране боя до «Закрыть» (замечание 33 прогона 11.10): конец боя модели и его показ (mapbattle over, строки
+    # battle end … — уход призванных, откаты, рост UPGRADE), затем опыт и кнопки (battle end shown), и только потом итог в карту.
+    lines = out.splitlines()
+    ending = next((i for i, line in enumerate(lines) if line.startswith("mapbattle over ")), -1)
+    shown = next((i for i, line in enumerate(lines) if line.startswith("battle end shown ")), -1)
+    closed = next((i for i, line in enumerate(lines) if line.startswith("mapbattle end ")), -1)
+    if not 0 <= ending < shown < closed:
+        return False, f"бой с карты: конец боя не до «Закрыть» (over {ending}, shown {shown}, end {closed})\n{out.strip()}"
+    # Опыт конца боя (0x64d4a4, docs/battle-screen.md §9): у получивших опыт — «Опыт: +N» и портрет светло-жёлтым до закрытия (состояние
+    # Experience), у выросших — вспышка (Experience, затем Plain); прочие — своё.
+    xp = re.search(r"опыт=(?P<gains>\S+) портреты=(?P<faces>\S*)", lines[shown])
+    faces = dict(f.split("=", 1) for f in (xp["faces"].split(",") if xp and xp["faces"] else []))
+    entries = xp["gains"].split(",") if xp and xp["gains"] != "-" else []
+    gained = [g.split("+")[0] for g in entries if "+" in g]
+    grown = [g.split(":")[0] for g in entries if g.endswith(":рост")]
+    if (xp is None or not entries or any(not faces.get(u, "").startswith("Experience@") for u in gained)
+            or any(not faces.get(u, "").startswith(("Experience@", "Plain@")) for u in grown)):
+        return False, f"бой с карты: опыт без жёлтого портрета: {lines[shown].strip()}"
+    # «Опыт: +N» без срока (0x64d23e, Зс53): надпись держится вместе с жёлтым до закрытия боя — после сборки панелей конца боя она на месте.
+    steady = re.search(r"стойких=(\d+)", lines[shown])
+    if gained and (steady is None or int(steady[1]) == 0):
+        return False, f"бой с карты: «Опыт: +N» не держится до закрытия: {lines[shown].strip()}"
+    return True, f"{battle.group(0)}; конец боя показан до «Закрыть»: {lines[shown].strip()}"
+
+
+FLASH = re.compile(r"battle flash (?P<unit>\S+) база=(?P<base>\w+)@(?P<plain>[\d;]+) (?P<faces>.*?) срок=(?P<gone>[\d.]+)с "
+                   r"после=(?P<after>\w+)@(?P<after_px>[\d;]+) держится=(?P<kept>\w+) после_сборки=(?P<rebuilt>\w+) понижение_строк=(?P<wrap>\S+)")
+
+
+def battle_flash(repo: Path) -> tuple[bool, str]:
+    """Вспышки портретов боя (docs/battle-screen.md §9, таблицы 0x5b191f/0x5b19fa/0x5b1a91/0x5b1add): точка середины портрета основной
+    панели под каждой вспышкой — смешение наполовину с цветом состояния (у превращения — чёрным целиком), без заливки — как база; вспышка
+    уходит по сроку надписи, держащаяся — сборкой панелей; «Понижение уровня» на малом портрете — две строки, ни одна не шире 70."""
+    code, out = godot(repo, ["--check", "--flash"], "res://scenes/battle/BattleScreen.tscn")
+    m = FLASH.search(out)
+    if code != 0 or m is None:
+        return False, f"вспышки портретов: код {code}\n{out.strip()}"
+
+    def px(text: str) -> tuple[int, ...]:
+        return tuple(int(v) for v in text.split(";"))
+
+    base = px(m["plain"])
+    got = {k: px(v) for k, v in (f.split("=") for f in m["faces"].split())}
+    colours = {"Hit": (255, 0, 0), "Missed": (255, 255, 0), "Healed": (0, 0, 255), "Boosted": (0, 255, 0), "LowerDamage": (255, 0, 255),
+               "Poisoned": (128, 128, 0), "Shattered": (94, 218, 249), "Experience": (255, 255, 64)}
+    bad = [f"{k}={got.get(k)} ждали≈{tuple((b + c) // 2 for b, c in zip(base, colour))}" for k, colour in colours.items()
+           if got.get(k) is None or any(abs(g - (b + c) // 2) > 1 for g, b, c in zip(got[k], base, colour))]
+    bad += [f"{k}={got.get(k)} ждали базу {base}" for k in ("Shielded", "Pass") if got.get(k) != base]
+    if got.get("Transformed") != (0, 0, 0):
+        bad.append(f"Transformed={got.get('Transformed')} ждали 0;0;0")
+    if m["base"] != "Normal" or m["after"] != "Normal" or px(m["after_px"]) != base or not 0.3 <= float(m["gone"]) <= 2.0:
+        bad.append(f"срок {m['gone']} с, после {m['after']}@{m['after_px']}")
+    if m["kept"] != "Transformed" or m["rebuilt"] != "Normal":
+        bad.append(f"держащаяся {m['kept']} → {m['rebuilt']}")
+    if m["wrap"] != "2x0":
+        bad.append(f"«Понижение уровня»: строк×шире {m['wrap']}, ждали 2x0")
+    if bad:
+        return False, f"вспышки портретов: {'; '.join(bad)}\n{m.group(0)}"
+    return True, f"вспышки портретов: {m.group(0)}"
+
+
+def paperdoll(repo: Path) -> tuple[bool, str]:
+    """«Меню героя» после боя (BTN_PAPERDOLL → closeBattleWindow(true) 0x633e20 → CRequestPaperdollMsg → RequestPaperdoll 0x41f397):
+    день 1 живой партии (корпус 20260919-human), отряд Кланов S073KC0001 бьёт нейтрала S073KC0063 и побеждает — как в журнале; бой закрыт
+    «Меню героя» (--paperdoll): после итога боя проверка событий с отрядом и окно отряда DLG_MANAGE_STACK (CCmdStackActionMsg(отряд, 0) →
+    0x48ee26 → CManageStkInterf). Нужен корпус (вне git); нет его — пропуск."""
+    sg = corpus_dir(repo) / "20260919-human" / "rastlennaya-vlast-dwarf-t01-002.sg"
+    if not sg.exists():
+        return True, "«Меню героя»: пропуск — нет корпуса"
+    code, out = godot(repo, ["--sg", str(sg), "--check", "--player", "S073PL000a", "--clicks", "select S073KC0001;56,37;56,37;arrows",
+                             "--paperdoll"], "res://scenes/map/MapScreen.tscn")
+    lines = out.splitlines()
+    closed = next((i for i, line in enumerate(lines) if line.startswith("mapbattle end winner=S073KC0001 ")), -1)
+    asked = next((i for i, line in enumerate(lines) if line.startswith("paperdoll stack=S073KC0001 запрос окно=DLG_MANAGE_STACK")), -1)
+    shown = next((i for i, line in enumerate(lines) if line.startswith("arrows ") and "окна=DLG_MANAGE_STACK" in line), -1)
+    if code != 0 or not 0 <= closed < asked < shown:
+        return False, f"«Меню героя»: код {code}, итог боя {closed}, запрос {asked}, окно {shown}\n{out.strip()}"
+    return True, f"«Меню героя»: {lines[asked].strip()} — после итога боя, окно открыто"
+
+
+def settings_file(path: Path) -> dict:
+    """Записанный игрой файл настроек (схема 2 — разделы, src/Game.UiModel/Map/SettingsFile.cs): «раздел.ключ» → значение и «version»;
+    нет файла — пусто."""
+    if not path.exists():
+        return {}
+    data = json.loads(path.read_text(encoding="utf-8"))
+    flat = {f"{section}.{key}": value for section, values in data.items() if isinstance(values, dict) for key, value in values.items()}
+    return {**flat, "version": data.get("version")}
+
+
+def corpus_dir(repo: Path) -> Path:
+    """Корпус журналов: D2_CORPUS_DIR (рабочие копии git без своего корпуса) или corpus/ в репозитории."""
+    return Path(os.environ.get("D2_CORPUS_DIR") or repo / "corpus")
+
+
+# Окна города (docs/ui-windows.md): шаги проверки сцены карты и что должна содержать строка каждого шага. Клетки групп —
+# «x» воин, «b» большой, «.» пусто; позиции 0…5, чётные — передний ряд.
+CITY_CASES = [
+    # Десятый круг: «Поставить жезл» (BTN_DROP_ROD, CTaskDropRod) — жезлоносец человека Империи на f7-m6-rods: режим с панелью DLG_DROP_BAG,
+    # курсор DROPRODVAL, первый щелчок — путь, второй — вопрос с ценой, «Да» — жезл; повторно — отказ кнопки (очков хода нет, X005TA0542).
+    ("../20260919-f7/f7-m6-rods-human-t01-021.sg", "S143PL0001", [
+        ("select S143KC0001", ["выделен=S143KC0001"]),
+        ("panel click BTN_DROP_ROD", ["окна=-"]),
+        ("rod 29,9", ["курсор=DROPRODVAL", "после: жезл=S143KC0001", "панель=DLG_DROP_BAG"]),
+        ("rod 29,9", ["окна=DLG_MESSAGE_BOX", "сообщение=вопрос", "текст=Водрузитьжезл"]),
+        ("ui click BTN_YES", ["окна=-"]),
+        ("select S143KC0001", ["выделен=S143KC0001"]),
+        ("panel click BTN_DROP_ROD", ["окна=DLG_MESSAGE_BOX", "текст=Длятогочтобы"]),
+    ]),
+    # Замечание 11.10, п. 31: жезл через клетку (29,10 от жезлоносца на 29,8) — «Да», отряд идёт, встаёт рядом (29,9) и ставит жезл
+    # (сервер 0x440cfc): ход списан целиком, повторная кнопка — отказ «нет очков хода» (X005TA0542). Прежде жезла не было, ход оставался.
+    ("../20260919-f7/f7-m6-rods-human-t01-021.sg", "S143PL0001", [
+        ("select S143KC0001", ["выделен=S143KC0001"]),
+        ("panel click BTN_DROP_ROD", ["окна=-"]),
+        ("rod 29,10", ["курсор=DROPRODVAL", "панель=DLG_DROP_BAG"]),
+        ("rod 29,10", ["окна=DLG_MESSAGE_BOX", "сообщение=вопрос", "текст=Водрузитьжезл"]),
+        ("ui click BTN_YES", ["окна=-"]),
+        ("select S143KC0001", ["выделен=S143KC0001"]),
+        ("panel click BTN_DROP_ROD", ["окна=DLG_MESSAGE_BOX", "текст=Длятогочтобы"]),
+    ]),
+    # Ответ пользователя 11.10: вопрос с ценой и тогда, когда сегодня доходим только до соседней клетки (18,8 от 29,8: до самой клетки не
+    # дойти, до 19,8 — да; DropRodTests.AsksToday_BesideOnlyCellsExistOnRodsMap). «Да» — отряд встаёт рядом и ставит жезл, ход списан.
+    ("../20260919-f7/f7-m6-rods-human-t01-021.sg", "S143PL0001", [
+        ("select S143KC0001", ["выделен=S143KC0001"]),
+        ("panel click BTN_DROP_ROD", ["окна=-"]),
+        ("rod 18,8", ["курсор=DROPRODVAL", "панель=DLG_DROP_BAG"]),
+        ("rod 18,8", ["окна=DLG_MESSAGE_BOX", "сообщение=вопрос", "текст=Водрузитьжезл"]),
+        ("ui click BTN_YES", ["окна=-"]),
+        ("select S143KC0001", ["выделен=S143KC0001"]),
+        ("panel click BTN_DROP_ROD", ["окна=DLG_MESSAGE_BOX", "текст=Длятогочтобы"]),
+    ]),
+    # День 5 живой партии, Кланы: столица → окно армии, перетаскивание гостя в гарнизон, найм по пустой ячейке с вопросом.
+    ("rastlennaya-vlast-dwarf-t05-011.sg", "S073PL000a", [
+        ("panel click BTN_CAPITAL", ["панель=DLG_CAPITAL"]),
+        ("panel click BTN_UNITS", ["окна=DLG_CITY_STACK ", "L=.xxx.x R=bb.x.."]),
+        # Тащение (CDragAndDropInterf 0x56c158): портрет тащимого на курсоре (0x56efc5, замечание 10), вне мест броска — NODRAGDROP.
+        # Рамки допустимости (0x56c58a → 0x56eaef, 0x56e02d → 0x56e487): с нажатия — у обеих групп; свой отряд — все шесть жёлтые,
+        # гарнизон — жёлтые там, куда бросок пройдёт (колонка большого и страж R3 — без рамки); 74×89 по середине ячейки (−2,−2).
+        ("ui press 200,80", ["L=.xxx.x", "тащимое=Faces:", "курсор=IsoCursr:DEFAULT+Faces:", "рамки=9 ",
+                             "IMG_LDROP1:SMALL_VALID@188,66:74x89", "IMG_LDROP0:SMALL_VALID@268,66:74x89",
+                             "IMG_RDROP2:SMALL_VALID@455,172:74x89", "!IMG_RDROPB0", "!IMG_RDROP3"]),
+        ("ui move 700,40", ["тащение=NODRAGDROP", "курсор=IsoCursr:NODRAGDROP+Faces:", "рамки=9 "]),
+        ("ui release 470,190", ["L=..xx.x R=bbxx..", "!рамки="]),
+        ("ui click 470,290", ["окна=DLG_CITY_STACK>DLG_HIRE_LEADER_2 ", "найм=Unit", "LBOX_LEADER=4"]),
+        ("ui click BTN_HIRE_LEADER", ["окна=DLG_CITY_STACK>DLG_HIRE_LEADER_2>DLG_MESSAGE_BOX"]),
+        ("ui click BTN_YES", ["окна=DLG_CITY_STACK ", "R=bbxxx.", "золото=250"]),
+        ("ui click BTN_CLOSE", ["окна=-"]),
+        ("panel click BTN_BACK", ["панель=DLG_STRATEGIC"]),
+    ]),
+    # День 5: зелье из сумки гостя на воинов (0x500d03 → 0x5de495, бросок 0x4ff396; журнал human seq 2199562 — то же зелье лидеру L2,
+    # 79 → 150): с нажатия рамки у обеих групп — раненый лидер жёлтая, здоровые красные (и колонка большого гарнизона), склад принимает
+    # предмет (DRAGDROP_INVENT_VALID), сумка-источник — нет; бросок на
+    # здорового — «Воин не ранен» (X005TA0594), зелье на месте; на лидера — выпито, рамок нет.
+    ("rastlennaya-vlast-dwarf-t05-011.sg", "S073PL000a", [
+        ("panel click BTN_CAPITAL", ["панель=DLG_CAPITAL"]),
+        ("panel click BTN_UNITS", ["окна=DLG_CITY_STACK ", "сумка=8"]),
+        ("ui press 50,414", ["тащимое=IconItem:G000IG0006", "рамки=7 ", "IMG_LDROP2:SMALL_VALID@268,172:74x89",
+                             "IMG_LDROP1:SMALL_INVALID@188,66:74x89", "IMG_RDROPB0:LARGE_INVALID@456,68:152x85", "!IMG_LDROP0",
+                             "MLBOX_RINVENTORY_DROP:INVENT_VALID@484,404:275x93", "!MLBOX_LINVENTORY_DROP"]),
+        ("ui release 225,110", ["окна=DLG_CITY_STACK>DLG_MESSAGE_BOX", "сообщение=ОК", "текст=Воиннеранен"]),
+        ("ui click BTN_OK", ["окна=DLG_CITY_STACK ", "сумка=8", "отказ=AlreadyAtFullHp"]),
+        ("ui press 50,414", ["IMG_LDROP2:SMALL_VALID@268,172:74x89"]),
+        ("ui release 305,216", ["окна=DLG_CITY_STACK ", "сумка=7", "отказ=- ", "!рамки="]),
+    ]),
+    # День 5, второй круг: карточка по правой кнопке (пока держится), кукла гостя, отпуск (страж — «ОК», воин — вопрос),
+    # предмет из сумки гостя на склад перетаскиванием; третий круг — «Остановить продвижение» (страж — отказ, воин — вопрос).
+    ("rastlennaya-vlast-dwarf-t05-011.sg", "S073PL000a", [
+        ("panel click BTN_CAPITAL", ["панель=DLG_CAPITAL"]),
+        ("panel click BTN_UNITS", ["имя=Сатория", "R=bb.x..", "сумка=8", "склад=0"]),
+        ("ui rpress 470,120", ["окна=DLG_CITY_STACK>DLG_R_C_UNIT ", "карточка="]),
+        ("ui rrelease 470,120", ["окна=DLG_CITY_STACK "]),
+        # Большой юнит гарнизона: одна рамка на колонку (DRAGDROP_LARGE_VALID 152×85, −1,0); у гостя рамок нет (лидерство, лидер в колонке).
+        ("ui press 470,120", ["рамки=5 ", "IMG_RDROPB0:LARGE_VALID@456,68:152x85", "!IMG_LDROP", "!IMG_RDROP0", "!IMG_RDROP1"]),
+        ("ui release 470,120", ["R=bb.x..", "!рамки="]),
+        ("ui click TOG_PAPERDOLL", ["кукла=1"]),
+        ("ui click TOG_PAPERDOLL", ["кукла=0"]),
+        # Инструмент отпуска — тоже перетаскивание (CMidDropAction): страж гарнизона красная (0x502186, код 2), лидер гостя — без рамки.
+        ("ui click TOG_DISMISS", ["инструмент=Dismiss", "рамки=5 ", "IMG_RDROP3:SMALL_INVALID@535,172:74x89", "!IMG_LDROP3"]),
+        ("ui click 550,190", ["сообщение=ОК"]),
+        ("ui click BTN_OK", ["окна=DLG_CITY_STACK ", "гарнизон=2"]),
+        ("ui click TOG_DISMISS", ["инструмент=Dismiss"]),
+        ("ui click 470,120", ["сообщение=вопрос"]),
+        ("ui click BTN_YES", ["гарнизон=1", "R=...x.."]),
+        ("ui press 50,414", ["сумка=8"]),
+        ("ui release 494,414", ["сумка=7", "склад=1"]),
+        ("ui click TOG_DYNLEVEL", ["инструмент=StopGrowth"]),
+        ("ui click 550,190", ["сообщение=ОК", "Вынеможетеостановить"]),
+        ("ui click BTN_OK", ["окна=DLG_CITY_STACK ", "инструмент=None"]),
+        ("ui click TOG_DYNLEVEL", ["инструмент=StopGrowth"]),
+        ("ui click 200,80", ["сообщение=вопрос", "Выдействительн"]),
+        ("ui click BTN_YES", ["окна=DLG_CITY_STACK ", "отказ=-"]),
+    ]),
+    # День 5, третий круг: картинка столицы — наведение на постройку даёт DLG_BUILDING на месте DLG_ISO_PAL, мимо — прежнюю
+    # панель; правая кнопка по постройке — её энциклопедия; щелчок по картинке — окно построек; одна анимация идёт.
+    ("rastlennaya-vlast-dwarf-t05-011.sg", "S073PL000a", [
+        ("panel click BTN_CAPITAL", ["панель=DLG_CAPITAL"]),
+        ("cap 360,400", ["постройка=G000BB0026", "пал=DLG_BUILDING", "анимаций=1"]),
+        ("cap 5,5", ["постройка=-", "пал=DLG_ISO_PAL"]),
+        ("cap rclick 360,400", ["окна=DLG_R_C_BUILDING ", "постройка=G000BB0026"]),
+        ("ui rrelease 360,400", ["окна=-"]),
+        ("cap click", ["окна=DLG_BUILD_STRUCTURE "]),
+        ("ui click BTN_CLOSE", ["окна=-"]),
+    ]),
+    # День 5: «Вывести героя» из окна армии столицы — окно и столица закрываются, на панели снова команды.
+    ("rastlennaya-vlast-dwarf-t05-011.sg", "S073PL000a", [
+        ("panel click BTN_CAPITAL", ["панель=DLG_CAPITAL"]),
+        ("panel click BTN_UNITS", ["гость=4"]),
+        ("ui click BTN_EXIT_CITY", ["окна=-", "панель=DLG_STRATEGIC"]),
+        ("city capital", ["гость=0", "L=------"]),
+    ]),
+    # Прогон 11.10, B1: щелчок по столице с гостем — первый выбирает гостя (0x4d4331), второй по сердцу укрепления — окно армии
+    # (0x4d0e2c → 0x486c8e; замечание 8); портрет героя на панели после окна и после вывода из столицы (замечание 11); отпускание на
+    # портрете гостя панели столицы — окно армии (CFortInterf 0x4867ca; замечание 21).
+    ("rastlennaya-vlast-dwarf-t05-011.sg", "S073PL000a", [
+        ("53,34", ["выбран=S073KC0001", "столица=0", "окна=-"]),
+        ("52,33", ["окна=DLG_CITY_STACK "]),
+        ("ui click BTN_CLOSE", ["окна=-", "портрет=1"]),
+        ("panel click BTN_CAPITAL", ["панель=DLG_CAPITAL", "портрет=0"]),
+        ("panel release IMG_LEADER", ["окна=DLG_CITY_STACK ", "гость=4"]),
+        ("ui click BTN_EXIT_CITY", ["окна=-", "панель=DLG_STRATEGIC", "портрет=1", "выбран=S073KC0001"]),
+    ]),
+    # Прогон 3 11.10, п. 6: сердце укрепления (вход и три клетки над ним и левее, 0x5e948d) без гостя щелчок не берёт (0x4d4262 даёт там
+    # гостя или ничего) — выбранному отряду это путь к столице; щелчок вне сердца выбирает столицу (CTaskSelectCity, 0x4d45a6), второе
+    # нажатие двойного открывает экран столицы, а не окно построек (0x4cf79d → CCapitalInterf; замечания 8, 28); в окне армии — подсказка
+    # найма героя (X005TA0159, CDDUnitNoGroup 0x573131; замечание 29). Клетка сердца щёлкается одна: второй щелчок по другой клетке той же
+    # столицы подтвердил бы путь (0x4cc8c2: та же цель-вход и тот же конец — docs/map-path.md §4, «Прицел щелчка»), и отряд пошёл бы.
+    ("rastlennaya-vlast-dwarf-t24-045.sg", "S073PL000a", [
+        ("panel click BTN_NEXT_LEADER", ["выбран=S073KC0001"]),
+        ("52,33", ["выбран=S073KC0001", "путь=18 ", "укрепление=-", "столица=0", "окна=-"]),
+        ("51,32", ["выбран=- ", "путь=0 ", "укрепление=S073FT0001", "столица=0", "окна=-"]),
+        ("51,32", ["столица=1", "окна=-"]),
+        ("panel click BTN_BACK", ["панель=DLG_STRATEGIC"]),
+        ("city capital", ["гость=0", "подсказка_найма=Щелкнитемышкойчт"]),
+        ("ui click BTN_CLOSE", ["окна=-"]),
+    ]),
+    # Прогон 3 11.10, п. 6: столица с гостем — щелчок вне сердца выбирает столицу, а не гостя; второй открывает экран столицы (0x4cf79d:
+    # 0x4cf6a9 даёт гостя только на самой клетке входа).
+    ("rastlennaya-vlast-dwarf-t05-011.sg", "S073PL000a", [
+        ("50,31", ["выбран=- ", "укрепление=S073FT0001", "столица=0", "окна=-"]),
+        ("50,31", ["столица=1", "окна=-"]),
+    ]),
+    # День 24, столица без гостя: найм героя — окно имени (набранная буква дописывается), найм под этим именем.
+    ("rastlennaya-vlast-dwarf-t24-045.sg", "S073PL000a", [
+        ("city capital", ["гость=0", "золото=1650"]),
+        ("ui click 265,216", ["найм=Leader", "LBOX_LEADER=5"]),
+        ("ui click BTN_HIRE_LEADER", ["DLG_HIRE_LEADER_2>DLG_GETINFO_BOX "]),
+        ("ui type Z", ["DLG_GETINFO_BOX "]),
+        ("ui click BTN_CLOSE", ["окна=DLG_CITY_STACK ", "гость=1", "L=..x...", "золото=1150"]),
+    ]),
+    # День 19, снос чужого жезла жезлоносцем (пометка 4 партии 15.10; журнал human seq 4173754…4173813): рядом с жезлом — вопрос
+    # X005TA0272 с первого щелчка (0x4d0e2c → 0x4d144d), «Да» — снос (0x4d1ec7 → 0x4408cb), жезлов 20 → 19.
+    ("rastlennaya-vlast-dwarf-t19-033.sg", "S073PL000a", [
+        ("83,33", ["выбран=S073KC0075", "жезлов=20"]),
+        ("83,34", ["окна=DLG_MESSAGE_BOX ", "жезлов=20"]),
+        ("ui click BTN_YES", ["окна=-", "жезлов=19"]),
+    ]),
+    # Тот же жезл через клетку: первый щелчок — путь, второй — вопрос (сегодня дойдёт), «Да» — ход к жезлу и снос.
+    ("rastlennaya-vlast-dwarf-t19-033.sg", "S073PL000a", [
+        ("83,33", ["выбран=S073KC0075"]),
+        ("81,33", ["путь=3 "]),
+        ("81,33", ["идёт=1"]),
+        ("83,34", ["путь=2 ", "окна=- ", "жезлов=20"]),
+        ("83,34", ["окна=DLG_MESSAGE_BOX ", "жезлов=20"]),
+        ("ui click BTN_YES", ["окна=-", "жезлов=19"]),
+    ]),
+    # День 24: окно построек из столицы — ветка магов Кланов, выбор значка 46 (можно строить), «Построить» с вопросом.
+    ("rastlennaya-vlast-dwarf-t24-045.sg", "S073PL000a", [
+        ("panel click BTN_CAPITAL", ["панель=DLG_CAPITAL"]),
+        ("panel click BTN_BUILD_STRUCTURE", ["окна=DLG_BUILD_STRUCTURE ", "ветка=TOG_FIGHTER", "построек=8"]),
+        # Правая кнопка по портрету воина постройки — его карточка, пока держится (0x4ac52d; замечание 20).
+        # Портрет воина постройки — в рамке карточки отряда по размеру (0x4abaa1: малый 0x5b680b, большой 0x5b6870; пометка 1 партии 15.10).
+        ("ui click 209,57", ["выбрано=G000BB0026", "портрет=Icons:BORDERUNITSMALL&Faces:G000UU0037FACE"]),
+        ("ui rpress 518,300", ["DLG_BUILD_STRUCTURE>DLG_R_C_UNIT ", "карточка=g000uu0037"]),
+        ("ui rrelease 518,300", ["окна=DLG_BUILD_STRUCTURE "]),
+        # Большой: место портрета — на всю рамку 164 (0x4abb08…0x4abbd7), правая кнопка правее малого места — тоже карточка.
+        ("ui click TOG_OTHER", ["ветка=TOG_OTHER"]),
+        ("ui click 215,59", ["выбрано=G000BB0041", "портрет=Icons:BORDERUNITLARGE&Faces:G000UU0030FACE"]),
+        ("ui rpress 620,300", ["DLG_BUILD_STRUCTURE>DLG_R_C_UNIT ", "карточка=g000uu0030"]),
+        ("ui rrelease 620,300", ["окна=DLG_BUILD_STRUCTURE "]),
+        ("ui click TOG_MAGE", ["ветка=TOG_MAGE", "46@302,58:+"]),
+        ("ui click 302,58", ["выбрано=G000BB0046"]),
+        ("ui click BTN_BUILD", ["DLG_BUILD_STRUCTURE>DLG_MESSAGE_BOX "]),
+        # Построено — окно закрывается само (0x4ab364 → 0x5c8f71 в 0x4ab3d1; корпус: 23 постройки из 23); снова открытое — на той же ветке.
+        ("ui click BTN_YES", ["окна=-"]),
+        ("panel click BTN_BUILD_STRUCTURE", ["окна=DLG_BUILD_STRUCTURE ", "ветка=TOG_MAGE", "построено=7", "золото=900", "46@302,58:b"]),
+        ("ui click BTN_CLOSE", ["окна=-"]),
+    ]),
+    # День 24: окно отряда с портрета героя панели команд; предмет боевого слота — в сумку и обратно. Рамки предметов (памятка 3
+    # партии 15.10; CDDBaseEquip 0x5713c9/0x571b20/0x571c80, CDDFoldedInv 0x56cff7): надетое зелье — боевые слоты жёлтые
+    # (DRAGDROP_SMALL по середине слота 70×85, −2,−2), сумка DRAGDROP_INVENT_VALID в точке списка, воины — рамки зелья; из сумки — у
+    # сумки рамки нет, прочие слоты (не того рода) — тоже.
+    ("rastlennaya-vlast-dwarf-t24-045.sg", "S073PL000a", [
+        ("panel click BTN_NEXT_LEADER", ["окна=-"]),
+        ("panel release IMG_LEADER", ["окна=DLG_MANAGE_STACK ", "отряд=S073KC0001", "кукла=..xx...", "сумка=7", "MLBOX_INVENTORY=3"]),
+        ("ui rpress 494,414", ["окна=DLG_MANAGE_STACK>DLG_R_C_ITEM ", "предмет="]),
+        ("ui rrelease 494,414", ["окна=DLG_MANAGE_STACK "]),
+        ("ui press 506,203", ["кукла=..xx...", "IMG_BATTLE1_DROP:SMALL_VALID@469,159:74x89", "IMG_BATTLE2_DROP:SMALL_VALID@707,159:74x89",
+                              "MLBOX_INVENTORY_DROP:INVENT_VALID@484,404:275x93", "!IMG_BANNER_DROP", "!IMG_BOOTS_DROP"]),
+        ("ui release 494,414", ["кукла=...x...", "сумка=8", "!рамки="]),
+        ("ui press 494,414", ["сумка=8", "IMG_BATTLE1_DROP:SMALL_VALID@469,159:74x89", "!MLBOX_INVENTORY_DROP", "!IMG_TOME_DROP"]),
+        ("ui release 506,203", ["кукла=..xx...", "сумка=7", "!рамки="]),
+        ("ui click BTN_CLOSE", ["окна=-"]),
+    ]),
+    # День 24, курсор окон (CInterface::setCursor 0x5308aa из строки DIALOG, 0x50cd54; выбор CCursorImpl 0x54021c → 0x5308d5): над окном —
+    # курсор его разметки, кинжал _CUDEFAUL с горячей точкой 0,0 (поля 7–8 DIALOG); окно поверх окна — верхнего; тащение — свой курсор,
+    # бросили — снова кинжал; окно закрылось — снова курсор карты (решение пользователя 15.10: «как в оригинале»).
+    ("rastlennaya-vlast-dwarf-t24-045.sg", "S073PL000a", [
+        ("panel click BTN_NEXT_LEADER", ["окна=-"]),
+        ("wcursor", ["окна=0 ", "чей=карта"]),
+        ("ui click BTN_OPTIONS", ["окна=DLG_OPTIONS"]),
+        ("wcursor", ["верх=DLG_OPTIONS ", "курсор=ui:_CUDEFAUL ", "кадров=1 ", "точка=0,0 ", "чей=окно"]),
+        ("ui click BTN_CLOSE", ["окна=-"]),
+        ("wcursor", ["окна=0 ", "чей=карта"]),
+        ("panel release IMG_LEADER", ["окна=DLG_MANAGE_STACK "]),
+        ("wcursor", ["верх=DLG_MANAGE_STACK ", "курсор=ui:_CUDEFAUL ", "точка=0,0 "]),
+        ("ui press 506,203", ["кукла=..xx...", "тащимое=IconItem:", "курсор=IsoCursr:"]),
+        ("ui release 494,414", ["кукла=...x...", "сумка=8"]),
+        ("wcursor", ["верх=DLG_MANAGE_STACK ", "курсор=ui:_CUDEFAUL "]),
+        ("ui click BTN_CLOSE", ["окна=-"]),
+        ("wcursor", ["окна=0 ", "чей=карта"]),
+        ("site merchant", ["окна=DLG_MERCHANT ", "курсор=ui:_CUDEFAUL "]),
+        ("ui press 494,413", ["окна=DLG_MERCHANT "]),
+        ("ui release 50,413", ["сообщение=вопрос"]),
+        ("wcursor", ["окна=2 ", "верх=DLG_MESSAGE_BOX ", "курсор=ui:_CUDEFAUL "]),
+        ("ui click BTN_NO", ["окна=DLG_MERCHANT "]),
+        ("ui click BTN_CLOSE", ["окна=-"]),
+        ("wcursor", ["окна=0 ", "чей=карта"]),
+        ("city capital", ["окна=DLG_CITY_STACK "]),
+        ("wcursor", ["верх=DLG_CITY_STACK ", "курсор=ui:_CUDEFAUL ", "чей=окно"]),
+        ("ui click BTN_CLOSE", ["окна=-"]),
+        ("wcursor", ["окна=0 ", "чей=карта"]),
+    ]),
+    # День 24: исследование из столицы — вопрос X005TA0269, «Да» — заклинание изучено, окно остаётся.
+    ("rastlennaya-vlast-dwarf-t24-045.sg", "S073PL000a", [
+        ("panel click BTN_CAPITAL", ["панель=DLG_CAPITAL"]),
+        ("panel click BTN_RESEARCH_SPELL", ["окна=DLG_RESEARCH_SPELL ", "заклинаний=5", "известно=0"]),
+        ("ui click BTN_RESEARCH_SPELL", ["сообщение=вопрос", "Исследоватьзаклинание"]),
+        # Отметка изученного (Icons:ICNSY001, opacity 300) ложится сложением, а не чёрным квадратом (замечание 23).
+        ("ui click BTN_YES", ["окна=DLG_RESEARCH_SPELL ", "известно=1", "сложением=1"]),
+    ]),
+    # День 24, площадки отрядом S073KC0001 (имя площадки из сценария): торговец — товар в сумку с вопросом, кукла вместо отряда; маг —
+    # книга известных заклинаний; наёмники — «нет места»; тренер — обучение и итог.
+    ("rastlennaya-vlast-dwarf-t24-045.sg", "S073PL000a", [
+        ("panel click BTN_NEXT_LEADER", ["окна=-"]),
+        # Окно закрывает место отряда фоном DLG_MERCHANT_GROUP_BG во всю картинку (0x49a449), курсор карты сменён курсором окна — кинжалом
+        # _CUDEFAUL из разметки (партия 15.10, пометки 2 и 5; 0x5308d5). Двойной щелчок по товару — как бросок в сумку (решение
+        # пользователя 15.10, у движка его нет, 0x53616c): вопрос с подставленными именем и ценой, не шаблон с «%NAME%»; «Нет» — ничего не куплено.
+        ("site merchant", ["окна=DLG_MERCHANT ", "имя=Лавка_Кру", "товаров=7", "сумка=7", "золото=1650", "курсор=ui:_CUDEFAUL ",
+                           "фон=DLG_MERCHANT_GROUP_BG@0,0:350x386:135100"]),
+        ("ui double 494,413", ["DLG_MERCHANT>DLG_MESSAGE_BOX ", "сообщение=вопрос", "текст=ЭтотпредметЭликсирЖизни", "числа=400 "]),
+        ("ui click BTN_NO", ["окна=DLG_MERCHANT ", "сумка=7", "золото=1650"]),
+        # Картинка лавки SITE0002 260×248 в месте IMG_MERCHANT 260×219 — лишнее обрезано (снимок «Лавка Веррика» 17.10; 0x49938e → 0x530db8).
+        ("ui move 600,200", ["окна=DLG_MERCHANT ", "!IMG_MERCHANT:"]),
+        # Товар «приклеивается» к курсору (пользователь 17.10): нажатие — картинка тащимого на курсоре, над складом — «нельзя», над сумкой —
+        # основа DEFAULT (CDDFoldedInv 0x56d84d, наложение 0x532df9). Рамка сумки — товар по карману (0x5056f7 → 0x5df9ea), складу — нет.
+        ("ui press 494,413", ["окна=DLG_MERCHANT ", "тащимое=IconItem:G000IG0001", "курсор=IsoCursr:NODRAGDROP+IconItem:G000IG0001",
+                              "MLBOX_RINVENTORY_DROP:INVENT_VALID@40,403:275x93", "!MLBOX_LINVENTORY_DROP"]),
+        ("ui move 50,413", ["тащимое=IconItem:G000IG0001", "курсор=IsoCursr:DEFAULT+IconItem:G000IG0001"]),
+        ("ui release 50,413", ["сообщение=вопрос", "Этотпредмет", "!MLBOX_RINVENTORY_DROP"]),
+        ("ui click BTN_YES", ["сумка=8", "золото=1250"]),
+        ("ui click TOG_PAPERDOLL", ["кукла=1"]),
+        # Кукла торговца рисует рамки, как кукла окна отряда (Ин40; CDDEquipment 0x4cbcea → 0x50401c, 0x571b20/0x571c80): надетое из
+        # первого боевого слота — оба боевых жёлтые по середине слота, сумка (0x5056f7) и склад (CMidDropInventory 0x572585, купит —
+        # 0x4fe84a) — DRAGDROP_INVENT_VALID; прочие слоты — нет. Бросили мимо — рамок нет.
+        ("ui press 50,200", ["IMG_BATTLE1_DROP:SMALL_VALID@19,159:74x89", "IMG_BATTLE2_DROP:SMALL_VALID@257,159:74x89",
+                             "MLBOX_RINVENTORY_DROP:INVENT_VALID@40,403:275x93", "MLBOX_LINVENTORY_DROP:INVENT_VALID@484,403:275x93",
+                             "!IMG_BANNER_DROP", "!IMG_BOOTS_DROP"]),
+        ("ui release 0,0", ["кукла=1", "!рамки="]),
+        ("ui click TOG_PAPERDOLL", ["кукла=0"]),
+        ("ui click BTN_CLOSE", ["окна=-"]),
+        ("site mage", ["окна=DLG_MAGE ", "имя=Лавка_волш", "предлагает=7"]),
+        # Заклинание мага тоже тянется под курсором (значок IconSpel), примет только левый список купленных.
+        ("ui press 600,420", ["тащимое=IconSpel:G000SS0005", "курсор=IsoCursr:NODRAGDROP+IconSpel:G000SS0005"]),
+        ("ui move 200,440", ["курсор=IsoCursr:DEFAULT+IconSpel:G000SS0005"]),
+        ("ui release 0,0", ["окна=DLG_MAGE ", "!тащимое="]),
+        ("ui click BTN_KNOWN_SPELL", ["окна=DLG_MAGE>DLG_CAST_SPELL "]),
+        ("ui click BTN_CLOSE", ["окна=DLG_MAGE "]),
+        ("ui click BTN_CLOSE", ["окна=-"]),
+        ("site mercenaries", ["DLG_MERCENARIES>DLG_MESSAGE_BOX ", "Ввашемотряде"]),
+        # Строка ростера (0x503e47): портрет в левом верхнем углу ячейки 486,396 (левая рамка подложки), подпись 0x61fe1e «имя, ОЗ, цена» —
+        # в месте (14, 115) ячейки, на пергаменте (пользователь 17.10: «поползли портреты, текста нет»).
+        ("ui click BTN_OK", ["окна=DLG_MERCENARIES ", "ростер=4",
+                             "ростер0=Faces:G000UU5002FACE@486,396_текст@500,511:251x79=ОполченецОЗ:95/95Цена:50"]),
+        ("ui press 496,406", ["тащимое=Faces:G000UU5002FACE", "курсор=IsoCursr:"]),
+        ("ui release 0,0", ["окна=DLG_MERCENARIES ", "!тащимое="]),
+        ("ui click BTN_BACK", ["окна=-"]),
+        # Длинное имя героя (пометка 12 партии 17.10, «S1 покупатель и продавец»): вторая строка не выходит за место TXT_LEADER_NAME 179×22 —
+        # движок режет картинку текста местом элемента (CTextBoxInterf 0x533862, виджет 0x53e18b); короткое имя не режется.
+        ("site merchant", ["окна=DLG_MERCHANT ", "срезано=TXT_GOLD "]),
+        ("ui click BTN_CLOSE", ["окна=-"]),
+        ("rename S1_покупатель_и_продавец", ["rename ok"]),
+        ("site merchant", ["окна=DLG_MERCHANT ", "срезано=TXT_GOLD,TXT_LEADER_NAME "]),
+        ("ui click BTN_CLOSE", ["окна=-"]),
+        # Слово длиннее места (Ин37): движок его не рвёт — кусок «слово + пробелы» один на строке и выходит за место (0x529b94, 0x52a1ba →
+        # 0x52a2f0); Godot WordSmart рвал по буквам — вторая строка, срезанная местом.
+        ("rename Безымяннейшийпревеликийгерой", ["rename ok"]),
+        ("site merchant", ["окна=DLG_MERCHANT ", "срезано=TXT_GOLD "]),
+        ("ui click BTN_CLOSE", ["окна=-"]),
+        # Колесо над картой — стрелки ↑/↓ (WM_MOUSEWHEEL → VK_UP/VK_DOWN, 0x5626a3; вид карты — шаг на клетку, 0x5418fb).
+        ("wheel down", ["сдвиг=0,16 "]),
+        ("wheel up", ["сдвиг=0,-16 "]),
+        ("site trainer", ["окна=DLG_TRAINING_CAMP ", "имя=Лагерь_тренировок"]),
+        ("ui click TOG_TRAINING", ["окна=DLG_TRAINING_CAMP "]),
+        ("ui click 200,80", ["сообщение=вопрос", "Обучениеэтого"]),
+        # Итог обучения: портрет в рамке BORDERUNITSMALL/LARGE по размеру воина (0x49e5cb → 0x5b680b/0x5b6870; пометка 32 партии 17.10).
+        ("ui click BTN_YES", ["DLG_TRAINING_CONFIRM ", "полностью=1", "лицо=Icons:BORDERUNIT"]),
+        ("ui click BTN_OK", ["окна=DLG_TRAINING_CAMP ", "золото=1230"]),
+    ]),
+    # День 24, пятый круг: дипломатия — поле на месте карты и панель; выбран другой лорд — дань 150 золотых удержанием стрелки; «Назад»;
+    # «Задание» (брифинг поверх карты) и журнал.
+    ("rastlennaya-vlast-dwarf-t24-045.sg", "S073PL000a", [
+        ("panel click BTN_DIPLOMACY", ["панель=DLG_DIPLOMACY"]),
+        ("diplo 2", ["игроков=4", "дань=1", "золото=1650", "полоса_золота=1"]),
+        # Карточка игрока DLG_R_C_PLAYER (0x48522d → 0x577a0c), пока держится правая кнопка: над портретом слота поля и над лицом выбранного.
+        ("panel field rpress IMG_RACE2", ["окна=DLG_R_C_PLAYER ", "игрок=S073PL0009 ", "лицо=Lords:LORDHUL0", "один_из_Ваших_соперников!//"]),
+        ("panel field rrelease IMG_RACE2", ["окна=- "]),
+        ("panel rpress IMG_LORD_FACE", ["окна=DLG_R_C_PLAYER ", "игрок=S073PL0009 "]),
+        ("panel rrelease IMG_LORD_FACE", ["окна=- "]),
+        ("panel field rpress IMG_RACE1", ["окна=DLG_R_C_PLAYER ", "игрок=S073PL000a ", "Вы_за_него_играете!"]),
+        ("panel field rrelease IMG_RACE1", ["окна=- "]),
+        ("panel click BTN_GIVE_RESS", ["окна=DLG_GIVE_RESOURCE ", "дань=0"]),
+        # Стрелка с автоповтором: нажатие — без шага, 600 мс удержания — два шага (250, 500), отпускание — ещё один.
+        ("ui press BTN_UP", ["дань=0 "]),
+        ("ui wait 600", ["дань=100 "]),
+        ("ui release BTN_UP", ["дань=150 "]),
+        # Подсказка: 250 мс покоя над «ОК», соседняя — сразу, нажатие прячет.
+        ("ui move BTN_OK", ["подсказка=-"]),
+        ("ui wait 300", ["подсказка=Подтвердить"]),
+        ("ui move BTN_CANCEL", ["подсказка=Отмена"]),
+        # Дань ИИ — его сообщение дарителю PLAYER_GIVE_GOLD (0x474dd2) окном DLG_CHAT_AI (CCmdChatMsg → 0x4b9747; корпус legions 8 из 8).
+        ("ui click BTN_OK", ["окна=DLG_CHAT_AI ", "реплика="]),
+        ("ui click BTN_OK", ["окна=-"]),
+        ("diplo 2", ["золото=1500"]),
+        # Шестой круг: продажа предмета — окно склада своих крепостей; обмен областями — вопрос или отказ сообщением.
+        ("panel click BTN_TRADE_ITEM", ["окна=DLG_TRADE_ITEM ", "продажа крепость="]),
+        ("ui click BTN_CLOSE", ["окна=-"]),
+        ("panel click BTN_EXCHANGE_FOG", ["окна=DLG_MESSAGE_BOX"]),
+        ("ui click BTN_OK", ["окна=-"]),
+        ("panel click BTN_BACK", ["панель=DLG_STRATEGIC"]),
+        ("ui click BTN_REPORT", ["окна=DLG_SCENARIO_BRIEFING ", "задание="]),
+        ("ui click BTN_CONTINUE", ["окна=-"]),
+        ("ui click BTN_QUESTLOG", ["окна=DLG_QUEST_LOG ", "журнал="]),
+        ("ui click BTN_CLOSE", ["окна=-"]),
+        # Девятый круг: окно полученного DLG_ITEM (docs/ui-windows.md §14) — пустой мешок, два заклинания из библиотеки подряд.
+        ("given empty", ["окна=DLG_MESSAGE_BOX ", "получено=ничего"]),
+        ("ui click BTN_OK", ["окна=-"]),
+        ("given spell", ["окна=DLG_ITEM ", "получено=заклинание", "библиотека=1 первое=1"]),
+        ("ui click BTN_OK", ["окна=DLG_ITEM ", "первое=0"]),
+        ("ui click BTN_OK", ["окна=-"]),
+        ("given", ["окна=DLG_ITEM ", "получено=предмет", "первое=1"]),
+    ]),
+    # День 66, пятый круг: обмен — главный отряд S073KC0001 и S073KC00b7 вплотную; выбор (панель DLG_DROP_BAG, курсор EXCHANGE над
+    # соседом), окно DLG_EXCHANGE, предмет из левой сумки в правую, куклы, «Закрыть».
+    ("rastlennaya-vlast-dwarf-t66-112.sg", "S073PL000a", [
+        ("select S073KC0001", ["выделен=S073KC0001", "обмен=1"]),
+        ("panel click BTN_EXCHANGE", ["панель=DLG_DROP_BAG"]),
+        ("pick 90,90", ["курсор=- ", "панель=DLG_DROP_BAG", "окна=-"]),
+        ("pick 85,66", ["курсор=EXCHANGE ", "отметка=85,66:SELECT_NO ", "панель=- ", "окна=DLG_EXCHANGE ", "R=S073KC00b7", "кукла=0"]),
+        ("ui press 80,445", ["сумкаR=0"]),
+        ("ui release 520,445", ["сумкаR=1", "отказ=-"]),
+        ("ui click TOG_PAPERDOLL", ["кукла=1"]),
+        ("ui click BTN_CLOSE", ["окна=-"]),
+        # Шестой круг: «Посох или свиток» — герой умеет, свитков в сумке нет — пустой список.
+        ("panel click BTN_WAND_SCROLL", ["окна=DLG_WAND_SCROLL ", "посох предметов=0"]),
+        ("ui click BTN_CLOSE", ["окна=-"]),
+    ]),
+    # День 24, шестой круг, глазами S073PL0009: вор S073KC0076 у отряда S073KC0032 — окно действий (весь список, доступные чёрным),
+    # «Отмена» — вопрос X005TA0766, «Нет» — окно остаётся, «Да» — окно закрыто.
+    ("rastlennaya-vlast-dwarf-t24-045.sg", "S073PL0009", [
+        ("thief S073KC0076 S073KC0032", ["открыто=1", "окна=DLG_THIEF_ACTIONS ", "действий=2 доступно=2"]),
+        ("ui click BTN_CANCEL", ["окна=DLG_THIEF_ACTIONS>DLG_MESSAGE_BOX", "сообщение=вопрос"]),
+        ("ui click BTN_NO", ["окна=DLG_THIEF_ACTIONS "]),
+        ("ui click BTN_CANCEL", ["DLG_MESSAGE_BOX"]),
+        ("ui click BTN_YES", ["окна=-"]),
+    ]),
+    # День 30, седьмой круг: одиночная игра — итогов хода нет (ShowTurnSummary по умолчанию 0, 0x48a363); флажок «Всегда показывать
+    # результаты хода» в окне настроек — на следующем дне окно итогов (DLG_TURNSUMMARY), «ОК».
+    # 28.09: день 29 — после правок ИИ (очередь дня, заклинания) в ходе ИИ дня 31 событий для итогов PL000a нет, окно итогов не нужно.
+    ("rastlennaya-vlast-dwarf-t29-053.sg", "S073PL000a", [
+        ("end", ["день=30", "окна=-"]),
+        ("ui click BTN_OPTIONS", ["окна=DLG_OPTIONS"]),
+        ("ui click TOG_SHOWTURNSUMMARY", ["ok=1", "окна=DLG_OPTIONS"]),
+        ("ui click BTN_CLOSE", ["окна=-"]),
+        ("end", ["день=31", "окна=DLG_TURNSUMMARY ", "итоги записей="]),
+        ("ui click BTN_OK", ["окна=-"]),
+    ]),
+    # День 24: «Бросить предмет» из окна отряда — панель DLG_DROP_BAG; далёкая клетка и гора не годятся, соседняя равнина — мешок и
+    # его окно, предмет на землю.
+    ("rastlennaya-vlast-dwarf-t24-045.sg", "S073PL000a", [
+        ("panel click BTN_NEXT_LEADER", ["окна=-"]),
+        ("panel release IMG_LEADER", ["окна=DLG_MANAGE_STACK ", "сумка=7"]),
+        ("ui click BTN_PICK_UP_DROP", ["окна=-"]),
+        ("drop 75,34", ["окна=-", "панель=DLG_DROP_BAG"]),
+        ("drop 72,35", ["окна=-"]),
+        ("drop 72,34", ["окна=DLG_PICKUP_DROP ", "на_земле=0"]),
+        ("ui press 50,413", ["сумка=7"]),
+        ("ui release 494,413", ["сумка=6", "на_земле=1"]),
+        ("ui click TOG_PAPERDOLL", ["кукла=1"]),
+        ("ui click BTN_BACK", ["окна=-"]),
+    ]),
+    # День 44 глазами S073PL000c (у человека заклинаний нет): книга, прицел призывом — туман молча, годная клетка — брошено,
+    # второй раз за день — X005TA0445.
+    ("rastlennaya-vlast-dwarf-t44-077.sg", "S073PL000c", [
+        ("panel click BTN_CAST_SPELL", ["окна=DLG_CAST_SPELL ", "выбрано=G000SS0061", "LBOX_SPELL_LIST=4"]),
+        # Правая кнопка по строке — карточка заклинания, пока держится.
+        ("ui rpress 200,90", ["окна=DLG_CAST_SPELL>DLG_R_C_SPELL ", "заклинание="]),
+        ("ui rrelease 200,90", ["окна=DLG_CAST_SPELL "]),
+        # Колесо — стрелки: BTN_NEXT_PAGE/BTN_PREV_PAGE с горячими клавишами 40/38 листают книгу (WM_MOUSEWHEEL → VK_DOWN/VK_UP, 0x5626a3).
+        ("ui wheeldown 200,90", ["выбрано=G000SS0062"]),
+        ("ui wheelup 200,90", ["выбрано=G000SS0061"]),
+        ("ui click BTN_CAST_SPELL", ["окна=-", "прицел=G000SS0061"]),
+        # Колесо в прицеле — шаг вида, как стрелки (WM_MOUSEWHEEL = VK_UP/VK_DOWN, 0x5626a3 → 0x5418fb); прицел остаётся.
+        ("wheel down", ["сдвиг=0,16 ", "прицел=G000SS0061"]),
+        ("wheel up", ["сдвиг=0,-16 ", "прицел=G000SS0061"]),
+        ("hover 1,1", ["курсор=SPELLINV:1"]),
+        ("hover 73,84", ["курсор=SPELLVAL:15", "цель=-"]),
+        ("target 1,1", ["прицел=G000SS0061"]),
+        ("target 73,84", ["прицел=-"]),
+        ("panel click BTN_CAST_SPELL", ["окна=DLG_CAST_SPELL "]),
+        ("ui click BTN_CAST_SPELL", ["сообщение=ОК", "Выможетеприменять"]),
+    ]),
+    # Прогон 3 11.10, п. 3: «призрак» предмета — у свитков нет своих значков в IconItem, ячейка свитка показывала одно число; значок —
+    # расы заклинания (0x5c5d89: SCROLLHU/UN/HE/DW/EL, раса первого лорда с заклинанием в GspellR, 0x5c5f4f). День 66 глазами
+    # S073PL000b: гость деревни S073FT000b с двумя G000IG5025 (g000ss0025, гномы) — свиток на склад и обратно; склад снова пуст.
+    ("rastlennaya-vlast-dwarf-t66-112.sg", "S073PL000b", [
+        ("city village", ["город=S073FT000b", "сумка=24", "склад=0", "MLBOX_LINVENTORY=3", "!MLBOX_RINVENTORY="]),
+        # Свиток на лидера гостя без навыка (ворота 0x5de6dc = 0xE): рамка красная, бросок — X005TA0592 «Нет навыка», литья нет.
+        ("ui press 260,450", ["тащимое=IconItem:SCROLLDW", "IMG_LDROP4:SMALL_INVALID@268,278:74x89"]),
+        ("ui release 305,320", ["DLG_CITY_STACK>DLG_MESSAGE_BOX ", "НетнавыкаЭтотгеройнеумее", "прицел=- "]),
+        ("ui click BTN_OK", ["окна=DLG_CITY_STACK ", "сумка=24"]),
+        ("ui press 260,450", ["тащимое=IconItem:SCROLLDW"]),
+        ("ui release 520,450", ["сумка=23", "склад=1", "MLBOX_LINVENTORY=3", "MLBOX_RINVENTORY=1"]),
+        ("ui press 520,450", ["тащимое=IconItem:SCROLLDW"]),
+        ("ui release 80,450", ["сумка=24", "склад=0", "MLBOX_LINVENTORY=3", "!MLBOX_RINVENTORY="]),
+    ]),
+    # День 44 глазами S073PL000b (у человека деревень нет): рост деревни с вопросом, столица без гостя — найм героя.
+    ("rastlennaya-vlast-dwarf-t44-077.sg", "S073PL000b", [
+        ("city village", ["город=S073FT000b", "золото=296"]),
+        ("ui click BTN_GROW_CITY", ["окна=DLG_CITY_STACK>DLG_MESSAGE_BOX "]),
+        ("ui click BTN_YES", ["окна=DLG_CITY_STACK ", "золото=46"]),
+        ("ui click BTN_CLOSE", ["окна=-"]),
+        ("city capital", ["гость=0", "L=------"]),
+        ("ui click 265,216", ["найм=Leader", "пунктов=5", "LBOX_LEADER=5"]),
+        ("ui click BTN_HIRE_LEADER", ["DLG_HIRE_LEADER_2>DLG_MESSAGE_BOX"]),   # 46 золота — «недостаточно золота»
+    ]),
+]
+
+
+def city_windows(repo: Path) -> tuple[bool, str]:
+    """Окна города (пункт 6, задача 4.6): столица и её окно армии, перетаскивание, найм воина и героя, рост деревни.
+    Каждый шаг печатает строку со стеком окон и клетками групп. Нет корпуса — пропуск."""
+    results = []
+    if any(not (corpus_dir(repo) / "20260919-human" / save).exists() for save, _, _ in CITY_CASES):
+        return True, "окна города: пропуск — нет корпуса"
+    outs = godot_all(repo, [(["--sg", str(corpus_dir(repo) / "20260919-human" / save), "--check", "--player", player,
+                              "--clicks", ";".join(step for step, _ in steps)], "res://scenes/map/MapScreen.tscn")
+                            for save, player, steps in CITY_CASES])
+    for (save, player, steps), (code, out) in zip(CITY_CASES, outs):
+        lines = [l for l in out.splitlines() if l.startswith(("ui ", "panel ", "city ", "target ", "hover ", "cap ", "diplo ", "site ", "drop ", "pick ", "rod ", "given", "end день=", "click ", "wcursor ", "wheel ", "rename "))
+                 and not l.startswith(("panel Open", "panel Goto"))]
+        if code != 0 or len(lines) != len(steps):
+            return False, f"окна города {save}: код {code}, строк {len(lines)} из {len(steps)}\n{out.strip()}"
+        for (step, wants), line in zip(steps, lines):
+            # «без_значка=» — карточка списка без картинки (видно одно число): так свиток без своего значка выглядел «призраком» в ячейке.
+            for bad in ("нет_кадров=", "без_значка="):
+                if bad in line:
+                    return False, f"окна города {save}: шаг «{step}» — {line[line.index(bad):].split()[0]}"
+            # «!строка» — такой строки быть не должно (ячейка опустела).
+            missing = [w for w in wants if not w.startswith("!") and w not in line + " "]
+            present = [w[1:] for w in wants if w.startswith("!") and w[1:] in line + " "]
+            if missing or present:
+                return False, f"окна города {save}: шаг «{step}» — нет {missing}, лишнее {present}\n{line}"
+        # Окно полученного: TAKEBAG — раз на сообщение, за первым окном, и у пустого мешка (0x4d95f5, 0x4d9aa9; docs/ai-screen.md §11).
+        given = sum(1 for step, _ in steps if step.startswith("given"))
+        if out.count("fx Midgard/TAKEBAG ") != given:
+            return False, f"окна города {save}: TAKEBAG {out.count('fx Midgard/TAKEBAG ')} раз, ожидалось {given}"
+        results.append(f"{save}: {len(steps)} шагов" + (f", TAKEBAG {given}" if given else ""))
+    return True, "окна города: " + ", ".join(results)
+
+
+def siege(repo: Path) -> tuple[bool, str]:
+    """Бой за руину (пункт 6): сохранение дня 3 живой партии, отряд Кланов идёт к охраняемой руине, путь кончается
+    у входа, бой с охраной на фоне RUIN доигрывается. Нужен корпус (вне git); нет его — пропуск."""
+    sg = corpus_dir(repo) / "20260919-human" / "rastlennaya-vlast-dwarf-t03-008.sg"
+    if not sg.exists():
+        return True, "бой за руину: пропуск — нет корпуса"
+    code, out = godot(repo, ["--sg", str(sg), "--check", "--player", "S073PL000a", "--clicks", "59,22;52,16;52,16"],
+                      "res://scenes/map/MapScreen.tscn")
+    start = re.search(r"mapbattle start attacker=S073KC0070 defender=S073RU000a units=\d+ place=RUIN", out)
+    end = MAPBATTLE.search(out)
+    if code != 0 or start is None or end is None or end["winner"] == "-":
+        return False, f"бой за руину: код {code}\n{out.strip()}"
+    return True, f"бой за руину: {start.group(0)} → победитель {end['winner']}"
+
+
+CLICK = re.compile(r"click (?P<cell>\d+,\d+) выбран=(?P<stack>\S+) путь=(?P<path>\d+) дойдёт=(?P<reach>\d+) "
+                   r"идёт=(?P<walk>\d)")
+
+
+def enemy_near(repo: Path) -> tuple[bool, str]:
+    """Отход от соседнего врага (docs/map-path.md §2, §9): сохранение дня 24 живой партии, отряд S073KC0075 стоит рядом
+    с врагом S073KC0089 (81,47). На северо-восток он уходит; на запад вдоль врага шага нет (последняя достижимая — старт), и
+    команда нападает на врага рядом — объект действия 0x5cd11f (PathObjectHarnessTests: вплотную к врагу ход без действия 0 из 72).
+    Цель на северо-востоке — (84,43): прежняя (85,43) стоит прямо над чужим отрядом в (86,44), щелчок по ней целит в него и вторым щелчком
+    не подтверждается (0x4d04c3, 0x4cc8c2; docs/map-path.md §4). Нет корпуса — пропуск."""
+    sg = corpus_dir(repo) / "20260919-human" / "rastlennaya-vlast-dwarf-t24-045.sg"
+    if not sg.exists():
+        return True, "отход от врага: пропуск — нет корпуса"
+    results, outs = [], []
+    for target in ("84,43", "80,46"):
+        code, out = godot(repo, ["--sg", str(sg), "--check", "--player", "S073PL000a",
+                                 "--clicks", f"82,46;{target};{target}"], "res://scenes/map/MapScreen.tscn")
+        shown = [c for c in CLICK.finditer(out) if c["cell"] == target]
+        if code != 0 or len(shown) != 2:
+            return False, f"отход от врага: код {code}\n{out.strip()}"
+        results.append((int(shown[0]["reach"]), shown[1]["walk"] == "1"))
+        outs.append(out)
+    (away, went), (along, _) = results
+    fight = re.search(r"mapbattle start attacker=S073KC0075 defender=S073KC0089", outs[1])
+    if away == 0 or not went or along != 0 or fight is None:
+        return False, f"отход от врага: прочь дойдёт={away} идёт={went}, вдоль дойдёт={along} бой={fight is not None}"
+    return True, f"отход от врага: прочь дойдёт={away}, вдоль — шага нет, бой с соседом S073KC0089"
+
+
+def ally_click(repo: Path) -> tuple[bool, str]:
+    """Щелчок по союзнику (карта 13, AL; docs/map-path.md §4): сохранение оригинала t01-017 партии 18.10, Рыцарь Смерти S143KC0018 (10,68),
+    союзные Эльфы S143KC0017 (14,68). Над пустой (13,67) прямо над ними курсор ALLIANCE; щелчок по ней и по самим Эльфам — пути нет, окно
+    «Перед тем, как атаковать союзника, расторгните альянс с ним.» (X005TA0303; 0x4d1590 → 0x4d0ca4), «ОК» его закрывает. Порт до 18.10
+    прокладывал путь к союзнику. Нет корпуса — пропуск."""
+    sg = corpus_dir(repo) / "20261018-port-synth" / "port-synth-13-path3-undead-t01-017.sg"
+    if not sg.exists():
+        return True, "щелчок по союзнику: пропуск — нет корпуса"
+    code, out = godot(repo, ["--sg", str(sg), "--check", "--player", "S143PL0003",
+                             "--clicks", "10,68;cursor 13,67;13,67;ui move 10,10;ui click BTN_OK;14,68;ui move 10,10;ui click BTN_OK"],
+                      "res://scenes/map/MapScreen.tscn")
+    cursor = re.search(r"^cursor 13,67 курсор=(?P<name>\S+)", out, re.MULTILINE)
+    clicks = {c["cell"]: c for c in CLICK.finditer(out)}
+    # Окно встаёт кадром позже щелчка: его текст — в строке следующего шага («ui move» по окну).
+    refused = [line for line in out.splitlines() if line.startswith("ui move_10,10 on=DLG_MESSAGE_BOX")
+               and "сообщение=ОК текст=Передтемкакатаковатьсоюз" in line]
+    closed = [line for line in out.splitlines() if line.startswith("ui click_BTN_OK") and "окна=- " in line + " "]
+    if (code != 0 or cursor is None or cursor["name"] != "ALLIANCE" or set(clicks) != {"10,68", "13,67", "14,68"}
+            or any(clicks[c]["stack"] != "S143KC0018" or clicks[c]["path"] != "0" for c in ("13,67", "14,68"))
+            or out.count("allyrefused S143KC0018 ") != 2 or len(refused) != 2 or len(closed) != 2):
+        return False, (f"щелчок по союзнику: код {code}, курсор {cursor and cursor['name']}, окон {len(refused)}, закрыто {len(closed)}\n"
+                       f"{out.strip()}")
+    return True, "щелчок по союзнику: курсор ALLIANCE, (13,67) и (14,68) — пути нет, окно X005TA0303, «ОК» закрывает"
+
+
+def own_fort_summon(repo: Path) -> tuple[bool, str]:
+    """Призванный у своей деревни (карта 17, G14; Г14 реестра): Адская гончая S143KC0007 (18,24) — над воротами своей пустой деревни
+    S143FT0004 курсор не ENTERCITY (0x4d0bb5 → CTaskStrat: DEFAULT), два щелчка по воротам (17,25) — пути нет, отряд стоит (0x4d1590 →
+    0x4d1a6c, GameSession.OwnFortRefuses). Герцог S143KC0008 (26,24) у своей деревни S143FT0005 — ENTERCITY, путь, второй щелчок — вход.
+    Порт до 18.10 вводил призванного в свой город."""
+    if (skip := no_synth(repo, "призванный у своей деревни")) is not None:
+        return skip
+    code, out = godot(repo, ["--mods", "../mods", "--check", "--scenario", "port-synth-17-mixed", "--player", "S143PL0003",
+                             "--humans", "S143PL0003", "--clicks", "18,24;cursor 17,25;17,25;17,25;26,24;cursor 25,25;25,25;25,25"],
+                      "res://scenes/map/MapScreen.tscn")
+    cursors = {c["cell"]: c["name"] for c in CURSOR.finditer(out)}
+    clicks = [c for c in CLICK.finditer(out)]
+    summon = [c for c in clicks if c["cell"] == "17,25"]
+    duke = [c for c in clicks if c["cell"] == "25,25"]
+    if (code != 0 or CSHARP_ERROR in out or cursors.get("17,25") != "DEFAULT" or cursors.get("25,25") != "ENTERCITY"
+            or len(summon) != 2 or any(c["stack"] != "S143KC0007" or c["path"] != "0" for c in summon)
+            or out.count("ownfortrefused S143KC0007 ") != 2 or len(duke) != 2 or duke[0]["path"] == "0"
+            or "visit S143FT0005 вход" not in out or "visit S143FT0004" in out):
+        return False, f"призванный у своей деревни: код {code}, курсоры {cursors}\n{out.strip()}"
+    return True, "призванный у своей деревни: курсор DEFAULT, два щелчка — пути нет, не вошёл; Герцог — ENTERCITY, путь, вход"
+
+
+def thief_then_event(repo: Path) -> tuple[bool, str]:
+    """Порядок окон вора и события (карта 8, K2; Ин42 реестра): сохранение оригинала t01-009 партии 16.10 (события — --events). Вор K1
+    S143KC001f убивает Гоблина и проваливается, вор K2 S143KC0021 — успех, Гоблин S143KC0020 убит, срабатывает событие S143EV0002
+    [PS-K2]. Попап события — только после «Да» окна итога (у движка DLG_ACTION_RESULT seq 1415653 → закрытие 1415674 → DLG_EVENT_POPUP
+    1415724; порт до 18.10 открывал его в том же кадре поверх итога). Нет корпуса — пропуск."""
+    sg = corpus_dir(repo) / "20261016g-port-synth" / "port-synth-8-edge-undead-t01-009.sg"
+    if not sg.exists():
+        return True, "вор, затем событие: пропуск — нет корпуса"
+    code, out = godot(repo, ["--mods", "../mods", "--check", "--events", "--sg", str(sg), "--player", "S143PL0003", "--humans", "S143PL0003",
+                             "--clicks", "thief S143KC001f S143KC001e;ui click 150,163;ui click BTN_OK;ui click BTN_YES;"
+                                         "thief S143KC0021 S143KC0020;ui click 150,163;ui click BTN_OK;wcursor;ui click BTN_YES;wcursor"],
+                      "res://scenes/map/MapScreen.tscn")
+    lines = [l for l in out.splitlines() if l.startswith(("ui click_BTN_OK", "wcursor ", "event popup S143EV0002"))]
+    k2 = [l for l in lines if "итог=успех действие=Assassinate" in l]
+    walls = [(i, l) for i, l in enumerate(lines) if l.startswith("wcursor ")]
+    popup = [i for i, l in enumerate(lines) if l.startswith("event popup S143EV0002")]
+    if (code != 0 or CSHARP_ERROR in out or len(k2) != 1 or len(walls) != 2 or len(popup) != 1
+            or "верх=DLG_ACTION_RESULT" not in walls[0][1] or "верх=DLG_EVENT_POPUP" not in walls[1][1]
+            or not walls[0][0] < popup[0] < walls[1][0]):
+        return False, f"вор, затем событие: код {code}\n" + "\n".join(lines) + f"\n{out.strip()}"
+    return True, "вор, затем событие: итог K2 сверху, попап [PS-K2] — после «Да»"
+
+
+def cut_second_move(repo: Path) -> tuple[bool, str]:
+    """Второй ход после обрыва (карта 13, CUT-S3; GameSession.ShownPathKept, 0x4cfead): сохранение оригинала t01-011 партии 18.10 (события —
+    --events). Отряд S143KC0013 (6,54) — на (8,54) и к Гоблину (12,54): обрыв событием на (11,54), окно [PS-CUT-S3]. Интерфейс помнит путь к
+    Гоблину, и один щелчок по нему — нападение (у движка seq 718642 → battle_start 718669 без нового пути). Порт до 18.10 путь после хода
+    сбрасывал — нужно было щёлкнуть дважды. Нет корпуса — пропуск."""
+    sg = corpus_dir(repo) / "20261018-port-synth" / "port-synth-13-path3-undead-t01-011.sg"
+    if not sg.exists():
+        return True, "второй ход после обрыва: пропуск — нет корпуса"
+    code, out = godot(repo, ["--sg", str(sg), "--check", "--events", "--player", "S143PL0003",
+                             "--clicks", "6,54;8,54;8,54;12,54;12,54;ui click BTN_RIGHTSIDE;12,54"], "res://scenes/map/MapScreen.tscn")
+    lines = out.splitlines()
+    popup = next((i for i, l in enumerate(lines) if l.startswith("event popup S143EV0007 ")), -1)
+    closed = next((i for i, l in enumerate(lines) if i > popup >= 0 and l.startswith("ui click_BTN_RIGHTSIDE on=DLG_EVENT_POPUP ok=1")), -1)
+    third = next((i for i, l in enumerate(lines) if i > closed >= 0 and l.startswith("click 12,54 выбран=S143KC0013 ")), -1)
+    fight = next((i for i, l in enumerate(lines) if i > third >= 0 and l.startswith("mapbattle start attacker=S143KC0013 defender=S143KC0012 ")), -1)
+    if code != 0 or min(popup, closed, third, fight) < 0 or not re.search(r"walked S143KC0013 в=\(11,54\) событий=1", out):
+        return False, f"второй ход после обрыва: код {code}, окно {popup}, закрыто {closed}, щелчок {third}, бой {fight}\n{out.strip()}"
+    return True, "второй ход после обрыва: обрыв на (11,54), путь к Гоблину помнится — один щелчок, бой с S143KC0012"
+
+
+ROUTE = re.compile(r"^route выбран=(?P<sel>\S+) в=(?P<at>\S+) ходы=(?P<mp>\d+) путь=(?P<n>\d+) дойдёт=(?P<reach>\d+) цель=\S+ "
+                   r"синих=(?P<blue>\d+) белых=(?P<white>\d+) красных=\d+ у_цели=\d+ помнят=(?P<kept>\d+) свой=(?P<own>\d) "
+                   r"продолжить=(?P<cont>\d) кнопка=(?P<btn>\d) день=(?P<day>\d+)", re.M)
+
+
+def route_through_turn(repo: Path) -> tuple[bool, str]:
+    """Путь через конец хода и «Продолжить движение» (Ин80; MapView.Routes.cs, docs/map-path.md §4 «Путь через конец хода»): сохранение
+    оригинала t01-011 карты 13 (партия 18.10). Отряд A S143KC0013 (6,54) идёт к (6,70): дойдёт 10 из 16, встаёт на (6,64) без очков — остаток
+    белыми флажками, кнопка выключена. Отряд B S143KC0016 (9,62) получает свой путь к (9,78). Конец хода: выбор остаётся (B), его путь —
+    с новым запасом. Щелчок по A — его путь снова, все флажки синие, кнопка доступна; клавиша M (BTN_CONT_MOVE, 77) — A идёт к (6,70), путь
+    B помнится. У движка путь хранится за каждым отрядом в интерфейсе (0x41a799/0x41a96d), начало хода его не стирает (0x41a3f4), M —
+    щелчок по цели показанного пути (0x48f451 → 0x4d2213). Порт до 20.10 стирал путь в конце хода. Прогон — с зондом порта (D2_PORT_PROBE=1):
+    строки ui_enable и ui_click «Продолжить движение» (Зс54, probe_cont_move). Нет корпуса — пропуск."""
+    sg = corpus_dir(repo) / "20261018-port-synth" / "port-synth-13-path3-undead-t01-011.sg"
+    if not sg.exists():
+        return True, "путь через конец хода: пропуск — нет корпуса"
+    probe = repo / ".cache" / "ui-check" / "probe-route"
+    probe.mkdir(parents=True, exist_ok=True)
+    for f in probe.glob("port-*"):
+        f.unlink()
+    with scene_env(D2_PORT_PROBE="1", D2_PORT_PROBE_DIR=str(probe)):
+        code, out = godot(repo, ["--sg", str(sg), "--check", "--events", "--player", "S143PL0003",
+                                 "--clicks", "6,54;6,70;6,70;route;9,62;9,78;route;end;route;6,64;route;panel key 77;route"],
+                          "res://scenes/map/MapScreen.tscn")
+    probed, probe_line = probe_cont_move(probe)
+    got = [(m["sel"][-4:], m["at"], m["mp"], m["n"], m["reach"], m["blue"], m["white"], m["kept"], m["own"], m["cont"], m["btn"], m["day"])
+           for m in ROUTE.finditer(out)]
+    want = [("0013", "6,64", "0", "7", "0", "0", "6", "1", "1", "0", "0", "1"),      # A встал, остаток белый, без очков — кнопки нет
+            ("0016", "9,62", "18", "17", "9", "9", "7", "2", "1", "1", "1", "1"),    # B — свой путь, A его помнит
+            ("0016", "9,62", "20", "17", "10", "10", "6", "2", "1", "1", "1", "2"),  # начало дня: B выбран, путь с новым запасом
+            ("0013", "6,64", "20", "7", "6", "6", "0", "2", "1", "1", "1", "2"),     # A снова выбран — его путь синий, кнопка доступна
+            ("0013", "6,70", "8", "0", "0", "0", "0", "1", "0", "0", "0", "2")]      # M: A дошёл, путь B помнится
+    walked = re.findall(r"^walked S143KC0013 в=\((\d+),(\d+)\)", out, re.M)
+    if (code != 0 or CSHARP_ERROR in out or got != want or walked != [("6", "64"), ("6", "70")] or "panel key_77 on=DLG_STRATEGIC ok=1" not in out
+            or not probed):
+        return False, f"путь через конец хода: код {code}, строки {got}, ходы {walked}, зонд: {probe_line}\n{out.strip()}"
+    return True, ("путь через конец хода: A встал на (6,64) — 6 белых, конец хода — выбор (B) и пути обоих остались, A снова — 6 синих, "
+                  f"M — A на (6,70), путь B помнится; зонд: {probe_line}")
+
+
+def probe_cont_move(probe: Path) -> tuple[bool, str]:
+    """Строки зонда порта (схема 7.6, Зс54) прогона route_through_turn: «Продолжить движение» (DLG_STRATEGIC/BTN_CONT_MOVE) погашена у
+    отряда без очков (A на (6,64)) и зажигается у отряда с путём (B, затем A в новый день); M — ui_click с hotkey, после прихода кнопка
+    гаснет. Строка — только смена: двух «зажглась» подряд у элемента нет (новая кнопка — включённая, её первая строка — «погасла»; две
+    «погасла» подряд — панель к ходу человека новая, Зс57)."""
+    journals = sorted(probe.glob("port-*.jsonl"))
+    if len(journals) != 1:
+        return False, f"журналов зонда {len(journals)} в {probe}"
+    rows = [json.loads(line) for line in journals[0].read_text(encoding="utf-8").splitlines() if '"ev":"ui_' in line]
+    enables = [r for r in rows if r.get("ev") == "ui_enable"]
+    cont = [(r["seq"], r["on"]) for r in enables if (r.get("screen"), r.get("element")) == ("DLG_STRATEGIC", "BTN_CONT_MOVE")]
+    clicks = [r for r in rows if r.get("ev") == "ui_click" and r.get("element") == "BTN_CONT_MOVE"]
+    last: dict[tuple, bool] = {}
+    repeats = 0
+    for r in enables:
+        key = (r.get("screen"), r.get("element"))
+        # «Погасла» подряд бывает: панель команд к ходу человека — новая (UiScreenView.RenewButtons, Зс57), её кнопки снова включены.
+        repeats += last.get(key, True) is True and r.get("on") is True
+        last[key] = r.get("on")
+    hotkey = bool(clicks) and clicks[0].get("hotkey") is True
+    line = (f"BTN_CONT_MOVE {''.join('+' if on else '-' for _, on in cont)}, нажатий M {len(clicks)}{' (hotkey)' if hotkey else ''}, "
+            f"строк ui_enable {len(enables)}, повторов {repeats}")
+    if not cont or len(clicks) != 1 or not hotkey or repeats:
+        return False, line
+    before = [on for seq, on in cont if seq < clicks[0]["seq"]]
+    after = [on for seq, on in cont if seq > clicks[0]["seq"]]
+    return cont[0][1] is False and bool(before) and before[-1] is True and after[-1:] == [False], line
+
+
+BUTTONS_K = re.compile(r"^battle synth K buttons ходов=(?P<turns>\d+) щелчков=(?P<clicks>\d+) мимо=(?P<miss>\d+) ударов=\d+ "
+                       r"защит_без_щелчка=\d+ погасли=(?P<dim>\d+) зажглись=(?P<lit>\d+) конец=(?P<end>\d) переключатель_в_конце=(?P<tog>\d) "
+                       r"защита_в_конце=(?P<def>\d)", re.M)
+
+
+def probe_runs(repo: Path, name: str, runs: list[tuple[list[str], str, dict[str, str]]]) -> tuple[list[Path], list[str]]:
+    """Прогоны сцен с зондом порта (D2_PORT_PROBE=1): у каждого свой каталог журнала .cache/ui-check/<name>-<i>; вернёт журналы и выводы."""
+    probes = []
+    for i in range(len(runs)):
+        probe = repo / ".cache" / "ui-check" / f"{name}-{i}"
+        probe.mkdir(parents=True, exist_ok=True)
+        for f in probe.glob("port-*"):
+            f.unlink()
+        probes.append(probe)
+    done = godot_all(repo, [(args, scene, {"D2_PORT_PROBE": "1", "D2_PORT_PROBE_DIR": str(probe), **env})
+                            for (args, scene, env), probe in zip(runs, probes)])
+    journals = [j for probe in probes for j in sorted(probe.glob("port-*.jsonl"))]
+    return journals, [f"код {code}\n{out}" for code, out in done]
+
+
+def panel_buttons(repo: Path) -> tuple[bool, str]:
+    """Погашенные кнопки как у движка (Зс55–Зс57; CButtonInterf::setEnabled 0x531cca): бой полигона A1 port-synth-1-battle с показом
+    (--synth K: «Ждать», «Защищаться» и TOG_RIGHTUNITS щелчком по панели) — кнопки боя гаснут на показ и ход ИИ (0x6371b1 → 0x62f27f) и
+    зажигаются к ходу человека (0x62f823 → 0x62fc08), после конца боя TOG_RIGHTUNITS доступен (0x637581); карта 13 — перебор лидеров (жезл
+    и «Охранять» зажигаются с выбором, 0x48df25/0x48dd7f), «Конец хода» гаснет по щелчку (0x48f945), палитра гаснет на ход ИИ и
+    зажигается к ходу человека (0x48d858/0x48fc5e); f7-m6-rods — режим жезла гасит палитру (DLG_DROP_BAG, 0x490553). Журналы зонда — сверкой
+    AvJournal.UiEnables против всех журналов 7.6 корпуса (tools/AvCompare): строк «≠» ui_enable/ui_enable_click нет. Нет корпуса — пропуск."""
+    if (skip := no_synth(repo, "кнопки панелей")) is not None:
+        return skip
+    corpus = corpus_dir(repo)
+    m13 = corpus / "20261018-port-synth" / "port-synth-13-path3-undead-t01-011.sg"
+    rods = corpus / "20260919-f7" / "f7-m6-rods-human-t01-021.sg"
+    originals = [p for p in sorted(corpus.glob("*/passive-*.jsonl")) if '"schema":"7.6"' in p.open(encoding="utf-8").readline()]
+    if not m13.exists() or not rods.exists() or not originals:
+        return True, "кнопки панелей: пропуск — нет корпуса"
+    map_scene = "res://scenes/map/MapScreen.tscn"
+    runs = [
+        (["--mods", "../mods", "--check", "--scenario", "port-synth-1-battle", "--stacks", "S143KC0004,S143KC0005", "--synth", "K"],
+         "res://scenes/battle/BattleScreen.tscn", {"D2_BATTLE_PLAYBACK": "1"}),
+        (["--sg", str(m13), "--check", "--events", "--player", "S143PL0003", "--clicks",
+          "pause;panel click BTN_NEXT_LEADER;pause;panel click BTN_NEXT_LEADER;pause;panel click BTN_DROP_ROD;pause;ui click BTN_OK;pause;"
+          "panel click BTN_END_TURN;pause;aidone;pause;panel click BTN_NEXT_LEADER;pause"], map_scene, {}),
+        (["--sg", str(rods), "--check", "--events", "--player", "S143PL0001", "--clicks",
+          "pause;select S143KC0001;pause;panel click BTN_DROP_ROD;pause;rod 29,9;pause;rod 29,9;pause;ui click BTN_YES;pause"], map_scene, {}),
+    ]
+    journals, outs = probe_runs(repo, "probe-buttons", runs)
+    k = BUTTONS_K.search(outs[0])
+    if len(journals) != len(runs) or k is None or any(not o.startswith("код 0") or CSHARP_ERROR in o for o in outs):
+        return False, f"кнопки панелей: журналов {len(journals)}, бой {k.group(0) if k else '-'}\n" + "\n".join(o.strip()[-3000:] for o in outs)
+    rows = [json.loads(line) for j in journals for line in j.read_text(encoding="utf-8").splitlines() if '"ev":"ui_' in line]
+    def changes(screen: str, element: str) -> str:
+        return "".join("+" if r["on"] else "-" for r in rows if r["ev"] == "ui_enable" and (r["screen"], r["element"]) == (screen, element))
+    end_turn, palette = changes("DLG_STRATEGIC", "BTN_END_TURN"), changes("DLG_ISO_PAL", "BTN_OPTIONS")
+    rod, guard = changes("DLG_STRATEGIC", "BTN_DROP_ROD"), changes("DLG_STRATEGIC", "BTN_GUARD")
+    proc = subprocess.run([*dotnet_tool(repo, "AvCompare"), ";".join(map(str, originals)),
+                           ";".join(map(str, journals))], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=RUN_TIMEOUT)
+    bad = [line for line in proc.stdout.splitlines() if line.startswith("| ≠ | ui_enable")]
+    same = [line for line in proc.stdout.splitlines() if line.startswith("| = | ui_enable_click") and "нет у " not in line]
+    line = (f"бой: ходов {k['turns']}, щелчков {k['clicks']} (мимо {k['miss']}), погасли {k['dim']}, зажглись {k['lit']}; "
+            f"карта: «Конец хода» {end_turn}, палитра {palette}, жезл {rod}, «Охранять» {guard}; сверка с {len(originals)} журналами 7.6: "
+            f"нажатий одинаково {len(same)}, расхождений {len(bad)}")
+    if (int(k["miss"]) or int(k["clicks"]) == 0 or int(k["dim"]) == 0 or k["dim"] != k["lit"] or k["end"] != "1" or k["tog"] != "1"
+            or k["def"] != "0" or end_turn != "-" or not palette.startswith("-+") or not rod.startswith("-+") or not guard.startswith("-+")
+            or bad or len(same) < 3):
+        return False, f"кнопки панелей: {line}\n" + "\n".join(bad) + f"\n{proc.stdout[-3000:]}{proc.stderr[-1500:]}"
+    return True, f"кнопки панелей: {line}"
+
+
+def path_reset(repo: Path) -> tuple[bool, str]:
+    """Где стирается путь отряда (карта 28 port-synth-28-path-reset, реестр Ин82; MapView.DropRoute): AL S143KC0004 — путь к (40,14), щелчок
+    по союзнику Кланов (16,17), «ОК» окна X005TA0303 (0x4d201e); вор TH1 S143KC0006 — путь к руине, окно вора, «Проверить руины» (итог
+    категории 0x837E30, 0x4d23a2); вор TH2 S143KC0007 — путь к деревне Легионов, шпионаж — путь остаётся; жезлоносец RD S143KC0008 — вопрос
+    сноса, «Нет» (0x4d1f06). Во всех трёх случаях движок зовёт 0x4cc63b(1) → 0x41a808: путь забыт, модель показанного сброшена, слой флажков
+    не снимается. Порт до 20.10 путь в этих местах не трогал."""
+    if (skip := no_synth(repo, "стирание пути")) is not None:
+        return skip
+    code, out = godot(repo, ["--mods", "../mods", "--check", "--scenario", "port-synth-28-path-reset", "--player", "S143PL0004",
+                             "--clicks", "12,14;40,14;route;16,17;ui move 10,10;ui click BTN_OK;route;"
+                                         "12,24;17,23;route;thief S143KC0006 S143RU0000;ui click 150,163;ui click BTN_OK;ui click BTN_YES;route;"
+                                         "12,30;17,29;route;thief S143KC0007 S143FT0004;ui click 150,163;ui click BTN_OK;ui click BTN_YES;route;"
+                                         "12,40;16,40;16,40;ui move 10,10;ui click BTN_NO;route"],
+                      "res://scenes/map/MapScreen.tscn")
+    got = [(m["sel"][-4:], m["n"] != "0", m["own"]) for m in ROUTE.finditer(out)]
+    want = [("0004", True, "1"), ("0004", False, "0"),     # AL: путь есть, после «ОК» забыт
+            ("0006", True, "1"), ("0006", False, "0"),     # TH1: после «Проверить руины» забыт
+            ("0007", True, "1"), ("0007", True, "1"),      # TH2: шпионаж путь не трогает
+            ("0008", False, "0")]                          # RD: после «Нет» забыт
+    drops = re.findall(r"^routedrop (S143KC\w+)", out, re.M)
+    if (code != 0 or CSHARP_ERROR in out or got != want or drops != ["S143KC0004", "S143KC0006", "S143KC0008"]
+            or "действие=SpyRuin" not in out or "действие=Spy " not in out):
+        return False, f"стирание пути: код {code}, строки {got}, стёрто {drops}\n{out.strip()}"
+    return True, "стирание пути: «ОК» союзнику, «Проверить руины» и «Нет» сносу — путь забыт; шпионаж — путь остался"
+
+
+def selection_under_popup(repo: Path) -> tuple[bool, str]:
+    """Эллипс выделения при попапе события после хода (карта 22, EV2; реестр Ин49): сохранение оригинала t01-021 партии 19.10 вечером
+    (события — --events; EV1 S143KC000c уже стоит в зоне (15,14)). EV2 S143KC000d (12,18) идёт на (18,18) — обрыв зоной на (15,18): с
+    открытым окном [PS-EV2] эллипса под ходоком нет, после «ОК» — есть (снимки оригинала 69–72: движок снимает эллипс командой хода
+    0x4d2260 → 0x4d0252 и ставит по извещению о приходе 0x4d24b0, которое идёт после попапа; EV1 в конце пути — так же). Ход без события
+    (EV1 на (16,14)) — эллипс сразу на месте. Порт до 19.10 показывал эллипс и с окном (снимки 73, 74). Нет корпуса — пропуск."""
+    sg = corpus_dir(repo) / "20261019b-port-synth" / "port-synth-22-ai-diplo2-human-t01-021.sg"
+    if not sg.exists():
+        return True, "эллипс при попапе: пропуск — нет корпуса"
+    code, out = godot(repo, ["--sg", str(sg), "--check", "--events", "--player", "S143PL0001",
+                             "--clicks", "wcursor;12,18;selmark;18,18;18,18;selmark;ui click BTN_RIGHTSIDE;selmark;15,14;16,14;16,14;selmark"],
+                      "res://scenes/map/MapScreen.tscn")
+    marks = re.findall(r"selmark выбран=(\S+) эллипс=(\d) снят=(\d) верх=(\S+)", out)
+    want = [("S143KC000d", "1", "0", "-"), ("S143KC000d", "0", "1", "DLG_EVENT_POPUP"), ("S143KC000d", "1", "0", "-"),
+            ("S143KC000c", "1", "0", "-")]
+    walked = re.findall(r"walked (S143KC000[cd]) в=\((\d+),(\d+)\) событий=(\d)", out)
+    if (code != 0 or CSHARP_ERROR in out or marks != want
+            or walked != [("S143KC000d", "15", "18", "1"), ("S143KC000c", "16", "14", "0")]):
+        return False, f"эллипс при попапе: код {code}, метки {marks}, ходы {walked}\n{out.strip()}"
+    return True, "эллипс при попапе: EV2 — с окном события эллипса нет, после «ОК» есть; ход без события — эллипс сразу"
+
+
+GAME = re.compile(r"game scenario=\S+ from=(?P<from>\w+) human=(?P<human>\S+) .*?day=(?P<day>\d+) gold=(?P<gold>\d+)")
+
+
+def gameloop(repo: Path) -> tuple[bool, str]:
+    """Игровой цикл (пункт 6): меню до брифинга → партия (день 1) → конец хода (день 2, доход) → настройки → запись →
+    загрузка той же партии из настроек. Сохранения — во временный каталог (--saves). После конца хода ИИ может предложить союз
+    (окно DLG_DIPLO_BOX) — «ui click BTN_CANCEL» отказывает, «ui click BTN_OK» закрывает
+    реплику ИИ (DLG_CHAT_AI); без окон шаги ничего не делают."""
+    saves = repo / ".cache" / "ui-check" / "saves"
+    if saves.exists():
+        for f in saves.iterdir():
+            f.unlink()
+    extra = ["--check", "--saves", str(saves), "--input", "; ".join(CONTENT_STEPS + ["click BTN_CONTINUE"]),
+             "--clicks", "ok;end;ok;ui click BTN_CANCEL;ui click BTN_OK;ok;ui click BTN_OPTIONS;ui click BTN_SAVE;ui click BTN_SAVE;ui click BTN_CLOSE;"
+                         "ui click BTN_LOAD;ui click BTN_LOAD"]
+    code, out = godot(repo, extra, "res://scenes/ui/UiFlow.tscn")
+    games = list(GAME.finditer(out))
+    screen = MAPSCREEN.search(out)
+    if (code != 0 or len(games) != 2 or screen is None or games[0]["from"] != "new" or games[1]["from"] != "save"
+            or "load briefing" not in out or "resume message day=2 " not in out
+            or games[0]["day"] != "1" or games[1]["day"] != "2" or int(games[1]["gold"]) <= int(games[0]["gold"])):
+        return False, f"игровой цикл: код {code}\n{out.strip()}"
+    return True, (f"игровой цикл: новая партия день 1, золото {games[0]['gold']} → конец хода → запись → загрузка через брифинг: "
+                  f"день {games[1]['day']}, золото {games[1]['gold']}, окно «Повтор миссии с дня 2»")
+
+
+def autosave(repo: Path) -> tuple[bool, str]:
+    """Автосохранение и окно загрузки в партии. Новая партия из меню, «Конец хода» — при флажке «Автосохранение» (по умолчанию включён)
+    архив «<сценарий> T0001» в каталоге сохранений (--saves; имя как у обёртки DisciplesGL-HD); настройки → «Загрузить» → Esc и «Назад»
+    возвращают к настройкам (пометка 4 прогона 14.10: не возвращали — у DLG_LOAD_GAME не было перехода BTN_CLOSE); снова «Загрузить» — в
+    списке автосохранение, «Загрузить» поднимает его тем же днём. Затем — чистка (autosave_archives). С выключенным флажком (--settings) —
+    конец хода без файла."""
+    steps = "; ".join(CONTENT_STEPS + ["click BTN_CONTINUE"])
+    saves = repo / ".cache" / "ui-check" / "autosave"
+    saves.mkdir(parents=True, exist_ok=True)
+    for f in saves.iterdir():
+        f.unlink()
+    code, out = godot(repo, ["--check", "--saves", str(saves), "--input", steps, "--clicks",
+                             "ok;end;ok;ui click BTN_CANCEL;ui click BTN_OK;ok;ui click BTN_OPTIONS;ui click BTN_LOAD;ui key 27;"
+                             "ui click BTN_LOAD;ui click BTN_CLOSE;ui click BTN_LOAD;ui click BTN_LOAD"], "res://scenes/ui/UiFlow.tscn")
+    files = [f.name for f in saves.glob("*.d2save")]
+    games = list(GAME.finditer(out))
+    back = [l for l in out.splitlines() if l.startswith(("ui key_27 ", "ui click_BTN_CLOSE "))]
+    if (code != 0 or len(files) != 1 or not files[0].endswith(" T0001.d2save") or "autosave " not in out
+            or len(back) != 2 or any(" on=DLG_LOAD_GAME " not in l or " окна=DLG_OPTIONS" not in l + " " for l in back)
+            or len(games) != 2 or games[1]["from"] != "save" or games[1]["day"] != "1"):
+        return False, f"автосохранение: код {code}, файлы {files}\n" + "\n".join(back) + f"\n{out.strip()}"
+    ok, archives = autosave_archives(repo, saves, files[0][:-len(" T0001.d2save")], steps)
+    if not ok:
+        return False, archives
+    settings = repo / ".cache" / "ui-check" / "autosave-off.json"
+    settings.write_text(json.dumps({"AutoSave": False}), encoding="utf-8")
+    for f in saves.iterdir():
+        f.unlink()
+    code, out = godot(repo, ["--check", "--saves", str(saves), "--settings", str(settings), "--input", steps, "--clicks", "ok;end"],
+                      "res://scenes/ui/UiFlow.tscn")
+    left = [f.name for f in saves.iterdir()]
+    # Конец хода состоялся (ход ИИ дня 1 стоит на окне предложения союза — день не важен), автосохранения нет.
+    if code != 0 or left or "autosave " in out or "end день=" not in out:
+        return False, f"автосохранение выключено: код {code}, файлы {left}\n{out.strip()}"
+    return True, (f"автосохранение: конец хода — «{files[0]}», Esc и «Назад» окна загрузки — к настройкам, загрузка — день 1; "
+                  f"{archives}; флажок выключен — файла нет")
+
+
+def autosave_archives(repo: Path, saves: Path, scenario: str, steps: str) -> tuple[bool, str]:
+    """Чистка архивов автосохранения (TrimAutoSaveArchives обёртки): в каталоге 15 старых архивов сценария (T0100…T0114, по времени
+    записи по порядку) и ручные сохранения с похожими именами; два конца хода дописывают T0001 и T0002 — архивов снова 15, ушли два
+    самых старых (T0100, T0101), ручные — на месте."""
+    source = saves / f"{scenario} T0001.d2save"
+    body = source.read_bytes()
+    for f in saves.iterdir():
+        f.unlink()
+    old = time.time() - 86400
+    for i in range(15):
+        path = saves / f"{scenario} T{100 + i:04d}.d2save"
+        path.write_bytes(body)
+        os.utime(path, (old + i * 60, old + i * 60))
+    manual = [saves / f"{scenario} T0100 копия.d2save", saves / f"{scenario} — день 1.d2save", saves / "AutoSave T0001.d2save"]
+    for path in manual:
+        path.write_bytes(body)
+        os.utime(path, (old - 3600, old - 3600))
+    # Предложение союза ИИ в ход дня 1 (OFFER_CLICKS) закрывается отказом — иначе второй конец хода не наступит.
+    code, out = godot(repo, ["--check", "--saves", str(saves), "--input", steps, "--clicks",
+                             "ok;end;ui click BTN_CANCEL;ui click BTN_OK;ok;end"], "res://scenes/ui/UiFlow.tscn")
+    pattern = re.compile(rf"^{re.escape(scenario)} T(\d{{4}})\.d2save$", re.I)
+    turns = sorted(int(m[1]) for f in saves.iterdir() if (m := pattern.match(f.name)))
+    counts = re.findall(r"^autosave \S+ день=\d+ архивов=(\d+)", out, re.M)
+    want = [1, 2] + list(range(102, 115))
+    if code != 0 or turns != want or counts != ["15", "15"] or not all(p.exists() for p in manual):
+        return False, (f"архивы автосохранения: код {code}, ходы {turns}, архивов {counts}, "
+                       f"ручные {[p.name for p in manual if p.exists()]}\n{out.strip()}")
+    return True, (f"чистка архивов: 15 старых + 2 конца хода → {len(turns)} (ушли T0100, T0101), "
+                  f"ручные «{manual[0].name}», «{manual[1].name}», «{manual[2].name}» на месте")
+
+
+def quicksave(repo: Path) -> tuple[bool, str]:
+    """Быстрое сохранение (Q на карте, QuickSave): новая партия из меню; Q под окном задания (F1) — записи нет; Q дважды на открытой
+    карте — один файл QuickSave.d2save (второе перезаписывает), в чате карты «Игра записана под именем QuickSave»; настройки →
+    «Загрузить» → «Загрузить» — партия из него."""
+    saves = repo / ".cache" / "ui-check" / "quicksave"
+    saves.mkdir(parents=True, exist_ok=True)
+    for f in saves.iterdir():
+        f.unlink()
+    steps = "; ".join(CONTENT_STEPS + ["click BTN_CONTINUE"])
+    code, out = godot(repo, ["--check", "--saves", str(saves), "--input", steps, "--clicks",
+                             "ok;ui click BTN_REPORT;panel key 81;ui key 27;panel key 81;panel key 81;"
+                             "ui click BTN_OPTIONS;ui click BTN_LOAD;ui click BTN_LOAD"],
+                      "res://scenes/ui/UiFlow.tscn")
+    files = [f.name for f in saves.iterdir()]
+    lines = re.findall(r"^quicksave (\S+) день=(\d+) чат=(\S*)", out, re.M)
+    games = list(GAME.finditer(out))
+    if (code != 0 or files != ["QuickSave.d2save"] or len(lines) != 2
+            or any(name != "QuickSave.d2save" or not chat.endswith("Игра_записана_под_именем_QuickSave") for name, _, chat in lines)
+            or len(games) != 2 or games[1]["from"] != "save" or games[1]["day"] != lines[-1][1]):
+        return False, f"быстрое сохранение: код {code}, файлы {files}, строки {lines}\n{out.strip()}"
+    return True, (f"быстрое сохранение: Q под окном — нет записи, Q ×2 на карте — один файл {files[0]}, в чате «Игра записана под именем QuickSave», "
+                  f"загрузка — день {games[1]['day']}")
+
+
+def map_arrows(repo: Path) -> tuple[bool, str]:
+    """Прокрутка карты стрелкой (MapView.Scroll): на открытой карте вид едет, под окном поверх карты (настройки) — стоит,
+    как у движка. Партия своя (меню → брифинг), корпус не нужен."""
+    extra = ["--check", "--input", "; ".join(CONTENT_STEPS + ["click BTN_CONTINUE"]),
+             "--clicks", "ok;arrows;ui click BTN_OPTIONS;arrows"]
+    code, out = godot(repo, extra, "res://scenes/ui/UiFlow.tscn")
+    rows = re.findall(r"^arrows сдвиг=(-?\d+) окна=(\S+)", out, re.M)
+    if (code != 0 or len(rows) != 2 or int(rows[0][0]) <= 0 or rows[0][1] != "-"
+            or rows[1][0] != "0" or rows[1][1] == "-"):
+        return False, f"прокрутка стрелкой: код {code}, {rows}\n" + "\n".join(l for l in out.splitlines() if l.startswith("arrows"))
+    return True, f"прокрутка стрелкой: карта — сдвиг {rows[0][0]} точек, под окном {rows[1][1]} — стоит"
+
+
+# Предложение союза — в ход ИИ дня 1. С раздачей стратегических приказов дня 1 (0x44e29e, 15.10) у ИИ S092PL0003 (Greenskins)
+# проход стратегии без экономического действия наступает уже в день 1 (бисекция по сцене: 4ebcbb4 — день 2, 5a523ca — день 1);
+# раздача подтверждена журналами оригинала (AiStrategicOrdersHarnessTests, 66/66 ходов ИИ дня 1), у Greenskins журнала нет.
+OFFER_CLICKS = "ok;end"
+
+
+def command_journal(repo: Path) -> tuple[bool, str]:
+    """Журнал команд живой партии (docs/game-commands.md §3): сцена с D2_COMMAND_JOURNAL пишет сохранение начала и команды, tools/JournalReplay
+    повторяет партию без сцены и сверяет хеш после каждой команды. Две партии: «Drega Zul» — конец хода с ходом ИИ, ход в зону события,
+    попап и бой события на экране (действия боя — в журнале); новая партия из меню — ИИ предлагает союз в свой ход, «Принять» — команда,
+    поданная, пока ход ИИ ждёт (решение снаружи). Корпус не нужен."""
+    out_dir = repo / ".cache" / "ui-check" / "journal"
+    shutil.rmtree(out_dir, ignore_errors=True)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    battle, offer = out_dir / "event-battle.jsonl", out_dir / "alliance.jsonl"
+    runs = [(["--check", "--scenario", "Drega Zul", "--player", "S001PL000a", "--humans", "S001PL000a",
+              "--clicks", "end;ok;16,26;21,32;21,32;ok"], "res://scenes/map/MapScreen.tscn", {"D2_COMMAND_JOURNAL": str(battle)}),
+            (["--check", "--input", "; ".join(CONTENT_STEPS + ["click BTN_CONTINUE"]),
+              "--clicks", f"{OFFER_CLICKS};ui click BTN_OK;ui click BTN_OK"], "res://scenes/ui/UiFlow.tscn", {"D2_COMMAND_JOURNAL": str(offer)})]
+    outs = godot_all(repo, runs)
+    found = []
+    for (code, out), journal, want in zip(outs, (battle, offer), ("endBattle", "answerAlliance")):
+        if code != 0 or not journal.exists():
+            return False, f"журнал команд: {journal.name} не записан, код {code}\n{out.strip()[-3000:]}"
+        lines = [json.loads(l) for l in journal.read_text(encoding="utf-8").splitlines()[1:]]
+        commands = [e["Command"]["$cmd"] for e in lines]
+        nested = [a["Command"]["$cmd"] for e in lines for a in e.get("Answers", []) if a["$ans"] == "command"]
+        played = any(e["Command"]["$cmd"] == "endBattle" and e["Command"].get("Play", {}).get("Actions") for e in lines)
+        outside = sum(1 for e in lines if e.get("Outside"))
+        if want == "endBattle" and not played or want == "answerAlliance" and want not in nested or outside:
+            return False, f"журнал команд: {journal.name} — команды {commands}, вложенные {nested}, бой с действиями {played}, мимо команд {outside}"
+        replay = subprocess.run([*dotnet_tool(repo, "JournalReplay"), str(journal)], capture_output=True, text=True, encoding="utf-8")
+        if replay.returncode != 0 or not replay.stdout.startswith("повтор сошёлся"):
+            return False, f"журнал команд: {journal.name} — {replay.stdout.strip()} {replay.stderr.strip()}"
+        found.append(f"{journal.stem}: {replay.stdout.split(';')[0].removeprefix('повтор сошёлся: ')}")
+    return True, "журнал команд: повтор сошёлся — " + "; ".join(found)
+
+
+def alliance_offer(repo: Path) -> tuple[bool, str]:
+    """Предложение союза от ИИ в сцене (docs/ui-windows.md §6): новая партия порта из меню, два конца хода (OFFER_CLICKS) — ИИ
+    предлагает союз, окно DLG_DIPLO_BOX сразу, в ход ИИ (как у движка, CEffectProposeAlliance 0x43b5c8; ход ИИ ждёт ответа);
+    «Принять» — реплика ИИ DLG_CHAT_AI, «ОК» закрывает; «Отказать» — тоже реплика. Партия своя (меню → брифинг), корпус не нужен."""
+    results = []
+    for button, word in (("BTN_OK", "принято"), ("BTN_CANCEL", "отказ")):
+        extra = ["--check", "--input", "; ".join(CONTENT_STEPS + ["click BTN_CONTINUE"]),
+                 "--clicks", f"{OFFER_CLICKS};ui click {button};ui click BTN_OK"]
+        code, out = godot(repo, extra, "res://scenes/ui/UiFlow.tscn")
+        lines = [l for l in out.splitlines() if l.startswith(("end ", "ui "))]
+        wants = [["end день=1 окна=DLG_DIPLO_BOX ", "предлагает="], ["окна=DLG_CHAT_AI ", "реплика="], ["окна=- "]]
+        if code != 0 or len(lines) != len(wants) or any(w not in line + " " for want, line in zip(wants, lines) for w in want):
+            return False, f"предложение союза ({word}): код {code}\n" + "\n".join(lines or [out.strip()])
+        # Сообщения ИИ человеку в ход ИИ дня 1 (ненависть, CCmdChatMsg → DLG_CHAT_AI 0x4b9747): каждое — окно, ход ждёт «Закрыть» (Ин36).
+        said = len(re.findall(r"^aichat ok реплика=\S", out, re.M))
+        if said < 1 or said != len(re.findall(r"^notice AiChat for=", out, re.M)) - 1:
+            return False, f"предложение союза ({word}): сообщений ИИ в ход ИИ {said}, окон " + str(len(re.findall(r"^notice AiChat", out, re.M)))
+        results.append(f"{word} (окон сообщений ИИ в ход ИИ {said})")
+    ok, message = alliance_offer_loaded(repo)
+    if not ok:
+        return False, message
+    return True, "предложение союза: " + ", ".join(results) + " — окно в ход ИИ, реплика ИИ, закрыто; " + message
+
+
+def alliance_offer_loaded(repo: Path) -> tuple[bool, str]:
+    """Ждущее предложение после загрузки: партия порта с отказом записывается, в сохранение дописывается предложение того же
+    ИИ (сохранить при открытом окне нельзя), загрузка из настроек — окно DLG_DIPLO_BOX поверх загруженной партии."""
+    saves = repo / ".cache" / "ui-check" / "offer-saves"
+    saves.mkdir(parents=True, exist_ok=True)
+    for f in saves.iterdir():
+        f.unlink()
+    steps = "; ".join(CONTENT_STEPS + ["click BTN_CONTINUE"])
+    # Одно сохранение — записанное вручную: автосохранение концов хода (по умолчанию включено) здесь выключено.
+    settings = repo / ".cache" / "ui-check" / "offer-settings.json"   # свой файл: шаг «автосохранение» может идти параллельно
+    settings.write_text(json.dumps({"AutoSave": False}), encoding="utf-8")
+    code, out = godot(repo, ["--check", "--saves", str(saves), "--settings", str(settings), "--input", steps, "--clicks",
+                             f"{OFFER_CLICKS};ui click BTN_CANCEL;ui click BTN_OK;ok;ui click BTN_OPTIONS;ui click BTN_SAVE;ui click BTN_SAVE"],
+                      "res://scenes/ui/UiFlow.tscn")
+    offer = re.search(r"предлагает=(\S+) кому=(\S+)", out)
+    files = list(saves.glob("*.d2save"))
+    if code != 0 or offer is None or len(files) != 1:
+        return False, f"предложение после загрузки: запись — код {code}, файлов {len(files)}\n{out.strip()}"
+    save = json.loads(files[0].read_text(encoding="utf-8"))
+    save["Offers"] = [{"From": offer[1], "To": offer[2], "Day": save["Day"]}]
+    files[0].write_text(json.dumps(save, ensure_ascii=False), encoding="utf-8")
+    code, out = godot(repo, ["--check", "--saves", str(saves), "--input", steps, "--clicks",
+                             "ok;ui click BTN_OPTIONS;ui click BTN_LOAD;ui click BTN_LOAD"], "res://scenes/ui/UiFlow.tscn")
+    shown = re.search(rf"offers shown 1 from={re.escape(offer[1])} окна=DLG_DIPLO_BOX", out)
+    if code != 0 or shown is None or "from=save" not in out:
+        return False, f"предложение после загрузки: код {code}\n{out.strip()}"
+    return True, f"после загрузки — окно предложения {offer[1]}"
+
+
+BATTLE = re.compile(r"battle units=(?P<units>\d+) sprites=(?P<sprites>\d+) missing=(?P<missing>\d+) "
+                    r"round=(?P<round>\d+) turns=(?P<turns>\d+) card=(?P<card>\d) winner=(?P<winner>\S+)")
+
+
+def battle(repo: Path) -> tuple[bool, str]:
+    """Экран боя (сцена battle/BattleScreen) на образце боя из корпуса: поле собрано, имён без картинок нет,
+    бой доигрывается до победителя. Правила берутся из data/rules, картинки — из assets/gfx."""
+    # Варианты сцены независимы — разом (godot_all), проверки — по порядку.
+    variants = [["--check"], ["--check", "--item"], ["--check", "--marks"], ["--check", "--hover"], ["--check", "--refusal"],
+                ["--check", "--cursor"], ["--check", "--cursor", "--still", "--speed", "4"], ["--check", "--resolve"],
+                ["--check", "--resolve", "--hotseat"], ["--check", "--d1"]]
+    outs = dict(zip(map(str, variants), godot_all(repo, [(v, "res://scenes/battle/BattleScreen.tscn") for v in variants])))
+    code, out = outs[str(["--check"])]
+    match = BATTLE.search(out)
+    if (code != 0 or match is None or int(match["sprites"]) == 0 or int(match["missing"]) != 0
+            or match["winner"] == "-"):
+        return False, f"экран боя: код {code}\n{out.strip()}"
+    # Поле во вьюпорте экрана боя — точками: 1 = Nearest у корня BattleView (фильтр SubViewport по умолчанию — Linear).
+    if re.search(r"^battle units=.* фильтр=1 ", out, re.M) is None:
+        return False, f"экран боя: фильтр поля не Nearest\n{match.group(0)}"
+    # Боевой предмет перетаскиванием (docs/ui-windows.md §7): зелье лечения мимо цели — не применено, на раненого своего — применено.
+    code, out = outs[str(["--check", "--item"])]
+    drops = re.findall(r"battle item drop 0 на=\S+ применён=(\d)", out)
+    frames = re.findall(r"battle item drag 0 \S+ целей=\d+ рамка=(\w+) нет_кадров=(\d+)", out)
+    hover = re.search(r"battle item hover \S+ курсор=Battle:CUATTACKA?\+\S+:(\d+)", out)   # «A» — при BattleAnim (DragCursor)
+    # Анимация применения (BatItems.ff, по категории: зелье — G000IG1111, 0x682eb0).
+    if (code != 0 or drops != ["0", "1"] or frames != [("ISEL", "0")] * 2 or "battle item card " not in out
+            or hover is None or int(hover[1]) < 2 or "battle item show G000IG1111HMOVA1B00 " not in out):
+        return False, f"экран боя, предмет: код {code}, броски {drops}\n{out.strip()}"
+    # Панель юнитов (docs/ui-windows.md §9): полоса — «сейчас/макс» текстом; значки состояний — усиление, паралич, яд, защита;
+    # паралич красит портрет серым.
+    code, out = outs[str(["--check", "--marks"])]
+    meters = re.search(r"battle panel полосы=(\d+/\d+(?:,\d+/\d+)*) ", out)
+    marks = re.search(r"battle panel marks значков=(\d+) подкраска=(\S+)", out)
+    # Рамка ходящего — в панели (PLY), метка под курсором на поле (MRK), надписи удара — на портрете («-N»).
+    frames = re.search(r"рамки=(\S*)", out)
+    hovered = re.search(r"battle hover меток=(\d+)", out)
+    notes = re.search(r"battle panel end .* надписи=(\S*)", out)
+    both = re.search(r"battle both groups меток=(\d+) целей=(\d+)", out)
+    if (code != 0 or meters is None or marks is None or marks[1] != "4" or marks[2] != "128;128;128"
+            or frames is None or not frames[1].startswith("PLY") or hovered is None or hovered[1] != "1"
+            or notes is None or not re.match(r"[-+]\d+", notes[1]) or both is None or both[1] != both[2]):
+        return False, f"экран боя, панель: код {code}\n{out.strip()}"
+    # Наведение (слова пользователя 15.10): зона мыши — место и 32 px под ним (0x6326b9), метка ловится и под ногами; пока мышь ходит
+    # внутри зоны одного юнита, анимация метки не начинается заново (0x633012), у другого юнита — с первого кадра.
+    code, out = outs[str(["--check", "--hover"])]
+    zone = re.search(r"battle hoverzone юнит=(?P<unit>\S+) .* под_ногами\+16=(?P<below>\S+) край\+31=(?P<edge>\S+) "
+                     r"за_краем\+32=(?P<past>\S+) у_ног-4=(?P<feet>\S+) тело-60=(?P<body>\S+) ", out)
+    anim = re.search(r"battle hoveranim кадров=(\d+) кадры=\S+ сбросов=(\d+) другой=(\S+):(-?\d+) мимо_меток=(\d+)", out)
+    if (code != 0 or zone is None or {zone["below"], zone["edge"], zone["feet"], zone["body"]} != {zone["unit"]}
+            or zone["past"] == zone["unit"] or anim is None or int(anim[1]) < 2 or anim[2] != "0"
+            or anim[3] in ("-", zone["unit"]) or anim[4] != "0" or anim[5] != "0"
+            # Перекрытие мест 2 и 3 левой группы: движок обходит юнитов в порядке позиций 1, 0, 3, 2, 5, 4 (0x63eed0) — ловится позиция 1.
+            or re.search(r"battle hoveroverlap .* ловится=поз1\b", out) is None):
+        return False, f"экран боя, наведение: код {code}\n{out.strip()}"
+    # Щелчок по негодной цели (0x63cce6): повторное воскрешение — окно X008TA0031, «ОК» закрывает.
+    code, out = outs[str(["--check", "--refusal"])]
+    # Ин114: окно — по павшему своей стороны (0x63cce6), по павшему врагу — нет.
+    if (code != 0 or "battle message X008TA0031" not in out or "battle refusal окно=DLG_MESSAGE_BOX" not in out
+            or "battle refusal враг окно=-" not in out
+            or "battle refusal closed окно=-" not in out):
+        return False, f"экран боя, отказ цели: код {code}\n{out.strip()}"
+    # Курсор цели (0x633a1f): над годной целью — пара класса атаки, над своим — «нельзя», вне мест — CUDEFAULT.
+    code, out = outs[str(["--check", "--cursor"])]
+    cursor = re.search(r"battle cursor цель=Battle:(CU[A-Z]+?)A? свой=Battle:(CU[A-Z]+?)A? вне=Battle:(CU[A-Z]+?)A? ", out)
+    if (code != 0 or cursor is None or cursor[1] not in ("CUATTACK", "CUHEAL", "CUTRANSF") or cursor[2] != cursor[1] + "N"
+            or cursor[3] != "CUDEFAULT" or re.search(r"battle cursor .* кадров=0\b", out)):
+        return False, f"экран боя, курсор цели: код {code}\n{out.strip()}"
+    # «Дополнительная анимация в бою» выключена и скорость «Сразу» (MapSettings): курсоры без «A», покой STIL — картинок хватает.
+    code, out = outs[str(["--check", "--cursor", "--still", "--speed", "4"])]
+    still = re.search(r"battle cursor цель=Battle:(CU[A-Z]+) свой=Battle:(CU[A-Z]+) вне=Battle:CUDEFAULT ", out)
+    done = BATTLE.search(out)
+    if code != 0 or still is None or still[1].endswith("A") or done is None or done["missing"] != "0":
+        return False, f"экран боя, без анимации: код {code}\n{out.strip()}"
+    # «Быстрый поединок» (docs/battle-screen.md §5.2): против ИИ — вопрос X005TA0922, «Да» досчитывает бой; бой двух людей — сообщение
+    # X005TA0926, бой идёт дальше. Автобой двух людей — у стороны ходящего: следующий ход другой стороны ждёт игрока.
+    code, out = outs[str(["--check", "--resolve"])]
+    if (code != 0 or "battle message X005TA0922" not in out or "battle resolve окно=вопрос" not in out
+            or "battle resolve closed окно=- конец=1" not in out):
+        return False, f"экран боя, быстрый поединок: код {code}\n{out.strip()}"
+    code, out = outs[str(["--check", "--resolve", "--hotseat"])]
+    auto = re.search(r"battle auto сторона=(\S+) нап=(\d) защ=(\d) ходит=(\S+) ждёт_игрока=(\d)", out)
+    if (code != 0 or "battle message X005TA0926" not in out or "battle resolve closed окно=- конец=0" not in out
+            or auto is None or auto[4] == auto[1] or auto[5] != "1" or (auto[2], auto[3]) not in (("1", "0"), ("0", "1"))):
+        return False, f"экран боя, два человека: код {code}\n{out.strip()}"
+    # Интерфейс боя (прогон 11.10, пункты 14–30): у подложек разметки подсказок нет (движок снимает картинки с диалога, 0x62e017), у кнопки —
+    # есть; подпись крупного портрета — две строки (имя MedBold, «ОЗ» Small); предметы — только у ходящего лидера (0x649775); портрет панели —
+    # цель (основная панель, своя после TOG_RIGHTUNITS, своя над SPOT); окно сообщения 337×367 — по середине 800×600 на слое окон над
+    # портретами; место боя — фон, тень и передний план (UNDEAD_0_FG на 2000, NEUTRAL_0_SHADOW на 138).
+    code, out = outs[str(["--check", "--d1"])]
+    d1 = re.search(r"battle d1 подсказки=(?P<tips>\S+) подпись=(?P<caption>\S+) имена=(?P<names>\S+) предметы_не_лидер=(?P<foreign>-?\d+) "
+                   r"предметы_лидер=(?P<own>\d+) выпито=(?P<drunk>\S+) панель_цель=(?P<target>\S+) панель_свой=(?P<self>\S+) spot=(?P<spot>\S+) "
+                   r"окно=(?P<window>\S+ слой=\d+) закрыто=(?P<closed>\d) место=(?P<place>\S+) панели=(?P<panels>\S+) "
+                   r"вторая=(?P<second>\S+) предметы_ИИ=(?P<ai>-?\d+) лекарь=(?P<healer>\S+) ждать=(?P<wait>\S+)", out)
+
+    def picked(pair: str) -> bool:
+        return pair.count("=") == 1 and pair.split("=")[0] == pair.split("=")[1] != "-"
+
+    tips = "IMG_LITEMSBG:-,IMG_RITEMSBG:-,IMG_BIGFACESBG:-,IMG_LUNITGROUPBG:-,IMG_RUNITGROUPBG:-,TOG_RIGHTUNITS:X005TA0754"
+    if (code != 0 or d1 is None or d1["tips"] != tips
+            # Имя в подписи — CMidUnit::getName (0x5e97dc): без хозяина (бой из журнала) у всех имя типа, пустых нет (прогон 14.10, пометка 2).
+            or not re.match(r"[^|]+\|__ОЗ:_\d+/\d+_y=\d+_высоты=\d+\+\d+$", d1["caption"])
+            or d1["caption"].split("|")[0] not in [n.split(":", 1)[1] for n in d1["names"].split(",")]
+            or any(n.endswith(":-") for n in d1["names"].split(","))
+            or d1["foreign"] != "0" or d1["own"] != "101"
+            # Пометка 4 прогона 15.10: выпитое зелье из слота уходит сразу (0x649939 → 0x622fee): значков 2 → 1, мышь ловит только второй.
+            or d1["drunk"] != "2>1:01"
+            or not (picked(d1["target"]) and picked(d1["self"]) and picked(d1["spot"]))
+            or d1["window"] != "231,116 слой=1" or d1["closed"] != "1"
+            or not all(p in d1["place"].split(",") for p in ("UNDEAD_0_BG:10", "UNDEAD_0_FG:2000", "NEUTRAL_0_SHADOW:138"))
+            # Ответы пользователя 11.10: обе панели сразу (группы по разные стороны, портрет второй — цель), у лидера ИИ на его ходу
+            # предметов нет, у лекаря после победы нет «Защищаться»/«Ждать»/«Отступить» — только лечение раненого, «Ждать» — ход в конце раунда.
+            or d1["panels"] not in ("LR", "RL") or not picked(d1["second"]) or d1["ai"] != "0"
+            or d1["healer"] != "BTN_DEFEND:0,BTN_WAIT:0,BTN_RETREAT:0,лечит=F"
+            or not re.match(r"\S+:ходов=[1-9]\d*:последний=1:повтор=0$", d1["wait"])):
+        return False, f"экран боя, интерфейс (пункты 14–30): код {code}\n{out.strip()}"
+    return True, match.group(0) + (f"; предмет: мимо — нет, на цель — применён; панель: полосы {meters[1]}, значков {marks[1]}; "
+                                   "наведение — и под ногами (+32), анимация метки без сброса; отказ цели — X008TA0031; быстрый поединок — вопрос/запрет двум людям; автобой по сторонам; "
+                                   "у подложек подсказок нет, предметы — у ходящего лидера-человека (у ИИ нет), цель портретом обеих панелей, "
+                                   "окно по центру над панелью, передний план места; лекарь после победы — только лечение; ждущий ходит в конце раунда")
+
+
+SYNTH_RUNS = [("A1", "S143KC0004,S143KC0005"), ("A2", "S143KC0006,S143KC0007"), ("A3", "S143KC0008,S143KC0009"),
+              ("A4", "S143KC000a,S143KC000b"), ("A5", "S143KC000c,S143KC000d"), ("I2", "S143KC0010,S143KC0011"),
+              ("A1o", "S143KC0004,S143KC0005"),
+              # Партия 17.10: призыв рядом с большим — Лиф (первым ходит) и тролль вместо отряда A2 (--squad), против трёх гномов.
+              ("B1", "S143KC0006,S143KC0007", ["--squad", "G000UU6007:0,G000UU5016:2"]),
+              # Партия 20.10 (corpus/20261020-faces): бой полигона целиком с показом — призыв юнитом (A2) и Сферой Сквайра (I1): вспышка
+              # призыва на призванном (Ин112), «Опыт: +N» без срока (Зс53).
+              ("F/A2", "S143KC0006,S143KC0007"), ("F/I1", "S143KC000e,S143KC000f")]
+
+
+def battle_synth(repo: Path) -> tuple[bool, str]:
+    """Партия пользователя 15.10 на port-synth-1-battle (слой mods/port-synth): ходы человека по памятке, числа видимого.
+    A1 — Аббатиса снимает яд второй атакой: значок FIPOISON и подкраска портрета ушли. A2 — павший сквайр в бою костями и в панели;
+    вампир — у человека цели без фильтра Always (не меньше, чем у ИИ); призыв — выбор клетки (метки на пустой и на клетке с
+    костями, щелчок по клетке), клетка с костями под живым — один портрет; Патриарх поднимает сквайра — костей нет. A3 — двойник: цели
+    своих и чужих, метки под всеми (как движок); Повелитель волков: себя в целях, удар по врагу — запасной атакой по всем, один удар на цель,
+    щелчок по себе — превращение. A5 — флаг отступающего только в панели, значков на поле нет.
+    Вечер 15.10: A2 — вампир бьёт: на нём лечение по классу (HEALTUCH, 0x63570a), прибавка в журнале вампиризма; A4 — Лесная Дева: обереги
+    основной атакой (свой TUCH) раньше лечения второй, у лечения второй атакой эльфа картинки нет (0x635321…0x6353da); I2 — тащение зелья:
+    метка под живым под курсором, под костями нет (0x632e88), зелье жизни на портрет павшего применяется; A1o (показ по часам,
+    D2_BATTLE_PLAYBACK=1) — тик яда не раньше конца показа действия, после которого начался ход отравленного."""
+    if (skip := no_synth(repo, "бой полигонов")) is not None:
+        return skip
+    seen = {}
+    runs = [(["--mods", "../mods", "--check", "--scenario", "port-synth-1-battle", "--stacks", stacks, "--synth", name.split("/")[0],
+              *(extra[0] if extra else [])], "res://scenes/battle/BattleScreen.tscn",
+             {"D2_BATTLE_PLAYBACK": "1"} if name.split("/")[0] in ("A1o", "F") else {}) for name, stacks, *extra in SYNTH_RUNS]
+    for (name, *_), (code, out) in zip(SYNTH_RUNS, godot_all(repo, runs)):
+        if code != 0:
+            return False, f"полигон {name}: код {code}\n{out.strip()}"
+        seen[name] = out
+    a1, a2, a3, a4, a5, i2, a1o, b1 = (seen[z] for z in ("A1", "A2", "A3", "A4", "A5", "I2", "A1o", "B1"))
+    fa2, fi1 = seen["F/A2"], seen["F/I1"]
+    checks = [
+        ("A1 яд снят", re.search(r"battle synth A1 cure \S+ .*яд_до=1 яд_после=0 подкраска_до=128;128;000 подкраска_после= ", a1)),
+        ("A2 павший в бою", re.search(r"battle synth A2 start павших=1 костей_на_поле=1 в_панели_павших=1 значков_на_поле=0", a2)),
+        # Цели человека — без фильтра Always (у ИИ — с ним): у человека их не меньше, чем у ИИ, и есть хоть одна (сам фильтр — тест
+        # AllySecondAttackTests.Human_ElderVampire_CanTargetDeathImmuneGhouls: вампир против упыря, иммунного к смерти).
+        ("A2 вампир", (m := re.search(r"battle synth A2 vampire целей=(\d+) у_ИИ=(\d+)", a2)) and int(m[1]) > 0 and int(m[1]) >= int(m[2]) and m),
+        ("A2 призыв", re.search(r"battle synth A2 summon клеток=2 клетки=14 с_костями=1 меток_поля=2 щелчок_по_клетке=1 выбрана=1 встал=1 призвано=1", a2)),
+        # Ин38: цель показа призыва — призванный (0x63c902): TUCH Повелителя стихий на его клетке, пауза кода 9 в кадры TUCH (23), встаёт на
+        # половине (11) — как в журналах оригинала (20261016g-port-synth с seq 519049, 20261016e-av 15948422: 17 призывов из 17).
+        ("A2 показ призыва", re.search(r"battle synth A2 summon_show цель_призванный=1 клетка=1 касание=G000UU0153TUCHA1B00 пауза=23 встаёт_на=11", a2)),
+        ("A2 одна надпись ОЗ", re.search(r"battle synth A2 covered клетка=\d портретов=1", a2)),
+        ("A2 воскрешение", re.search(r"battle synth A2 revive \S+ hp=50/100 воскрешён=1 костей_до=1 костей_после=0", a2)),
+        ("A3 двойник", re.search(r"battle synth A3 doppel целей=6 своих=3 чужих=3 меток_всех=6", a3)),
+        ("A3 волк по врагу", re.search(r"battle synth A3 wolf себя_в_целях=1 по_врагу целей=3 классы=Damage ударов_на_цель=1 превращён=0", a3)),
+        ("A3 волк превратился", re.search(r"battle synth A3 wolf self превращён=1 тип=g000uu0190", a3)),
+        ("A5 флаг", re.search(r"battle synth A5 flag \S+ значков_на_поле=0 значков_в_панели=1", a5)),
+        ("A2 вампиризм", (m := re.search(r"battle synth A2 drain \S+ касаний=(\d+) себе=(\d+) hp_до=(\d+) hp_после=(\d+) записей=(\d+)", a2))
+         and int(m[1]) >= 1 and int(m[2]) > 0 and int(m[4]) == int(m[3]) + int(m[2]) and m),
+        ("A4 Лесная Дева", re.search(r"battle synth A4 dryad касания=BestowWards:1:G000UU8033TUCHA1B00,Heal:2:-$", a4, re.M)),
+        # Партия 16.10: оберег — значок заклинания-усиления слева вверху портрета (0x5ea6c1: модификатор оберега = модификатор «Защиты от …»).
+        ("A4 значок оберега", re.search(r"battle synth A4 ward \S+ оберегов=[1-4] значки_панели=(?:\S+\+)?FIISOSPELLBOOST@0,0(?:\+\S+)?$", a4, re.M)),
+        ("I2 предметы", re.search(r"battle synth I2 items метка_под_живым=1 метка_под_костями=0 портрет_павшего=1 применён=1 hp=1", i2)),
+        # Партия 17.10: обе клетки тролля — не цели призыва; метки при открытии боя (первым ходит призыватель); щелчок по месту в панели
+        # призывает; пара свободна — большой (паук Лифа) на чётную клетку; у тролля один широкий портрет, вторая половина — он же.
+        ("B1 метки при открытии", re.search(r"battle synth open ходит=CHECK00 клеток=3 меток_поля=3 рамок_панели=3", b1)),
+        ("B1 призыв у тролля", re.search(r"battle synth B1 summon клетки=145 клетка_тролля=0 меток_поля=3 рамок_панели=3 портретов_тролля=1 "
+                                         r"половина_тролля=1 по_троллю=- панель=4 призвано=1 встал=4 большой=1 тип=g000uu5035 портретов_призванного=1", b1)),
+        ("A1o порядок", (m := re.search(r"battle synth A1o order действий=(\d+) тиков=(\d+) раньше_конца_действия=(\d+)", a1o))
+         and int(m[2]) >= 1 and m[3] == "0" and m),
+        # Ин110 (партия 20.10, corpus/20261020-faces): вторая атака Головореза — свой шаг: «Яд» и оливковый через срок надписи после «−N» и
+        # красного, а не разом (у порта до 20.10 вторая вспышка гасила первую в ту же мс).
+        ("A1o вторая атака", re.search(r"battle synth A1o second вторая_отдельно=[1-9]\d* разом=0", a1o)),
+        # Ин112, Зс53: вспышка призыва — на призванном (юнитом и сферой), «Опыт: +N» держится до закрытия боя.
+        ("F/A2 призыв", re.search(r"battle synth F faces .*конец=1 .*стойких_надписей=[1-9]\d* сфер_призыва=0 призыв_на_призванном=([1-9]\d*)/\1 ", fa2)),
+        ("F/I1 сфера", re.search(r"battle synth F faces .*конец=1 .*стойких_надписей=[1-9]\d* сфер_призыва=1 призыв_на_призванном=1/1 ", fi1)),
+    ]
+    failed = [name for name, m in checks if m is None]
+    if failed:
+        lines = "\n".join(l for out in seen.values() for l in out.splitlines() if "battle synth" in l)
+        return False, f"полигоны port-synth-1-battle: не прошло {', '.join(failed)}\n{lines}"
+    order = re.search(r"battle synth A1o order действий=(\d+) тиков=(\d+)", a1o)
+    return True, ("полигоны A1–A5, I2, B1: призыв у тролля — клетки 1,4,5 (не тролля), метки и при открытии, место в панели призывает, "
+                  "паук Лифа — большой на 4, у тролля один портрет; яд снят Cure, павший в бою и воскрешён, клетка призыва выбрана (и с костями), показ призыва на призванном (TUCH и пауза 23), одна надпись ОЗ, вампир бьёт "
+                  "иммунных и лечится (HEALTUCH на нём), двойник — цели обеих групп, волк — себя в целях и удар по всем, Лесная Дева — "
+                  "обереги раньше лечения и без HEALTUCH, значок оберега FIISOSPELLBOOST слева вверху, флаг только в панели, метка под живым при тащении зелья, зелье жизни — на портрет "
+                  f"павшего; порядок показа: тиков {order[2]} — все после конца действия ({order[1]} действий)")
+
+
+QUEUE_TURN = re.compile(r"^battle queue ход=\d+ раунд=\d+ ходит=\S+ модель=(?P<model>\S+) полоса=(?P<strip>\S+) совпало=(?P<ok>\d)$", re.M)
+QUEUE_SUM = re.compile(r"battle queue итог ходов=(?P<turns>\d+) сверок=(?P<checks>\d+) совпало=(?P<same>\d+) новых_раундов=(?P<rounds>\d+) "
+                       r"ждал=(?P<waiters>\S+) пометка_ждёт=(?P<waits>\S+) пропуск=(?P<skip>\S+) портретов_макс=(?P<most>\d+) вне=(?P<out>\d+) "
+                       r"рамка=(?P<x0>\d+),(?P<y0>\d+),(?P<x1>\d+),(?P<y1>\d+) элементов_в_полосе=(?P<elements>\d+) зона_мыши_верх=(?P<hit>\d+) "
+                       r"событий=(?P<events>\d+) пересборок=(?P<rebuilds>\d+) наведение_поле=(?P<field>\S+) наведение_полоса=(?P<strip>\S+) "
+                       r"полосок_под_рамкой=(?P<covered>\d+) отражение=(?P<mirror_same>\d+)/(?P<mirror_seen>\d+) отражённых=(?P<mirrored>\d+) ")
+
+
+def battle_queue(repo: Path) -> tuple[bool, str]:
+    """Полоса очереди ходов (docs/own-version-roadmap.md §3.3, BattleQueueStrip): под --check она выключена без --queue-strip (прежние шаги
+    боя идут без неё). С ключом — бой ход за ходом сессией (--queue-check): на каждом ходу и после каждого действия порядок и пометки портретов
+    полосы — те же, что BattleSession.Upcoming (первые 10), портреты в полосе x 174–627, y 0–85, в ней нет элементов разметки и зон мыши
+    поля; полоса пересобирается только по событию очереди (событий = пересборок); «Ждать» — пометка «ждёт» (дважды, ход ждавшего в конце
+    раунда сверяется), паралич — «пропустит»; наведение на юнита поля — рамка его портрета, на портрет — метка под юнитом на поле; рамки
+    ходящего и наведённого обводят портрет с полоской стороны снаружи (полоска открыта); портрет отражён, как его портрет в боковой панели.
+    Бои: образец корпуса (два юнита) и полигон A5 port-synth-1-battle (11 юнитов — предел полосы 10), он же с --flip (стороны поменяны),
+    если слой есть."""
+    scene = "res://scenes/battle/BattleScreen.tscn"
+    runs = [(["--check", "--queue-check"], scene), (["--check", "--queue-strip", "--queue-check"], scene)]
+    synth = no_synth(repo, "полоса очереди боя") is None
+    if synth:
+        for flip in ([], ["--flip"]):
+            runs.append((["--mods", "../mods", "--check", *flip, "--scenario", "port-synth-1-battle", "--stacks", "S143KC000c,S143KC000d",
+                          "--queue-strip", "--queue-check"], scene))
+    outs = godot_all(repo, runs)
+    code, out = outs[0]
+    if code != 0 or "battle queue итог полосы нет" not in out or re.search(r"^battle queue (ход|конец)", out, re.M):
+        return False, f"полоса очереди: под --check без --queue-strip она есть — код {code}\n{out.strip()}"
+    found = []
+    for name, (code, out) in zip(("образец", "A5", "A5 --flip"), outs[1:]):
+        turns = list(QUEUE_TURN.finditer(out))
+        m = QUEUE_SUM.search(out)
+        bad = [t.group(0) for t in turns if t["ok"] != "1" or t["model"] != t["strip"] or len(t["model"].split(",")) > 10]
+        if (code != 0 or m is None or not turns or bad or m["checks"] != m["same"] or m["out"] != "0" or int(m["most"]) > 10
+                or int(m["x0"]) < 174 or int(m["x1"]) > 627 or int(m["y1"]) > 85 or m["elements"] != "0" or int(m["hit"]) <= int(m["y1"])
+                or m["events"] != m["rebuilds"] or int(m["events"]) == 0 or m["covered"] != "0"
+                or m["mirror_same"] != m["mirror_seen"] or m["mirror_seen"] == "0"
+                or not re.fullmatch(r"(\S+):\1", m["field"]) or "W" not in m["waits"].split(",")
+                or "battle queue конец портретов=0 модель=0" not in out):
+            return False, f"полоса очереди, {name}: код {code}, расхождений {len(bad)}\n" + "\n".join(bad[:5]) + f"\n{out.strip()}"
+        # У образца (два юнита) к концу проверки в полосе один портрет: «пропустит» и наведение на портрет — на полигоне.
+        if name.startswith("A5") and (m["most"] != "10" or m["mirrored"] == "0" or int(m["rounds"]) < 2 or m["waits"] != "W,W" or not m["skip"].endswith(":S")
+                             or not re.fullmatch(r"(\S+):[1-9]\d*:\1", m["strip"])):
+            return False, f"полоса очереди, A5: предел, раунды, «ждёт», «пропустит» или наведение на портрет — {m.group(0)}"
+        found.append(f"{name}: ходов {m['turns']}, сверок {m['checks']}, портретов до {m['most']}, событий {m['events']}, отражение {m['mirror_same']}/{m['mirror_seen']}")
+    return True, ("полоса очереди: без ключа под --check нет; " + "; ".join(found)
+                  + (" (полигона нет — mods/port-synth вне дерева)" if not synth else "")
+                  + "; порядок и пометки = Upcoming, «ждёт» и «пропустит», наведение в обе стороны, рамки не закрывают полоски, отражение как в панели, место свободно")
+
+
+VISIBLE = re.compile(r"battle visible на_поле=(?P<field>\d+) без_кадра=(?P<noframe>\d+) в_панели=(?P<panel>\d+) "
+                     r"без_портрета=(?P<noface>\d+) нет_поля=(?P<nofield>\S+) нет_портрета=(?P<noportrait>\S+) под_панелью=(?P<under>\S+)")
+RMB = re.compile(r"battle rmb юнит=\S+ нажата_карточка=(?P<down>\d) отпущена_карточка=(?P<up>\d)")
+
+
+def battle_visible(repo: Path) -> tuple[bool, str]:
+    """Прогон 3 пользователя 11.10, пункты 4, 5, 7 — бои карты 'The Seals' из журнала зонда порта (mapbattle start …):
+    у каждого юнита на поле — кадр покоя с непрозрачными точками, у каждого в панели — портрет. Выросший уровнем юнит в бою — порождённая
+    реализация G000UG…: картинки ищутся по базовому типу (GlobalId), иначе Титан-лидер нейтралов 2-го уровня (G000UU5218 → G000UG978c) и
+    выросший лидер игрока пропадали с поля и из панели. Карточка по правой кнопке держится, пока кнопка нажата. «под_панелью» — юниты,
+    которых закрывает фон показанной панели (задние места своей стороны при обеих панелях сразу) — печатается, не валит."""
+    runs = [
+        ("Титан", ["--scenario", "'The Seals'", "--stacks", "S109KC0000,S109KC001a", "--rmb"]),
+        ("грифоны, лидер 10-го уровня", ["--scenario", "'The Seals'", "--stacks", "S109KC0000,S109KC000c", "--squad",
+                                         "G000UU0019@10:2,G000UU0157:0,G000UU0154:1,G000UU0151:3,G000UU0010:5"]),
+    ]
+    notes = []
+    for name, extra in runs:
+        code, out = godot(repo, ["--check", *extra], "res://scenes/battle/BattleScreen.tscn")
+        seen = VISIBLE.search(out)
+        rmb = RMB.search(out)
+        if (code != 0 or seen is None or seen["noframe"] != "0" or seen["noface"] != "0" or int(seen["field"]) < 4
+                or ("--rmb" in extra and (rmb is None or rmb["down"] != "1" or rmb["up"] != "0"))):
+            return False, f"экран боя, видимость ({name}): код {code}\n{out.strip()}"
+        notes.append(f"{name}: на поле {seen['field']} с кадром, портретов {seen['panel']}, под панелью {seen['under']}"
+                     + ("; карточка ПКМ закрылась при отпускании" if rmb else ""))
+    return True, "; ".join(notes)
+
+
+def game_over(repo: Path) -> tuple[bool, str]:
+    """Конец партии (docs/scenario-events.md §4): партия с победителем — окно сообщения, эпилог DLG_END_WIN_LOSE_, выход.
+    Победа человека и победа другого игрока на «Power to Corrupt» (сценарий порта data/scenarios). Звук эпилога (0x4bcba0): у квеста
+    запись C000CC0001 с WAV_WIN=GENBRIEF — и при победе, и при поражении GENBRIEF после затухания музыки 750 мс; конец звука включает
+    «Повтор» (0x4bcd11)."""
+    results = []
+    # Победа: вместо сообщения — вопрос о вывозе героя (docs/day-cycle.md §14), «Да» — окно выбора, «Отмена» — эпилог.
+    for winner, won, clicks in (("S073PL000a", "1", "ui click BTN_YES;ui click BTN_CANCEL;ui click BTN_CLOSE"),
+                                ("S073PL0009", "0", "ui click BTN_OK;ui click BTN_CLOSE")):
+        code, out = godot(repo, ["--check", "--scenario", "Power to Corrupt", "--player", "S073PL000a", "--winner", winner,
+                                 "--clicks", clicks], "res://scenes/map/MapScreen.tscn")
+        exported = won == "0" or ("export ask answer=BTN_YES" in out and "окна=DLG_LEADER_PICKER" in out)
+        if (code != 0 or f"game over winner={winner} viewer=S073PL000a won={won}" not in out or not exported
+                or "overlay DLG_MESSAGE_BOX" not in out or "overlay DLG_END_WIN_LOSE_" not in out or "game over closed" not in out
+                or "overlay tune GENBRIEF затухание=750" not in out or not re.search(r"^music GENBRIEF ", out, re.M)):
+            return False, f"конец партии ({winner}): код {code}\n{out.strip()}"
+        results.append("победа (вопрос о вывозе, окно выбора героя)" if won == "1" else "поражение")
+    return True, f"конец партии: {', '.join(results)} — эпилог (звук GENBRIEF) → выход в меню"
+
+
+def saga(repo: Path) -> tuple[bool, str]:
+    """Сага от меню (docs/day-cycle.md §15–16): «Новая сага» → раса (эльфы) → лорд → брифинг → глава 1 (вступление — окна событий)
+    → победа (шаг win) → сообщение → эпилог → окно переноса DLG_CARRY_ITEM_LEADER → «Закрыть» — один вопрос → «Да» → глава 2.
+    Названия глав — по-русски (перевод Руссобит-М, data/scenarios/lang/ru): язык по умолчанию — ru."""
+    steps = ["click BTN_SINGLE", "click BTN_NEW_TOURNEMENT", "key 13", "click BTN_FACE", "key 13", "click BTN_CONTINUE"]
+    clicks = "ok;ok;ok;win;ok;ok;ok;ui click BTN_OK;ui click BTN_CLOSE;ui click BTN_CLOSE;ui click BTN_YES"
+    code, out = godot(repo, ["--check", "--input", "; ".join(steps), "--clicks", clicks], "res://scenes/ui/UiFlow.tscn")
+    games = re.findall(r"game scenario=(\S+) from=new", out)
+    asked = re.search(r"ui click_BTN_CLOSE on=DLG_CARRY_ITEM_LEADER ok=1 \S+ окна=(\S+)", out)
+    if (code != 0 or games != ["Грехи_отцов", "Охота"] or "chapter won → carry over" not in out
+            or asked is None or asked.group(1) != "DLG_CARRY_ITEM_LEADER>DLG_MESSAGE_BOX"
+            or "next chapter campaign=C000CC0006 chapter=1 scenario=S136SC0000" not in out
+            or "overlay tune WINFGEN затухание=750" not in out):
+        return False, f"сага: код {code}, главы {games}, окна {asked.group(1) if asked else '-'}\n{out.strip()}"
+    return True, "сага: эльфы, глава 1 → победа → эпилог (звук WINFGEN) → окно переноса (один вопрос) → глава 2"
+
+
+CYRILLIC = re.compile("[А-Яа-яЁё]")
+SCENARIO_TEXT_STEPS = ["click BTN_SINGLE", "click BTN_NEW_SKIRMISH", "key 13", "key 13", "key 13"]
+
+
+def scenario_texts(repo: Path) -> tuple[bool, str]:
+    """Перевод сценариев (data/scenarios/lang/<язык>, D2.Data.Play.ScenarioTexts): с языком ru (по умолчанию) описание в выборе
+    сценария и задание брифинга первого квеста ('A Return To Simpler Times', перевод порта) и попап события «Ненависти» в ход ИИ
+    дня 1 (S073EV0002, текст Руссобит-М) — русские; с --lang en (перевода нет) — оригинал."""
+    found = {}
+    for lang in ("ru", "en"):
+        extra = ["--input", "; ".join(SCENARIO_TEXT_STEPS), "--probe", "TXT_DESCRIPTION,TXT_TEXT_SCROLL"] + (["--lang", lang] if lang != "ru" else [])
+        code, out = godot(repo, extra, "res://scenes/ui/UiFlow.tscn")
+        texts = {p["id"]: p["text"] for p in PROBE.finditer(out) if p["text"] != "-"}
+        code2, out2 = godot(repo, ["--check", "--scenario", "Hatred", "--player", "S073PL0009", "--humans", "S073PL0009", "--clicks", "end;ok"]
+                            + (["--lang", lang] if lang != "ru" else []), "res://scenes/map/MapScreen.tscn")
+        popup = re.search(r"event popup S073EV0002 for=\S+ day=1(?: ai=1)? text=(\S+)", out2)
+        if code != 0 or code2 != 0 or "TXT_DESCRIPTION" not in texts or "TXT_TEXT_SCROLL" not in texts or popup is None:
+            return False, f"перевод сценариев ({lang}): код {code}/{code2}, тексты {sorted(texts)}, попап {bool(popup)}\n{out.strip()}\n{out2.strip()}"
+        found[lang] = (texts["TXT_DESCRIPTION"], texts["TXT_TEXT_SCROLL"], popup.group(1))
+    ru, en = found["ru"], found["en"]
+    # Перевод первого квеста — машинный перевод порта (data/scenarios/lang/ru, в публичное дерево не входит): без него проверяется только
+    # попап «Ненависти» из слоя русификации.
+    if not (repo / "data" / "scenarios" / "lang" / "ru" / "'A Return To Simpler Times'.json").is_file():
+        if not CYRILLIC.search(ru[2]) or CYRILLIC.search(en[2]):
+            return False, f"перевод сценариев (без перевода порта): ru {ru[2]}, en {en[2]}"
+        return True, f"перевод сценариев: перевода порта нет (публичное дерево) — попап ru «{ru[2][:24]}…», en «{en[2][:16]}…»"
+    if not all(CYRILLIC.search(t) for t in ru) or any(CYRILLIC.search(t) for t in en) or not en[0].startswith("Average"):
+        return False, f"перевод сценариев: ru {ru}, en {en}"
+    return True, (f"перевод сценариев: ru — выбор «{ru[0][:24]}…», брифинг «{ru[1][:24]}…», попап «{ru[2][:24]}…»; "
+                  f"en — «{en[0][:16]}…», «{en[2][:16]}…»")
+
+
+def event_battle(repo: Path) -> tuple[bool, str]:
+    """Бой эффекта L_BATTLE в ход человека (docs/day-cycle.md §7): «Drega Zul», день 1, отряд нежити S001KC0001 входит в область
+    S001LO000d — событие S001EV001a: попап, затем экран боя (нападает оруженосец S001KC0014), закрытие — итог в карту."""
+    code, out = godot(repo, ["--check", "--scenario", "Drega Zul", "--player", "S001PL000a", "--humans", "S001PL000a",
+                             "--clicks", "end;ok;16,26;21,32;21,32;ok"], "res://scenes/map/MapScreen.tscn")
+    lines = out.splitlines()
+    popup = next((i for i, line in enumerate(lines) if "event popup S001EV001a" in line), -1)
+    start = next((i for i, line in enumerate(lines) if "eventbattle start attacker=S001KC0014 defender=S001KC0001" in line), -1)
+    end = next((i for i, line in enumerate(lines) if i > start >= 0 and line.startswith("mapbattle end")), -1)
+    if code != 0 or not 0 <= popup < start < end:
+        return False, f"бой эффекта: код {code}\n{out.strip()}"
+    return True, f"бой эффекта: попап S001EV001a → экран боя S001KC0014 против S001KC0001 → {lines[end].strip()}"
+
+
+def leader_import(repo: Path) -> tuple[bool, str]:
+    """Импорт героя в лобби «горячего стула» (docs/day-cycle.md §12): герои игры (.ldr из Exports копии с экспортом) переводятся в
+    каталог героев порта; «Импорт» ячейки → DLG_IMPORT_LEADER → просмотр DLG_VIEW_EXPLEAD → «ОК» → вопрос → «Да» → имя героя
+    в ячейке → партия."""
+    exports = repo.parent / "disciples-modding" / "game-dev" / "Exports"
+    if not any(exports.glob("*.ldr")):
+        return True, "импорт героя: нет образцов .ldr — пропуск"
+    leaders = repo / ".cache" / "ui-check" / "leaders"
+    if leaders.exists():
+        for f in leaders.iterdir():
+            f.unlink()
+    steps = ["click BTN_MULTI", "click BTN_CONTINUE", "click BTN_NEW_SKIRMISH", "click BTN_LOAD", "click TOG_PLAYERTYPE_1",
+             "click BTN_IMPORT_LEADER_1", "key 40", "click BTN_VIEW_LEADER", "click BTN_CLOSE", "click BTN_OK", "click BTN_YES",
+             "type A", "click TOG_PLAYERTYPE_2", "type B", "click BTN_OK"]
+    code, out = godot(repo, ["--check", "--leaders", str(leaders), "--ldr", str(exports), "--probe", "TXT_IMPORT_NAME_1",
+                             "--input", "; ".join(steps)], "res://scenes/ui/UiFlow.tscn")
+    windows = re.findall(r"flow window (\S+)", out)
+    named = re.search(r"id=TXT_IMPORT_NAME_1 text=(\S+)", out)
+    if (code != 0 or "leaders imported=" not in out or windows != ["DLG_IMPORT_LEADER", "DLG_VIEW_EXPLEAD", "DLG_MESSAGE_BOX"]
+            or named is None or GAME.search(out) is None):
+        return False, f"импорт героя: код {code}, окна {windows}\n{out.strip()}"
+    return True, f"импорт героя: .ldr → герои порта, окно выбора → просмотр → вопрос → «{named.group(1)}» в ячейке → партия"
+
+
+def hotseat(repo: Path) -> tuple[bool, str]:
+    """«Горячий стул» (docs/scenario-events.md §3б): Кланы и Легионы — люди на «Power to Corrupt»; ход Кланов, ход Легионов
+    того же дня, день +1 — снова Кланы; окно передачи хода DLG_HOTSEAT_POPUP — раньше окон событий начала хода."""
+    code, out = godot(repo, ["--check", "--scenario", "Power to Corrupt", "--player", "S073PL000a",
+                             "--humans", "S073PL000a,S073PL000b", "--clicks", "ok;end;ok;end;ok"], "res://scenes/map/MapScreen.tscn")
+    turns = [line.strip() for line in out.splitlines() if line.strip().startswith("hotseat turn ")]
+    expected = ["hotseat turn human=S073PL000a day=0", "hotseat turn human=S073PL000b day=0", "hotseat turn human=S073PL000a day=1"]
+    lines = out.splitlines()
+    last_turn = max((i for i, line in enumerate(lines) if expected[-1] in line), default=-1)
+    popup = next((i for i, line in enumerate(lines) if i > last_turn and "overlay DLG_HOTSEAT_POPUP" in line), -1)
+    event = next((i for i, line in enumerate(lines) if i > last_turn and "overlay DLG_EVENT_POPUP" in line), len(lines))
+    if code != 0 or [t for t in turns if t in expected] != expected or popup < 0 or popup > event:
+        return False, f"горячий стул: код {code}, ходы {turns}\n{out.strip()}"
+    return True, "горячий стул: Кланы → Легионы → день +1 → Кланы, окно передачи хода раньше окон событий"
+
+
+def courier(repo: Path) -> tuple[bool, str]:
+    """Гонец «горячего стула» (docs/ui-windows.md §15): Кланы предлагают союз Легионам-людям — сразу, в свой ход: вопрос → гонец
+    DLG_HOTSEAT_POPUP → «ОК» — окно ответа адресата DLG_DIPLO_BOX поверх карты Кланов → «Принять» — итог Кланам (сообщение)."""
+    steps = [("ok", None), ("panel click BTN_DIPLOMACY", "панель=DLG_DIPLOMACY"), ("diplo 3", "выбран=S073PL000b"),
+             ("panel click BTN_PROPOSE_ALLIANCE", "окна=DLG_MESSAGE_BOX сообщение=вопрос"),
+             ("ui click BTN_YES", "окна=DLG_HOTSEAT_POPUP гонец ответ=DLG_DIPLO_BOX"),
+             ("ui click BTN_OK", "окна=DLG_DIPLO_BOX союз предлагает=S073PL000a кому=S073PL000b"),
+             ("ui click BTN_OK", "окна=DLG_MESSAGE_BOX сообщение=ОК"), ("ui click BTN_OK", "окна=- ")]
+    code, out = godot(repo, ["--check", "--scenario", "Power to Corrupt", "--player", "S073PL000a", "--humans", "S073PL000a,S073PL000b",
+                             "--clicks", ";".join(s for s, _ in steps)], "res://scenes/map/MapScreen.tscn")
+    lines = [l for l in out.splitlines() if l.startswith(("ui ", "panel ", "diplo "))]
+    wants = [w for _, w in steps if w is not None]
+    if (code != 0 or len(lines) != len(wants) or any(w not in l + " " for w, l in zip(wants, lines))
+            or "courier from=S073PL000a to=S073PL000b" not in out):
+        return False, f"гонец: код {code}\n" + "\n".join(lines or [out.strip()])
+    return True, "гонец: союз человеку — вопрос → гонец → окно ответа адресата → итог предложившему, в его ход"
+
+
+AITURN = re.compile(r"aiturn игроков=(?P<players>\d+) ходов=(?P<moves>\d+) показано=(?P<shown>\d+) под_туманом=(?P<hidden>\d+) "
+                    r"боёв=(?P<battles>\d+) с_человеком=(?P<human>\d+) день=(?P<day>\d+) ошибка=(?P<error>\d)")
+
+# Окно ожидания к концу хода ИИ (MapScreen.OnAiFinished): у движка IMG_LEADER и TXT_LEADER_NAME в DLG_STRAT_WAIT пусты (Ин39,
+# смена панели 0x48d858 ставит только IMG_LORD_FACE; портрет и имя лидера — только в DLG_STRATEGIC, проверка 0x48d934).
+AIWAIT = re.compile(r"^aiwait лидер=(?P<leader>\S+) имя=(?P<name>\S+) лорд=(?P<lord>\S+)$", re.MULTILINE)
+
+# Мигание в ход ИИ (замечание 11.10, п. 22): кусок земли под камерой не пропадает ни на кадр (старая картинка стоит до новой), пересборка
+# объектов оставляет нетронутым узлам их кадр анимации (0x5ace8a), а не сбрасывает все анимации карты к кадрам Random(1).
+AIFLICKER = re.compile(r"провалов_земли=(?P<gaps>\d+) удержано=(?P<held>\d+) кадров=(?P<frames>\d+) пересборок=(?P<builds>\d+) "
+                       r"кадр_сохранён=(?P<kept>\d+) скачков_кадра_снято=(?P<jumps>\d+)")
+
+# Ход ИИ на экране (docs/ai-screen.md): сохранение, глазами человека, что должно быть видно.
+AI_TURN_CASES = [
+    # День 1 партии за Легионы, туман закрыт: ходы ИИ за туманом не показываются, открытые — идут по клеткам.
+    ("20260920-legions", "rastlennaya-vlast-heretic-t01-001.sg", "S073PL000b", "туман"),
+    # День 30 партии за Кланы: Нежить (S073KC0003) нападает на отряд человека — экран боя поверх карты, итог в ход ИИ.
+    ("20260919-human", "rastlennaya-vlast-dwarf-t30-055.sg", "S073PL000a", "бой"),
+]
+
+
+WALKED = re.compile(r"walked (?P<stack>\S+) в=\((?P<x>\d+),(?P<y>\d+)\) событий=\d+ туман_по_шагам=(?P<opened>\d+)/(?P<steps>\d+) "
+                    r"кадров=(?P<frames>\d+) вид_на_отряде=(?P<followed>\d+) кадр_мс=(?P<key_ms>[\d.]+) кадр_мин_мс=(?P<key_min>[\d.]+) "
+                    r"группа=(?P<group>\d+)")
+
+
+def walk_clock_ok(w: re.Match, period: int) -> bool:
+    """Часы хода (CTwoSpeedAnimator, 0x4f5e7c): группа хода — period мс, ни один ключевой кадр не короче периода (тик без догона), в среднем —
+    не больше четырёх периодов (кадр за тик; без окна кадр Godot под нагрузкой бывает длиннее периода — тик тогда на границе кадра)."""
+    return w["group"] == str(period) and float(w["key_min"]) >= period - 0.5 and float(w["key_ms"]) < 4 * period
+
+
+def walk_steps(repo: Path) -> tuple[bool, str]:
+    """Ход отряда человека (замечание 11.10, пп. 19 и 34): ключевые кадры задачи движения (StackWalk), вид на отряде на каждом кадре
+    (0x4f6539), туман открывается на первом кадре каждого шага (0x4f6856 → 0x5d52fe), а не куском по концу пути. Легионы, день 1 (туман
+    закрыт): S073KC0002 из столицы к 14,92 — 7 шагов. Второе — мешок (п. 26): на дне 24 Кланов брошенный рядом мешок берётся щелчком
+    по нему (путь из одной точки — только подбор, 0x43fcb5), окно полученного DLG_ITEM. Нет корпуса — пропуск."""
+    sg = corpus_dir(repo) / "20260920-legions" / "rastlennaya-vlast-heretic-t01-001.sg"
+    if not sg.exists():
+        return True, "ход и туман по шагам: пропуск — нет корпуса"
+    code, out = godot(repo, ["--sg", str(sg), "--check", "--player", "S073PL000b", "--clicks", "select S073KC0002;14,92;14,92"],
+                      "res://scenes/map/MapScreen.tscn")
+    w = WALKED.search(out)
+    if (code != 0 or w is None or (w["x"], w["y"]) != ("14", "91") or w["steps"] != "7" or int(w["opened"]) < 2
+            or int(w["frames"]) < int(w["steps"]) or w["followed"] != w["frames"] or not walk_clock_ok(w, 33)):
+        return False, f"ход и туман по шагам: код {code}\n{out.strip()}"
+    walk = (f"ход {w['stack']} в {w['x']},{w['y']}: шагов {w['steps']}, туман открылся на {w['opened']}, ключевых кадров {w['frames']}, "
+            f"вид на отряде {w['followed']}, кадр {w['key_ms']} мс (не короче {w['key_min']}, группа {w['group']})")
+    # Флажок «Плавная прокрутка при движении отряда» выключен: шаг кадра вдвое длиннее (14 точек), группа хода медленная — 66 мс (0x4f5e7c).
+    settings = repo / ".cache" / "ui-check" / "walk-settings.json"
+    settings.parent.mkdir(parents=True, exist_ok=True)
+    settings.write_text(json.dumps({"StackSmoothScroll": False}), encoding="utf-8")
+    code, out = godot(repo, ["--sg", str(sg), "--check", "--player", "S073PL000b", "--settings", str(settings),
+                             "--clicks", "select S073KC0002;14,92;14,92"], "res://scenes/map/MapScreen.tscn")
+    slow = WALKED.search(out)
+    if (code != 0 or slow is None or (slow["x"], slow["y"]) != ("14", "91") or not walk_clock_ok(slow, 66)
+            or abs(int(slow["frames"]) * 2 - int(w["frames"])) > int(w["steps"]) * 2):
+        return False, f"ход без плавности: код {code}\n{out.strip()}"
+    walk += (f"; без плавности — ключевых кадров {slow['frames']}, кадр {slow['key_ms']} мс (не короче {slow['key_min']}, "
+             f"группа {slow['group']})")
+    sg = corpus_dir(repo) / "20260919-human" / "rastlennaya-vlast-dwarf-t24-045.sg"
+    code, out = godot(repo, ["--sg", str(sg), "--check", "--player", "S073PL000a", "--clicks",
+                             "panel click BTN_NEXT_LEADER;panel release IMG_LEADER;ui click BTN_PICK_UP_DROP;drop 72,34;ui press 50,413;"
+                             "ui release 494,413;ui click BTN_BACK;72,34;72,34;ui click BTN_OK"], "res://scenes/map/MapScreen.tscn")
+    visit = re.search(r"^visit (S073BG\w+) добыча", out, re.M)
+    if code != 0 or visit is None or "fx Midgard/TAKEBAG " not in out or "ui click_BTN_OK on=DLG_ITEM " not in out:
+        return False, f"мешок рядом: код {code}\n{out.strip()}"
+    return True, f"ход и туман по шагам: {walk}; мешок {visit.group(1)} взят щелчком, окно DLG_ITEM"
+
+
+def land_spread_ok(out: str) -> bool:
+    """Растекание земли по пачкам (CMidAnim2Terrain, docs/ai-screen.md §11): есть хоть одно; пачек столько же, сколько звуков, и последняя
+    пачка каждого растекания перекрасила все его клетки."""
+    spreads = re.findall(r"^landspread клеток=(\d+) групп=\d+ пачки=\S+ звуков=(\d+)", out, re.M)
+    packs = re.findall(r"^landspread пачка (\d+)/(\d+) новых=(\d+)/(\d+)", out, re.M)
+    last = [p for p in packs if p[0] == p[1]]
+    return (len(spreads) > 0 and len(packs) == sum(int(s[1]) for s in spreads) and len(last) == len(spreads)
+            and all(p[2] == p[3] for p in last))
+
+
+def ai_turn(repo: Path) -> tuple[bool, str]:
+    """Ход ИИ на экране (пункт 6, задача 4.4): «конец хода» проводит ходы ИИ в фоне; на каждого игрока ИИ — строка окна
+    ожидания DLG_STRAT_WAIT с портретом лорда, на каждый показанный ход отряда — строка aimove; показано + под туманом = все
+    ходы отрядов ИИ; бой ИИ с человеком открывает экран боя (aibattle start/end), и ход ИИ продолжается; вода анимирована
+    (WATERBKGND1, 16 кадров). Нет корпуса — пропуск."""
+    results = []
+    for corpus, save, player, want in AI_TURN_CASES:
+        sg = corpus_dir(repo) / corpus / save
+        if not sg.exists():
+            return True, "ход ИИ: пропуск — нет корпуса"
+        code, out = godot(repo, ["--sg", str(sg), "--check", "--player", player, "--clicks", "end"], "res://scenes/map/MapScreen.tscn")
+        turn = AITURN.search(out)
+        flicker = AIFLICKER.search(out)
+        wait = AIWAIT.search(out)
+        moves = [l for l in out.splitlines() if l.startswith("aimove ")]
+        players = [l for l in out.splitlines() if l.startswith("aiplayer ") and "лорд=Lords:LORD" in l]
+        starts, ends = out.count("aibattle start "), out.count("aibattle end ")
+        if (code != 0 or turn is None or turn["error"] != "0" or len(moves) != int(turn["shown"]) or "water кадров=16" not in out
+                or len(players) != int(turn["players"]) or int(turn["shown"]) + int(turn["hidden"]) != int(turn["moves"])
+                or flicker is None or flicker["gaps"] != "0" or int(flicker["kept"]) == 0
+                or wait is None or wait["leader"] != "-" or wait["name"] != "-"
+                or starts != ends or starts != int(turn["human"])
+                or (want == "туман" and (int(turn["hidden"]) == 0 or int(turn["shown"]) == 0))
+                or (want == "бой" and (starts == 0 or re.search(r"aibattle start .* flip=[01] bg=\d+", out) is None
+                                       or not land_spread_ok(out) or "fx Midgard/OCCUPY " not in out))):
+            return False, f"ход ИИ {save}: код {code}\n{out.strip()}"
+        results.append(f"{save}: игроков {turn['players']}, ходов {turn['moves']} (показано {turn['shown']}, "
+                       f"под туманом {turn['hidden']}), боёв с человеком {turn['human']}, день {turn['day']}; мигание: провалов земли "
+                       f"{flicker['gaps']} из {flicker['frames']} кадров, пересборок {flicker['builds']}, скачков кадра снято {flicker['jumps']}")
+    return True, "ход ИИ: " + "; ".join(results)
+
+
+SMOOTH = re.compile(r"^smoothscroll в=\((?P<x>\d+),(?P<y>\d+)\) положений=(?P<count>\d+) тиков=(?P<ticks>\d+) мс=(?P<ms>\d+) "
+                    r"тик_мин_мс=(?P<min>[\d.]+) сдвиги=(?P<path>\S+)$", re.MULTILINE)
+
+
+def engine_line(x0: int, y0: int, x1: int, y1: int) -> list[tuple[int, int]]:
+    """Отрезок движка 0x51f452 → 0x51f4fe (своя запись, не код порта): max(|dx|,|dy|)+1 точек, Брезенхэм сверху вниз — у отрезка вверх
+    точки строятся от конца и кладутся с последней."""
+    n = max(abs(x0 - x1), abs(y0 - y1)) + 1
+    pts: list[tuple[int, int]] = [(0, 0)] * n
+    at, step_at = 0, 1
+    sx, sy, ex, ey = x0, y0, x1, y1
+    if y0 > y1:
+        at, step_at, sx, sy, ex, ey = n - 1, -1, x1, y1, x0, y0
+    dx, dy, xs = ex - sx, ey - sy, 1
+    if dx <= 0:
+        dx, xs = -dx, -1
+    x, y = sx, sy
+    pts[at] = (x, y)
+    major, minor = (dx, dy) if dx > dy else (dy, dx)
+    err = 2 * minor - major
+    for _ in range(major):
+        at += step_at
+        if err >= 0:
+            err += 2 * minor - 2 * major
+            if dx > dy:
+                y += 1
+            else:
+                x += xs
+        else:
+            err += 2 * minor
+        if dx > dy:
+            x += xs
+        else:
+            y += 1
+        pts[at] = (x, y)
+    return pts
+
+
+def engine_scroll(dx: int, dy: int) -> list[tuple[int, int]]:
+    """Положения CMidAnimSmoothScroll (0x4f4b51): точки отрезка от сдвига до нуля с номерами 0, 4, 12, 24, … до половины (шаг +4 до 128) и
+    симметрично с конца."""
+    line = engine_line(dx, dy, 0, 0)
+    n, half = len(line), len(line) // 2
+    head, i, step = [], 0, 0
+    while i < half:
+        head.append(line[i])
+        step += 4 if step < 128 else 0
+        i += step
+    tail, i, step = [], n - 1, 0
+    while i >= half:
+        tail.append(line[i])
+        step += 4 if step < 128 else 0
+        i -= step
+    return head + tail[::-1]
+
+
+FOGCHANGE = re.compile(r"^fogchange в=\((?P<x>\d+),(?P<y>\d+)\) радиус=(?P<r>\d+) шагов=(?P<steps>\d+) мс=(?P<ms>\d+) "
+                       r"тик_мин_мс=(?P<min>[\d.]+) сменилось=(?P<changed>\d+) по_шагам=(?P<per>[\d,]+) клетки=(?P<cells>.*)$", re.MULTILINE)
+FOGTEST = re.compile(r"^fogtest done (?P<x>\d+),(?P<y>\d+),(?P<r>\d+) открыто=(?P<opened>\d+) показ=1 идёт=0 расхождение=(?P<left>\d+) "
+                     r"карта=(?P<size>\d+)$",
+                     re.MULTILINE)
+
+
+def engine_fog_rings(x: int, y: int, r: int, size: int) -> list[set[tuple[int, int]]]:
+    """Кольца CMidAnim2ChangeFog (своя запись по 0x4f1a29/0x4f1b63): прямоугольник (x,y)…(x+1,y+1) шире на r и зажат в [0, size]; центр
+    ((л+п)>>1, (в+н)>>1), кольцо 1, 3, …; клетки периметра, углы на клетку внутрь; конец — когда кольцо + 2 > сторона."""
+    left, top, right, bottom = max(0, x - r), max(0, y - r), min(size, x + 1 + r), min(size, y + 1 + r)
+    side, cx, cy = right - left, (left + right) >> 1, (top + bottom) >> 1
+    rings, ring = [], 1
+    while True:
+        cells = set()
+        for row in range(ring):
+            for col in range(ring):
+                if row not in (0, ring - 1) and col not in (0, ring - 1):
+                    continue
+                px, py = cx + col, cy + row
+                if ring > 1 and col in (0, ring - 1) and row in (0, ring - 1):
+                    px += 1 if col == 0 else -1
+                    py += 1 if row == 0 else -1
+                if 0 <= px < size and 0 <= py < size:
+                    cells.add((px, py))
+        rings.append(cells)
+        cx, cy = cx - 1, cy - 1
+        if ring + 2 > side:
+            return rings
+        ring += 2
+
+
+def fog_change(repo: Path) -> tuple[bool, str]:
+    """Смена тумана кольцами (CMidAnim2ChangeFog, MapView.Fog.cs): Легионы, день 1 — эффект CEffectFog зрителю (шаг fogtest: квадрат ±r без
+    углов открыт в модели) в 60,60 с радиусом 3 и у угла карты 1,1 с радиусом 4. Сначала вид едет к центру (плавная прокрутка), затем туман
+    догоняет модель кольцами: шагов и клетки каждого шага — по своему пересчёту колец, шаг не короче 66 мс (медленная группа); после
+    показа показанный туман равен модели. Нет корпуса — пропуск."""
+    sg = corpus_dir(repo) / "20260920-legions" / "rastlennaya-vlast-heretic-t01-001.sg"
+    if not sg.exists():
+        return True, "смена тумана: пропуск — нет корпуса"
+    code, out = godot(repo, ["--sg", str(sg), "--check", "--player", "S073PL000b", "--clicks", "fogtest 60,60,3;fogtest 1,1,4"],
+                      "res://scenes/map/MapScreen.tscn")
+    changes, tests = list(FOGCHANGE.finditer(out)), list(FOGTEST.finditer(out))
+    if code != 0 or len(changes) != 2 or len(tests) != 2 or any(t["left"] != "0" for t in tests):
+        return False, f"смена тумана: код {code}, показов {len(changes)}, проверок {len(tests)}\n{out.strip()}"
+    results = []
+    for change, test in zip(changes, tests):
+        x, y, r = int(change["x"]), int(change["y"]), int(change["r"])
+        rings = engine_fog_rings(x, y, r, int(test["size"]))
+        per = [int(v) for v in change["per"].split(",")]
+        steps = [[tuple(int(v) for v in c.split(",")) for c in part.split("/") if c] for part in change["cells"].split(";")]
+        scrolled = re.findall(r"^smoothscroll в=\((\d+),(\d+)\)", out[:change.start()], re.MULTILINE)
+        if (int(change["steps"]) != len(rings) or len(per) != len(rings) or len(steps) != len(rings)
+                or any(not set(cells) <= ring for cells, ring in zip(steps, rings)) or sum(per) != int(change["changed"])
+                or (len(rings) > 1 and float(change["min"]) < 65.5) or not scrolled or scrolled[-1] != (change["x"], change["y"])):
+            return False, f"смена тумана в {x},{y} r={r}: {change.group(0)[:400]}\nкольца по движку {[len(g) for g in rings]}"
+        results.append(f"{x},{y} r={r}: {len(rings)} колец, по кольцам {change['per']}, всего {change['changed']} из {test['opened']}")
+    if int(changes[0]["changed"]) != int(tests[0]["opened"]):
+        return False, f"смена тумана: в середине карты кольца сменили не все клетки эффекта\n{out.strip()}"
+    return True, "смена тумана кольцами: " + "; ".join(results) + " — после показа расхождений с моделью 0"
+
+
+def smooth_scroll(repo: Path) -> tuple[bool, str]:
+    """Плавная прокрутка к событиям (CMidAnimSmoothScroll, MapView.Scroll.cs): ход ИИ дня 30 Кланов — перед ходами отрядов и событиями на
+    виду вид едет к месту; положения по тикам совпадают с разгоном движка (свой пересчёт отрезка 0x51f452 и номеров 0x4f4b51 от первого
+    сдвига), последнее — (0, 0), тик не короче 33 мс (быстрая группа). Флажок «Прокрутка между действиями» выключен — ни одной плавной
+    прокрутки, вид встаёт сразу. Нет корпуса — пропуск."""
+    sg = corpus_dir(repo) / "20260919-human" / "rastlennaya-vlast-dwarf-t30-055.sg"
+    if not sg.exists():
+        return True, "плавная прокрутка: пропуск — нет корпуса"
+    code, out = godot(repo, ["--sg", str(sg), "--check", "--player", "S073PL000a", "--clicks", "end"], "res://scenes/map/MapScreen.tscn")
+    scrolls = list(SMOOTH.finditer(out))
+    if code != 0 or not scrolls or AITURN.search(out) is None:
+        return False, f"плавная прокрутка: код {code}, прокруток {len(scrolls)}\n{out.strip()}"
+    positions = ticks = 0
+    for s in scrolls:
+        path = [tuple(int(v) for v in p.split(",")) for p in s["path"].split(";")]
+        want = engine_scroll(*path[0])
+        if (path != want or int(s["count"]) != len(path) or int(s["ticks"]) != len(path) - 1
+                or (len(path) > 1 and (float(s["min"]) < 32.5 or int(s["ms"]) >= 132 * (len(path) - 1)))):
+            return False, f"плавная прокрутка в {s['x']},{s['y']}: положения {path[:6]}…, по движку {want[:6]}…, {s.group(0)[:300]}"
+        positions += len(path)
+        ticks += int(s["ticks"])
+    ms = sum(int(s["ms"]) for s in scrolls)
+    settings = repo / ".cache" / "ui-check" / "scroll-settings.json"
+    settings.parent.mkdir(parents=True, exist_ok=True)
+    settings.write_text(json.dumps({"SmoothScroll": False}), encoding="utf-8")
+    code, off = godot(repo, ["--sg", str(sg), "--check", "--player", "S073PL000a", "--settings", str(settings), "--clicks", "end"],
+                      "res://scenes/map/MapScreen.tscn")
+    turn = AITURN.search(off)
+    if code != 0 or turn is None or turn["error"] != "0" or SMOOTH.search(off):
+        return False, f"плавная прокрутка выключена: код {code}\n{off.strip()}"
+    return True, (f"плавная прокрутка: {len(scrolls)} прокруток, {positions} положений по движку, {ticks} тиков за {ms} мс "
+                  f"({ms / max(ticks, 1):.1f} мс на тик); флажок выключен — прокруток 0")
+
+
+def sound(repo: Path) -> tuple[bool, str]:
+    """Звук и музыка (docs/ai-screen.md §12). Карта (сохранение human дня 8 глазами Легионов): играет музыка карты; у клетки 16,79 звучат
+    ближайшие фоны мест — золотая жила и лава; шаги отряда ИИ звучат; выбор отряда — голос лидера; его ход кончается нападением —
+    шаги молчат, на последнем шаге ATTK, перед боем SBATTLE (CMidAnim2Unit, CMidAnim2Battle). У руины 23,29 (вид на 24,30) её источник
+    RUIN молчит и места не занимает (CAudioRgnRuin 0x50851a: имя RUIN, в AudioRgn.wdb только RUIN1..4 — 0x5674ce не находит), звучат
+    другие. Экран боя: звуки действий по записям хода (замах, удар, гибель). Нет корпуса — только бой."""
+    results = []
+    sg = corpus_dir(repo) / "20260919-human" / "rastlennaya-vlast-dwarf-t08-018.sg"
+    if sg.exists():
+        code, out = godot(repo, ["--sg", str(sg), "--check", "--player", "S073PL000b", "--humans", "S073PL000b",
+                                 "--clicks", "regions 16,79;regions 24,30;end;16,79;4,73;4,73"], "res://scenes/map/MapScreen.tscn")
+        music = re.search(r"^music (INGAME|AMB)\d+ ", out, re.M)
+        regions = re.search(r"regions 16,79 источников=(\d+) звучат=GOLDMINE:\d+:\d+,LAVA:\d+:\d+", out)
+        ruin = re.search(r"regions 24,30 источников=\d+ звучат=(\S*) молчат=(\S+)", out)
+        ruin_ok = ruin is not None and "RUIN@23,29" in ruin[2].split(";") and "RUIN" not in ruin[1]
+        attack = re.search(r"^fx Midgard/G000UU\d{4}ATTK ", out, re.M) and "fx Midgard/SBATTLE " in out
+        voice = re.search(r"^fx Midgard/G000UU\d{4}ACK[123] ", out, re.M)
+        steps = re.findall(r"^fx Midgard/(?:WALK|FLY)\w+ ", out, re.M)
+        if code != 0 or music is None or regions is None or not ruin_ok or voice is None or not steps or not attack:
+            return False, (f"звук карты: код {code}, музыка {music is not None}, фон {regions is not None}, руина {ruin_ok}, "
+                           f"голос {voice is not None}, шагов {len(steps)}, нападение {bool(attack)}\n{out.strip()}")
+        results.append(f"карта: музыка, фон мест ({regions[1]} источников; у руины 23,29 звучат {ruin[1] or '-'}, RUIN молчит), голос, "
+                       f"шагов {len(steps)}, нападение ATTK и SBATTLE")
+    code, out = godot(repo, ["--check"], "res://scenes/battle/BattleScreen.tscn")
+    actions = re.findall(r"^battle sounds \S+ (\S+)", out, re.M)
+    # Звуки действий идут очередью по таймерам, а проверка выходит сразу — сверяется план, не проигрывание.
+    if code != 0 or not actions or not any("DEATH@" in a for a in actions):
+        return False, f"звук боя: код {code}, действий {len(actions)}\n{out.strip()}"
+    results.append(f"бой: действий со звуком {len(actions)}, гибель звучит")
+    return True, "звук: " + "; ".join(results)
+
+
+def shot_compare(repo: Path) -> tuple[bool, str]:
+    """Сверка карты со снимком (docs/ai-screen.md §14, сцена dev/ShotCompare): самопроверка на сохранении дня 30 глазами Кланов —
+    снимок из своего же кадра со сдвигом (−7, 5) находится поиском точно и совпадает весь; тот же сдвиг, заданный как у снимка зонда
+    (--shift), тоже совпадает весь, а сдвиг на точку — уже нет. Кадр — в 16 битах, как снимок обёртки. Нет корпуса — пропуск."""
+    sg = corpus_dir(repo) / "20260919-human" / "rastlennaya-vlast-dwarf-t30-055.sg"
+    if not sg.exists():
+        return True, "сверка со снимком: пропуск — нет корпуса"
+    line = re.compile(r"shotcompare .* сдвиг=(?P<dx>-?\d+),(?P<dy>-?\d+) равно=(?P<eq>[\d.]+) .* картинок=(?P<sprites>\d+) цвет=565")
+    results = {}
+    for name, extra in (("поиск", []), ("сдвиг", ["--shift", "-7,5"]), ("мимо", ["--shift", "-6,5"])):
+        code, out = godot(repo, ["--sg", str(sg), "--player", "S073PL000a", "--center", "42,14", "--shot", "self", *extra],
+                          "res://scenes/dev/ShotCompare.tscn")
+        match = line.search(out)
+        if code != 0 or match is None or int(match["sprites"]) == 0:
+            return False, f"сверка со снимком ({name}): код {code}\n{out.strip()}"
+        results[name] = match
+    if ((results["поиск"]["dx"], results["поиск"]["dy"], results["поиск"]["eq"]) != ("-7", "5", "1.0000")
+            or results["сдвиг"]["eq"] != "1.0000" or float(results["мимо"]["eq"]) >= 1):
+        return False, "сверка со снимком: " + "; ".join(f"{k} {v.group(0)}" for k, v in results.items())
+    return True, (f"сверка со снимком: самопроверка в 565 — сдвиг −7,5 найден и задан, совпало всё ({results['поиск']['sprites']} "
+                  f"картинок); на точку мимо — равно {results['мимо']['eq']}")
+
+
+def path_event(repo: Path) -> tuple[bool, str]:
+    """Упреждающая проверка пути событиями у хода человека (docs/map-path.md §7): сохранение human дня 8 глазами Легионов
+    (человек — S073PL000b, события — из сохранения, --events). После конца хода S073KC0002 идёт к 4,73; путь дня проходит зону
+    S073LO0007 (событие S073EV0015 «вход в локацию»), отряд встаёт в 7,74 — первой клетке зоны, событие срабатывает (попап).
+    Нет корпуса — пропуск."""
+    sg = corpus_dir(repo) / "20260919-human" / "rastlennaya-vlast-dwarf-t08-018.sg"
+    if not sg.exists():
+        return True, "событие на пути: пропуск — нет корпуса"
+    code, out = godot(repo, ["--sg", str(sg), "--events", "--check", "--player", "S073PL000b", "--humans", "S073PL000b",
+                             "--clicks", "end;ok;16,79;4,73;4,73"], "res://scenes/map/MapScreen.tscn")
+    cut = re.search(r"pathevents S073KC0002 клеток=(?P<today>\d+) пройдёт=(?P<walk>\d+) событий=(?P<fired>\d+)", out)
+    walked = re.search(r"walked S073KC0002 в=\((?P<x>\d+),(?P<y>\d+)\) событий=(?P<fired>\d+)", out)
+    if (code != 0 or cut is None or walked is None or int(cut["walk"]) >= int(cut["today"]) or int(cut["fired"]) == 0
+            or (walked["x"], walked["y"]) != ("7", "74") or "overlay DLG_EVENT_POPUP" not in out):
+        return False, f"событие на пути: код {code}\n{out.strip()}"
+    return True, (f"событие на пути: S073KC0002 путь дня {cut['today']} клеток → встал в 7,74 после {cut['walk']}, "
+                  f"событий {cut['fired']}, попап открыт")
+
+
+def battle_opening(repo: Path) -> tuple[bool, str]:
+    """Экран боя от хозяина доигрывает ходы ИИ до первого хода человека (docs/ai-screen.md §5): бой за руину на сохранении
+    дня 3 живой партии — охрана ходит первой, экран открывается уже с ходом человека. Нет корпуса — пропуск."""
+    sg = corpus_dir(repo) / "20260919-human" / "rastlennaya-vlast-dwarf-t03-008.sg"
+    if not sg.exists():
+        return True, "начало боя: пропуск — нет корпуса"
+    code, out = godot(repo, ["--sg", str(sg), "--check", "--player", "S073PL000a", "--clicks", "59,22;52,16;52,16"],
+                      "res://scenes/map/MapScreen.tscn")
+    opened = re.search(r"battle open ходов_ИИ_до_игрока=(?P<steps>\d+) ждёт_игрока=(?P<waits>\d)", out)
+    if code != 0 or opened is None or opened["waits"] != "1" or int(opened["steps"]) == 0:
+        return False, f"начало боя: код {code}\n{out.strip()}"
+    return True, f"начало боя: ИИ сделал {opened['steps']} ходов до первого хода человека"
+
+
+def hotseat_ai(repo: Path) -> tuple[bool, str]:
+    """Ход ИИ в «горячем стуле» (docs/ai-screen.md): день 30 живой партии, люди — Кланы (S073PL000a) и Легионы (S073PL000b).
+    Конец хода Кланов передаёт ход Легионам без хода ИИ; конец хода Легионов — ход ИИ их глазами (туман Легионов), и нападение
+    Нежити на отряд Кланов идёт экраном боя (защитник — человек, не зритель) после окна режима 2 «… атакован!» Кланам (DLG_HOTSEAT_POPUP,
+    CTaskBattle 0x4d79c8 — и в ход ИИ). Нет корпуса — пропуск."""
+    sg = corpus_dir(repo) / "20260919-human" / "rastlennaya-vlast-dwarf-t30-055.sg"
+    if not sg.exists():
+        return True, "ход ИИ в горячем стуле: пропуск — нет корпуса"
+    code, out = godot(repo, ["--sg", str(sg), "--check", "--humans", "S073PL000a,S073PL000b", "--clicks", "ok;end;ok;end;ok"],
+                      "res://scenes/map/MapScreen.tscn")
+    turns = AITURN.findall(out)
+    turn = AITURN.search(out)
+    order = re.findall(r"hotseat turn human=(\S+) day=(\d+)", out)
+    called, started = out.find("hotseat defend human=S073PL000a"), out.find("aibattle start attacker=S073KC0003 defender=S073KC0075")
+    if (code != 0 or len(turns) != 1 or turn is None or turn["error"] != "0" or turn["human"] != "1"
+            or not 0 <= called < started < out.find("aibattle ending ") or int(turn["hidden"]) == 0
+            or order != [("S073PL000a", "30"), ("S073PL000b", "30"), ("S073PL000a", "31")]):
+        return False, f"ход ИИ в горячем стуле: код {code}\n{out.strip()}"
+    return True, (f"ход ИИ в горячем стуле: Кланы → Легионы без ИИ, ход ИИ глазами Легионов — ходов {turn['moves']} "
+                  f"(показано {turn['shown']}), окно защитнику, бой с Кланами на экране, день {turn['day']}")
+
+
+HIGHLIGHT = re.compile(r"^highlight (?P<cell>\d+,\d+) клетка=(?P<shown>\S+) фаза_до=(?P<before>-?\d+) фаза=(?P<phase>-?\d+) "
+                       r"настройка=(?P<on>\d) видно=(?P<seen>\d+)/(?P<all>\d+)$", re.MULTILINE)
+
+
+def highlight(repo: Path) -> tuple[bool, str]:
+    """Подсветка клетки под курсором TILE_HIGHLIGHT (docs/ai-screen.md): над любой клеткой (решение пользователя 28.09), слой 320 в общем
+    порядке отрисовки, при смене клетки анимация продолжается с того же кадра (0x4d4bc9); переключатель TOG_ISOHIGHLIGHT окна настроек
+    убирает её (настройка IsoHighlight). «видно» — точки круга, не закрытые картинками, что рисуются позже (отряд, лес, туман): у
+    большого юнита круг под ним закрыт телом сильнее, как у движка (слой 320 под STACKS 391, клетка — по мыши, 0x540f6a)."""
+    settings = repo / ".cache" / "ui-check" / "highlight-settings.json"
+    if settings.exists():
+        settings.unlink()
+    code, out = godot(repo, ["--check", "--scenario", "Tutorial", "--settings", str(settings), "--clicks",
+                             "highlight 10,10;highlight 11,10;order highlight;ui click BTN_OPTIONS;ui click TOG_ISOHIGHLIGHT;"
+                             "ui click BTN_CLOSE;highlight 12,10"], "res://scenes/map/MapScreen.tscn")
+    rows = [m.groupdict() for m in HIGHLIGHT.finditer(out)]
+    order = re.search(r"^order highlight картинок=1 ", out, re.MULTILINE)
+    if (code != 0 or len(rows) != 3 or order is None or rows[0]["shown"] != "10,10" or rows[1]["shown"] != "11,10"
+            or int(rows[1]["before"]) < 0 or rows[1]["phase"] != rows[1]["before"] or rows[2]["shown"] != "-" or rows[2]["on"] != "0"
+            or int(rows[0]["seen"]) == 0 or rows[2]["all"] != "0"):
+        return False, f"подсветка клетки: код {code}\n{out.strip()}"
+    return True, (f"подсветка клетки: 10,10 → 11,10 с кадра {rows[1]['before']} на {rows[1]['phase']}, в общем порядке, видно "
+                  f"{rows[0]['seen']}/{rows[0]['all']} точек; TOG_ISOHIGHLIGHT выключил")
+
+
+def clouds(repo: Path) -> tuple[bool, str]:
+    """Облака над картой (CMapClouds 0x5bd6d3, docs/ai-screen.md): на карте 48×48 — ⌊(48/48)²·10⌋ = 10 облаков в общем порядке отрисовки,
+    за полсекунды сдвигаются вправо; TOG_ISOCLOUDS (IsoBirds) убирает их."""
+    code, out = godot(repo, ["--check", "--scenario", "Mercantile", "--clicks",
+                             "clouds;ui click BTN_OPTIONS;ui click TOG_ISOCLOUDS;ui click BTN_CLOSE;clouds"], "res://scenes/map/MapScreen.tscn")
+    rows = re.findall(r"^clouds облаков=(\d+) в_порядке=(\d+)/\d+ сдвиг=(-?\d+) настройка=(\d)$", out, re.MULTILINE)
+    if code != 0 or len(rows) != 2 or rows[0][:2] != ("10", "10") or int(rows[0][2]) <= 0 or rows[1][0] != "0" or rows[1][3] != "0":
+        return False, f"облака: код {code}\n{out.strip()}"
+    return True, f"облака: 10 на Mercantile, сдвиг {rows[0][2]} точек за 0,5 с, TOG_ISOCLOUDS убрал"
+
+
+def mountains(repo: Path) -> tuple[bool, str]:
+    """Снос гор L_REMOVE_MOUNTAIN (docs/ai-screen.md, CMidAnim2Mountain): RMVMOUNTAIN7 по центру области, на середине — OCCUPY и
+    перерисовка карты. Шаг mountains — показ по точке MountainsRemoved (ядро — сессия В)."""
+    code, out = godot(repo, ["--check", "--scenario", "Tutorial", "--clicks", "mountains 20,20"], "res://scenes/map/MapScreen.tscn")
+    played = re.search(r"^mountains CHECK в=\(20,20\) картинка=RMVMOUNTAIN7 кадров=(\d+)$", out, re.MULTILINE)
+    if code != 0 or played is None or "mountains done 20,20 показ=1 играет=0" not in out:
+        return False, f"снос гор: код {code}\n{out.strip()}"
+    return True, f"снос гор: RMVMOUNTAIN7, {played[1]} кадров, доиграл"
+
+
+def ai_popup(repo: Path) -> tuple[bool, str]:
+    """Попап события человеку в ходе ИИ (docs/ai-screen.md): у движка окно сразу (CCmdPopupMsg → 0x489e90), показ хода ждёт его закрытия.
+    S095SC0000, человек S095PL0009, конец дня 0: событие S095EV0000 (попап, затем смена владельца отряда S095KC0022) срабатывает на рабочем
+    потоке хода — окно встаёт раньше анимации смены владельца и конца хода, а не после хода."""
+    code, out = godot(repo, ["--check", "--scenario", "S095SC0000", "--player", "S095PL0009", "--humans", "S095PL0009",
+                             "--clicks", "ok;end"], "res://scenes/map/MapScreen.tscn")
+    asked, shown = out.find("aipopup для=S095PL0009"), out.find("event popup S095EV0000")
+    owner, turn = out.find("aisight владелец:S095PL0009 S095KC0022"), out.find("aiturn ")
+    if code != 0 or not 0 <= asked < shown < owner < turn:
+        return False, f"попап в ходе ИИ: код {code}\n{out.strip()}"
+    return True, "попап в ходе ИИ: S095EV0000 — окно на рабочем потоке, до смены владельца S095KC0022 и конца хода"
+
+
+def map_settings(repo: Path) -> tuple[bool, str]:
+    """Настройки показа карты в окне DLG_OPTIONS (docs/ai-screen.md): «скорость движения противника» на шаг вверх и показ ходов ИИ
+    выключен — файл настроек (--settings) записан, и на конце хода все показанные ходы ИИ — прыжком в конечную клетку. Нет корпуса —
+    пропуск."""
+    sg = corpus_dir(repo) / "20260919-human" / "rastlennaya-vlast-dwarf-t30-055.sg"
+    if not sg.exists():
+        return True, "настройки показа: пропуск — нет корпуса"
+    settings = repo / ".cache" / "ui-check" / "settings.json"
+    if settings.exists():
+        settings.unlink()
+    code, out = godot(repo, ["--sg", str(sg), "--check", "--player", "S073PL000a", "--settings", str(settings), "--clicks",
+                             "ui click BTN_OPTIONS;ui click BTN_OPPONENT_RIGHT;ui click TOG_PLAYAIISOANIM;ui click BTN_CLOSE;end"],
+                      "res://scenes/map/MapScreen.tscn")
+    moves = re.findall(r"^aimove .* прыжок=(\d)$", out, re.MULTILINE)
+    saved = settings_file(settings)
+    if (code != 0 or "settings скорость=1 противник=2 ходы_ИИ=0" not in out or not moves or set(moves) != {"1"}
+            or saved.get("version") != 2 or saved.get("game.opponentSpeed") != 2 or saved.get("game.showAiMoves") is not False):
+        return False, f"настройки показа: код {code}, файл {saved}\n{out.strip()}"
+    # Пометка 5 прогона 14.10 («не сохраняются настройки»: окно не читало и не писало флажки и счётчики сверх показа карты). Запуск 1: из
+    # умолчаний (ini) — автосохранение 1 → 0, прокрутка 0 → 50 мс, плавно за отрядом 1 → 0, фоны мест 3 → 2. Запуск 2 с тем же файлом:
+    # автосохранение 0 → 1, прокрутка 50 → 0, за отрядом 0 → 1 (без чтения файла было бы снова 0, 50, 0), затем «Для слабых систем» и «Да» —
+    # фоны 0, за отрядом 0, между действиями 0, слабая видеокарта 1.
+    runs = [
+        ("ui click TOG_AUTOSAVE;ui click BTN_SCROLL_LEFT;ui click TOG_STACKSMOOTHSCROLL;ui click BTN_AUDIRGN_LEFT",
+         "автосохранение=0 прокрутка=50 за_отрядом=0 между_действиями=1 фоны=2 голоса=66 слабая=0",
+         {"game.autoSave": False, "game.scrollSpeed": 50, "game.stackSmoothScroll": False, "audio.ambientSources": 2,
+          "display.lowEndVideoCard": False}),
+        ("ui click TOG_AUTOSAVE;ui click BTN_SCROLL_RIGHT;ui click TOG_STACKSMOOTHSCROLL;ui click BTN_LOWEND;ui click BTN_YES",
+         "автосохранение=1 прокрутка=0 за_отрядом=0 между_действиями=0 фоны=0 голоса=66 слабая=1",
+         {"game.autoSave": True, "game.scrollSpeed": 0, "game.stackSmoothScroll": False, "audio.ambientSources": 0,
+          "display.lowEndVideoCard": True, "game.smoothScroll": False}),
+    ]
+    for clicks, line, fields in runs:
+        code, out = godot(repo, ["--sg", str(sg), "--check", "--player", "S073PL000a", "--settings", str(settings), "--clicks",
+                                 f"ui click BTN_OPTIONS;{clicks};ui click BTN_CLOSE"], "res://scenes/map/MapScreen.tscn")
+        saved = settings_file(settings)
+        last = ([l for l in out.splitlines() if l.startswith("settings ")] or ["-"])[-1]
+        if (code != 0 or not last.endswith(line) or any(saved.get(k) != v for k, v in fields.items())
+                or saved.get("game.opponentSpeed") != 2):
+            return False, f"настройки показа: окно настроек — код {code}, ждали «{line}», последняя «{last}», файл {saved}\n{out.strip()}"
+    return True, (f"настройки показа: противник 2, ходы ИИ выключены — {len(moves)} ходов прыжком, файл записан; "
+                  "автосохранение, прокрутка, плавность за отрядом и фоны мест — между запусками, «Для слабых систем» после «Да»")
+
+
+SPELL = re.compile(r"^spell (?P<spell>\S+) в=\((?P<x>\d+),(?P<y>\d+)\) картинок=(?P<parts>\d+) кадров=(?P<frames>\d+) звук=(?P<sound>[\d.,]+)$", re.MULTILINE)
+
+
+def spell_anim(repo: Path) -> tuple[bool, str]:
+    """Литьё заклинания на карте (IsoSpell, docs/ai-screen.md §6): ИИ дня 31 бросает g000ss0048 на виду (у движка — PL000b в 17,37, журнал
+    seq 8067839; прежде проверка стояла на дне 30, где порт бросал его на день раньше движка) — камера к месту, анимация и
+    звук (Midgard, §9), ход ИИ ждёт их конца; человек дня 44 бросает призыв g000ss0061 прицелом — анимация и звук в клетке литья. Нет
+    корпуса — пропуск."""
+    ai_sg = corpus_dir(repo) / "20260919-human" / "rastlennaya-vlast-dwarf-t31-058.sg"
+    human_sg = corpus_dir(repo) / "20260919-human" / "rastlennaya-vlast-dwarf-t44-077.sg"
+    if not ai_sg.exists() or not human_sg.exists():
+        return True, "литьё на карте: пропуск — нет корпуса"
+    code, out = godot(repo, ["--sg", str(ai_sg), "--check", "--player", "S073PL000a", "--clicks", "end"], "res://scenes/map/MapScreen.tscn")
+    ai = [m for m in SPELL.finditer(out)]
+    if code != 0 or not ai or "aisight заклинание g000ss0048" not in out or AITURN.search(out) is None or Seconds(ai[0]) <= 0:
+        return False, f"литьё на карте (ИИ): код {code}\n{out.strip()}"
+    code, out = godot(repo, ["--sg", str(human_sg), "--check", "--player", "S073PL000c",
+                             "--clicks", "panel click BTN_CAST_SPELL;ui click BTN_CAST_SPELL;aimrelease 73,84;aimpress 73,84"],
+                      "res://scenes/map/MapScreen.tscn")
+    human = SPELL.search(out)
+    # Отпускание без своего нажатия (хвост двойного щелчка по заклинанию книги) прицел не бросает — партия 17.10, карта 11; бросает щелчок.
+    held = re.search(r"^aimrelease 73,84 прицел=(?P<spell>\S+)", out, re.MULTILINE)
+    if (code != 0 or human is None or (human["x"], human["y"]) != ("73", "84") or "aim target 73,84 брошено" not in out
+            or held is None or held["spell"] == "-" or out.index("aim target 73,84") < held.start() or Seconds(human) <= 0):
+        return False, f"литьё на карте (человек): код {code}\n{out.strip()}"
+    return True, (f"литьё на карте: ИИ {ai[0]['spell']} — {ai[0]['parts']} картинка, {ai[0]['frames']} кадров, звук {ai[0]['sound']} с; "
+                  f"человек {human['spell']} — {human['parts']} картинки, {human['frames']} кадров, звук {human['sound']} с")
+
+
+def Seconds(match: re.Match) -> float:
+    """Длительность звука литья из строки spell (запятая — десятичный знак культуры)."""
+    return float(match["sound"].replace(",", "."))
+
+
+BATTLE_OPEN = re.compile(r"battle open ходов_ИИ_до_игрока=\d+ ждёт_игрока=\d предметы_нап=(?P<att>\S+) предметы_защ=(?P<def>\S+) "
+                         r"значков=(?P<icons>\d+) у_ходящего=(?P<mover>\d+)")
+
+
+def battle_items(repo: Path) -> tuple[bool, str]:
+    """Боевые предметы лидеров на экране боя с хозяином (BATTLE1/2, docs/ai-screen.md §8): бой ИИ с человеком дня 30 — у нападающего
+    лидера нежити два предмета; нападение человека дня 21 — два предмета у его лидера. Значки в слотах — только у ходящего лидера
+    (updateBattleItems 0x6383d0 → 0x649775, прогон 11.10 пункт 24): их столько, сколько предметов у ходящего, если он лидер, иначе 0.
+    Нет корпуса — пропуск."""
+    cases = [("rastlennaya-vlast-dwarf-t30-055.sg", "end", "att"),
+             ("rastlennaya-vlast-dwarf-t21-037.sg", "42,14;37,9;37,9", "att")]
+    results = []
+    for save, clicks, side in cases:
+        sg = corpus_dir(repo) / "20260919-human" / save
+        if not sg.exists():
+            return True, "предметы в бою: пропуск — нет корпуса"
+        code, out = godot(repo, ["--sg", str(sg), "--check", "--player", "S073PL000a", "--clicks", clicks], "res://scenes/map/MapScreen.tscn")
+        opened = BATTLE_OPEN.search(out)
+        items = [] if opened is None or opened[side] == "-" else opened[side].split(",")
+        if code != 0 or CSHARP_ERROR in out or opened is None or len(items) != 2 or opened["icons"] != opened["mover"]:
+            return False, f"предметы в бою {save}: код {code}\n{out.strip()}"
+        results.append(f"{save}: {','.join(items)} — значков {opened['icons']} (у ходящего {opened['mover']})")
+    return True, "предметы в бою: " + "; ".join(results)
+
+
+DEATH = re.compile(r"^death (?P<stack>\S+) в=\((?P<x>\d+),(?P<y>\d+)\) кадров=(?P<frames>\d+) призыв=(?P<summon>\d) "
+                   r"могила=(?P<tomb>\d) звук=(?P<sound>[\d.,]+)$", re.MULTILINE)
+CSHARP_ERROR = "ERROR: System."
+
+
+def stack_death(repo: Path) -> tuple[bool, str]:
+    """Гибель отряда на карте (CMidAnim2Dying, docs/ai-screen.md §8): в ходе ИИ дня 30 погибшие в боях на виду отряды — анимация
+    G000UU9999DYIN8 и звуки (гибель S073KC0013 в бою ИИ с ИИ, отряд человека S073KC0075 в бою с нежитью), ход ждёт их конца; на середине
+    гибели, где модель ставит могилу, встаёт её картинка (могила=1 хотя бы у одной); после боя человека на Tutorial — гибель его отряда.
+    Необработанных исключений C# нет. Нет корпуса — только Tutorial."""
+    results = []
+    sg = corpus_dir(repo) / "20260919-human" / "rastlennaya-vlast-dwarf-t30-055.sg"
+    if sg.exists():
+        code, out = godot(repo, ["--sg", str(sg), "--check", "--player", "S073PL000a", "--clicks", "end"], "res://scenes/map/MapScreen.tscn")
+        deaths = {m["stack"]: m for m in DEATH.finditer(out)}
+        shown = len(re.findall(r"^aisight гибель(?:-могила)? ", out, re.MULTILINE))
+        tombs = sum(m["tomb"] == "1" for m in deaths.values())
+        if (code != 0 or CSHARP_ERROR in out or not {"S073KC0013", "S073KC0075"} <= deaths.keys() or shown != len(deaths)
+                or any(m["frames"] != "16" for m in deaths.values()) or tombs == 0):
+            return False, f"гибель отряда (ход ИИ): код {code}\n{out.strip()}"
+        results.append(f"ход ИИ — {len(deaths)} гибели ({', '.join(deaths)}), с могилой {tombs}")
+    code, out = godot(repo, ["--scenario", "Tutorial", "--check", "--player", "S001PL0009", "--clicks", "30,9;42,18;42,18"],
+                      "res://scenes/map/MapScreen.tscn")
+    death = DEATH.search(out)
+    if code != 0 or CSHARP_ERROR in out or death is None or death["stack"] != "S001KC0000":
+        return False, f"гибель отряда (бой человека): код {code}\n{out.strip()}"
+    results.append(f"бой человека — {death['stack']}, звук {death['sound']} с")
+    return True, "гибель отряда: " + "; ".join(results)
+
+
+CURSOR = re.compile(r"^cursor (?P<cell>\d+,\d+) курсор=(?P<name>\S+) картинка=(?P<size>\S+)$", re.MULTILINE)
+
+MENU_CURSOR = re.compile(r"flow step=\d+ .* stack=(?P<stack>\S+) .* cursor=(?P<cursor>\S+)$", re.MULTILINE)
+
+
+def menu_cursors(repo: Path) -> tuple[bool, str]:
+    """Курсор меню (docs/ui-windows.md, «Курсор окна»): у экранов меню и окна поверх них в разметке курсор _CUDEFAUL (DIALOG, поле 6) —
+    кинжал Interf.ff, а не системная стрелка; верхний экран отвечает за курсор (0x53ca03 → 0x5308d5). Проход «назад и окно поверх»
+    до выхода и «до брифинга»: после каждого шага курсор — ui:_CUDEFAUL."""
+    shown = []
+    for name in ("назад и окно поверх", "до брифинга"):
+        steps = next(c[2] for c in FLOW_CASES if c[0] == name)
+        steps = [s for s in steps if s[1] != "-"]   # выход из игры — курсора уже нет
+        code, out = godot(repo, ["--input", "; ".join(s[0] for s in steps)], "res://scenes/ui/UiFlow.tscn")
+        got = [(m["stack"], m["cursor"]) for m in MENU_CURSOR.finditer(out)]
+        if code != 0 or len(got) != len(steps) or any(c != "ui:_CUDEFAUL" for _, c in got):
+            return False, f"курсор меню «{name}»: код {code}, {got}\n{out.strip()}"
+        shown += [st.split(">")[-1] for st, _ in got]
+    return True, f"курсор меню: кинжал ui:_CUDEFAUL на {len(set(shown))} экранах ({', '.join(sorted(set(shown)))})"
+
+
+def map_cursors(repo: Path) -> tuple[bool, str]:
+    """Курсоры карты (CTaskStrat/CTaskSelectUnit, docs/ai-screen.md §10): день 21 живой партии — над своим отрядом SELECTUNIT, выбрав
+    его — MANAGESTK, над врагом BATTLE, пустая проходимая клетка MOVE, вне дела DEFAULT; картинки обрезаны до размера курсора Godot
+    (не больше 256×256). Нет корпуса — пропуск."""
+    sg = corpus_dir(repo) / "20260919-human" / "rastlennaya-vlast-dwarf-t21-037.sg"
+    if not sg.exists():
+        return True, "курсоры карты: пропуск — нет корпуса"
+    want = [("42,14", "SELECTUNIT"), ("42,14", "MANAGESTK"), ("37,9", "BATTLE"), ("43,14", "MOVE"), ("1,1", "DEFAULT")]
+    code, out = godot(repo, ["--sg", str(sg), "--check", "--player", "S073PL000a",
+                             "--clicks", "cursor 42,14;42,14;cursor 42,14;cursor 37,9;cursor 43,14;cursor 1,1"], "res://scenes/map/MapScreen.tscn")
+    got = [(m["cell"], m["name"], m["size"]) for m in CURSOR.finditer(out)]
+    small = all(s != "-" and max(int(v) for v in s.split("x")) <= 256 for _, _, s in got)
+    if code != 0 or CSHARP_ERROR in out or [(c, n) for c, n, _ in got] != want or not small:
+        return False, f"курсоры карты: код {code}, {got}\n{out.strip()}"
+    return True, "курсоры карты: " + ", ".join(f"{c} {n}" for c, n, _ in got)
+
+
+CARD = re.compile(r"^card (?P<cell>\d+,\d+) карточка=(?P<screen>\S+)(?: текст=(?P<text>\S*))?"
+                  r"(?: лидер=(?P<leader>\S+) нет_кадров=(?P<missing>\S+) портреты=(?P<faces>\d+) в_рамке=(?P<framed>\d+) рамки=(?P<borders>\S+))?$",
+                  re.MULTILINE)
+
+
+def map_cards(repo: Path) -> tuple[bool, str]:
+    """Карточки правой кнопки на карте (DLG_R_C_*, docs/ai-screen.md §10): день 21 живой партии — свой отряд и нейтральный отряд —
+    DLG_R_C_STACK с именем лидера, гора — DLG_R_C_LANDMARK, пустая клетка — окна нет. Нет корпуса — пропуск."""
+    sg = corpus_dir(repo) / "20260919-human" / "rastlennaya-vlast-dwarf-t21-037.sg"
+    if not sg.exists():
+        return True, "карточки карты: пропуск — нет корпуса"
+    code, out = godot(repo, ["--sg", str(sg), "--check", "--player", "S073PL000a",
+                             "--clicks", "card 42,14;card 37,9;card 1,1;card 45,45"], "res://scenes/map/MapScreen.tscn")
+    matches = {m["cell"]: m for m in CARD.finditer(out)}
+    got = {c: (m["screen"], m["text"] or "") for c, m in matches.items()}
+    want = {"42,14": "DLG_R_C_STACK", "37,9": "DLG_R_C_STACK", "1,1": "DLG_R_C_LANDMARK", "45,45": "-"}
+    # Карточка отряда (11.10, замечание 7): лидер — картина во весь рост из Events (0x57c0a9), а не круглый FACEB; все кадры нашлись.
+    pictures = all((matches[c]["leader"] or "").startswith("gfx:Events/") and matches[c]["missing"] == "-"
+                   for c in ("42,14", "37,9") if c in matches)
+    if (code != 0 or CSHARP_ERROR in out or {c: s for c, (s, _) in got.items()} != want
+            or not all(got[c][1] for c in ("42,14", "37,9", "1,1")) or not pictures):
+        return False, f"карточки карты: код {code}, {got}\n{out.strip()}"
+    ok, framed = card_frames(repo)
+    if not ok:
+        return False, framed
+    ok, battle = battle_card(repo)
+    if not ok:
+        return False, battle
+    return True, "карточки карты: " + ", ".join(f"{c} {s} {t}".rstrip() for c, (s, t) in got.items()) + \
+        f"; лидер {matches['42,14']['leader']}; {framed}; {battle}"
+
+
+def card_frames(repo: Path) -> tuple[bool, str]:
+    """Рамки портретов карточек (прогон 2 пользователя 11.10, снимок 31: у портретов карточки столицы не было рамок): день 5 живой партии,
+    столица Кланов — клетка 50,30 (DLG_R_C_CITY: гость и гарнизон, в гарнизоне большой), вход — 49,30 (DLG_R_C_STACK гостя). Каждый портрет —
+    в рамке Icons BORDERUNITSMALL 84×99, большой — BORDERUNITLARGE 164×99 (0x57c443 → 0x5b6559, таблица 0x7ae938); кадры все нашлись."""
+    sg = corpus_dir(repo) / "20260919-human" / "rastlennaya-vlast-dwarf-t05-011.sg"
+    if not sg.exists():
+        return True, "рамки карточек: пропуск — нет корпуса"
+    code, out = godot(repo, ["--sg", str(sg), "--check", "--player", "S073PL000a", "--clicks", "card 50,30;card 49,30"],
+                      "res://scenes/map/MapScreen.tscn")
+    got = {m["cell"]: m for m in CARD.finditer(out)}
+    city, stack = got.get("50,30"), got.get("49,30")
+
+    def framed(m, *borders: str) -> bool:
+        return (m is not None and m["missing"] == "-" and int(m["faces"]) > 0 and m["faces"] == m["framed"]
+                and all(b in m["borders"] for b in borders))
+
+    if (code != 0 or CSHARP_ERROR in out or city is None or city["screen"] != "DLG_R_C_CITY" or stack is None
+            or stack["screen"] != "DLG_R_C_STACK" or not framed(city, "BORDERUNITSMALL:84x99", "BORDERUNITLARGE:164x99")
+            or not framed(stack, "BORDERUNITSMALL:84x99")):
+        return False, f"рамки карточек: код {code}\n{out.strip()}"
+    return True, f"рамки: город {city['framed']} из {city['faces']} ({city['borders']}), отряд {stack['framed']} из {stack['faces']}"
+
+
+BATTLE_CARD = re.compile(r"^battle card карточка=(?P<kind>\S+) таб=(?P<tab>\d+) нет_кадров=(?P<missing>\S+) статы=(?P<stats>\S*)$", re.MULTILINE)
+
+
+def battle_card(repo: Path) -> tuple[bool, str]:
+    """Карточка воина в бою с карты по правой кнопке (прогон 2 пользователя 11.10, снимок 33): та же, что на карте (UnitCardLogic.InBattle),
+    место табуляции 110, «Опыт:» табуляция «N / M», «Иммунитет» и «Стойкость» — каждая своей строкой со значением. Бой A (32,38) против
+    A (34,38) из сохранения ai-q14-crit."""
+    sg = corpus_dir(repo) / "20260928-shots" / "ai-q14-crit-elf-t01-010.sg"
+    if not sg.exists():
+        return True, "карточка в бою: пропуск — нет корпуса"
+    code, out = godot(repo, ["--sg", str(sg), "--check", "--clicks", "fight 32,38 34,38 1;battle card"], "res://scenes/map/MapScreen.tscn")
+    m = BATTLE_CARD.search(out)
+    lines = m["stats"].split("|") if m else []
+    # Без CSHARP_ERROR, как у «раскладки боя»: бой остаётся открытым до выхода, и GameAudio.FadeThen при выходе падает на снятом узле
+    # (ObjectDisposedException, не связано с карточкой).
+    xp = next((l for l in lines if l.startswith("Опыт:→")), "")
+    if (code != 0 or m is None or m["kind"] != "общая" or m["tab"] != "110" or m["missing"] != "-"
+            or not re.fullmatch(r"Опыт:→\d+_/_\d+", xp)
+            or not any(re.fullmatch(r"Иммунитет:→.+", l) for l in lines) or not any(re.fullmatch(r"Стойкость:→.+", l) for l in lines)):
+        return False, f"карточка в бою: код {code}\n{out.strip()}"
+    return True, f"карточка в бою: {m['kind']}, табуляция {m['tab']}, {xp.replace('_', ' ').replace('→', ' ')}"
+
+
+PALETTE = re.compile(r"^(?P<step>palette|minimap_\S+) палитра=(?P<screen>\S+) ресурсы=(?P<res>\d) знамёна=(?P<shown>\d+)/(?P<all>\d+) "
+                     r"мини=(?P<mini>\d)(?: кнопка_над_окном=(?P<covered>\d))?$", re.MULTILINE)
+NEXT = re.compile(r"^next выбран=(?P<sel>\S+) кнопка=(?P<button>\d)$", re.MULTILINE)
+
+
+def map_palette(repo: Path) -> tuple[bool, str]:
+    """Палитра карты (замечания 36, 38 прогона 11.10; MapPalette): в начале партии полоса ресурсов видна (ответ пользователя 11.10),
+    TOG_RESPOPUP её прячет и показывает, TOG_BANNERS — знамёна, BTN_RES_PAL меняет мини-карту на владения DLG_ISO_LAND и обратно;
+    угловые кнопки над окном мини-карты (TOG_BANNERS, BTN_RES_PAL) мини-карта не перехватывает. Знамёна сохраняются в настройках порта
+    (--settings): включены в файле — включены при старте, выключили — в файле false. Сценарий карты пользователя — из data/scenarios.
+    «Следующий лидер» (замечание 32) — кнопка доступна, отряд выбран."""
+    scenario = ["--scenario", "'A Return To Simpler Times'", "--check", "--player", "S001PL0001", "--humans", "S001PL0001"]
+    code, out = godot(repo, [*scenario,
+                             "--clicks", "palette;ui click TOG_RESPOPUP;palette;ui click TOG_RESPOPUP;palette;ui click TOG_BANNERS;palette;"
+                             "ui click BTN_RES_PAL;palette;ui click BTN_RES_PAL;palette;minimap 10,10;minimap 2,110;minimap 70,70;next"],
+                      "res://scenes/map/MapScreen.tscn")
+    rows = [(m["step"], m["screen"], m["res"], m["shown"] == m["all"] and int(m["all"]) > 0, m["shown"] == "0", m["mini"], m["covered"])
+            for m in PALETTE.finditer(out)]
+    want = [("palette", "DLG_ISO_PAL", "1", False, True, "1", None),
+            ("palette", "DLG_ISO_PAL", "0", False, True, "1", None),
+            ("palette", "DLG_ISO_PAL", "1", False, True, "1", None),
+            ("palette", "DLG_ISO_PAL", "1", True, False, "1", None),
+            ("palette", "DLG_ISO_LAND", "1", True, False, "0", None),
+            ("palette", "DLG_ISO_PAL", "1", True, False, "1", None),
+            ("minimap_10,10", "DLG_ISO_PAL", "1", True, False, "1", "1"),
+            ("minimap_2,110", "DLG_ISO_PAL", "1", True, False, "1", "1"),
+            ("minimap_70,70", "DLG_ISO_PAL", "1", True, False, "1", "0")]
+    nxt = NEXT.search(out)
+    if code != 0 or CSHARP_ERROR in out or rows != want or nxt is None or nxt["sel"] == "-" or nxt["button"] != "1":
+        return False, f"палитра карты: код {code}, {rows}\n{out.strip()}"
+    # Знамёна из сохранённой настройки: файл с Banners=true — знамёна видны сразу и переключатель включён; щелчок — выключены и в файле.
+    with tempfile.TemporaryDirectory(prefix="d2-banners-") as tmp:
+        settings = Path(tmp) / "settings.json"
+        settings.write_text(json.dumps({"Banners": True}), encoding="utf-8")
+        # Там же — полоса золота дипломатии видна и при спрятанной полосе ресурсов; после «Назад» полоса ресурсов остаётся спрятанной.
+        code2, out2 = godot(repo, [*scenario, "--settings", str(settings),
+                                   "--clicks", "palette;ui click TOG_BANNERS;palette;ui click TOG_RESPOPUP;panel click BTN_DIPLOMACY;"
+                                   "diplo 1;panel click BTN_BACK;palette"], "res://scenes/map/MapScreen.tscn")
+        saved = settings_file(settings).get("display.banners")   # файл схемы 1 ({"Banners": true}) игра переписала схемой 2
+    rows2 = [(m["res"], m["shown"] == m["all"] and int(m["all"]) > 0, m["shown"] == "0") for m in PALETTE.finditer(out2)]
+    gold = re.search(r"^diplo 1 .*полоса_золота=(\d)", out2, re.MULTILINE)
+    if (code2 != 0 or CSHARP_ERROR in out2 or rows2 != [("1", True, False), ("1", False, True), ("0", False, True)]
+            or saved is not False or gold is None or gold[1] != "1"):
+        return False, f"палитра карты: знамёна из настроек — код {code2}, {rows2}, в файле {saved}\n{out2.strip()}"
+    return True, (f"палитра карты: полоса ресурсов видна при старте и по переключателю, знамёна по переключателю "
+                  f"(знамён {PALETTE.search(out)['all']}) и из сохранённой настройки (включены при старте, выключены — в файле false), "
+                  f"полоса золота в дипломатии видна и при спрятанной полосе ресурсов, мини-карта ↔ владения, угловые кнопки над окном мини-карты — панели; Tab выбрал {nxt['sel']}")
+
+
+UNDER_FOG = re.compile(r"^order aim картинок=(?P<n>\d+) .*под_туманом=(?P<under>\d+)/(?P<fogged>\d+)", re.MULTILINE)
+FRAME = re.compile(r"^frame рамка=(?P<outline>\S+) мини_фон=(?P<mini>\S+) цели=(?P<goals>\d+) кругов=(?P<circles>\d+)$", re.MULTILINE)
+
+
+def map_frame(repo: Path) -> tuple[bool, str]:
+    """Рамка и слои экрана карты (docs/ai-screen.md §11): над картой — рамка края поля ISO_OUTLINE, фон мини-карты чёрный; квадрат
+    прицела обычного заклинания (g000ss0086, слой 895) на клетке под туманом лежит под туманом, туман (g000ss0052, SPLAREAFOG 1590) —
+    над ним. День 44 глазами S073PL000c, клетка 1,1 под туманом. Нет корпуса — пропуск."""
+    sg = corpus_dir(repo) / "20260919-human" / "rastlennaya-vlast-dwarf-t44-077.sg"
+    if not sg.exists():
+        return True, "рамка и слои карты: пропуск — нет корпуса"
+    code, out = godot(repo, ["--sg", str(sg), "--check", "--player", "S073PL000c", "--clicks",
+                             "frame;aim g000ss0086;hover 1,1;order aim;aim g000ss0052;hover 1,1;order aim"],
+                      "res://scenes/map/MapScreen.tscn")
+    frame = FRAME.search(out)
+    orders = [(int(m["n"]), int(m["under"]), int(m["fogged"])) for m in UNDER_FOG.finditer(out)]
+    ok = (code == 0 and CSHARP_ERROR not in out and frame is not None and frame["outline"] == "ISO_OUTLINE"
+          and frame["mini"] == "000000" and len(orders) == 2
+          and orders[0][2] > 0 and orders[0][1] == orders[0][2]   # обычное — все клетки под туманом легли под него
+          and orders[1][2] > 0 and orders[1][1] == 0)               # туман — над туманом
+    if not ok or frame is None:
+        return False, f"рамка и слои карты: код {code}, рамка {frame and frame.group(0)}, прицел {orders}\n{out.strip()}"
+    # Круг цели сценария (SYM_OBJECTIVE): Mercantile глазами Империи — у трёх деревень-целей по кругу (сценарий порта, без корпуса).
+    code, goals_out = godot(repo, ["--scenario", "Mercantile", "--check", "--player", "S135PL0001", "--clicks", "frame"],
+                            "res://scenes/map/MapScreen.tscn")
+    goals = FRAME.search(goals_out)
+    if code != 0 or goals is None or goals["goals"] != "3" or goals["circles"] != "3":
+        return False, f"рамка и слои карты: круг цели — код {code}, {goals and goals.group(0)}\n{goals_out.strip()}"
+    return True, (f"рамка и слои карты: {frame['outline']}, мини-карта #{frame['mini']}, квадрат под туманом {orders[0][1]}/{orders[0][2]}, "
+                  f"туман над туманом {orders[1][2] - orders[1][1]}/{orders[1][2]}, круги целей Mercantile {goals['circles']}/{goals['goals']}")
+
+
+def noble(repo: Path) -> tuple[bool, str]:
+    """Вор у цели (CEffectNobleChoose, docs/ai-screen.md §11): день 24 глазами S073PL0009 — вор S073KC0076 у отряда S073KC0032: ANOBLE между
+    ними и звук SNOBLE, после анимации — окно действий вора. Нет корпуса — пропуск."""
+    sg = corpus_dir(repo) / "20260919-human" / "rastlennaya-vlast-dwarf-t24-045.sg"
+    if not sg.exists():
+        return True, "вор у цели: пропуск — нет корпуса"
+    code, out = godot(repo, ["--sg", str(sg), "--check", "--player", "S073PL0009", "--clicks", "arrive S073KC0076 S073KC0032"],
+                      "res://scenes/map/MapScreen.tscn")
+    shown = re.search(r"^noble S073KC0076 .* кадров=(\d+)", out, re.M)
+    if (code != 0 or CSHARP_ERROR in out or shown is None or "fx Midgard/SNOBLE " not in out
+            or not re.search(r"^arrive S073KC0076 S073KC0032 окна=DLG_THIEF_ACTIONS ", out, re.M)):
+        return False, f"вор у цели: код {code}\n{out.strip()}"
+    return True, f"вор у цели: ANOBLE {shown[1]} кадров, SNOBLE, затем окно действий"
+
+
+# Окна вора на синтетической карте port-synth-2-world (прогон пользователя 15.10, пометки 21–22; слой модов — как у игры, корень mods/):
+# строки списка — без разметки «\c», доступные чёрным, недоступные тёмно-красным (X005TA0820, #800000); шпионаж — окно итога и «Закрыть»;
+# второй вор у того же отряда — шпионаж уже недоступен (владелец разведан), красным; после окон щелчок по карте выбирает отряд.
+THIEF_STEPS = [
+    ("thief S143KC0008 S143KC0006", ["окна=DLG_THIEF_ACTIONS ", "строки_TLBOX_ACTIONS=Отравить_армию#000000|Заслать_шпиона#000000|Дуэль#000000 "]),
+    ("ui click 150,147", ["окна=DLG_THIEF_ACTIONS ", "выбрано=Spy "]),
+    ("ui click BTN_OK", ["окна=DLG_ACTION_RESULT ", "вор итог=успех действие=Spy "]),
+    ("ui click BTN_YES", ["окна=- "]),
+    ("thief S143KC0009 S143KC0006", ["доступно=2 ", "строки_TLBOX_ACTIONS=Отравить_армию#000000|Заслать_шпиона#800000|Дуэль#000000 "]),
+    ("ui click BTN_CANCEL", ["окна=DLG_THIEF_ACTIONS>DLG_MESSAGE_BOX"]),
+    ("ui click BTN_YES", ["окна=- "]),
+    ("39,21", ["выбран=S143KC0009 ", "окна=- "]),
+    ("wcursor", ["окна=0 верх=-"]),
+]
+
+# То же со слоем-приспособлением tools/ui-check-mods/broken-action-result (DLG_ACTION_RESULT без IMG_ACTION и кнопки — как пример мода до
+# 15.10): логика окна итога падает на открытии, карта снимает окно (MapScreen.DropFailed), а не держит игру.
+THIEF_BROKEN_STEPS = [
+    ("thief S143KC0008 S143KC0006", ["окна=DLG_THIEF_ACTIONS "]),
+    ("ui click 150,147", ["выбрано=Spy "]),
+    ("ui click BTN_OK", ["окна=- "]),
+    ("39,21", ["выбран=S143KC0009 ", "окна=- "]),
+    ("wcursor", ["окна=0 верх=-"]),
+]
+
+
+def thief_windows(repo: Path) -> tuple[bool, str]:
+    """Окна вора (docs/ui-windows.md §11): разметка цвета в строках списка разобрана, итог шпионажа открывается и закрывается, окно с
+    упавшей логикой снимается, ввод на карте после окон работает."""
+    if (skip := no_synth(repo, "окна вора")) is not None:
+        return skip
+    results = []
+    for name, mods, steps in (("слои игры", "../mods", THIEF_STEPS),
+                              ("окно мода без элементов", "../mods;../tools/ui-check-mods", THIEF_BROKEN_STEPS)):
+        code, out = godot(repo, ["--mods", mods, "--check", "--scenario", "port-synth-2-world", "--player", "S143PL0001",
+                                 "--humans", "S143PL0001", "--clicks", ";".join(step for step, _ in steps)], "res://scenes/map/MapScreen.tscn")
+        lines = [l for l in out.splitlines() if l.startswith(("ui ", "click ", "wcursor "))]
+        if code != 0 or len(lines) != len(steps):
+            return False, f"окна вора ({name}): код {code}, строк {len(lines)} из {len(steps)}\n{out.strip()}"
+        for (step, wants), line in zip(steps, lines):
+            missing = [w for w in wants if w not in line + " "]
+            if missing or "\\c" in line or "нет_кадров=" in line:
+                return False, f"окна вора ({name}): шаг «{step}» — нет {missing}\n{line}"
+        dropped = "не открылось (логика упала) — снято" in out
+        if dropped != (steps is THIEF_BROKEN_STEPS):
+            return False, f"окна вора ({name}): снятие упавшего окна {'было' if dropped else 'не было'}\n{out.strip()}"
+        results.append(f"{name} — {len(steps)} шагов")
+    return True, "окна вора: " + ", ".join(results) + "; строки без \\c, недоступное #800000, итог шпионажа закрывается, упавшее окно снято"
+
+
+# Свиток на лидера перетаскиванием (пользователь 17.10; CDDStackGroup: рамка 0x500d03, бросок 0x4ff396, ворота 0x5de6dc): карта
+# port-synth-7-magic, Архидьявол со свитками S143KC0004 у (14, 16) — окно отряда, свиток из сумки: рамка жёлтая только у лидера, бросок на
+# него закрывает окно и ставит прицел заклинания свитка (0x40710a → CTaskCastWandScroll).
+SCROLL_DROP_STEPS = [
+    ("14,16", ["выбран=S143KC0004 "]),
+    ("panel release IMG_LEADER", ["окна=DLG_MANAGE_STACK ", "сумка=11"]),
+    ("ui press 494,414", ["тащимое=IconItem:SCROLLDW", "рамки=1 IMG_SDROP2:SMALL_VALID@82,278:74x89"]),
+    ("ui move 119,322", ["курсор=IsoCursr:DEFAULT+IconItem:SCROLLDW"]),
+    ("ui release 119,322", ["окна=- ", "прицел=g000ss0024 "]),
+]
+
+
+def scroll_drop(repo: Path) -> tuple[bool, str]:
+    """Свиток перетаскиванием на лидера в окне отряда — прицел заклинания (docs/ui-windows.md §24)."""
+    if (skip := no_synth(repo, "свиток на лидера")) is not None:
+        return skip
+    code, out = godot(repo, ["--mods", "../mods", "--check", "--scenario", "port-synth-7-magic", "--player", "S143PL0003",
+                             "--humans", "S143PL0003", "--clicks", ";".join(step for step, _ in SCROLL_DROP_STEPS)],
+                      "res://scenes/map/MapScreen.tscn")
+    lines = [l for l in out.splitlines() if l.startswith(("ui ", "click ", "panel "))]
+    if code != 0 or len(lines) != len(SCROLL_DROP_STEPS):
+        return False, f"свиток на лидера: код {code}, строк {len(lines)} из {len(SCROLL_DROP_STEPS)}\n{out.strip()}"
+    for (step, wants), line in zip(SCROLL_DROP_STEPS, lines):
+        missing = [w for w in wants if w not in line + " "]
+        if missing:
+            return False, f"свиток на лидера: шаг «{step}» — нет {missing}\n{line}"
+    return True, "свиток на лидера: рамка у лидера, бросок — прицел g000ss0024"
+
+
+# Вторая партия пользователя 15.10 на port-synth-2-world (журнал 234513): захват ходом — без окна города (у движка за fort_capture
+# человека ui_open нет, звучит OCCUPY), осмотр руины вором — охрана по правой кнопке (0x5796c0 → DLG_R_C_RUIN), призванный «Оживший
+# доспех» — портрет в панели без масштаба по центру (флаги 9) и отказ захвата пустой деревни (CEffectCapture 0x433e2e, X005TA0458).
+WORLD_STEPS = [
+    ("arrive S143KC0004 S143FT0004", ["окна=- ", "внутри=S143FT0004 ", "хозяин_цели=S143PL0001 ", "сообщение=- "]),
+    ("thief S143KC0014 S143RU0000", ["окна=DLG_THIEF_ACTIONS ", "выбрано=SpyRuin "]),
+    ("ui click BTN_OK", ["окна=DLG_ACTION_RESULT ", "вор итог=успех действие=SpyRuin "]),
+    ("ui click BTN_YES", ["окна=- "]),
+    ("card 53,31", ["карточка=DLG_R_C_RUIN ", "текст=Руина_для_вора ", "портреты=1 ", "нет_кадров=- "]),
+    ("aim G000SS0008", []),
+    ("target 18,18", []),
+    ("select new", ["лицо=G000UU0024FACE ", "кадр=70x85+0,0 "]),
+    ("arrive new S143FT0007", ["внутри=- ", "сообщение=DLG_MESSAGE_BOX "]),
+    ("ui click BTN_OK", ["окна=- "]),
+]
+
+
+def ruin_after_battle(repo: Path) -> tuple[bool, str]:
+    """Карточка руины после боя у неё (CBattleResultRuin 0x41b290 → CEffectVisitRuin → набор посетивших +0x84, 0x613164): на карте 2 до
+    боя правая кнопка по руине S143RU0000 (53,31) — DLG_R_C_MISC «еще не исследованы» (0x5796c0 → 0x5fda67); отряд S143KC0005 нападает на
+    охрану — хозяин в посетивших при любом исходе: руина цела — DLG_R_C_RUIN, разграблена — DLG_R_C_MISC «здесь кто-то уже побывал».
+    Победил отряд — руина разграблена (и с павшим лидером, CBattleResultRuin 0x41b381 → 0x44133a; прежде вход отказывал)."""
+    if (skip := no_synth(repo, "карта 2: руина после боя")) is not None:
+        return skip
+    code, out = godot(repo, ["--mods", "../mods", "--check", "--scenario", "port-synth-2-world", "--player", "S143PL0001",
+                             "--humans", "S143PL0001", "--clicks", "card 53,31;arrive S143KC0005 S143RU0000;ui click BTN_OK;card 53,31"],
+                      "res://scenes/map/MapScreen.tscn")
+    cards = [m for m in CARD.finditer(out) if m["cell"] == "53,31"]
+    fought = re.search(r"^mapbattle end winner=(\S+) .*", out, re.M)
+    if code != 0 or CSHARP_ERROR in out or len(cards) != 2 or fought is None:
+        return False, f"руина после боя: код {code}, карточек {len(cards)}, бой {'был' if fought else 'не было'}\n{out.strip()}"
+    # Разграбил — окно «Вы победили! / Вы нашли N золота» (CCmdLootRuinMsg 0x489787 → 0x4cea43) со звуком ENTRRUIN после LOOTRUIN;
+    # «ОК» его закрывает (журнал 20261016g, карта 8: 564439 → 564453 → 564459).
+    if fought[1] == "S143KC0005" and not re.search(r"fx Midgard/LOOTRUIN .*\n(?:.*\n)*?notice Looted for=S143PL0001 ruin=S143RU0000 "
+                                                     r"золото=\d+ текст=Вы_победили!/\\hC;Вы_нашли_\d+_золота\n(?:.*\n)*?fx Midgard/ENTRRUIN", out):
+        return False, f"руина после боя: нет окна «Вы победили!» со звуком ENTRRUIN после LOOTRUIN\n{out.strip()}"
+    before, after = cards
+    unseen = before["screen"] == "DLG_R_C_MISC" and (before["text"] or "").endswith("еще_не_исследованы.")
+    # Победитель-отряд грабит руину и с павшим лидером (0x41b381 → 0x44133a → CEffectLootRuin): после победы — «побывал», иначе охрана.
+    looted = after["screen"] == "DLG_R_C_MISC" and "побывал" in (after["text"] or "")
+    seen = looted if fought[1] == "S143KC0005" else after["screen"] == "DLG_R_C_RUIN"
+    if not unseen or not seen:
+        return False, f"руина после боя: до {before['screen']} {before['text']}, после {after['screen']} {after['text']}"
+    return True, f"руина после боя: до — {before['screen']} (не исследованы), бой (победил {fought[1]}), после — {after['screen']}"
+
+
+def world_synth(repo: Path) -> tuple[bool, str]:
+    """Карта port-synth-2-world (вторая партия 15.10): захват деревни ходом не открывает окно города, но звучит OCCUPY; после осмотра
+    вором правая кнопка по руине — её охрана; портрет призванного большого юнита (FACE 150×85 без FACES) — средние 70×85 без
+    масштаба; призванный в пустую деревню не входит — окно X005TA0458, деревня остаётся нейтральной."""
+    if (skip := no_synth(repo, "карта 2: деревни, руина, призванный")) is not None:
+        return skip
+    code, out = godot(repo, ["--mods", "../mods", "--check", "--scenario", "port-synth-2-world", "--player", "S143PL0001",
+                             "--humans", "S143PL0001", "--clicks", ";".join(step for step, _ in WORLD_STEPS)], "res://scenes/map/MapScreen.tscn")
+    # «card x,y окно=…» печатает и само открытие карточки (MapScreen.Cards.cs) — строка шага та, где «карточка=».
+    lines = [l for l in out.splitlines() if l.startswith(("arrive ", "ui ", "card ", "panel select ", "target "))
+             and not re.match(r"card \d+,\d+ окно=", l)]
+    picked = []
+    for step, _ in WORLD_STEPS:
+        head = {"thief": "ui thief", "select": "panel select", "aim": None}.get(step.split()[0], step.split()[0])
+        if head is None:
+            picked.append(None)
+            continue
+        line = next((l for l in lines if l.startswith(head)), None)
+        if line is not None:
+            lines.remove(line)
+        picked.append(line)
+    if code != 0 or CSHARP_ERROR in out:
+        return False, f"карта 2 (деревни, руина, призванный): код {code}\n{out.strip()}"
+    for (step, wants), line in zip(WORLD_STEPS, picked):
+        if not wants:
+            continue
+        if line is None:
+            return False, f"карта 2: шаг «{step}» — нет строки\n{out.strip()}"
+        missing = [w for w in wants if w not in line + " "]
+        if missing:
+            return False, f"карта 2: шаг «{step}» — нет {missing}\n{line}"
+    if "fx Midgard/OCCUPY " not in out or "окна=DLG_CITY_STACK" in out:
+        return False, f"карта 2: захват V1 — OCCUPY {'есть' if 'fx Midgard/OCCUPY ' in out else 'нет'}, окно города {'было' if 'окна=DLG_CITY_STACK' in out else 'нет'}"
+    notice = re.search(r"^notice CaptureRefused for=S143PL0001 other=S143FT0007 текст=(\S+)", out, re.M)
+    if notice is None or notice[1] != "Призванные_существа_и_воры_не_могут_захватывать_города.":
+        return False, f"карта 2: окна X005TA0458 нет\n{out.strip()}"
+    return True, ("карта 2: захват V1 без окна города, OCCUPY; руина после осмотра — DLG_R_C_RUIN; портрет призванного 70×85 по центру; "
+                  "призванный в S1 не вошёл — X005TA0458")
+
+
+def upgrade_leader(repo: Path) -> tuple[bool, str]:
+    """Окно выбора навыка лидера (DLG_UPGRADE_LEADER, CUpgradeLdrInterf): день 6 глазами Кланов, у героя S073KC0001 отложен один выбор;
+    «конец хода» — после ходов ИИ начинается день 7, очередь (0x5edbf7) — один отряд, окно с четырьмя навыками, первый — g000um4003
+    (журнал 20260919-human, день 7: skill_offer [4003, 4002, 4004, 4001]); «ОК» берёт навык — выборов не осталось. Нет корпуса — пропуск."""
+    sg = corpus_dir(repo) / "20260919-human" / "rastlennaya-vlast-dwarf-t06-015.sg"
+    if not sg.exists():
+        return True, "выбор навыка лидера: пропуск — нет корпуса"
+    # Окно начала хода (DLG_BEGIN_TURN, 0x4b9b9d) — первым, окно навыка — за ним (журналы: BEGIN_TURN → GETINFO_BOX → UPGRADE_LEADER).
+    code, out = godot(repo, ["--sg", str(sg), "--check", "--player", "S073PL000a", "--clicks", "end;ok"], "res://scenes/map/MapScreen.tscn")
+    began, offered = out.find("\nbegin turn human=S073PL000a day=7 "), out.find("\nupgrade leader stack=S073KC0001 pending=1 offer=4")
+    if (code != 0 or CSHARP_ERROR in out
+            or not re.search(r"^upgrade queue human=S073PL000a day=7 stacks=S073KC0001$", out, re.M)
+            or began < 0 or offered < began
+            or not re.search(r"^end день=7 окна=DLG_UPGRADE_LEADER навык отряд=S073KC0001 навыков=4 выбран=g000um4003 взят=- ", out, re.M)
+            or "нет_кадров=" in out
+            or not re.search(r"^upgrade accept навык отряд=S073KC0001 навыков=4 выбран=g000um4003 взят=g000um4003 отложено=0$", out, re.M)):
+        return False, f"выбор навыка лидера: код {code}\n{out.strip()}"
+    return True, "выбор навыка лидера: день 7 — окно героя S073KC0001, четыре навыка, «ОК» берёт g000um4003, выборов не осталось"
+
+
+def briefing_scroll(repo: Path) -> tuple[bool, str]:
+    """«Задание» в партии (docs/ui-windows.md §11): автопрокрутка истории — 1500 мс ждёт, затем точка за 2 тика по 66 мс; кнопка
+    BTN_SCROLL_UP — ещё 10 точек. «Power to Corrupt» (сценарий порта, история есть)."""
+    code, out = godot(repo, ["--check", "--scenario", "Power to Corrupt", "--player", "S073PL000a", "--clicks",
+                             "ok;ui click BTN_REPORT;ui wait 1400;ui wait 3000;ui click BTN_SCROLL_UP;ui press 700,20;ui wait 3000;"
+                             "ui click BTN_CONTINUE"],
+                      "res://scenes/map/MapScreen.tscn")
+    got = re.findall(r"^ui (\S+) .*?прокручено=(\d+)", out, re.MULTILINE)
+    want = [("click_BTN_REPORT", "0"), ("wait_1400", "0"), ("wait_3000", "21"), ("click_BTN_SCROLL_UP", "31")]
+    # Седьмой круг: щелчок вне рамки текста — сразу к концу (низ текста на 76 от верха рамки), дальше автопрокрутка стоит.
+    end = got[4:6]
+    if (code != 0 or got[:4] != want or len(end) != 2 or end[0][0] != "press_700,20" or int(end[0][1]) <= 31
+            or end[1] != ("wait_3000", end[0][1])):
+        return False, f"автопрокрутка «Задания»: код {code}, шаги {got}\n{out.strip()}"
+    # Восьмой круг: любая клавиша, кроме служебных (0x48201d), — сразу к концу; Esc — горячая клавиша «Продолжить».
+    code, keyed = godot(repo, ["--check", "--scenario", "Power to Corrupt", "--player", "S073PL000a", "--clicks",
+                               "ok;ui click BTN_REPORT;ui key 81;ui key 27"], "res://scenes/map/MapScreen.tscn")
+    keys = re.findall(r"^ui (key_\d+) .*?окна=(\S+)(?:.*?прокручено=(\d+))?", keyed, re.MULTILINE)
+    if code != 0 or len(keys) != 2 or keys[0][2] != end[0][1] or keys[1][1] != "-":
+        return False, f"клавиши «Задания»: код {code}, шаги {keys}, конец {end[0][1]}\n{keyed.strip()}"
+    return True, (f"автопрокрутка «Задания»: 1,4 с — 0 точек, ещё 3 с — 21, кнопка — 31, щелчок вне рамки — конец ({end[0][1]}); "
+                  "клавиша Q — конец, Esc — закрыто")
+
+
+def battle_playback(repo: Path) -> tuple[bool, str]:
+    """Показ боя по действиям без окна (D2_BATTLE_PLAYBACK=1, образец корпуса; замечания 12, 13, 25, 35 прогона 11.10): замах и удар —
+    один проход, затем покой (повторов кадров действия 0); синхронная часть шага (сборка поля, модель, подготовка картинок) — меньше
+    150 мс (прежде первый замах и удар разбирали PNG в главном потоке: 0,39 и 0,59 с); шаг начинается не раньше плана и не позже чем на
+    50 мс (таймер дерева отсчитывал от начала долгого кадра и срабатывал раньше); павший остаётся в боковой панели; трупы — у ног места.
+    Прогон 2 (11.10): кости на поле у каждого павшего (DEAD_HUMAN_* у любой расы, пункт 4), на портрете каждого павшего — череп
+    MASKDEAD* (пункт 3); кадры в видеопамяти обрезаны по занятой части — после боя меньше 60 МБ (прежде холсты 800×600 целиком, ~150 МБ)."""
+    with scene_env(D2_BATTLE_PLAYBACK="1"):
+        code, out = godot(repo, ["--check"], "res://scenes/battle/BattleScreen.tscn")
+    steps = re.findall(r"^battle step \S+ поле=[\d.]+мс синхронно=(?P<sync>[\d.]+)мс показ=\d+мс опоздание=(?P<late>-?[\d.]+)мс", out, re.M)
+    line = re.search(r"^battle playback шагов=(?P<steps>\d+) действий=(?P<acts>\d+) повторов=(?P<rep>\d+) синхронно_макс=(?P<sync>\d+) "
+                     r"портреты=(?P<faces>\S*) трупов=(?P<corpses>\d+) у_ног=(?P<feet>\d+) костей_на_поле=(?P<bones>\d+) "
+                     r"черепов=(?P<skulls>\d+) видеопамять_мб=(?P<vram>[\d.]+)", out, re.M)
+    if code != 0 or line is None or not steps:
+        return False, f"показ боя: код {code}, шагов {len(steps)}\n{out.strip()}"
+    syncs = [float(a) for a, _ in steps]
+    lates = [float(b) for _, b in steps]
+    fallen = [f for f in line["faces"].split(",") if f.endswith(":павший")]
+    if (int(line["acts"]) == 0 or int(line["rep"]) != 0 or max(syncs) >= 150 or min(lates) < 0 or max(lates) > 50
+            or not fallen or line["corpses"] != line["feet"] or int(line["corpses"]) == 0 or line["bones"] != line["corpses"]
+            or int(line["skulls"]) != len(fallen) or float(line["vram"]) >= 60):
+        return False, f"показ боя: синхронно {syncs}, опоздание {lates}\n{line.group(0)}"
+    return True, (f"показ боя: шагов {len(steps)}, действий {line['acts']}, повторов 0, синхронно до {max(syncs):.0f} мс, "
+                  f"опоздание {min(lates):.0f}…{max(lates):.0f} мс, павших в панели {len(fallen)} (черепов {line['skulls']}), "
+                  f"трупов у ног {line['feet']}/{line['corpses']}, костей на поле {line['bones']}, кадры в видеопамяти {line['vram']} МБ")
+
+
+# Анимации, листы которых держат ключ в индексе 0 палитры при чёрном цвете (opacity 255): атака гоблина и G000UU8023 (пункт 2 прогона 2).
+BLACK_KEY_ANIMS = ["G000UU5017HMOVA1A00", "G000UU5017HMOVA1D00", "G000UU8023HHITA1A00", "G000UU8023HMOVA1A00",
+                   "G000UU8023IDLEA1A00", "G000UU8023STILA1A00"]
+
+
+def black_key_frames(repo: Path) -> tuple[bool, str]:
+    """Кадры с ключом прозрачности в индексе палитры (tools/ui-assets/ff_extract.py, transparent_index из -IMAGES.OPT): вокруг атакующего
+    гоблина не должно быть непрозрачного чёрного прямоугольника (снимок 32). Числа: непрозрачных точек ровно (0,0,0) в кадрах — 0 (прежде
+    до 3653 на кадр), доля прозрачных точек в занятом прямоугольнике кадра — не меньше 20 % (прежде 0: весь прямоугольник непрозрачен)."""
+    import numpy as np
+    from PIL import Image
+    root = Path(os.environ.get("D2_ASSETS_DIR") or repo / "assets") / "gfx" / "BatUnits" / "anims"
+    if not root.exists():
+        return True, "ключ в индексе палитры: пропуск — нет графики"
+    worst_black, worst_share, frames = 0, 1.0, 0
+    for anim in BLACK_KEY_ANIMS:
+        for f in sorted((root / anim).glob("*.webp")):
+            a = np.array(Image.open(f).convert("RGBA"))
+            opaque = a[..., 3] > 0
+            if not opaque.any():
+                continue
+            ys, xs = np.nonzero(opaque)
+            box = opaque[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
+            worst_black = max(worst_black, int((opaque & (a[..., :3].sum(-1) == 0)).sum()))
+            worst_share = min(worst_share, 1 - box.mean())
+            frames += 1
+    if frames == 0 or worst_black > 0 or worst_share < 0.2:
+        return False, f"ключ в индексе палитры: кадров {frames}, непрозрачного чёрного до {worst_black}, прозрачных в рамке от {worst_share:.0%}"
+    return True, f"ключ в индексе палитры: {frames} кадров атаки гоблина и G000UU8023 — непрозрачного чёрного 0, прозрачных в рамке от {worst_share:.0%}"
+
+
+def battle_layout(repo: Path) -> tuple[bool, str]:
+    """Раскладка экрана боя (docs/ui-windows.md §11–§12, снимки 28.09): бой A (32,38) против A (34,38) из сохранения ai-q14-crit.
+    Без зеркала — обе панели (ответ пользователя 11.10): справа отряд врага, слева свой; пока видны обе, переключатель TOG_RIGHTUNITS их
+    не переставляет (0x638035/0x638298(1), пометка 1 партии 14.10); «Поменяться сторонами» (FlippedBattle) — сдвиг +173, фон с 0, панель слева.
+    Нет корпуса — пропуск."""
+    sg = corpus_dir(repo) / "20260928-shots" / "ai-q14-crit-elf-t01-010.sg"
+    if not sg.exists():
+        return True, "раскладка боя: пропуск — нет корпуса"
+    code, out = godot(repo, ["--sg", str(sg), "--check", "--clicks",
+                             "fight 32,38 34,38 1;battle ui click TOG_RIGHTUNITS;battle hover 10,200"], "res://scenes/map/MapScreen.tscn")
+    lines = re.findall(r"^(?:fight|battle) .*$", out, re.MULTILINE)
+    lines = [l for l in lines if l.startswith(("fight ", "battle ui", "battle hover"))]
+    # Обе панели сразу (ответ пользователя 11.10, BattleScene.BothPanels): враг справа, своя группа слева с рамкой ходящего; переключатель
+    # группы панелей не переставляет — свой отряд всегда на своей стороне (пометка 1 партии 14.10); SPOT ничего не прячет и не открывает.
+    want = [["зеркало=0", "сдвиг=0", "фон=-150", "панель_нап=L", "панель_защ=R", "PLYSMALL", "SELSMALL"],
+            ["панель_нап=L", "панель_защ=R", "PLYSMALL"],
+            ["панель_нап=L", "панель_защ=R", "spot=1"]]
+    if code != 0 or len(lines) != 3 or any(w not in l for l, ws in zip(lines, want) for w in ws):
+        return False, f"раскладка боя: код {code}\n" + "\n".join(lines) + f"\n{out.strip()}"
+    settings = repo / ".cache" / "ui-check" / "flip-settings.json"
+    settings.parent.mkdir(parents=True, exist_ok=True)
+    settings.write_text('{"FlippedBattle": true}', encoding="utf-8")
+    code, out = godot(repo, ["--sg", str(sg), "--check", "--settings", str(settings), "--clicks", "fight 32,38 34,38 2"],
+                      "res://scenes/map/MapScreen.tscn")
+    flipped = re.search(r"^fight .*$", out, re.MULTILINE)
+    if code != 0 or flipped is None or not all(w in flipped[0] for w in ["зеркало=1", "сдвиг=173", "фон=0", "панель_защ=L"]):
+        return False, f"раскладка боя, зеркало: код {code}\n{out.strip()}"
+    return True, "раскладка боя: обе панели — враг справа, свой слева, переключатель их не переставляет; зеркало — +173, фон 0, панель врага слева"
+
+
+SIDES = re.compile(r"(?P<what>[а-я_]+):(?P<mover>\S+):(?P<whose>свой|чужой) свои=(?P<own>[LR-]) враг=(?P<foe>[LR-]) лица=L=(?P<left>\S+),R=(?P<right>\S+)")
+
+
+def battle_sides(repo: Path) -> tuple[bool, str]:
+    """Стороны панелей и крупных портретов (пометка 1 партии 14.10 «в ход лекаря панели меняются местами»; ответ пользователя о крупных
+    портретах): бой партии «A Return To Simpler Times» S001KC0000 против S001KC001a, свой отряд — два сквайра и две послушницы.
+    На ходу своего бойца, своего лекаря и врага свой отряд — в левой панели, враг — в правой (0x638035, 0x638298(1)); крупный портрет
+    ходящего — слева у своего, справа у врага (0x639d89/0x639e08); на другой стороне — юнит под мышью и первая цель удара (0x630f15)."""
+    code, out = godot(repo, ["--scenario", "'A Return To Simpler Times'", "--stacks", "S001KC0000,S001KC001a",
+                             "--squad", "G000UU0001:0,G000UU0001:2,G000UU0011:1,G000UU0011:3", "--check", "--sides"],
+                      "res://scenes/battle/BattleScreen.tscn")
+    line = re.search(r"^battle sides (.*)$", out, re.MULTILINE)
+    steps = {m["what"]: m for m in SIDES.finditer(line[1])} if line else {}
+    need = [f"{k}_{s}" for k in ("боец", "лекарь") for s in ("ход", "мышь", "удар")] + ["враг"]
+    if code != 0 or any(n not in steps for n in need):
+        return False, f"стороны боя: код {code}, шаги {sorted(steps)}\n{out.strip()}"
+    bad = [n for n in need if (steps[n]["own"], steps[n]["foe"]) != ("L", "R")]
+    for kind in ("боец", "лекарь"):
+        turn, hover, hit = steps[f"{kind}_ход"], steps[f"{kind}_мышь"], steps[f"{kind}_удар"]
+        if turn["left"] != turn["mover"] or hover["left"] != turn["mover"] or hit["left"] != turn["mover"]:
+            bad.append(f"{kind}: слева не ходящий")
+        if hover["right"] == turn["mover"] or hit["right"] != hover["right"]:
+            bad.append(f"{kind}: справа не цель")
+    foe = steps["враг"]
+    if foe["whose"] != "чужой" or foe["right"] != foe["mover"] or foe["left"] == foe["mover"]:
+        bad.append("враг: ходящий не справа или цель не слева")
+    start = steps.get("начало")
+    if start is None or sorted((start["left"], start["right"])) != sorted((start["mover"], "-")):
+        bad.append("начало: второй крупный портрет не пуст (CBatBigFace 0x64ec10 — пуст до мыши и показа действия)")
+    if bad:
+        return False, f"стороны боя: {', '.join(bad)}\n{line[0]}"
+    return True, (f"стороны боя: свои слева, враг справа на ходу бойца, лекаря и врага; портреты — боец {steps['боец_удар']['left']}"
+                  f"/{steps['боец_удар']['right']}, лекарь {steps['лекарь_удар']['left']}/{steps['лекарь_удар']['right']}, "
+                  f"враг {foe['left']}/{foe['right']}")
+
+
+def pixel_tool(repo: Path) -> tuple[bool, str]:
+    """Сверка со снимком (tools/pixel-compare.py, docs/ui-windows.md §10) на поддельном снимке: экран порта DLG_OPTIONS вклеен в
+    1024×768 со сдвигом 37,91 и испорченным квадратом 20×20 — инструмент должен найти сдвиг и ровно этот квадрат."""
+    import importlib.util
+    from PIL import Image
+    spec = importlib.util.spec_from_file_location("pixel_compare", repo / "tools" / "pixel-compare.py")
+    pc = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(pc)
+    port = pc.port_screen("DLG_OPTIONS")
+    # Имя не совпадает с настоящим снимком: файл состояния tools/pixel-states/DLG_OPTIONS.json к поддельному не относится.
+    shot = repo / ".cache" / "pixel" / "selftest" / "DLG_OPTIONS-selftest.png"
+    shot.parent.mkdir(parents=True, exist_ok=True)
+    canvas = Image.new("RGBA", (1024, 768), (10, 10, 10, 255))
+    canvas.alpha_composite(Image.open(port).convert("RGBA"), (37, 91))
+    canvas.paste((255, 255, 0, 255), (425, 321, 445, 341))   # экран 388,230 — орнамент без подписей и счётчиков
+    canvas.save(shot)
+    code = subprocess.run([sys.executable, str(repo / "tools" / "pixel-compare.py"), str(shot), "--port", str(port),
+                           "--screen", "DLG_OPTIONS"], capture_output=True, text=True, encoding="utf-8", errors="replace", env=child_env())
+    out = code.stdout.strip()
+    if "сдвиг=37,91 " not in out or "худшая_область=388,230,20,20 " not in out:
+        return False, f"сверка со снимком: {out}\n{code.stderr}"
+    return True, "сверка со снимком: поддельный снимок — сдвиг 37,91 и испорченный квадрат 20×20 найдены"
+
+
+def steps(repo: Path, screens: list[str], window: bool) -> list[tuple[str, Callable[[], tuple[bool, str]]]]:
+    """Шаги проверки по порядку: имя (оно же строка в итоге провала и ключ выбора `--only`) и вызов."""
+    out: list[tuple[str, Callable[[], tuple[bool, str]]]] = [(screen, partial(run, repo, screen)) for screen in screens]
+    out += [("шрифт", partial(ink, repo)), ("шаг строки", partial(lines, repo)), ("табуляция", partial(tabs, repo)),
+            ("строки подписей", partial(text_block, repo)), ("толщина линий", partial(strokes, repo, window))]
+    out += [(f"ввод {screen}", partial(live, repo, screen, counts, case)) for screen, counts, case in INPUT_CASES]
+    out += [(f"граф {name}", partial(flow, repo, name, start, case)) for name, start, case in FLOW_CASES]
+    out += [(name, partial(fn, repo)) for name, fn in [
+        ("щелчки через показ", scaled_flow), ("логика новой игры", content), ("вступление", cinematic), ("земля", ground),
+        ("экран карты", mapscreen), ("портрет лидера", leader_face), ("экран боя", battle), ("экран боя: видимость", battle_visible),
+        ("бой полигонов", battle_synth), ("вспышки портретов", battle_flash), ("полоса очереди боя", battle_queue),
+        ("бой с карты", mapbattle), ("«Меню героя»", paperdoll), ("автопрокрутка «Задания»", briefing_scroll),
+        ("сверка со снимком: инструмент", pixel_tool), ("раскладка боя", battle_layout), ("показ боя", battle_playback),
+        ("стороны боя", battle_sides), ("ключ в индексе палитры", black_key_frames), ("бой за руину", siege),
+        ("отход от врага", enemy_near), ("щелчок по союзнику", ally_click), ("второй ход после обрыва", cut_second_move),
+        ("кнопки панелей", panel_buttons), ("путь через конец хода", route_through_turn), ("стирание пути", path_reset),
+        ("призванный у своей деревни", own_fort_summon), ("вор, затем событие", thief_then_event),
+        ("эллипс при попапе", selection_under_popup), ("игровой цикл", gameloop), ("автосохранение", autosave),
+        ("быстрое сохранение", quicksave), ("предложение союза", alliance_offer), ("журнал команд", command_journal), ("прокрутка стрелкой", map_arrows),
+        ("сага", saga), ("перевод сценариев", scenario_texts), ("конец партии", game_over), ("бой эффекта", event_battle),
+        ("импорт героя", leader_import), ("горячий стул", hotseat), ("гонец", courier), ("окна города", city_windows),
+        ("ход и туман по шагам, мешок", walk_steps), ("ход ИИ", ai_turn), ("плавная прокрутка", smooth_scroll),
+        ("смена тумана", fog_change), ("событие на пути", path_event), ("звук", sound), ("сверка со снимком", shot_compare),
+        ("начало боя", battle_opening), ("ход ИИ в горячем стуле", hotseat_ai), ("подсветка клетки", highlight),
+        ("облака", clouds), ("снос гор", mountains), ("попап в ходе ИИ", ai_popup), ("настройки показа", map_settings),
+        ("литьё на карте", spell_anim), ("предметы в бою", battle_items), ("гибель отряда", stack_death),
+        ("курсоры карты", map_cursors), ("курсор меню", menu_cursors), ("карточки карты", map_cards),
+        ("рамка и слои карты", map_frame), ("палитра карты", map_palette), ("вор у цели", noble), ("окна вора", thief_windows),
+        ("свиток на лидера", scroll_drop), ("выбор навыка лидера", upgrade_leader),
+        ("карта 2: деревни, руина, призванный", world_synth), ("карта 2: руина после боя", ruin_after_battle)]]
+    return out
+
+
+def timed(name: str, fn: Callable[[], tuple[bool, str]]) -> tuple[str, bool, str, float, list[float]]:
+    """Шаг с замером: стена шага и время каждого запуска Godot в нём (`godot()` пишет их в _STEP.calls шага)."""
+    _STEP.calls, _STEP.extra, _STEP.name = [], {}, name
+    t0 = time.monotonic()
+    try:
+        ok, message = fn()
+    except Exception as e:   # упавший шаг — провал с причиной, а не обрыв всей проверки
+        ok, message = False, f"{name}: исключение {type(e).__name__}: {e}"
+    return name, ok, message, time.monotonic() - t0, _STEP.calls
+
+
+# Что сцена может показать: меню и окна (ui), карту (map), бой (battle). Меню ведёт в партию и бой, карта открывает окна и бои, окна
+# интерфейса есть везде. Шаг выбирается по задетому (--areas), если его сцены показывают задетую область.
+SCENE_AREAS = {"UiScreen": {"ui"}, "UiFlow": {"ui", "map", "battle"}, "MapScreen": {"ui", "map", "battle"},
+               "BattleScreen": {"ui", "battle"}, "GroundTest": {"map"}, "ShotCompare": {"map"}}
+AREAS = ("ui", "map", "battle")
+
+
+def call_arity(text: str, head: str) -> list[int]:
+    """Число аргументов каждого вызова `head…)` в тексте (запятые верхнего уровня скобок)."""
+    out = []
+    for m in re.finditer(re.escape(head), text):
+        depth, commas, i = 1, 0, m.end()
+        while i < len(text) and depth:
+            c = text[i]
+            depth += c in "([{"
+            depth -= c in ")]}"
+            commas += c == "," and depth == 1
+            i += 1
+        out.append(commas + 1)
+    return out
+
+
+def step_areas(fn: Callable) -> set[str]:
+    """Области шага — по сценам, которые запускают он и вызванные им функции этого файла (поиск по исходнику; `godot()` без сцены —
+    UiScreen). Внешние скрипты (stroke-check, pixel-compare) — по их тексту. Сцена не найдена — все области."""
+    module = sys.modules[__name__]
+    seen: set[str] = set()
+    scenes: set[str] = set()
+
+    def walk(f: Callable) -> None:
+        f = getattr(f, "func", f)   # partial
+        if f.__name__ in seen:
+            return
+        seen.add(f.__name__)
+        text = inspect.getsource(f)
+        scenes.update(re.findall(r"res://scenes/\w+/(\w+)\.tscn", text))
+        if any(args == 2 for args in call_arity(text, "godot(")):
+            scenes.add("UiScreen")
+        for tool in re.findall(r'"tools" / "([\w-]+\.py)"', text):
+            path = Path(__file__).with_name(tool)
+            if path.is_file():
+                scenes.update(re.findall(r"res://scenes/\w+/(\w+)\.tscn", path.read_text(encoding="utf-8")))
+        for name in set(re.findall(r"(?<![.\w])([a-z_]\w*)\(", text)) - seen:   # без «.run(», «.items(» — это не функции файла
+            g = getattr(module, name, None)
+            if inspect.isfunction(g) and g.__module__ == __name__ and name not in ("godot", "_godot", "godot_all", "main"):
+                walk(g)
+
+    walk(fn)
+    areas = set().union(*(SCENE_AREAS.get(s, set(AREAS)) for s in scenes)) if scenes else set(AREAS)
+    return areas
+
+
+# Время шагов прошлого прогона: по нему пул берёт долгие шаги первыми (иначе самый долгий, начатый последним, растянул бы стену).
+TIMES = Path(".cache") / "ui-check" / "times.json"
+
+# Шаги, которые меряют время кадров и таймеров сцены (синхронная часть шага боя, опоздание таймера, мс прокрутки и тумана): под нагрузкой
+# соседних Godot их пороги ложно падали бы — они идут после пула, по одному, на свободной машине (perf-log: «показ боя» дал 2458 мс при
+# нагруженной машине).
+SOLO = {"ход и туман по шагам, мешок", "плавная прокрутка", "показ боя"}
+
+
+def default_jobs() -> int:
+    return int(os.environ.get("UI_CHECK_JOBS") or max(1, (os.cpu_count() or 2) // 2))
+
+
+def previous_times(path: Path) -> dict[str, float]:
+    try:
+        # Работа шага — время его Godot без ожидания слота: стена шага в хвосте очереди слотов раскачивала бы порядок.
+        return {s["name"]: s.get("work", s["seconds"]) for s in json.loads(path.read_text(encoding="utf-8"))["steps"]}
+    except (OSError, ValueError, KeyError):
+        return {}
+
+
+def prewarm(repo: Path) -> None:
+    """Свежая рабочая копия без каталога .godot: первый запуск Godot пишет туда кэши проекта — один раз до пула, а не разом из всех
+    работников."""
+    if not (repo / "godot" / ".godot").is_dir():
+        exe = os.environ.get("GODOT", r"C:\Tools\bin\godot.cmd")
+        subprocess.run([exe, "--headless", "--path", str(repo / "godot"), "--import"], capture_output=True, timeout=600, check=False)
+
+
+def run_pool(repo: Path, plan: list[tuple[str, Callable[[], tuple[bool, str]]]], jobs: int,
+             before: dict[str, float]) -> dict[str, tuple[str, bool, str, float, list[float]]]:
+    """Все шаги разом (потоки только ждут Godot), а Godot идёт не больше `jobs` разом — слоты; долгие по прошлому прогону встают в
+    очередь слотов первыми. SOLO — после, по одному. Строка шага печатается по готовности; итог собирает main в порядке плана."""
+    set_slots(repo, max(1, jobs))
+    pooled = sorted((s for s in plan if s[0] not in SOLO), key=lambda s: -before.get(s[0], 1e9))
+    solo = [s for s in plan if s[0] in SOLO]
+    done = {}
+    with ThreadPoolExecutor(max_workers=max(1, len(pooled), len(solo))) as pool:
+        futures = []
+        for name, fn in pooled:   # по одному с паузой: потоки встают в очередь слотов в порядке «долгие первыми»
+            futures.append(pool.submit(timed, name, fn))
+            time.sleep(0.005)
+        for future in as_completed(futures):
+            result = future.result()
+            print(f"{result[2]}  [{result[3]:.1f} с]", flush=True)
+            done[result[0]] = result
+        for name, fn in solo:
+            result = pool.submit(timed, name, fn).result()
+            print(f"{result[2]}  [{result[3]:.1f} с, отдельно]", flush=True)
+            done[name] = result
+    return done
+
+
+def main(argv: list[str]) -> int:
+    repo = Path(__file__).resolve().parents[1]
+    ap = argparse.ArgumentParser(description="Экраны порта без окна: сборка, ввод, графы, живые сцены — числами.")
+    ap.add_argument("screens", nargs="*", help=f"экраны для сборки в PNG (по умолчанию — {len(SCREENS)})")
+    ap.add_argument("--window", action="store_true", help="снимки окна для толщины линий (открывает окно на несколько секунд)")
+    ap.add_argument("--only", action="append", default=[], metavar="ПОДСТРОКА",
+                    help="только шаги, в имени которых есть подстрока (можно несколько раз)")
+    ap.add_argument("--areas", help=f"только шаги, чьи сцены показывают задетое: через запятую из {', '.join(AREAS)} или all "
+                                    "(решает tools/affected_tests.py, передаёт check.py)")
+    ap.add_argument("--list", action="store_true", help="напечатать имена шагов с их областями и выйти")
+    ap.add_argument("--times", type=Path, default=TIMES,
+                    help="куда записать время шагов (JSON: имя, секунды, запуски Godot); прошлый файл задаёт порядок пула")
+    ap.add_argument("-j", "--jobs", type=int, default=default_jobs(),
+                    help="работников пула (по умолчанию UI_CHECK_JOBS или половина логических ядер); 1 — строго по очереди")
+    args = ap.parse_args(argv[1:])
+
+    plan = steps(repo, args.screens or SCREENS, args.window)
+    if args.only:
+        plan = [(n, f) for n, f in plan if any(o.lower() in n.lower() for o in args.only)]
+    if args.areas and "all" not in args.areas.split(","):
+        want = set(args.areas.split(","))
+        plan = [(n, f) for n, f in plan if step_areas(f) & want]
+    if args.list:
+        print("\n".join(f"{n}  [{','.join(sorted(step_areas(f)))}]" for n, f in plan))
+        return 0
+    if not plan:   # опечатка в --only или области без шагов — не «зелёное» из пустоты
+        print("ПРОВАЛ: ни одного шага не выбрано (--only/--areas)", file=sys.stderr)
+        return 2
+
+    prewarm(repo)
+    t0 = time.monotonic()
+    done = run_pool(repo, plan, args.jobs, previous_times(repo / args.times))
+    results = [done[name] for name, _ in plan]
+    wall = time.monotonic() - t0
+
+    slow = sorted(results, key=lambda r: -r[3])[:10]
+    print(f"\nвремя: {wall:.0f} с стены ({args.jobs} работников), шаги в сумме {sum(r[3] for r in results):.0f} с, запусков Godot "
+          f"{sum(len(r[4]) for r in results)} ({sum(sum(r[4]) for r in results):.0f} с в них); самые долгие шаги: "
+          + ", ".join(f"{r[0]} {r[3]:.0f} с" for r in slow))
+    times = repo / args.times
+    times.parent.mkdir(parents=True, exist_ok=True)
+    times.write_text(json.dumps({"wall": round(wall, 1), "jobs": args.jobs, "steps": [
+        {"name": r[0], "ok": r[1], "seconds": round(r[3], 2), "work": round(sum(r[4]), 2), "godot": [round(c, 2) for c in r[4]]}
+        for r in results]},
+        ensure_ascii=False, indent=1), encoding="utf-8")
+
+    if _AUDIT:
+        print(f"\nмимо команд: {len(_AUDIT)} мест (партия менялась вне GameSession.Execute, docs/game-commands.md §3):")
+        for site, step in sorted(_AUDIT.items()):
+            print(f"  {site}  [{step}]")
+    failures = [r[0] for r in results if not r[1]] + (["мимо команд"] if _AUDIT else [])
+    if failures:
+        print(f"\nПРОВАЛ: {len(failures)} из {len(results)} — {', '.join(failures)}", file=sys.stderr)
+        return 1
+    print(f"\nОК: {len(results)} шагов — экраны собраны без пропусков и мадженты, строки на месте, кириллица есть, ввод, графы "
+          f"экранов, живые сцены карты и боя, сохранения, ход ИИ, звук и сверки со снимками проходят")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8")
+    raise SystemExit(main(sys.argv))

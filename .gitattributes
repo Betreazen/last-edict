@@ -1,0 +1,14 @@
+# tools/d2probe/patches и apply-patches.sh должны применяться на любой
+# машине независимо от core.autocrlf — LF всегда, иначе git apply может
+# не найти контекст из-за перегона строк в CRLF при чекауте.
+tools/d2probe/patches/*.patch text eol=lf
+tools/d2probe/apply-patches.sh text eol=lf
+
+# Шрифты — двоичные: перегон строк при чекауте испортил бы файл.
+data/fonts/*.ttf binary
+
+# Основы синтетических карт и исходники переигровок (.sg) — двоичные.
+tools/synth-maps/bases/*.sg binary
+
+# Содержимое правил выпускает импорт (ContentFiles) с LF: без этого перевыпуск давал бы ложные изменения после чекаута в CRLF.
+data/content/** text eol=lf

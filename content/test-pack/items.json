@@ -1,0 +1,40 @@
+{
+ "$schema": "../../data/content/schema/items.schema.json",
+ "items": [
+  {
+   "id": "test:item/healing-draught",
+   "legacyId": "t000IGa001",
+   "category": "potionHeal",
+   "value": {
+    "gold": 120
+   },
+   "potionHeal": 50
+  },
+  {
+   "id": "test:item/iron-draught",
+   "legacyId": "t000IGa002",
+   "category": "potionBoost",
+   "value": {
+    "gold": 150
+   },
+   "potionModifier": "test:modifier/draught"
+  },
+  {
+   "id": "test:item/iron-charm",
+   "legacyId": "t000IGa003",
+   "category": "jewel",
+   "value": {
+    "gold": 400
+   },
+   "equipModifier": "test:modifier/charm"
+  },
+  {
+   "id": "test:item/gem",
+   "legacyId": "t000IGa004",
+   "category": "valuable",
+   "value": {
+    "gold": 300
+   }
+  }
+ ]
+}

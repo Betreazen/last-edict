@@ -1,0 +1,127 @@
+{
+ "$schema": "../../data/content/schema/globals.schema.json",
+ "globals": [
+  {
+   "id": "test:globals",
+   "battle": {
+    "initiativeRandom": 8,
+    "damageRandom": 5,
+    "rounds": 12,
+    "break": 85,
+    "breakModifier": 12,
+    "boostDamagePercent": [
+     20,
+     40,
+     60,
+     80
+    ],
+    "lowerDamagePercent": [
+     40,
+     30
+    ],
+    "lowerInitiativePercent": 40,
+    "defendBonus": 45
+   },
+   "thieves": {
+    "morale": [
+     12,
+     22,
+     32,
+     42,
+     52,
+     62
+    ],
+    "spyDiscovery": 12,
+    "poisonStack": 18,
+    "poisonCity": 22,
+    "bribe": 4,
+    "stealRace": 20,
+    "stealNeutral": 200,
+    "riotMin": 1,
+    "riotMax": 3,
+    "riotDamage": 15
+   },
+   "land": {
+    "capturePercent": 100,
+    "capital": 8,
+    "cities": [
+     12,
+     14,
+     16,
+     18,
+     20
+    ],
+    "rodCost": {
+     "gold": 120
+    },
+    "rodRange": 2
+   },
+   "diplomacy": {
+    "peace": 90,
+    "war": 30,
+    "neutral": 60,
+    "goldPerPoint": 40,
+    "makeAlly": 90,
+    "attackStack": -6,
+    "attackFort": -9,
+    "attackAtPeace": 60,
+    "rodDestroyed": -12,
+    "refuseAlly": 45,
+    "breakAlly": 8,
+    "nobleAction": -4,
+    "allianceBreakChance": 4,
+    "allianceBreakTurn": 8
+   },
+   "difficulty": {
+    "startBankPercent": [
+     250,
+     100,
+     60,
+     30
+    ],
+    "incomePercent": [
+     25,
+     0,
+     0,
+     0
+    ]
+   },
+   "ai": {
+    "cityArmor": [
+     8,
+     12,
+     16,
+     20,
+     24
+    ],
+    "capitalArmor": 40,
+    "guardRange": 4,
+    "partyRange": 4,
+    "locationRange": 3,
+    "constructionUrgency": 85
+   },
+   "economy": {
+    "sellRatio": 25,
+    "crystalProfit": 40,
+    "ruinRegeneration": 15
+   },
+   "heroes": {
+    "weaponMaster": 20,
+    "maxAbilities": 12,
+    "warlordRegeneration": 12,
+    "talismanCharges": 4
+   },
+   "spells": {
+    "areaPowerPercent": [
+     100,
+     75,
+     55,
+     40,
+     25
+    ],
+    "gainOnCapture": 40
+   },
+   "tutorial": ""
+  }
+ ]
+}

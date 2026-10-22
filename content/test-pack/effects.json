@@ -1,0 +1,60 @@
+{
+ "$schema": "../../data/content/schema/effects.schema.json",
+ "effects": [
+  {
+   "id": "test:effect/damage",
+   "behavior": "damage",
+   "ai": {
+    "classFactor": 1,
+    "classFactorAlt": 1,
+    "secondFactor": 1,
+    "xpFactor": 1
+   }
+  },
+  {
+   "id": "test:effect/heal",
+   "behavior": "heal",
+   "ai": {
+    "classFactor": 1,
+    "classFactorAlt": 1,
+    "secondFactor": 1,
+    "fullPower": true,
+    "xpFactor": 2,
+    "xpRank": 0
+   }
+  },
+  {
+   "id": "test:effect/paralyze",
+   "behavior": "paralyze",
+   "ai": {
+    "classFactor": 25,
+    "classFactorAlt": 1,
+    "secondFactor": 1,
+    "infiniteCounts": true,
+    "xpFactor": 6,
+    "xpRank": 1
+   }
+  },
+  {
+   "id": "test:effect/poison",
+   "behavior": "poison",
+   "ai": {
+    "classFactor": 1,
+    "classFactorAlt": 1,
+    "secondFactor": 1.2,
+    "infiniteCounts": true,
+    "xpFactor": 1
+   }
+  },
+  {
+   "id": "test:effect/drain",
+   "behavior": "drain",
+   "ai": {
+    "classFactor": 1.4,
+    "classFactorAlt": 1,
+    "secondFactor": 1,
+    "xpFactor": 1
+   }
+  }
+ ]
+}

@@ -1,0 +1,6 @@
+{
+  "port": {
+    "sg": "20260928-shots/dyhanie-smerti-human-t01-002.sg",
+    "clicks": "city capital;ui press 492,110;ui release 305,110;ui press 492,325;ui release 305,325"
+  }
+}

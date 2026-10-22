@@ -1,0 +1,24 @@
+# Граф знаний: только свой код и документы. Сторонние библиотеки зонда, корпус, данные и графика — вне графа.
+tools/d2probe/SLikeNet/
+tools/d2probe/sol2/
+tools/d2probe/D2RSG/
+tools/d2probe/spdlog/
+tools/d2probe/Detours/
+tools/d2probe/fmt/
+tools/d2probe/lua/
+tools/d2probe/GSL/
+tools/d2probe/mss32/
+tools/godot-ref/
+tools/ksy/node_modules/
+tools/__pycache__/
+corpus/
+data/
+assets/
+mods/
+godot/.godot/
+**/bin/
+**/obj/
+*.json
+*.png
+*.jpg
+.claude/

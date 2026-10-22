@@ -1,0 +1,52 @@
+{
+  "Default": "Normal",
+  "Color": {
+    "R": 0,
+    "G": 0,
+    "B": 0
+  },
+  "Faces": {
+    "Small": {
+      "File": "assets/fonts/small.fnt",
+      "Size": 12,
+      "Line": 16,
+      "Fallback": "data/fonts/EBGaramond-Regular.ttf"
+    },
+    "Normal": {
+      "File": "assets/fonts/normal.fnt",
+      "Size": 13,
+      "Line": 17,
+      "Fallback": "data/fonts/EBGaramond-Regular.ttf"
+    },
+    "Medium": {
+      "File": "assets/fonts/medium.fnt",
+      "Size": 14,
+      "Line": 18,
+      "Fallback": "data/fonts/EBGaramond-Regular.ttf"
+    },
+    "MedBold": {
+      "File": "assets/fonts/medbold.fnt",
+      "Size": 13,
+      "Line": 17,
+      "Fallback": "data/fonts/EBGaramond-SemiBold.ttf"
+    },
+    "Menu": {
+      "File": "assets/fonts/menu.fnt",
+      "Size": 14,
+      "Line": 18,
+      "Fallback": "data/fonts/EBGaramond-Italic.ttf"
+    },
+    "Large": {
+      "File": "assets/fonts/large.fnt",
+      "Size": 14,
+      "Line": 18,
+      "Fallback": "data/fonts/EBGaramond-SemiBold.ttf"
+    },
+    "VLarge": {
+      "File": "assets/fonts/vlarge.fnt",
+      "Size": 19,
+      "Line": 25,
+      "Fallback": "data/fonts/EBGaramond-Regular.ttf"
+    }
+  }
+}

@@ -1,0 +1,148 @@
+{
+ "$schema": "../../data/content/schema/modifiers.schema.json",
+ "modifiers": [
+  {
+   "id": "test:modifier/sun-capital",
+   "legacyId": "t000uma001",
+   "scope": "unit",
+   "comment": "capital protection",
+   "elements": [
+    {
+     "type": "armor",
+     "number": 40,
+     "immuneLevel": 2
+    }
+   ]
+  },
+  {
+   "id": "test:modifier/sun-city",
+   "legacyId": "t000uma002",
+   "scope": "unit",
+   "comment": "city protection",
+   "elements": [
+    {
+     "type": "armor",
+     "number": 15,
+     "immuneLevel": 2
+    }
+   ]
+  },
+  {
+   "id": "test:modifier/sun-ward",
+   "legacyId": "t000uma003",
+   "scope": "unit",
+   "comment": "spell: armor",
+   "elements": [
+    {
+     "type": "armor",
+     "number": 20,
+     "immuneLevel": 2
+    }
+   ]
+  },
+  {
+   "id": "test:modifier/sun-skill-armor",
+   "legacyId": "t000uma004",
+   "scope": "unit",
+   "comment": "skill: armor",
+   "elements": [
+    {
+     "type": "armor",
+     "number": 10,
+     "immuneLevel": 2
+    }
+   ]
+  },
+  {
+   "id": "test:modifier/moon-capital",
+   "legacyId": "t000uma005",
+   "scope": "unit",
+   "comment": "capital protection",
+   "elements": [
+    {
+     "type": "armor",
+     "number": 40,
+     "immuneLevel": 2
+    }
+   ]
+  },
+  {
+   "id": "test:modifier/moon-city",
+   "legacyId": "t000uma006",
+   "scope": "unit",
+   "comment": "city protection",
+   "elements": [
+    {
+     "type": "armor",
+     "number": 15,
+     "immuneLevel": 2
+    }
+   ]
+  },
+  {
+   "id": "test:modifier/moon-ward",
+   "legacyId": "t000uma007",
+   "scope": "unit",
+   "comment": "spell: armor",
+   "elements": [
+    {
+     "type": "armor",
+     "number": 20,
+     "immuneLevel": 2
+    }
+   ]
+  },
+  {
+   "id": "test:modifier/moon-skill-armor",
+   "legacyId": "t000uma008",
+   "scope": "unit",
+   "comment": "skill: armor",
+   "elements": [
+    {
+     "type": "armor",
+     "number": 10,
+     "immuneLevel": 2
+    }
+   ]
+  },
+  {
+   "id": "test:modifier/wild-city",
+   "legacyId": "t000uma009",
+   "scope": "unit",
+   "comment": "neutral city protection",
+   "elements": [
+    {
+     "type": "armor",
+     "number": 10,
+     "immuneLevel": 2
+    }
+   ]
+  },
+  {
+   "id": "test:modifier/draught",
+   "legacyId": "t000uma00a",
+   "scope": "unit",
+   "comment": "potion: armor",
+   "elements": [
+    {
+     "type": "armor",
+     "number": 25,
+     "immuneLevel": 2
+    }
+   ]
+  },
+  {
+   "id": "test:modifier/charm",
+   "legacyId": "t000uma00b",
+   "scope": "unit",
+   "comment": "item: armor",
+   "elements": [
+    {
+     "type": "armor",
+     "number": 10,
+     "immuneLevel": 2
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,67 @@
+{
+ "$schema": "../../data/content/schema/spells.schema.json",
+ "spells": [
+  {
+   "id": "test:spell/sun-bolt",
+   "legacyId": "t000ssa001",
+   "category": "attack",
+   "level": 1,
+   "castCost": {
+    "life": 80
+   },
+   "buyCost": {
+    "gold": 250
+   },
+   "area": 1,
+   "damageSource": "fire",
+   "damage": 30,
+   "aiUse": "all"
+  },
+  {
+   "id": "test:spell/sun-ward",
+   "legacyId": "t000ssa002",
+   "category": "boost",
+   "level": 1,
+   "castCost": {
+    "life": 60
+   },
+   "buyCost": {
+    "gold": 200
+   },
+   "area": 1,
+   "modifier": "test:modifier/sun-ward",
+   "aiUse": "all"
+  },
+  {
+   "id": "test:spell/moon-bolt",
+   "legacyId": "t000ssa003",
+   "category": "attack",
+   "level": 1,
+   "castCost": {
+    "death": 80
+   },
+   "buyCost": {
+    "gold": 250
+   },
+   "area": 1,
+   "damageSource": "death",
+   "damage": 30,
+   "aiUse": "all"
+  },
+  {
+   "id": "test:spell/moon-ward",
+   "legacyId": "t000ssa004",
+   "category": "boost",
+   "level": 1,
+   "castCost": {
+    "death": 60
+   },
+   "buyCost": {
+    "gold": 200
+   },
+   "area": 1,
+   "modifier": "test:modifier/moon-ward",
+   "aiUse": "all"
+  }
+ ]
+}

@@ -1,0 +1,5 @@
+{
+  "id": "ui-check-self-goto",
+  "name": "Проверка: Goto на тот же экран",
+  "description": "Приспособление tools/ui-render-check.py: у ОК окна предмета остаётся только переход на себя (в базовом графе чаще Close)."
+}

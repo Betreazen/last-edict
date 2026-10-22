@@ -1,0 +1,211 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "Disciples: race",
+ "type": "object",
+ "properties": {
+  "$schema": {
+   "type": "string"
+  },
+  "races": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "description": "Устойчивый id «мод:вид/имя» — по нему ссылаются другие сущности и моды.",
+      "type": "string"
+     },
+     "legacyId": {
+      "description": "Id оригинала (Gunits.UNIT_ID и т. п.): по нему сущность находят сохранения, карты и журналы. У новых сущностей модов — нет.",
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "guardian": {
+      "description": "Страж столицы.",
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "noble": {
+      "description": "Вор расы.",
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "leaders": {
+      "description": "Лидеры для найма по порядку.",
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "soldiers": {
+      "description": "Солдаты первого уровня веток найма.",
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "scout": {
+      "description": "Обзор столицы.",
+      "type": [
+       "integer",
+       "null"
+      ]
+     },
+     "capitalRegeneration": {
+      "description": "Лечение в столице, процентов в день.",
+      "type": [
+       "integer",
+       "null"
+      ]
+     },
+     "income": {
+      "type": [
+       "object",
+       "null"
+      ],
+      "additionalProperties": {
+       "type": "integer"
+      }
+     },
+     "protection": {
+      "description": "Защита столицы.",
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "nameText": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "kind": {
+      "enum": [
+       "human",
+       "undead",
+       "heretic",
+       "dwarf",
+       "neutral",
+       "elf"
+      ]
+     },
+     "playable": {
+      "type": "boolean"
+     },
+     "land": {
+      "description": "Своя земля: её красят захваты и жезлы расы, на ней лечатся её отряды. Нет — по роду (kind).",
+      "enum": [
+       "human",
+       "dwarf",
+       "heretic",
+       "undead",
+       "neutral",
+       "elf",
+       null
+      ]
+     },
+     "turnOrder": {
+      "description": "Место в очереди хода, меньше — раньше. Нет — по роду (kind).",
+      "type": [
+       "integer",
+       "null"
+      ]
+     },
+     "eventFlag": {
+      "description": "Номер флага расы в событиях сценария (HUMAN, DWARF, UNDEAD, HERETIC, NEUTRAL, ELF — 0…5); −1 — флага нет. Нет — по роду (kind).",
+      "type": [
+       "integer",
+       "null"
+      ]
+     },
+     "neutral": {
+      "description": "Нейтралы: хозяин ничьих отрядов и объектов карты. Нет — по роду (kind).",
+      "type": [
+       "boolean",
+       "null"
+      ]
+     },
+     "heroNames": {
+      "description": "Имена героев (Tleader) по порядку таблицы.",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "text": {
+         "type": "string"
+        },
+        "male": {
+         "type": "boolean"
+        },
+        "verified": {
+         "type": [
+          "boolean",
+          "null"
+         ]
+        },
+        "context": {
+         "type": [
+          "string",
+          "null"
+         ]
+        }
+       },
+       "required": [
+        "text"
+       ],
+       "additionalProperties": false
+      }
+     },
+     "aiMessages": {
+      "description": "Сообщения ИИ (TAiMsg) по порядку таблицы.",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "kind": {
+         "enum": [
+          "playerAcceptsAll",
+          "playerRefusedAll",
+          "aiBreakAlliance",
+          "playerBreakAll",
+          "aiOffersAlliance",
+          "playerGiveGold",
+          "aiGiveGold",
+          "tradeAccepted",
+          "tradeRefused",
+          "hateMessage",
+          "noGold",
+          "playerGiveGoldN"
+         ]
+        },
+        "text": {
+         "type": "string"
+        }
+       },
+       "required": [
+        "kind",
+        "text"
+       ],
+       "additionalProperties": false
+      }
+     }
+    },
+    "required": [
+     "id"
+    ],
+    "additionalProperties": false
+   }
+  }
+ },
+ "required": [
+  "races"
+ ],
+ "additionalProperties": false
+}

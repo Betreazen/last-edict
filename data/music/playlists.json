@@ -1,0 +1,19 @@
+{
+  "_about": "Музыка по ситуациям (разбор CMidMusic, docs/ai-screen.md §12): имена — дорожки описи Music.json. Карта — два списка из ImgData/imusic.dbf (AMBIENT=F / T), чередуются; столица — тема расы владельца по RaceType, 1..3 по кругу; бой — по кругу с случайного.",
+  "menu": ["MENUTRCK"],
+  "briefing": ["GENBRIEF"],
+  "credits": ["CREDITS"],
+  "map": [
+    ["INGAME01", "INGAME02", "INGAME03", "INGAME04", "INGAME05", "INGAME06", "INGAME07", "INGAME08", "INGAME09", "INGAME10", "INGAME11"],
+    ["AMB01", "AMB02", "AMB03", "AMB04", "AMB05", "AMB06", "AMB07", "AMB08", "AMB09", "AMB10", "AMB11"]
+  ],
+  "battle": ["BATTLE01", "BATTLE02", "BATTLE03", "BATTLE04"],
+  "capital": {
+    "0": ["HUMNTRK1", "HUMNTRK2", "HUMNTRK3"],
+    "1": ["UNDETRK1", "UNDETRK2", "UNDETRK3"],
+    "2": ["HERETRK1", "HERETRK2", "HERETRK3"],
+    "3": ["DWRFTRK1", "DWRFTRK2", "DWRFTRK3"],
+    "5": ["ELFTRK1", "ELFTRK2", "ELFTRK3"]
+  },
+  "fades": { "menuOut": 500, "menuIn": 1000, "briefingOut": 700, "tempIn": 0, "battleOut": 1000, "battleEnd": 700, "capitalOut": 1500, "capitalEnd": 700, "resumeIn": 1000 }
+}

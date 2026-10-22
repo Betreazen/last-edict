@@ -1,0 +1,183 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "Disciples: spell",
+ "type": "object",
+ "properties": {
+  "$schema": {
+   "type": "string"
+  },
+  "spells": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "description": "Устойчивый id «мод:вид/имя» — по нему ссылаются другие сущности и моды.",
+      "type": "string"
+     },
+     "legacyId": {
+      "description": "Id оригинала (Gunits.UNIT_ID и т. п.): по нему сущность находят сохранения, карты и журналы. У новых сущностей модов — нет.",
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "category": {
+      "enum": [
+       "attack",
+       "lower",
+       "heal",
+       "boost",
+       "summon",
+       "fog",
+       "unfog",
+       "restoreMove",
+       "invisibility",
+       "removeRod",
+       "changeTerrain",
+       "giveWards"
+      ]
+     },
+     "level": {
+      "type": "integer"
+     },
+     "castCost": {
+      "type": [
+       "object",
+       "null"
+      ],
+      "additionalProperties": {
+       "type": "integer"
+      }
+     },
+     "buyCost": {
+      "type": [
+       "object",
+       "null"
+      ],
+      "additionalProperties": {
+       "type": "integer"
+      }
+     },
+     "nameText": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "descriptionText": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "unit": {
+      "description": "Призываемый юнит.",
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "restoreMovePercent": {
+      "description": "Сколько процентов запаса хода возвращает.",
+      "type": [
+       "integer",
+       "null"
+      ]
+     },
+     "area": {
+      "description": "Сторона квадрата действия на карте.",
+      "type": "integer"
+     },
+     "modifier": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "modifierText": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "damageSource": {
+      "enum": [
+       "weapon",
+       "mind",
+       "life",
+       "death",
+       "fire",
+       "water",
+       "earth",
+       "air",
+       null
+      ]
+     },
+     "damage": {
+      "type": [
+       "integer",
+       "null"
+      ]
+     },
+     "heal": {
+      "type": [
+       "integer",
+       "null"
+      ]
+     },
+     "aiUse": {
+      "description": "Кому полезно заклинание — подсказка выбора ИИ (пусто — без подсказки).",
+      "enum": [
+       "all",
+       "none",
+       "human",
+       "undead",
+       "heretic",
+       "dwarf",
+       null
+      ]
+     },
+     "terrain": {
+      "description": "Во что превращает землю.",
+      "enum": [
+       "human",
+       "dwarf",
+       "heretic",
+       "undead",
+       "neutral",
+       "elf",
+       null
+      ]
+     },
+     "changesTerrain": {
+      "type": [
+       "boolean",
+       "null"
+      ]
+     },
+     "wardCount": {
+      "type": [
+       "integer",
+       "null"
+      ]
+     },
+     "wards": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     }
+    },
+    "required": [
+     "id"
+    ],
+    "additionalProperties": false
+   }
+  }
+ },
+ "required": [
+  "spells"
+ ],
+ "additionalProperties": false
+}

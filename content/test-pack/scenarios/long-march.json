@@ -1,0 +1,3224 @@
+{
+ "Format": "d2-port-scenario",
+ "Version": 5,
+ "Id": "long-march",
+ "Looks": {
+  "Map": {
+   "Size": 64,
+   "Tiles": {
+    "w": 64,
+    "h": 64,
+    "data": "JQUFBQUFBSUFBQUFBQUlBQUFBQUFJQUFBQUFBSUFBQUFBQUlBQUFBQUFJQUFBQUFBSUFBQUFDQ0lDQ0FBQUFJQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQ0NDQ0NDQ0NBQUFBQUFBQEBAQEBAQEBAQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUNDQ0NDQ0NDQUFBQUFBQUBAQEBAQEBAQEFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFDQ0NDQ0FBQUFBQUFBQUFAQEBAQEBAQEBBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQEBAQEBAQEBAQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUBAQEBAQEBAQEFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFAQEBAQEBAQEBBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBSUFBQEBAQEBAQEBAQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUBAQEBAQEBAQEFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUNDQ0NBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFAQEBAQEBAQEBBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFDQ0NDQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQ0NDQ0FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQ0NDQ0NBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUNDQ0NDQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFDQ0NDQ0FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUlBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQ0NDQ0NBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUNDQ0NDQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFDQ0NDQ0FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUNDQ0NDQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFDQ0NDQ0FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFDQ0NDQ0FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQ0NDQ0NBQUFJQUFBQUFBQUFBQUFBQUFBQUFBQUFBQ0NDQ0NBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUNDQ0NDQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFDQ0NDQ0FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFDQ0NDQ0FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQ0NDQ0NBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQ0NDQ0NBQUFBQUFBQUFBQ0NDQ0NBQUFBQUFBQUFBQUFBQUNDQ0NDQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUNDQ0NDQUFBQUFBQUFBQUNDQ0NDQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFDQ0NDQ0FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBSUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFHR0dHQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBR0dHR0FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUdHR0dBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQ0NDQ0NBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUNDQ0NDQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFDQ0NDQ0FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUlBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUNDQ0NDQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFDQ0NDQ0FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQ0NDQ0NBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQ0NDQ0NBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUNDQ0NDQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFDQ0NDQ0FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFJQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQ0NDQ0NBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUNDQ0NDQUFBQUFBQUFDQ0NDQ0FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFDQ0NDQ0FBQUFDQ0NDQ0FBQUFBQUFBQ0NDQ0NBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQ0NDQ0NBQUFDQ0NDQ0FBQUFBQUFBQUNDQ0NDQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUNDQ0NDQUFBQ0NDQ0NBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUNDQ0NDQUFBQUFBSUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQQEBAQEBAQEBAUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUEBAQEBAQEBAQFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBAQEBAQEBAQEBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQQEBAQEBAQEBAUlBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUNDQ0NDQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUEBAQEBAQEBAQFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFDQ0NDQ0FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBAQEBAQEBAQEBQUFBQUFBQUFBQ0NDQ0NBQUFBQUFBQUFBQUFBQ0NDQ0NBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQQEBAQEBAQEBAUFBQUFBQUFBQUNDQ0NDQUFBQUFBQUNDQ0NDQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUEBAQEBAQEBAQFBQUFBQUFBQUFDQ0NDQ0FBQUFBQUFDQ0NDQ0FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBAQEBAQEBAQEBQUFBQUFBQUFBQ0NDQ0NBQUFBQUFBQ0NDQ0NBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUNDQ0NDQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFJQ=="
+   },
+   "Stacks": {
+    "S902KC0000": {
+     "Id": "S902KC0000",
+     "Owner": "S902PL0001",
+     "Subrace": "S902SR0001",
+     "LeaderId": "S902UN0000",
+     "LeaderAlive": true,
+     "X": 4,
+     "Y": 4,
+     "Move": 20,
+     "Inside": "S902FT0000",
+     "UnitIds": [
+      "S902UN0000",
+      "S902UN0001",
+      "S902UN0002"
+     ],
+     "Slots": [
+      1,
+      -1,
+      0,
+      -1,
+      2,
+      -1
+     ],
+     "Items": [],
+     "TemplateId": "",
+     "Equipment": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     "Order": 1,
+     "OrderTarget": "",
+     "AiOrder": 1,
+     "AiOrderTarget": "",
+     "AiIgnore": false,
+     "UpgradeCount": 0,
+     "BattlesWon": 0,
+     "CreationLevel": 1,
+     "AiPriority": 3
+    },
+    "S902KC0001": {
+     "Id": "S902KC0001",
+     "Owner": "S902PL0002",
+     "Subrace": "S902SR0002",
+     "LeaderId": "S902UN0004",
+     "LeaderAlive": true,
+     "X": 55,
+     "Y": 55,
+     "Move": 20,
+     "Inside": "S902FT0001",
+     "UnitIds": [
+      "S902UN0004",
+      "S902UN0005",
+      "S902UN0006"
+     ],
+     "Slots": [
+      1,
+      -1,
+      0,
+      -1,
+      2,
+      -1
+     ],
+     "Items": [],
+     "TemplateId": "",
+     "Equipment": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     "Order": 1,
+     "OrderTarget": "",
+     "AiOrder": 1,
+     "AiOrderTarget": "",
+     "AiIgnore": false,
+     "UpgradeCount": 0,
+     "BattlesWon": 0,
+     "CreationLevel": 1,
+     "AiPriority": 3
+    },
+    "S902KC0002": {
+     "Id": "S902KC0002",
+     "Owner": "S902PL0000",
+     "Subrace": "S902SR0000",
+     "LeaderId": "S902UN0010",
+     "LeaderAlive": true,
+     "X": 22,
+     "Y": 7,
+     "Move": 20,
+     "Inside": "",
+     "UnitIds": [
+      "S902UN0010"
+     ],
+     "Slots": [
+      -1,
+      -1,
+      0,
+      -1,
+      -1,
+      -1
+     ],
+     "Items": [],
+     "TemplateId": "",
+     "Equipment": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     "Order": 2,
+     "OrderTarget": "",
+     "AiOrder": 1,
+     "AiOrderTarget": "",
+     "AiIgnore": false,
+     "UpgradeCount": 0,
+     "BattlesWon": 0,
+     "CreationLevel": 1,
+     "AiPriority": 3
+    },
+    "S902KC0003": {
+     "Id": "S902KC0003",
+     "Owner": "S902PL0000",
+     "Subrace": "S902SR0000",
+     "LeaderId": "S902UN0011",
+     "LeaderAlive": true,
+     "X": 24,
+     "Y": 58,
+     "Move": 20,
+     "Inside": "",
+     "UnitIds": [
+      "S902UN0011"
+     ],
+     "Slots": [
+      -1,
+      -1,
+      0,
+      -1,
+      -1,
+      -1
+     ],
+     "Items": [],
+     "TemplateId": "",
+     "Equipment": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     "Order": 2,
+     "OrderTarget": "",
+     "AiOrder": 1,
+     "AiOrderTarget": "",
+     "AiIgnore": false,
+     "UpgradeCount": 0,
+     "BattlesWon": 0,
+     "CreationLevel": 1,
+     "AiPriority": 3
+    },
+    "S902KC0004": {
+     "Id": "S902KC0004",
+     "Owner": "S902PL0000",
+     "Subrace": "S902SR0000",
+     "LeaderId": "S902UN0012",
+     "LeaderAlive": true,
+     "X": 19,
+     "Y": 35,
+     "Move": 20,
+     "Inside": "",
+     "UnitIds": [
+      "S902UN0012"
+     ],
+     "Slots": [
+      -1,
+      -1,
+      0,
+      -1,
+      -1,
+      -1
+     ],
+     "Items": [],
+     "TemplateId": "",
+     "Equipment": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     "Order": 2,
+     "OrderTarget": "",
+     "AiOrder": 1,
+     "AiOrderTarget": "",
+     "AiIgnore": false,
+     "UpgradeCount": 0,
+     "BattlesWon": 0,
+     "CreationLevel": 1,
+     "AiPriority": 3
+    },
+    "S902KC0005": {
+     "Id": "S902KC0005",
+     "Owner": "S902PL0000",
+     "Subrace": "S902SR0000",
+     "LeaderId": "S902UN0013",
+     "LeaderAlive": true,
+     "X": 20,
+     "Y": 58,
+     "Move": 20,
+     "Inside": "",
+     "UnitIds": [
+      "S902UN0013",
+      "S902UN0014"
+     ],
+     "Slots": [
+      1,
+      -1,
+      0,
+      -1,
+      -1,
+      -1
+     ],
+     "Items": [],
+     "TemplateId": "",
+     "Equipment": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     "Order": 2,
+     "OrderTarget": "",
+     "AiOrder": 1,
+     "AiOrderTarget": "",
+     "AiIgnore": false,
+     "UpgradeCount": 0,
+     "BattlesWon": 0,
+     "CreationLevel": 1,
+     "AiPriority": 3
+    },
+    "S902KC0006": {
+     "Id": "S902KC0006",
+     "Owner": "S902PL0000",
+     "Subrace": "S902SR0000",
+     "LeaderId": "S902UN0015",
+     "LeaderAlive": true,
+     "X": 50,
+     "Y": 30,
+     "Move": 20,
+     "Inside": "",
+     "UnitIds": [
+      "S902UN0015",
+      "S902UN0016"
+     ],
+     "Slots": [
+      1,
+      -1,
+      0,
+      -1,
+      -1,
+      -1
+     ],
+     "Items": [],
+     "TemplateId": "",
+     "Equipment": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     "Order": 2,
+     "OrderTarget": "",
+     "AiOrder": 1,
+     "AiOrderTarget": "",
+     "AiIgnore": false,
+     "UpgradeCount": 0,
+     "BattlesWon": 0,
+     "CreationLevel": 1,
+     "AiPriority": 3
+    },
+    "S902KC0007": {
+     "Id": "S902KC0007",
+     "Owner": "S902PL0000",
+     "Subrace": "S902SR0000",
+     "LeaderId": "S902UN0017",
+     "LeaderAlive": true,
+     "X": 36,
+     "Y": 14,
+     "Move": 20,
+     "Inside": "",
+     "UnitIds": [
+      "S902UN0017",
+      "S902UN0018"
+     ],
+     "Slots": [
+      1,
+      -1,
+      0,
+      -1,
+      -1,
+      -1
+     ],
+     "Items": [],
+     "TemplateId": "",
+     "Equipment": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     "Order": 2,
+     "OrderTarget": "",
+     "AiOrder": 1,
+     "AiOrderTarget": "",
+     "AiIgnore": false,
+     "UpgradeCount": 0,
+     "BattlesWon": 0,
+     "CreationLevel": 1,
+     "AiPriority": 3
+    },
+    "S902KC0008": {
+     "Id": "S902KC0008",
+     "Owner": "S902PL0000",
+     "Subrace": "S902SR0000",
+     "LeaderId": "S902UN0019",
+     "LeaderAlive": true,
+     "X": 17,
+     "Y": 10,
+     "Move": 20,
+     "Inside": "",
+     "UnitIds": [
+      "S902UN0019",
+      "S902UN001a"
+     ],
+     "Slots": [
+      1,
+      -1,
+      0,
+      -1,
+      -1,
+      -1
+     ],
+     "Items": [],
+     "TemplateId": "",
+     "Equipment": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     "Order": 2,
+     "OrderTarget": "",
+     "AiOrder": 1,
+     "AiOrderTarget": "",
+     "AiIgnore": false,
+     "UpgradeCount": 0,
+     "BattlesWon": 0,
+     "CreationLevel": 1,
+     "AiPriority": 3
+    },
+    "S902KC0009": {
+     "Id": "S902KC0009",
+     "Owner": "S902PL0000",
+     "Subrace": "S902SR0000",
+     "LeaderId": "S902UN001b",
+     "LeaderAlive": true,
+     "X": 7,
+     "Y": 40,
+     "Move": 20,
+     "Inside": "",
+     "UnitIds": [
+      "S902UN001b",
+      "S902UN001c"
+     ],
+     "Slots": [
+      1,
+      -1,
+      0,
+      -1,
+      -1,
+      -1
+     ],
+     "Items": [],
+     "TemplateId": "",
+     "Equipment": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     "Order": 2,
+     "OrderTarget": "",
+     "AiOrder": 1,
+     "AiOrderTarget": "",
+     "AiIgnore": false,
+     "UpgradeCount": 0,
+     "BattlesWon": 0,
+     "CreationLevel": 1,
+     "AiPriority": 3
+    },
+    "S902KC000a": {
+     "Id": "S902KC000a",
+     "Owner": "S902PL0000",
+     "Subrace": "S902SR0000",
+     "LeaderId": "S902UN001d",
+     "LeaderAlive": true,
+     "X": 51,
+     "Y": 8,
+     "Move": 20,
+     "Inside": "",
+     "UnitIds": [
+      "S902UN001d",
+      "S902UN001e",
+      "S902UN001f"
+     ],
+     "Slots": [
+      1,
+      -1,
+      0,
+      -1,
+      2,
+      -1
+     ],
+     "Items": [],
+     "TemplateId": "",
+     "Equipment": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     "Order": 2,
+     "OrderTarget": "",
+     "AiOrder": 1,
+     "AiOrderTarget": "",
+     "AiIgnore": false,
+     "UpgradeCount": 0,
+     "BattlesWon": 0,
+     "CreationLevel": 1,
+     "AiPriority": 3
+    },
+    "S902KC000b": {
+     "Id": "S902KC000b",
+     "Owner": "S902PL0000",
+     "Subrace": "S902SR0000",
+     "LeaderId": "S902UN0020",
+     "LeaderAlive": true,
+     "X": 46,
+     "Y": 51,
+     "Move": 20,
+     "Inside": "",
+     "UnitIds": [
+      "S902UN0020",
+      "S902UN0021",
+      "S902UN0022"
+     ],
+     "Slots": [
+      1,
+      -1,
+      0,
+      -1,
+      2,
+      -1
+     ],
+     "Items": [],
+     "TemplateId": "",
+     "Equipment": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     "Order": 2,
+     "OrderTarget": "",
+     "AiOrder": 1,
+     "AiOrderTarget": "",
+     "AiIgnore": false,
+     "UpgradeCount": 0,
+     "BattlesWon": 0,
+     "CreationLevel": 1,
+     "AiPriority": 3
+    },
+    "S902KC000c": {
+     "Id": "S902KC000c",
+     "Owner": "S902PL0000",
+     "Subrace": "S902SR0000",
+     "LeaderId": "S902UN0023",
+     "LeaderAlive": true,
+     "X": 54,
+     "Y": 32,
+     "Move": 20,
+     "Inside": "",
+     "UnitIds": [
+      "S902UN0023",
+      "S902UN0024",
+      "S902UN0025"
+     ],
+     "Slots": [
+      1,
+      -1,
+      0,
+      -1,
+      2,
+      -1
+     ],
+     "Items": [],
+     "TemplateId": "",
+     "Equipment": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     "Order": 2,
+     "OrderTarget": "",
+     "AiOrder": 1,
+     "AiOrderTarget": "",
+     "AiIgnore": false,
+     "UpgradeCount": 0,
+     "BattlesWon": 0,
+     "CreationLevel": 1,
+     "AiPriority": 3
+    },
+    "S902KC000d": {
+     "Id": "S902KC000d",
+     "Owner": "S902PL0000",
+     "Subrace": "S902SR0000",
+     "LeaderId": "S902UN0026",
+     "LeaderAlive": true,
+     "X": 16,
+     "Y": 22,
+     "Move": 20,
+     "Inside": "",
+     "UnitIds": [
+      "S902UN0026",
+      "S902UN0027",
+      "S902UN0028"
+     ],
+     "Slots": [
+      1,
+      -1,
+      0,
+      -1,
+      2,
+      -1
+     ],
+     "Items": [],
+     "TemplateId": "",
+     "Equipment": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     "Order": 2,
+     "OrderTarget": "",
+     "AiOrder": 1,
+     "AiOrderTarget": "",
+     "AiIgnore": false,
+     "UpgradeCount": 0,
+     "BattlesWon": 0,
+     "CreationLevel": 1,
+     "AiPriority": 3
+    },
+    "S902KC000e": {
+     "Id": "S902KC000e",
+     "Owner": "S902PL0000",
+     "Subrace": "S902SR0000",
+     "LeaderId": "S902UN0029",
+     "LeaderAlive": true,
+     "X": 35,
+     "Y": 10,
+     "Move": 20,
+     "Inside": "",
+     "UnitIds": [
+      "S902UN0029",
+      "S902UN002a",
+      "S902UN002b"
+     ],
+     "Slots": [
+      1,
+      -1,
+      0,
+      -1,
+      2,
+      -1
+     ],
+     "Items": [],
+     "TemplateId": "",
+     "Equipment": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     "Order": 2,
+     "OrderTarget": "",
+     "AiOrder": 1,
+     "AiOrderTarget": "",
+     "AiIgnore": false,
+     "UpgradeCount": 0,
+     "BattlesWon": 0,
+     "CreationLevel": 1,
+     "AiPriority": 3
+    },
+    "S902KC000f": {
+     "Id": "S902KC000f",
+     "Owner": "S902PL0000",
+     "Subrace": "S902SR0000",
+     "LeaderId": "S902UN002c",
+     "LeaderAlive": true,
+     "X": 59,
+     "Y": 48,
+     "Move": 20,
+     "Inside": "",
+     "UnitIds": [
+      "S902UN002c",
+      "S902UN002d",
+      "S902UN002e"
+     ],
+     "Slots": [
+      1,
+      -1,
+      0,
+      -1,
+      2,
+      -1
+     ],
+     "Items": [],
+     "TemplateId": "",
+     "Equipment": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     "Order": 2,
+     "OrderTarget": "",
+     "AiOrder": 1,
+     "AiOrderTarget": "",
+     "AiIgnore": false,
+     "UpgradeCount": 0,
+     "BattlesWon": 0,
+     "CreationLevel": 1,
+     "AiPriority": 3
+    },
+    "S902KC0010": {
+     "Id": "S902KC0010",
+     "Owner": "S902PL0000",
+     "Subrace": "S902SR0000",
+     "LeaderId": "S902UN002f",
+     "LeaderAlive": true,
+     "X": 38,
+     "Y": 7,
+     "Move": 20,
+     "Inside": "",
+     "UnitIds": [
+      "S902UN002f",
+      "S902UN0030",
+      "S902UN0031",
+      "S902UN0032"
+     ],
+     "Slots": [
+      1,
+      -1,
+      0,
+      3,
+      2,
+      -1
+     ],
+     "Items": [],
+     "TemplateId": "",
+     "Equipment": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     "Order": 2,
+     "OrderTarget": "",
+     "AiOrder": 1,
+     "AiOrderTarget": "",
+     "AiIgnore": false,
+     "UpgradeCount": 0,
+     "BattlesWon": 0,
+     "CreationLevel": 1,
+     "AiPriority": 3
+    },
+    "S902KC0011": {
+     "Id": "S902KC0011",
+     "Owner": "S902PL0000",
+     "Subrace": "S902SR0000",
+     "LeaderId": "S902UN0033",
+     "LeaderAlive": true,
+     "X": 61,
+     "Y": 25,
+     "Move": 20,
+     "Inside": "",
+     "UnitIds": [
+      "S902UN0033",
+      "S902UN0034",
+      "S902UN0035",
+      "S902UN0036"
+     ],
+     "Slots": [
+      1,
+      -1,
+      0,
+      3,
+      2,
+      -1
+     ],
+     "Items": [],
+     "TemplateId": "",
+     "Equipment": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+     ],
+     "Order": 2,
+     "OrderTarget": "",
+     "AiOrder": 1,
+     "AiOrderTarget": "",
+     "AiIgnore": false,
+     "UpgradeCount": 0,
+     "BattlesWon": 0,
+     "CreationLevel": 1,
+     "AiPriority": 3
+    }
+   },
+   "Units": {
+    "S902UN0000": {
+     "Id": "S902UN0000",
+     "TypeId": "T000UUA003",
+     "Level": 1,
+     "Hp": 140,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN0001": {
+     "Id": "S902UN0001",
+     "TypeId": "T000UUA007",
+     "Level": 1,
+     "Hp": 110,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN0002": {
+     "Id": "S902UN0002",
+     "TypeId": "T000UUA008",
+     "Level": 1,
+     "Hp": 50,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN0003": {
+     "Id": "S902UN0003",
+     "TypeId": "T000UUA001",
+     "Level": 1,
+     "Hp": 700,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN0004": {
+     "Id": "S902UN0004",
+     "TypeId": "T000UUA00F",
+     "Level": 1,
+     "Hp": 140,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN0005": {
+     "Id": "S902UN0005",
+     "TypeId": "T000UUA013",
+     "Level": 1,
+     "Hp": 110,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN0006": {
+     "Id": "S902UN0006",
+     "TypeId": "T000UUA014",
+     "Level": 1,
+     "Hp": 50,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN0007": {
+     "Id": "S902UN0007",
+     "TypeId": "T000UUA00D",
+     "Level": 1,
+     "Hp": 700,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN0008": {
+     "Id": "S902UN0008",
+     "TypeId": "T000UUA019",
+     "Level": 1,
+     "Hp": 70,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN0009": {
+     "Id": "S902UN0009",
+     "TypeId": "T000UUA01B",
+     "Level": 1,
+     "Hp": 45,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN000a": {
+     "Id": "S902UN000a",
+     "TypeId": "T000UUA019",
+     "Level": 1,
+     "Hp": 70,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN000b": {
+     "Id": "S902UN000b",
+     "TypeId": "T000UUA01B",
+     "Level": 1,
+     "Hp": 45,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN000c": {
+     "Id": "S902UN000c",
+     "TypeId": "T000UUA019",
+     "Level": 1,
+     "Hp": 70,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN000d": {
+     "Id": "S902UN000d",
+     "TypeId": "T000UUA01B",
+     "Level": 1,
+     "Hp": 45,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN000e": {
+     "Id": "S902UN000e",
+     "TypeId": "T000UUA019",
+     "Level": 1,
+     "Hp": 70,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN000f": {
+     "Id": "S902UN000f",
+     "TypeId": "T000UUA01B",
+     "Level": 1,
+     "Hp": 45,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN0010": {
+     "Id": "S902UN0010",
+     "TypeId": "T000UUA019",
+     "Level": 1,
+     "Hp": 70,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN0011": {
+     "Id": "S902UN0011",
+     "TypeId": "T000UUA019",
+     "Level": 1,
+     "Hp": 70,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN0012": {
+     "Id": "S902UN0012",
+     "TypeId": "T000UUA019",
+     "Level": 1,
+     "Hp": 70,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN0013": {
+     "Id": "S902UN0013",
+     "TypeId": "T000UUA019",
+     "Level": 1,
+     "Hp": 70,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN0014": {
+     "Id": "S902UN0014",
+     "TypeId": "T000UUA019",
+     "Level": 1,
+     "Hp": 70,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN0015": {
+     "Id": "S902UN0015",
+     "TypeId": "T000UUA019",
+     "Level": 1,
+     "Hp": 70,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN0016": {
+     "Id": "S902UN0016",
+     "TypeId": "T000UUA019",
+     "Level": 1,
+     "Hp": 70,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN0017": {
+     "Id": "S902UN0017",
+     "TypeId": "T000UUA019",
+     "Level": 1,
+     "Hp": 70,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN0018": {
+     "Id": "S902UN0018",
+     "TypeId": "T000UUA019",
+     "Level": 1,
+     "Hp": 70,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN0019": {
+     "Id": "S902UN0019",
+     "TypeId": "T000UUA01B",
+     "Level": 1,
+     "Hp": 45,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN001a": {
+     "Id": "S902UN001a",
+     "TypeId": "T000UUA019",
+     "Level": 1,
+     "Hp": 70,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN001b": {
+     "Id": "S902UN001b",
+     "TypeId": "T000UUA01B",
+     "Level": 1,
+     "Hp": 45,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN001c": {
+     "Id": "S902UN001c",
+     "TypeId": "T000UUA019",
+     "Level": 1,
+     "Hp": 70,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN001d": {
+     "Id": "S902UN001d",
+     "TypeId": "T000UUA01D",
+     "Level": 1,
+     "Hp": 40,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN001e": {
+     "Id": "S902UN001e",
+     "TypeId": "T000UUA01D",
+     "Level": 1,
+     "Hp": 40,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN001f": {
+     "Id": "S902UN001f",
+     "TypeId": "T000UUA019",
+     "Level": 1,
+     "Hp": 70,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN0020": {
+     "Id": "S902UN0020",
+     "TypeId": "T000UUA01D",
+     "Level": 1,
+     "Hp": 40,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN0021": {
+     "Id": "S902UN0021",
+     "TypeId": "T000UUA01D",
+     "Level": 1,
+     "Hp": 40,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN0022": {
+     "Id": "S902UN0022",
+     "TypeId": "T000UUA019",
+     "Level": 1,
+     "Hp": 70,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN0023": {
+     "Id": "S902UN0023",
+     "TypeId": "T000UUA01D",
+     "Level": 1,
+     "Hp": 40,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN0024": {
+     "Id": "S902UN0024",
+     "TypeId": "T000UUA01D",
+     "Level": 1,
+     "Hp": 40,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN0025": {
+     "Id": "S902UN0025",
+     "TypeId": "T000UUA019",
+     "Level": 1,
+     "Hp": 70,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN0026": {
+     "Id": "S902UN0026",
+     "TypeId": "T000UUA01C",
+     "Level": 1,
+     "Hp": 150,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN0027": {
+     "Id": "S902UN0027",
+     "TypeId": "T000UUA01B",
+     "Level": 1,
+     "Hp": 45,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN0028": {
+     "Id": "S902UN0028",
+     "TypeId": "T000UUA019",
+     "Level": 1,
+     "Hp": 70,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN0029": {
+     "Id": "S902UN0029",
+     "TypeId": "T000UUA01C",
+     "Level": 1,
+     "Hp": 150,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN002a": {
+     "Id": "S902UN002a",
+     "TypeId": "T000UUA01B",
+     "Level": 1,
+     "Hp": 45,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN002b": {
+     "Id": "S902UN002b",
+     "TypeId": "T000UUA019",
+     "Level": 1,
+     "Hp": 70,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN002c": {
+     "Id": "S902UN002c",
+     "TypeId": "T000UUA01C",
+     "Level": 1,
+     "Hp": 150,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN002d": {
+     "Id": "S902UN002d",
+     "TypeId": "T000UUA01B",
+     "Level": 1,
+     "Hp": 45,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN002e": {
+     "Id": "S902UN002e",
+     "TypeId": "T000UUA019",
+     "Level": 1,
+     "Hp": 70,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN002f": {
+     "Id": "S902UN002f",
+     "TypeId": "T000UUA01C",
+     "Level": 1,
+     "Hp": 150,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN0030": {
+     "Id": "S902UN0030",
+     "TypeId": "T000UUA01D",
+     "Level": 1,
+     "Hp": 40,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN0031": {
+     "Id": "S902UN0031",
+     "TypeId": "T000UUA01B",
+     "Level": 1,
+     "Hp": 45,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN0032": {
+     "Id": "S902UN0032",
+     "TypeId": "T000UUA019",
+     "Level": 1,
+     "Hp": 70,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN0033": {
+     "Id": "S902UN0033",
+     "TypeId": "T000UUA01C",
+     "Level": 1,
+     "Hp": 150,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN0034": {
+     "Id": "S902UN0034",
+     "TypeId": "T000UUA01D",
+     "Level": 1,
+     "Hp": 40,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN0035": {
+     "Id": "S902UN0035",
+     "TypeId": "T000UUA01B",
+     "Level": 1,
+     "Hp": 45,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    },
+    "S902UN0036": {
+     "Id": "S902UN0036",
+     "TypeId": "T000UUA019",
+     "Level": 1,
+     "Hp": 70,
+     "Xp": 0,
+     "Modifiers": [],
+     "DynLevel": false
+    }
+   },
+   "Players": {
+    "S902PL0000": {
+     "Id": "S902PL0000",
+     "RaceId": "T000RRA003",
+     "LordId": "T000LRA001",
+     "Name": "Wild",
+     "Face": 0,
+     "IsHuman": false,
+     "Bank": {
+      "Gold": 0,
+      "Infernal": 0,
+      "Life": 0,
+      "Death": 0,
+      "Runic": 0,
+      "Grove": 0
+     },
+     "FogId": "S902FG0000",
+     "BuildingsId": "S902PB0000",
+     "Buildings": [],
+     "SpellBank": {
+      "Gold": 0,
+      "Infernal": 0,
+      "Life": 0,
+      "Death": 0,
+      "Runic": 0,
+      "Grove": 0
+     },
+     "QtyBreaks": 0,
+     "Attitude": 1,
+     "CapturedBy": "",
+     "ConstructionTurn": 0,
+     "ResearchTurn": 0,
+     "KnownSpells": [],
+     "Spied": []
+    },
+    "S902PL0001": {
+     "Id": "S902PL0001",
+     "RaceId": "T000RRA001",
+     "LordId": "T000LRA001",
+     "Name": "Sun",
+     "Face": 0,
+     "IsHuman": false,
+     "Bank": {
+      "Gold": 600,
+      "Infernal": 0,
+      "Life": 150,
+      "Death": 0,
+      "Runic": 0,
+      "Grove": 0
+     },
+     "FogId": "S902FG0001",
+     "BuildingsId": "S902PB0001",
+     "Buildings": [],
+     "SpellBank": {
+      "Gold": 0,
+      "Infernal": 0,
+      "Life": 0,
+      "Death": 0,
+      "Runic": 0,
+      "Grove": 0
+     },
+     "QtyBreaks": 0,
+     "Attitude": 1,
+     "CapturedBy": "",
+     "ConstructionTurn": 0,
+     "ResearchTurn": 0,
+     "KnownSpells": [],
+     "Spied": []
+    },
+    "S902PL0002": {
+     "Id": "S902PL0002",
+     "RaceId": "T000RRA002",
+     "LordId": "T000LRA002",
+     "Name": "Moon",
+     "Face": 0,
+     "IsHuman": false,
+     "Bank": {
+      "Gold": 600,
+      "Infernal": 0,
+      "Life": 0,
+      "Death": 150,
+      "Runic": 0,
+      "Grove": 0
+     },
+     "FogId": "S902FG0002",
+     "BuildingsId": "S902PB0002",
+     "Buildings": [],
+     "SpellBank": {
+      "Gold": 0,
+      "Infernal": 0,
+      "Life": 0,
+      "Death": 0,
+      "Runic": 0,
+      "Grove": 0
+     },
+     "QtyBreaks": 0,
+     "Attitude": 1,
+     "CapturedBy": "",
+     "ConstructionTurn": 0,
+     "ResearchTurn": 0,
+     "KnownSpells": [],
+     "Spied": []
+    }
+   },
+   "Objects": {
+    "S902FT0000": {
+     "Id": "S902FT0000",
+     "Kind": "FT",
+     "X": 4,
+     "Y": 4,
+     "Resource": 0,
+     "TypeId": ""
+    },
+    "S902KC0000": {
+     "Id": "S902KC0000",
+     "Kind": "KC",
+     "X": 4,
+     "Y": 4,
+     "Resource": 0,
+     "TypeId": ""
+    },
+    "S902FT0001": {
+     "Id": "S902FT0001",
+     "Kind": "FT",
+     "X": 55,
+     "Y": 55,
+     "Resource": 0,
+     "TypeId": ""
+    },
+    "S902KC0001": {
+     "Id": "S902KC0001",
+     "Kind": "KC",
+     "X": 55,
+     "Y": 55,
+     "Resource": 0,
+     "TypeId": ""
+    },
+    "S902FT0002": {
+     "Id": "S902FT0002",
+     "Kind": "FT",
+     "X": 39,
+     "Y": 9,
+     "Resource": 0,
+     "TypeId": ""
+    },
+    "S902FT0003": {
+     "Id": "S902FT0003",
+     "Kind": "FT",
+     "X": 29,
+     "Y": 4,
+     "Resource": 0,
+     "TypeId": ""
+    },
+    "S902FT0004": {
+     "Id": "S902FT0004",
+     "Kind": "FT",
+     "X": 38,
+     "Y": 19,
+     "Resource": 0,
+     "TypeId": ""
+    },
+    "S902FT0005": {
+     "Id": "S902FT0005",
+     "Kind": "FT",
+     "X": 54,
+     "Y": 39,
+     "Resource": 0,
+     "TypeId": ""
+    },
+    "S902KC0002": {
+     "Id": "S902KC0002",
+     "Kind": "KC",
+     "X": 22,
+     "Y": 7,
+     "Resource": 0,
+     "TypeId": ""
+    },
+    "S902KC0003": {
+     "Id": "S902KC0003",
+     "Kind": "KC",
+     "X": 24,
+     "Y": 58,
+     "Resource": 0,
+     "TypeId": ""
+    },
+    "S902KC0004": {
+     "Id": "S902KC0004",
+     "Kind": "KC",
+     "X": 19,
+     "Y": 35,
+     "Resource": 0,
+     "TypeId": ""
+    },
+    "S902KC0005": {
+     "Id": "S902KC0005",
+     "Kind": "KC",
+     "X": 20,
+     "Y": 58,
+     "Resource": 0,
+     "TypeId": ""
+    },
+    "S902KC0006": {
+     "Id": "S902KC0006",
+     "Kind": "KC",
+     "X": 50,
+     "Y": 30,
+     "Resource": 0,
+     "TypeId": ""
+    },
+    "S902KC0007": {
+     "Id": "S902KC0007",
+     "Kind": "KC",
+     "X": 36,
+     "Y": 14,
+     "Resource": 0,
+     "TypeId": ""
+    },
+    "S902KC0008": {
+     "Id": "S902KC0008",
+     "Kind": "KC",
+     "X": 17,
+     "Y": 10,
+     "Resource": 0,
+     "TypeId": ""
+    },
+    "S902KC0009": {
+     "Id": "S902KC0009",
+     "Kind": "KC",
+     "X": 7,
+     "Y": 40,
+     "Resource": 0,
+     "TypeId": ""
+    },
+    "S902KC000a": {
+     "Id": "S902KC000a",
+     "Kind": "KC",
+     "X": 51,
+     "Y": 8,
+     "Resource": 0,
+     "TypeId": ""
+    },
+    "S902KC000b": {
+     "Id": "S902KC000b",
+     "Kind": "KC",
+     "X": 46,
+     "Y": 51,
+     "Resource": 0,
+     "TypeId": ""
+    },
+    "S902KC000c": {
+     "Id": "S902KC000c",
+     "Kind": "KC",
+     "X": 54,
+     "Y": 32,
+     "Resource": 0,
+     "TypeId": ""
+    },
+    "S902KC000d": {
+     "Id": "S902KC000d",
+     "Kind": "KC",
+     "X": 16,
+     "Y": 22,
+     "Resource": 0,
+     "TypeId": ""
+    },
+    "S902KC000e": {
+     "Id": "S902KC000e",
+     "Kind": "KC",
+     "X": 35,
+     "Y": 10,
+     "Resource": 0,
+     "TypeId": ""
+    },
+    "S902KC000f": {
+     "Id": "S902KC000f",
+     "Kind": "KC",
+     "X": 59,
+     "Y": 48,
+     "Resource": 0,
+     "TypeId": ""
+    },
+    "S902KC0010": {
+     "Id": "S902KC0010",
+     "Kind": "KC",
+     "X": 38,
+     "Y": 7,
+     "Resource": 0,
+     "TypeId": ""
+    },
+    "S902KC0011": {
+     "Id": "S902KC0011",
+     "Kind": "KC",
+     "X": 61,
+     "Y": 25,
+     "Resource": 0,
+     "TypeId": ""
+    }
+   },
+   "Plan": [
+    {
+     "X": 4,
+     "Y": 4,
+     "Ids": [
+      "S902FT0000",
+      "S902KC0000"
+     ]
+    },
+    {
+     "X": 5,
+     "Y": 4,
+     "Ids": [
+      "S902FT0000"
+     ]
+    },
+    {
+     "X": 6,
+     "Y": 4,
+     "Ids": [
+      "S902FT0000"
+     ]
+    },
+    {
+     "X": 7,
+     "Y": 4,
+     "Ids": [
+      "S902FT0000"
+     ]
+    },
+    {
+     "X": 8,
+     "Y": 4,
+     "Ids": [
+      "S902FT0000"
+     ]
+    },
+    {
+     "X": 29,
+     "Y": 4,
+     "Ids": [
+      "S902FT0003"
+     ]
+    },
+    {
+     "X": 30,
+     "Y": 4,
+     "Ids": [
+      "S902FT0003"
+     ]
+    },
+    {
+     "X": 31,
+     "Y": 4,
+     "Ids": [
+      "S902FT0003"
+     ]
+    },
+    {
+     "X": 32,
+     "Y": 4,
+     "Ids": [
+      "S902FT0003"
+     ]
+    },
+    {
+     "X": 4,
+     "Y": 5,
+     "Ids": [
+      "S902FT0000"
+     ]
+    },
+    {
+     "X": 5,
+     "Y": 5,
+     "Ids": [
+      "S902FT0000"
+     ]
+    },
+    {
+     "X": 6,
+     "Y": 5,
+     "Ids": [
+      "S902FT0000"
+     ]
+    },
+    {
+     "X": 7,
+     "Y": 5,
+     "Ids": [
+      "S902FT0000"
+     ]
+    },
+    {
+     "X": 8,
+     "Y": 5,
+     "Ids": [
+      "S902FT0000"
+     ]
+    },
+    {
+     "X": 29,
+     "Y": 5,
+     "Ids": [
+      "S902FT0003"
+     ]
+    },
+    {
+     "X": 30,
+     "Y": 5,
+     "Ids": [
+      "S902FT0003"
+     ]
+    },
+    {
+     "X": 31,
+     "Y": 5,
+     "Ids": [
+      "S902FT0003"
+     ]
+    },
+    {
+     "X": 32,
+     "Y": 5,
+     "Ids": [
+      "S902FT0003"
+     ]
+    },
+    {
+     "X": 4,
+     "Y": 6,
+     "Ids": [
+      "S902FT0000"
+     ]
+    },
+    {
+     "X": 5,
+     "Y": 6,
+     "Ids": [
+      "S902FT0000"
+     ]
+    },
+    {
+     "X": 6,
+     "Y": 6,
+     "Ids": [
+      "S902FT0000"
+     ]
+    },
+    {
+     "X": 7,
+     "Y": 6,
+     "Ids": [
+      "S902FT0000"
+     ]
+    },
+    {
+     "X": 8,
+     "Y": 6,
+     "Ids": [
+      "S902FT0000"
+     ]
+    },
+    {
+     "X": 29,
+     "Y": 6,
+     "Ids": [
+      "S902FT0003"
+     ]
+    },
+    {
+     "X": 30,
+     "Y": 6,
+     "Ids": [
+      "S902FT0003"
+     ]
+    },
+    {
+     "X": 31,
+     "Y": 6,
+     "Ids": [
+      "S902FT0003"
+     ]
+    },
+    {
+     "X": 32,
+     "Y": 6,
+     "Ids": [
+      "S902FT0003"
+     ]
+    },
+    {
+     "X": 4,
+     "Y": 7,
+     "Ids": [
+      "S902FT0000"
+     ]
+    },
+    {
+     "X": 5,
+     "Y": 7,
+     "Ids": [
+      "S902FT0000"
+     ]
+    },
+    {
+     "X": 6,
+     "Y": 7,
+     "Ids": [
+      "S902FT0000"
+     ]
+    },
+    {
+     "X": 7,
+     "Y": 7,
+     "Ids": [
+      "S902FT0000"
+     ]
+    },
+    {
+     "X": 8,
+     "Y": 7,
+     "Ids": [
+      "S902FT0000"
+     ]
+    },
+    {
+     "X": 22,
+     "Y": 7,
+     "Ids": [
+      "S902KC0002"
+     ]
+    },
+    {
+     "X": 29,
+     "Y": 7,
+     "Ids": [
+      "S902FT0003"
+     ]
+    },
+    {
+     "X": 30,
+     "Y": 7,
+     "Ids": [
+      "S902FT0003"
+     ]
+    },
+    {
+     "X": 31,
+     "Y": 7,
+     "Ids": [
+      "S902FT0003"
+     ]
+    },
+    {
+     "X": 32,
+     "Y": 7,
+     "Ids": [
+      "S902FT0003"
+     ]
+    },
+    {
+     "X": 38,
+     "Y": 7,
+     "Ids": [
+      "S902KC0010"
+     ]
+    },
+    {
+     "X": 4,
+     "Y": 8,
+     "Ids": [
+      "S902FT0000"
+     ]
+    },
+    {
+     "X": 5,
+     "Y": 8,
+     "Ids": [
+      "S902FT0000"
+     ]
+    },
+    {
+     "X": 6,
+     "Y": 8,
+     "Ids": [
+      "S902FT0000"
+     ]
+    },
+    {
+     "X": 7,
+     "Y": 8,
+     "Ids": [
+      "S902FT0000"
+     ]
+    },
+    {
+     "X": 8,
+     "Y": 8,
+     "Ids": [
+      "S902FT0000"
+     ]
+    },
+    {
+     "X": 51,
+     "Y": 8,
+     "Ids": [
+      "S902KC000a"
+     ]
+    },
+    {
+     "X": 39,
+     "Y": 9,
+     "Ids": [
+      "S902FT0002"
+     ]
+    },
+    {
+     "X": 40,
+     "Y": 9,
+     "Ids": [
+      "S902FT0002"
+     ]
+    },
+    {
+     "X": 41,
+     "Y": 9,
+     "Ids": [
+      "S902FT0002"
+     ]
+    },
+    {
+     "X": 42,
+     "Y": 9,
+     "Ids": [
+      "S902FT0002"
+     ]
+    },
+    {
+     "X": 17,
+     "Y": 10,
+     "Ids": [
+      "S902KC0008"
+     ]
+    },
+    {
+     "X": 35,
+     "Y": 10,
+     "Ids": [
+      "S902KC000e"
+     ]
+    },
+    {
+     "X": 39,
+     "Y": 10,
+     "Ids": [
+      "S902FT0002"
+     ]
+    },
+    {
+     "X": 40,
+     "Y": 10,
+     "Ids": [
+      "S902FT0002"
+     ]
+    },
+    {
+     "X": 41,
+     "Y": 10,
+     "Ids": [
+      "S902FT0002"
+     ]
+    },
+    {
+     "X": 42,
+     "Y": 10,
+     "Ids": [
+      "S902FT0002"
+     ]
+    },
+    {
+     "X": 39,
+     "Y": 11,
+     "Ids": [
+      "S902FT0002"
+     ]
+    },
+    {
+     "X": 40,
+     "Y": 11,
+     "Ids": [
+      "S902FT0002"
+     ]
+    },
+    {
+     "X": 41,
+     "Y": 11,
+     "Ids": [
+      "S902FT0002"
+     ]
+    },
+    {
+     "X": 42,
+     "Y": 11,
+     "Ids": [
+      "S902FT0002"
+     ]
+    },
+    {
+     "X": 39,
+     "Y": 12,
+     "Ids": [
+      "S902FT0002"
+     ]
+    },
+    {
+     "X": 40,
+     "Y": 12,
+     "Ids": [
+      "S902FT0002"
+     ]
+    },
+    {
+     "X": 41,
+     "Y": 12,
+     "Ids": [
+      "S902FT0002"
+     ]
+    },
+    {
+     "X": 42,
+     "Y": 12,
+     "Ids": [
+      "S902FT0002"
+     ]
+    },
+    {
+     "X": 36,
+     "Y": 14,
+     "Ids": [
+      "S902KC0007"
+     ]
+    },
+    {
+     "X": 38,
+     "Y": 19,
+     "Ids": [
+      "S902FT0004"
+     ]
+    },
+    {
+     "X": 39,
+     "Y": 19,
+     "Ids": [
+      "S902FT0004"
+     ]
+    },
+    {
+     "X": 40,
+     "Y": 19,
+     "Ids": [
+      "S902FT0004"
+     ]
+    },
+    {
+     "X": 41,
+     "Y": 19,
+     "Ids": [
+      "S902FT0004"
+     ]
+    },
+    {
+     "X": 38,
+     "Y": 20,
+     "Ids": [
+      "S902FT0004"
+     ]
+    },
+    {
+     "X": 39,
+     "Y": 20,
+     "Ids": [
+      "S902FT0004"
+     ]
+    },
+    {
+     "X": 40,
+     "Y": 20,
+     "Ids": [
+      "S902FT0004"
+     ]
+    },
+    {
+     "X": 41,
+     "Y": 20,
+     "Ids": [
+      "S902FT0004"
+     ]
+    },
+    {
+     "X": 38,
+     "Y": 21,
+     "Ids": [
+      "S902FT0004"
+     ]
+    },
+    {
+     "X": 39,
+     "Y": 21,
+     "Ids": [
+      "S902FT0004"
+     ]
+    },
+    {
+     "X": 40,
+     "Y": 21,
+     "Ids": [
+      "S902FT0004"
+     ]
+    },
+    {
+     "X": 41,
+     "Y": 21,
+     "Ids": [
+      "S902FT0004"
+     ]
+    },
+    {
+     "X": 16,
+     "Y": 22,
+     "Ids": [
+      "S902KC000d"
+     ]
+    },
+    {
+     "X": 38,
+     "Y": 22,
+     "Ids": [
+      "S902FT0004"
+     ]
+    },
+    {
+     "X": 39,
+     "Y": 22,
+     "Ids": [
+      "S902FT0004"
+     ]
+    },
+    {
+     "X": 40,
+     "Y": 22,
+     "Ids": [
+      "S902FT0004"
+     ]
+    },
+    {
+     "X": 41,
+     "Y": 22,
+     "Ids": [
+      "S902FT0004"
+     ]
+    },
+    {
+     "X": 61,
+     "Y": 25,
+     "Ids": [
+      "S902KC0011"
+     ]
+    },
+    {
+     "X": 50,
+     "Y": 30,
+     "Ids": [
+      "S902KC0006"
+     ]
+    },
+    {
+     "X": 54,
+     "Y": 32,
+     "Ids": [
+      "S902KC000c"
+     ]
+    },
+    {
+     "X": 19,
+     "Y": 35,
+     "Ids": [
+      "S902KC0004"
+     ]
+    },
+    {
+     "X": 54,
+     "Y": 39,
+     "Ids": [
+      "S902FT0005"
+     ]
+    },
+    {
+     "X": 55,
+     "Y": 39,
+     "Ids": [
+      "S902FT0005"
+     ]
+    },
+    {
+     "X": 56,
+     "Y": 39,
+     "Ids": [
+      "S902FT0005"
+     ]
+    },
+    {
+     "X": 57,
+     "Y": 39,
+     "Ids": [
+      "S902FT0005"
+     ]
+    },
+    {
+     "X": 7,
+     "Y": 40,
+     "Ids": [
+      "S902KC0009"
+     ]
+    },
+    {
+     "X": 54,
+     "Y": 40,
+     "Ids": [
+      "S902FT0005"
+     ]
+    },
+    {
+     "X": 55,
+     "Y": 40,
+     "Ids": [
+      "S902FT0005"
+     ]
+    },
+    {
+     "X": 56,
+     "Y": 40,
+     "Ids": [
+      "S902FT0005"
+     ]
+    },
+    {
+     "X": 57,
+     "Y": 40,
+     "Ids": [
+      "S902FT0005"
+     ]
+    },
+    {
+     "X": 54,
+     "Y": 41,
+     "Ids": [
+      "S902FT0005"
+     ]
+    },
+    {
+     "X": 55,
+     "Y": 41,
+     "Ids": [
+      "S902FT0005"
+     ]
+    },
+    {
+     "X": 56,
+     "Y": 41,
+     "Ids": [
+      "S902FT0005"
+     ]
+    },
+    {
+     "X": 57,
+     "Y": 41,
+     "Ids": [
+      "S902FT0005"
+     ]
+    },
+    {
+     "X": 54,
+     "Y": 42,
+     "Ids": [
+      "S902FT0005"
+     ]
+    },
+    {
+     "X": 55,
+     "Y": 42,
+     "Ids": [
+      "S902FT0005"
+     ]
+    },
+    {
+     "X": 56,
+     "Y": 42,
+     "Ids": [
+      "S902FT0005"
+     ]
+    },
+    {
+     "X": 57,
+     "Y": 42,
+     "Ids": [
+      "S902FT0005"
+     ]
+    },
+    {
+     "X": 59,
+     "Y": 48,
+     "Ids": [
+      "S902KC000f"
+     ]
+    },
+    {
+     "X": 46,
+     "Y": 51,
+     "Ids": [
+      "S902KC000b"
+     ]
+    },
+    {
+     "X": 55,
+     "Y": 55,
+     "Ids": [
+      "S902FT0001",
+      "S902KC0001"
+     ]
+    },
+    {
+     "X": 56,
+     "Y": 55,
+     "Ids": [
+      "S902FT0001"
+     ]
+    },
+    {
+     "X": 57,
+     "Y": 55,
+     "Ids": [
+      "S902FT0001"
+     ]
+    },
+    {
+     "X": 58,
+     "Y": 55,
+     "Ids": [
+      "S902FT0001"
+     ]
+    },
+    {
+     "X": 59,
+     "Y": 55,
+     "Ids": [
+      "S902FT0001"
+     ]
+    },
+    {
+     "X": 55,
+     "Y": 56,
+     "Ids": [
+      "S902FT0001"
+     ]
+    },
+    {
+     "X": 56,
+     "Y": 56,
+     "Ids": [
+      "S902FT0001"
+     ]
+    },
+    {
+     "X": 57,
+     "Y": 56,
+     "Ids": [
+      "S902FT0001"
+     ]
+    },
+    {
+     "X": 58,
+     "Y": 56,
+     "Ids": [
+      "S902FT0001"
+     ]
+    },
+    {
+     "X": 59,
+     "Y": 56,
+     "Ids": [
+      "S902FT0001"
+     ]
+    },
+    {
+     "X": 55,
+     "Y": 57,
+     "Ids": [
+      "S902FT0001"
+     ]
+    },
+    {
+     "X": 56,
+     "Y": 57,
+     "Ids": [
+      "S902FT0001"
+     ]
+    },
+    {
+     "X": 57,
+     "Y": 57,
+     "Ids": [
+      "S902FT0001"
+     ]
+    },
+    {
+     "X": 58,
+     "Y": 57,
+     "Ids": [
+      "S902FT0001"
+     ]
+    },
+    {
+     "X": 59,
+     "Y": 57,
+     "Ids": [
+      "S902FT0001"
+     ]
+    },
+    {
+     "X": 20,
+     "Y": 58,
+     "Ids": [
+      "S902KC0005"
+     ]
+    },
+    {
+     "X": 24,
+     "Y": 58,
+     "Ids": [
+      "S902KC0003"
+     ]
+    },
+    {
+     "X": 55,
+     "Y": 58,
+     "Ids": [
+      "S902FT0001"
+     ]
+    },
+    {
+     "X": 56,
+     "Y": 58,
+     "Ids": [
+      "S902FT0001"
+     ]
+    },
+    {
+     "X": 57,
+     "Y": 58,
+     "Ids": [
+      "S902FT0001"
+     ]
+    },
+    {
+     "X": 58,
+     "Y": 58,
+     "Ids": [
+      "S902FT0001"
+     ]
+    },
+    {
+     "X": 59,
+     "Y": 58,
+     "Ids": [
+      "S902FT0001"
+     ]
+    },
+    {
+     "X": 55,
+     "Y": 59,
+     "Ids": [
+      "S902FT0001"
+     ]
+    },
+    {
+     "X": 56,
+     "Y": 59,
+     "Ids": [
+      "S902FT0001"
+     ]
+    },
+    {
+     "X": 57,
+     "Y": 59,
+     "Ids": [
+      "S902FT0001"
+     ]
+    },
+    {
+     "X": 58,
+     "Y": 59,
+     "Ids": [
+      "S902FT0001"
+     ]
+    },
+    {
+     "X": 59,
+     "Y": 59,
+     "Ids": [
+      "S902FT0001"
+     ]
+    }
+   ],
+   "Fog": {
+    "S902FG0000": {
+     "w": 64,
+     "h": 64,
+     "data": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    },
+    "S902FG0001": {
+     "w": 64,
+     "h": 64,
+     "data": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    },
+    "S902FG0002": {
+     "w": 64,
+     "h": 64,
+     "data": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    }
+   },
+   "Turn": 0,
+   "Rods": {},
+   "Sites": [
+    {
+     "Id": "S902FT0000",
+     "Kind": "Capital",
+     "RawKind": "Capital",
+     "X": 4,
+     "Y": 4,
+     "Name": "Sun Keep",
+     "Description": "",
+     "Owner": "S902PL0001",
+     "Cash": {
+      "Gold": 0,
+      "Infernal": 0,
+      "Life": 0,
+      "Death": 0,
+      "Runic": 0,
+      "Grove": 0
+     },
+     "ItemId": "",
+     "LooterId": "",
+     "Items": [],
+     "Guards": [
+      "S902UN0003"
+     ],
+     "GuardSlots": [
+      -1,
+      -1,
+      0,
+      -1,
+      -1,
+      -1
+     ],
+     "Resource": 0,
+     "VisitorId": "",
+     "Gone": false,
+     "StackId": "S902KC0000",
+     "Subrace": "S902SR0001",
+     "Size": null,
+     "GrowthTurn": null,
+     "RiotTurn": null,
+     "RegenBonus": null,
+     "ProtectBonus": "",
+     "Morale": null,
+     "Visitors": [],
+     "Stock": [],
+     "Buys": null,
+     "Mission": false,
+     "Roster": [],
+     "Spells": [],
+     "AiPriority": 3
+    },
+    {
+     "Id": "S902FT0001",
+     "Kind": "Capital",
+     "RawKind": "Capital",
+     "X": 55,
+     "Y": 55,
+     "Name": "Moon Keep",
+     "Description": "",
+     "Owner": "S902PL0002",
+     "Cash": {
+      "Gold": 0,
+      "Infernal": 0,
+      "Life": 0,
+      "Death": 0,
+      "Runic": 0,
+      "Grove": 0
+     },
+     "ItemId": "",
+     "LooterId": "",
+     "Items": [],
+     "Guards": [
+      "S902UN0007"
+     ],
+     "GuardSlots": [
+      -1,
+      -1,
+      0,
+      -1,
+      -1,
+      -1
+     ],
+     "Resource": 0,
+     "VisitorId": "",
+     "Gone": false,
+     "StackId": "S902KC0001",
+     "Subrace": "S902SR0002",
+     "Size": null,
+     "GrowthTurn": null,
+     "RiotTurn": null,
+     "RegenBonus": null,
+     "ProtectBonus": "",
+     "Morale": null,
+     "Visitors": [],
+     "Stock": [],
+     "Buys": null,
+     "Mission": false,
+     "Roster": [],
+     "Spells": [],
+     "AiPriority": 3
+    },
+    {
+     "Id": "S902FT0002",
+     "Kind": "Village",
+     "RawKind": "MidVillage",
+     "X": 39,
+     "Y": 9,
+     "Name": "Hamlet 1",
+     "Description": "",
+     "Owner": "S902PL0000",
+     "Cash": {
+      "Gold": 0,
+      "Infernal": 0,
+      "Life": 0,
+      "Death": 0,
+      "Runic": 0,
+      "Grove": 0
+     },
+     "ItemId": "",
+     "LooterId": "",
+     "Items": [],
+     "Guards": [
+      "S902UN0008",
+      "S902UN0009"
+     ],
+     "GuardSlots": [
+      1,
+      -1,
+      0,
+      -1,
+      -1,
+      -1
+     ],
+     "Resource": 0,
+     "VisitorId": "",
+     "Gone": false,
+     "StackId": "",
+     "Subrace": "S902SR0000",
+     "Size": 1,
+     "GrowthTurn": 0,
+     "RiotTurn": 0,
+     "RegenBonus": 0,
+     "ProtectBonus": "",
+     "Morale": 0,
+     "Visitors": [],
+     "Stock": [],
+     "Buys": null,
+     "Mission": false,
+     "Roster": [],
+     "Spells": [],
+     "AiPriority": 3
+    },
+    {
+     "Id": "S902FT0003",
+     "Kind": "Village",
+     "RawKind": "MidVillage",
+     "X": 29,
+     "Y": 4,
+     "Name": "Hamlet 2",
+     "Description": "",
+     "Owner": "S902PL0000",
+     "Cash": {
+      "Gold": 0,
+      "Infernal": 0,
+      "Life": 0,
+      "Death": 0,
+      "Runic": 0,
+      "Grove": 0
+     },
+     "ItemId": "",
+     "LooterId": "",
+     "Items": [],
+     "Guards": [
+      "S902UN000a",
+      "S902UN000b"
+     ],
+     "GuardSlots": [
+      1,
+      -1,
+      0,
+      -1,
+      -1,
+      -1
+     ],
+     "Resource": 0,
+     "VisitorId": "",
+     "Gone": false,
+     "StackId": "",
+     "Subrace": "S902SR0000",
+     "Size": 1,
+     "GrowthTurn": 0,
+     "RiotTurn": 0,
+     "RegenBonus": 0,
+     "ProtectBonus": "",
+     "Morale": 0,
+     "Visitors": [],
+     "Stock": [],
+     "Buys": null,
+     "Mission": false,
+     "Roster": [],
+     "Spells": [],
+     "AiPriority": 3
+    },
+    {
+     "Id": "S902FT0004",
+     "Kind": "Village",
+     "RawKind": "MidVillage",
+     "X": 38,
+     "Y": 19,
+     "Name": "Hamlet 3",
+     "Description": "",
+     "Owner": "S902PL0000",
+     "Cash": {
+      "Gold": 0,
+      "Infernal": 0,
+      "Life": 0,
+      "Death": 0,
+      "Runic": 0,
+      "Grove": 0
+     },
+     "ItemId": "",
+     "LooterId": "",
+     "Items": [],
+     "Guards": [
+      "S902UN000c",
+      "S902UN000d"
+     ],
+     "GuardSlots": [
+      1,
+      -1,
+      0,
+      -1,
+      -1,
+      -1
+     ],
+     "Resource": 0,
+     "VisitorId": "",
+     "Gone": false,
+     "StackId": "",
+     "Subrace": "S902SR0000",
+     "Size": 1,
+     "GrowthTurn": 0,
+     "RiotTurn": 0,
+     "RegenBonus": 0,
+     "ProtectBonus": "",
+     "Morale": 0,
+     "Visitors": [],
+     "Stock": [],
+     "Buys": null,
+     "Mission": false,
+     "Roster": [],
+     "Spells": [],
+     "AiPriority": 3
+    },
+    {
+     "Id": "S902FT0005",
+     "Kind": "Village",
+     "RawKind": "MidVillage",
+     "X": 54,
+     "Y": 39,
+     "Name": "Hamlet 4",
+     "Description": "",
+     "Owner": "S902PL0000",
+     "Cash": {
+      "Gold": 0,
+      "Infernal": 0,
+      "Life": 0,
+      "Death": 0,
+      "Runic": 0,
+      "Grove": 0
+     },
+     "ItemId": "",
+     "LooterId": "",
+     "Items": [],
+     "Guards": [
+      "S902UN000e",
+      "S902UN000f"
+     ],
+     "GuardSlots": [
+      1,
+      -1,
+      0,
+      -1,
+      -1,
+      -1
+     ],
+     "Resource": 0,
+     "VisitorId": "",
+     "Gone": false,
+     "StackId": "",
+     "Subrace": "S902SR0000",
+     "Size": 1,
+     "GrowthTurn": 0,
+     "RiotTurn": 0,
+     "RegenBonus": 0,
+     "ProtectBonus": "",
+     "Morale": 0,
+     "Visitors": [],
+     "Stock": [],
+     "Buys": null,
+     "Mission": false,
+     "Roster": [],
+     "Spells": [],
+     "AiPriority": 3
+    }
+   ],
+   "Relations": [
+    {
+     "Race1": 4,
+     "Race2": 0,
+     "Raw": 0
+    },
+    {
+     "Race1": 4,
+     "Race2": 1,
+     "Raw": 0
+    },
+    {
+     "Race1": 0,
+     "Race2": 1,
+     "Raw": 0
+    }
+   ],
+   "TalismanCharges": {},
+   "SpellCasts": [],
+   "ItemCasts": [],
+   "SpellEffects": [],
+   "ItemTypes": {},
+   "Limits": {
+    "MaxUnit": 3,
+    "MaxSpell": 3,
+    "MaxLeader": 10,
+    "MaxCity": 5,
+    "DifficultyScenario": 2,
+    "DifficultyGame": 1,
+    "SuggestedLevel": 1
+   },
+   "Subraces": {
+    "S902SR0000": 5,
+    "S902SR0001": 1,
+    "S902SR0002": 2
+   },
+   "Destroyed": [],
+   "Tombs": [],
+   "MapSeed": 182137
+  },
+  "TreeImage": {
+   "w": 64,
+   "h": 64,
+   "data": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+  },
+  "TreeGroup": {
+   "w": 64,
+   "h": 64,
+   "data": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+  },
+  "Forts": [
+   {
+    "Id": "S902FT0000",
+    "Capital": true,
+    "X": 4,
+    "Y": 4,
+    "Owner": "S902PL0001",
+    "Level": 0,
+    "Riot": false,
+    "Garrison": "S902KC0000"
+   },
+   {
+    "Id": "S902FT0001",
+    "Capital": true,
+    "X": 55,
+    "Y": 55,
+    "Owner": "S902PL0002",
+    "Level": 0,
+    "Riot": false,
+    "Garrison": "S902KC0001"
+   },
+   {
+    "Id": "S902FT0002",
+    "Capital": false,
+    "X": 39,
+    "Y": 9,
+    "Owner": "S902PL0000",
+    "Level": 1,
+    "Riot": false,
+    "Garrison": ""
+   },
+   {
+    "Id": "S902FT0003",
+    "Capital": false,
+    "X": 29,
+    "Y": 4,
+    "Owner": "S902PL0000",
+    "Level": 1,
+    "Riot": false,
+    "Garrison": ""
+   },
+   {
+    "Id": "S902FT0004",
+    "Capital": false,
+    "X": 38,
+    "Y": 19,
+    "Owner": "S902PL0000",
+    "Level": 1,
+    "Riot": false,
+    "Garrison": ""
+   },
+   {
+    "Id": "S902FT0005",
+    "Capital": false,
+    "X": 54,
+    "Y": 39,
+    "Owner": "S902PL0000",
+    "Level": 1,
+    "Riot": false,
+    "Garrison": ""
+   }
+  ],
+  "Ruins": [],
+  "Sites": [],
+  "Crystals": [],
+  "Bags": [],
+  "Tombs": [],
+  "Rods": [],
+  "Landmarks": [],
+  "Mountains": [],
+  "Roads": [],
+  "Stacks": [
+   {
+    "Id": "S902KC0000",
+    "X": 4,
+    "Y": 4,
+    "Owner": "S902PL0001",
+    "Subrace": "S902SR0001",
+    "LeaderType": "T000UUA003",
+    "LeaderAlive": true,
+    "AnyAlive": true,
+    "Facing": 0,
+    "Inside": "S902FT0000",
+    "Invisible": false,
+    "LeaderName": "Sun-Captain"
+   },
+   {
+    "Id": "S902KC0001",
+    "X": 55,
+    "Y": 55,
+    "Owner": "S902PL0002",
+    "Subrace": "S902SR0002",
+    "LeaderType": "T000UUA00F",
+    "LeaderAlive": true,
+    "AnyAlive": true,
+    "Facing": 0,
+    "Inside": "S902FT0001",
+    "Invisible": false,
+    "LeaderName": "Moon-Captain"
+   },
+   {
+    "Id": "S902KC0002",
+    "X": 22,
+    "Y": 7,
+    "Owner": "S902PL0000",
+    "Subrace": "S902SR0000",
+    "LeaderType": "T000UUA019",
+    "LeaderAlive": true,
+    "AnyAlive": true,
+    "Facing": 0,
+    "Inside": "",
+    "Invisible": false,
+    "LeaderName": "Wild-Wolf"
+   },
+   {
+    "Id": "S902KC0003",
+    "X": 24,
+    "Y": 58,
+    "Owner": "S902PL0000",
+    "Subrace": "S902SR0000",
+    "LeaderType": "T000UUA019",
+    "LeaderAlive": true,
+    "AnyAlive": true,
+    "Facing": 0,
+    "Inside": "",
+    "Invisible": false,
+    "LeaderName": "Wild-Wolf"
+   },
+   {
+    "Id": "S902KC0004",
+    "X": 19,
+    "Y": 35,
+    "Owner": "S902PL0000",
+    "Subrace": "S902SR0000",
+    "LeaderType": "T000UUA019",
+    "LeaderAlive": true,
+    "AnyAlive": true,
+    "Facing": 0,
+    "Inside": "",
+    "Invisible": false,
+    "LeaderName": "Wild-Wolf"
+   },
+   {
+    "Id": "S902KC0005",
+    "X": 20,
+    "Y": 58,
+    "Owner": "S902PL0000",
+    "Subrace": "S902SR0000",
+    "LeaderType": "T000UUA019",
+    "LeaderAlive": true,
+    "AnyAlive": true,
+    "Facing": 0,
+    "Inside": "",
+    "Invisible": false,
+    "LeaderName": "Wild-Wolf"
+   },
+   {
+    "Id": "S902KC0006",
+    "X": 50,
+    "Y": 30,
+    "Owner": "S902PL0000",
+    "Subrace": "S902SR0000",
+    "LeaderType": "T000UUA019",
+    "LeaderAlive": true,
+    "AnyAlive": true,
+    "Facing": 0,
+    "Inside": "",
+    "Invisible": false,
+    "LeaderName": "Wild-Wolf"
+   },
+   {
+    "Id": "S902KC0007",
+    "X": 36,
+    "Y": 14,
+    "Owner": "S902PL0000",
+    "Subrace": "S902SR0000",
+    "LeaderType": "T000UUA019",
+    "LeaderAlive": true,
+    "AnyAlive": true,
+    "Facing": 0,
+    "Inside": "",
+    "Invisible": false,
+    "LeaderName": "Wild-Wolf"
+   },
+   {
+    "Id": "S902KC0008",
+    "X": 17,
+    "Y": 10,
+    "Owner": "S902PL0000",
+    "Subrace": "S902SR0000",
+    "LeaderType": "T000UUA01B",
+    "LeaderAlive": true,
+    "AnyAlive": true,
+    "Facing": 0,
+    "Inside": "",
+    "Invisible": false,
+    "LeaderName": "Wild-Shaman"
+   },
+   {
+    "Id": "S902KC0009",
+    "X": 7,
+    "Y": 40,
+    "Owner": "S902PL0000",
+    "Subrace": "S902SR0000",
+    "LeaderType": "T000UUA01B",
+    "LeaderAlive": true,
+    "AnyAlive": true,
+    "Facing": 0,
+    "Inside": "",
+    "Invisible": false,
+    "LeaderName": "Wild-Shaman"
+   },
+   {
+    "Id": "S902KC000a",
+    "X": 51,
+    "Y": 8,
+    "Owner": "S902PL0000",
+    "Subrace": "S902SR0000",
+    "LeaderType": "T000UUA01D",
+    "LeaderAlive": true,
+    "AnyAlive": true,
+    "Facing": 0,
+    "Inside": "",
+    "Invisible": false,
+    "LeaderName": "Wild-Bat"
+   },
+   {
+    "Id": "S902KC000b",
+    "X": 46,
+    "Y": 51,
+    "Owner": "S902PL0000",
+    "Subrace": "S902SR0000",
+    "LeaderType": "T000UUA01D",
+    "LeaderAlive": true,
+    "AnyAlive": true,
+    "Facing": 0,
+    "Inside": "",
+    "Invisible": false,
+    "LeaderName": "Wild-Bat"
+   },
+   {
+    "Id": "S902KC000c",
+    "X": 54,
+    "Y": 32,
+    "Owner": "S902PL0000",
+    "Subrace": "S902SR0000",
+    "LeaderType": "T000UUA01D",
+    "LeaderAlive": true,
+    "AnyAlive": true,
+    "Facing": 0,
+    "Inside": "",
+    "Invisible": false,
+    "LeaderName": "Wild-Bat"
+   },
+   {
+    "Id": "S902KC000d",
+    "X": 16,
+    "Y": 22,
+    "Owner": "S902PL0000",
+    "Subrace": "S902SR0000",
+    "LeaderType": "T000UUA01C",
+    "LeaderAlive": true,
+    "AnyAlive": true,
+    "Facing": 0,
+    "Inside": "",
+    "Invisible": false,
+    "LeaderName": "Wild-Chief"
+   },
+   {
+    "Id": "S902KC000e",
+    "X": 35,
+    "Y": 10,
+    "Owner": "S902PL0000",
+    "Subrace": "S902SR0000",
+    "LeaderType": "T000UUA01C",
+    "LeaderAlive": true,
+    "AnyAlive": true,
+    "Facing": 0,
+    "Inside": "",
+    "Invisible": false,
+    "LeaderName": "Wild-Chief"
+   },
+   {
+    "Id": "S902KC000f",
+    "X": 59,
+    "Y": 48,
+    "Owner": "S902PL0000",
+    "Subrace": "S902SR0000",
+    "LeaderType": "T000UUA01C",
+    "LeaderAlive": true,
+    "AnyAlive": true,
+    "Facing": 0,
+    "Inside": "",
+    "Invisible": false,
+    "LeaderName": "Wild-Chief"
+   },
+   {
+    "Id": "S902KC0010",
+    "X": 38,
+    "Y": 7,
+    "Owner": "S902PL0000",
+    "Subrace": "S902SR0000",
+    "LeaderType": "T000UUA01C",
+    "LeaderAlive": true,
+    "AnyAlive": true,
+    "Facing": 0,
+    "Inside": "",
+    "Invisible": false,
+    "LeaderName": "Wild-Chief"
+   },
+   {
+    "Id": "S902KC0011",
+    "X": 61,
+    "Y": 25,
+    "Owner": "S902PL0000",
+    "Subrace": "S902SR0000",
+    "LeaderType": "T000UUA01C",
+    "LeaderAlive": true,
+    "AnyAlive": true,
+    "Facing": 0,
+    "Inside": "",
+    "Invisible": false,
+    "LeaderName": "Wild-Chief"
+   }
+  ],
+  "Banners": {
+   "S902SR0000": 0,
+   "S902SR0001": 1,
+   "S902SR0002": 2
+  }
+ },
+ "Events": {
+  "Events": [],
+  "Zones": {},
+  "Variables": {},
+  "Templates": {},
+  "SubraceOwners": {
+   "S902SR0000": "S902PL0000",
+   "S902SR0001": "S902PL0001",
+   "S902SR0002": "S902PL0002"
+  }
+ }
+}

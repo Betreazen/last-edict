@@ -1,0 +1,18 @@
+{
+  "note": "снимок 28.09: отряд Nigel — «Бросить предмет» выключена (нечего бросать); живое поведение окна — ui-render-check (panel release IMG_LEADER …)",
+  "port": {
+    "sg": "20260928-shots/dyhanie-smerti-human-t01-002.sg",
+    "clicks": "city capital;ui press 492,110;ui release 305,110;ui press 492,325;ui release 305,325;ui click BTN_EXIT_CITY;panel release IMG_LEADER"
+  },
+  "mask": [
+    {
+      "rect": [
+        610,
+        520,
+        40,
+        65
+      ],
+      "why": "курсор мыши на снимке"
+    }
+  ]
+}

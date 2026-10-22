@@ -1,0 +1,10 @@
+{
+  "Screens": [
+    {
+      "Id": "DLG_ITEM",
+      "Edges": [
+        { "Element": "BTN_OK", "Action": "Goto", "Target": "DLG_ITEM" }
+      ]
+    }
+  ]
+}

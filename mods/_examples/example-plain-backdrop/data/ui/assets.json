@@ -1,0 +1,10 @@
+[
+  {
+    "name": "EXAMPLE_BACKDROP",
+    "archive": "ExamplePlainBackdrop",
+    "file": "example_backdrop.png",
+    "w": 800,
+    "h": 600,
+    "sha256": "af5c9181be9f1fab"
+  }
+]

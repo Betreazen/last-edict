@@ -1,0 +1,419 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "Disciples: unit",
+ "type": "object",
+ "properties": {
+  "$schema": {
+   "type": "string"
+  },
+  "units": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "description": "Устойчивый id «мод:вид/имя» — по нему ссылаются другие сущности и моды.",
+      "type": "string"
+     },
+     "legacyId": {
+      "description": "Id оригинала (Gunits.UNIT_ID и т. п.): по нему сущность находят сохранения, карты и журналы. У новых сущностей модов — нет.",
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "role": {
+      "enum": [
+       "soldier",
+       "noble",
+       "leader",
+       "summon",
+       "illusion",
+       "neutralLeader",
+       "neutralSoldier",
+       "guardian"
+      ]
+     },
+     "level": {
+      "type": "integer"
+     },
+     "previousLevel": {
+      "description": "Тип уровнем ниже: в него превращает цель атака «понижение уровня».",
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "race": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "subrace": {
+      "enum": [
+       "custom",
+       "human",
+       "undead",
+       "heretic",
+       "dwarf",
+       "neutral",
+       "neutralHuman",
+       "neutralElf",
+       "neutralGreenSkin",
+       "neutralDragon",
+       "neutralMarsh",
+       "neutralWater",
+       "neutralBarbarian",
+       "neutralWolf",
+       "elf"
+      ]
+     },
+     "branch": {
+      "enum": [
+       "fighter",
+       "archer",
+       "mage",
+       "special",
+       "sideshow",
+       "hero",
+       "noble",
+       "summon"
+      ]
+     },
+     "small": {
+      "description": "Занимает одну клетку отряда (ложь — две).",
+      "type": [
+       "boolean",
+       "null"
+      ]
+     },
+     "male": {
+      "type": [
+       "boolean",
+       "null"
+      ]
+     },
+     "hireCost": {
+      "type": [
+       "object",
+       "null"
+      ],
+      "additionalProperties": {
+       "type": "integer"
+      }
+     },
+     "hireBuilding": {
+      "description": "Постройка, без которой юнита не нанять.",
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "nameText": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "descriptionText": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "abilityText": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "attack": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "secondAttack": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "attacksTwice": {
+      "type": [
+       "boolean",
+       "null"
+      ]
+     },
+     "hitPoints": {
+      "type": "integer"
+     },
+     "baseUnit": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "armor": {
+      "type": "integer"
+     },
+     "regeneration": {
+      "type": "integer"
+     },
+     "reviveCost": {
+      "type": [
+       "object",
+       "null"
+      ],
+      "additionalProperties": {
+       "type": "integer"
+      }
+     },
+     "healCost": {
+      "description": "Цена лечения за единицу здоровья.",
+      "type": [
+       "object",
+       "null"
+      ],
+      "additionalProperties": {
+       "type": "integer"
+      }
+     },
+     "trainingCost": {
+      "description": "Цена обучения за единицу опыта.",
+      "type": [
+       "object",
+       "null"
+      ],
+      "additionalProperties": {
+       "type": "integer"
+      }
+     },
+     "xpForKill": {
+      "description": "Опыт победителю за гибель юнита.",
+      "type": "integer"
+     },
+     "upgradeBuilding": {
+      "description": "Постройка, открывающая этот тип как улучшение.",
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "xpForNextLevel": {
+      "description": "Опыт до следующего уровня.",
+      "type": "integer"
+     },
+     "move": {
+      "description": "Запас хода лидера за день.",
+      "type": [
+       "integer",
+       "null"
+      ]
+     },
+     "scout": {
+      "description": "Обзор лидера в клетках.",
+      "type": [
+       "integer",
+       "null"
+      ]
+     },
+     "lifetimeDays": {
+      "description": "Сколько дней живёт призванный (пусто — без срока).",
+      "type": [
+       "integer",
+       "null"
+      ]
+     },
+     "leadership": {
+      "type": [
+       "integer",
+       "null"
+      ]
+     },
+     "negotiate": {
+      "description": "Сопротивление действиям вора.",
+      "type": [
+       "integer",
+       "null"
+      ]
+     },
+     "leaderCategory": {
+      "enum": [
+       "fighter",
+       "explorer",
+       "mage",
+       "rod",
+       "noble",
+       null
+      ]
+     },
+     "growth": {
+      "description": "Рост характеристик с уровнем: шаги «ранний» до уровня смены, дальше «поздний».",
+      "type": "object",
+      "properties": {
+       "early": {
+        "type": [
+         "string",
+         "null"
+        ]
+       },
+       "switchLevel": {
+        "description": "Уровень, с которого действуют поздние шаги.",
+        "type": "integer"
+       },
+       "late": {
+        "type": [
+         "string",
+         "null"
+        ]
+       }
+      },
+      "additionalProperties": false
+     },
+     "waterOnly": {
+      "type": [
+       "boolean",
+       "null"
+      ]
+     },
+     "deathAnimation": {
+      "enum": [
+       "human",
+       "heretic",
+       "dwarf",
+       "undead",
+       "neutral",
+       "dragon",
+       "ghost",
+       "elf",
+       null
+      ]
+     },
+     "immunities": {
+      "description": "Иммунитеты к источникам атак (Gimmu).",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "source": {
+         "enum": [
+          "weapon",
+          "mind",
+          "life",
+          "death",
+          "fire",
+          "water",
+          "earth",
+          "air"
+         ]
+        },
+        "level": {
+         "enum": [
+          "notImmune",
+          "once",
+          "always"
+         ]
+        }
+       },
+       "required": [
+        "source",
+        "level"
+       ],
+       "additionalProperties": false
+      }
+     },
+     "classImmunities": {
+      "description": "Иммунитеты к классам атак (GimmuC).",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "attackClass": {
+         "enum": [
+          "damage",
+          "drain",
+          "paralyze",
+          "heal",
+          "fear",
+          "boostDamage",
+          "petrify",
+          "lowerDamage",
+          "lowerInitiative",
+          "poison",
+          "frostbite",
+          "revive",
+          "drainOverflow",
+          "cure",
+          "summon",
+          "drainLevel",
+          "giveAttack",
+          "doppelganger",
+          "transformSelf",
+          "transformOther",
+          "blister",
+          "bestowWards",
+          "shatter"
+         ]
+        },
+        "level": {
+         "enum": [
+          "notImmune",
+          "once",
+          "always"
+         ]
+        }
+       },
+       "required": [
+        "attackClass",
+        "level"
+       ],
+       "additionalProperties": false
+      }
+     },
+     "leaderAbilities": {
+      "description": "Врождённые способности лидера (GLabi).",
+      "type": "array",
+      "items": {
+       "enum": [
+        "zealot",
+        "incorruptible",
+        "weaponMaster",
+        "wandScrollUse",
+        "weaponArmorUse",
+        "bannerUse",
+        "jewelryUse",
+        "rod",
+        "orbUse",
+        "talismanUse",
+        "travelItemUse",
+        "criticalHit"
+       ]
+      }
+     },
+     "moveAbilities": {
+      "description": "Земли, по которым юнит ходит без штрафа (GMabi).",
+      "type": "array",
+      "items": {
+       "enum": [
+        "plain",
+        "forest",
+        "water",
+        "mountain"
+       ]
+      }
+     }
+    },
+    "required": [
+     "id"
+    ],
+    "additionalProperties": false
+   }
+  }
+ },
+ "required": [
+  "units"
+ ],
+ "additionalProperties": false
+}

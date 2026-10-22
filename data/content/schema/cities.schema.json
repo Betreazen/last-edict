@@ -1,0 +1,74 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "Disciples: city",
+ "type": "object",
+ "properties": {
+  "$schema": {
+   "type": "string"
+  },
+  "cities": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "description": "Устойчивый id «мод:вид/имя» — по нему ссылаются другие сущности и моды.",
+      "type": "string"
+     },
+     "legacyId": {
+      "description": "Id оригинала (Gunits.UNIT_ID и т. п.): по нему сущность находят сохранения, карты и журналы. У новых сущностей модов — нет.",
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "race": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "size": {
+      "type": "integer"
+     },
+     "scout": {
+      "type": "integer"
+     },
+     "regeneration": {
+      "description": "Лечение в городе, процентов в день.",
+      "type": "integer"
+     },
+     "protection": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "growth": {
+      "type": [
+       "object",
+       "null"
+      ],
+      "additionalProperties": {
+       "type": "integer"
+      }
+     },
+     "resourceMoney": {
+      "type": [
+       "integer",
+       "null"
+      ]
+     }
+    },
+    "required": [
+     "id"
+    ],
+    "additionalProperties": false
+   }
+  }
+ },
+ "required": [
+  "cities"
+ ],
+ "additionalProperties": false
+}

@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Содержимое игры (этап Э2, задачи C и A3, docs/content-schema.md): схема сущностей (record → JSON Schema), набор и его проверки, слои
+       модов, запись и чтение каталогов содержимого, импорт содержимого base из таблиц оригинала. Над правилами и форматами, под ядром. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Engine.Rules\Engine.Rules.csproj" />
+    <ProjectReference Include="..\Import.Legacy.Formats\Import.Legacy.Formats.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- id содержимого по смыслу для сущностей оригинала (tools/content_ids.py). -->
+    <EmbeddedResource Include="Legacy\legacy-ids.json" LogicalName="D2.Data.Content.Legacy.legacy-ids.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Engine.Play" />
+    <InternalsVisibleTo Include="Import.Legacy" />
+    <InternalsVisibleTo Include="Engine.Play.Tests" />
+    <InternalsVisibleTo Include="Engine.Rules.Tests" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,5 @@
+{
+  "id": "example-plain-backdrop",
+  "name": "Пример: свой фон DLG_ACTION_RESULT",
+  "description": "Показывает оба слоя мода: заменённый экран (data/ui/screens.json) и добавленный кадр (data/ui/assets.json + assets/ui/*.png). Разбор — docs/modding.md."
+}

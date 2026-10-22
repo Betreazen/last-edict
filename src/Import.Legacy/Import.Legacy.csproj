@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Импорт своей копии игры в данные порта (этап Э2, задача A3): графика, звук, видео, шрифты, столицы, имена героев, таблицы правил и
+       содержимое base — первым запуском (сцена Boot) и инструментами tools/*Import. Ядро (D2.Data) от импорта не зависит. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Engine.Play\Engine.Play.csproj" />
+    <ProjectReference Include="..\Game.UiModel\Game.UiModel.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Engine.Play.Tests" />
+    <InternalsVisibleTo Include="Engine.Rules.Tests" />
+  </ItemGroup>
+
+</Project>

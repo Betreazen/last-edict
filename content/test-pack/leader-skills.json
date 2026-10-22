@@ -1,0 +1,19 @@
+{
+ "$schema": "../../data/content/schema/leader-skills.schema.json",
+ "leaderSkills": [
+  {
+   "id": "test:leader-skill/sun-lord--armor",
+   "lord": "test:lord/sun-lord",
+   "modifier": "test:modifier/sun-skill-armor",
+   "minLevel": 2,
+   "priority": 50
+  },
+  {
+   "id": "test:leader-skill/moon-lord--armor",
+   "lord": "test:lord/moon-lord",
+   "modifier": "test:modifier/moon-skill-armor",
+   "minLevel": 2,
+   "priority": 50
+  }
+ ]
+}

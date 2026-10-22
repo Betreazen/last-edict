@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Engine.Rules\Engine.Rules.csproj" />
+    <ProjectReference Include="..\Import.Legacy.Formats\Import.Legacy.Formats.csproj" />
+    <ProjectReference Include="..\Engine.Content\Engine.Content.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Game.UiModel" />
+    <InternalsVisibleTo Include="Import.Legacy" />
+    <InternalsVisibleTo Include="Engine.Play.Tests" />
+    <InternalsVisibleTo Include="Engine.Rules.Tests" />
+  </ItemGroup>
+
+</Project>

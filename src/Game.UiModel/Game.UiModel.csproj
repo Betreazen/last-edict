@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Модель интерфейса (этап Э2, задача A3): экраны и окна (Ui, Ui.Windows), меню, графика и звук сцен (Gfx, Sound), панели карты,
+       итоги и конец партии, «горячий стул», сборщик содержимого игры GameContent. Сцены Godot берут вид отсюда, правила — из ядра (D2.Data):
+       окно меняет партию только командой (Session.Run). -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Engine.Play\Engine.Play.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Import.Legacy" />
+    <InternalsVisibleTo Include="Engine.Play.Tests" />
+    <InternalsVisibleTo Include="Engine.Rules.Tests" />
+  </ItemGroup>
+
+</Project>

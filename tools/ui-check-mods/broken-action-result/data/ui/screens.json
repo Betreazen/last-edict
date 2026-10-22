@@ -1,0 +1,16 @@
+[
+  {
+    "Id": "DLG_ACTION_RESULT",
+    "Design": { "X": 0, "Y": 0, "Width": 573, "Height": 586 },
+    "Background": "_PG0250IX",
+    "Cursor": "_CUDEFAUL",
+    "Elements": [
+      {
+        "Id": "TXT_ACTION_RESULT",
+        "Kind": "Text",
+        "Rect": { "X": 150, "Y": 102, "Width": 250, "Height": 35 },
+        "Anchor": "Top"
+      }
+    ]
+  }
+]

@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Повтор журнала команд партии (docs/game-commands.md §3): сохранение начала + журнал → та же партия, хеш после каждой команды. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Engine.Play\Engine.Play.csproj" />
+    <ProjectReference Include="..\..\src\Game.UiModel\Game.UiModel.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,59 @@
+bin/
+obj/
+.vs/
+*.user
+godot/.godot/
+# сгенерированная графика; корневой слэш обязателен — иначе правило съедало бы assets/ внутри модов
+/assets/
+tools/ksy/node_modules/
+tools/ksy/out/
+
+# tools/d2probe (vendored D2ModdingToolset build outputs)
+tools/d2probe/mss32/Lib/
+tools/d2probe/mss32/Release/
+tools/d2probe/mss32/Debug/
+tools/d2probe/mss32/mss32/
+tools/d2probe/mss32/.vs/
+tools/d2probe/**/x64/
+*.obj
+*.pdb
+__pycache__/
+graphify-out/
+
+# кеш подборов генератора харнесса С2 (FitDiskCache)
+.cache/
+
+TestResults/
+
+# сырые ответы REA/Ghidra (docs/re-tools.md)
+.analysis/
+
+# временные прогоны tools/bench/ab.py
+bench/ab-tmp*.json
+bench/ab-*/
+
+# собранные синтетические карты порта (tools/synth-maps/make_port_synth.py); в игру идут через импорт в mods/port-synth
+tools/synth-maps/out/
+
+# отметка импорта данных игры (tools/import_game.py, docs/publishing.md) и сборки Windows (tools/publish/build_windows.ps1)
+/import.json
+/dist/
+
+# Данные игры: импорт из своей копии Disciples II (GOG), в репозитории их нет — docs/publishing.md
+/data/content/base/
+/data/game/
+/data/gfx/
+/data/map/
+/data/rules/
+/data/scenarios/
+/data/sound/
+/data/video/
+/data/ui/assets.json
+/data/ui/screens.json
+/data/ui/strings.*.json
+/data/ui/capital.json
+/data/ui/leader-names.*.json
+
+# Данные игры: импорт из своей копии Disciples II (GOG), в репозитории их нет — docs/publishing.md
+/data/content/base/
+/data/scenarios/

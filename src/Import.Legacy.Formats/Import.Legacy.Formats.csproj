@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Форматы файлов оригинала (этап Э2, задача A3): сохранения и сценарии .sg/.csg (Kaitai, tools/ksy), таблицы .dbf. Нижний слой:
+       ни от чего в порте не зависит; ядро (D2.Data) читает через него карты, сценарии и таблицы при импорте. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="KaitaiStruct.Runtime.CSharp" Version="0.11.0" />
+    <PackageReference Include="NDbfReader" Version="2.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Engine.Play" />
+    <InternalsVisibleTo Include="Engine.Play.Tests" />
+    <InternalsVisibleTo Include="Engine.Rules.Tests" />
+  </ItemGroup>
+
+</Project>

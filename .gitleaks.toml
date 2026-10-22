@@ -1,0 +1,12 @@
+# gitleaks (скан секретов публичного снимка, tools/publish/make_public.py): правила по умолчанию плюс разобранные ложные срабатывания.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "справочник API Godot (tools/godot-ref, собран из самого движка): сигнатуры вида «CryptoKey key, …», не ключи"
+paths = ['''(^|[\\/])tools[\\/]godot-ref[\\/]godot47\.jsonl$''']
+
+[[allowlists]]
+description = "имена классов движка Disciples в проверках харнессов (Key: \"CMid…\"), не ключи"
+regexTarget = "match"
+regexes = ['''Key: "CMid\w+"''']

@@ -84,6 +84,48 @@
    },
    "level": 1,
    "category": "magic"
+  },
+  {
+   "id": "test:building/ember-barracks",
+   "cost": {
+    "gold": 250
+   },
+   "level": 2,
+   "category": "unit",
+   "branch": "fighter"
+  },
+  {
+   "id": "test:building/ember-range",
+   "cost": {
+    "gold": 230
+   },
+   "level": 2,
+   "category": "unit",
+   "branch": "archer"
+  },
+  {
+   "id": "test:building/ember-guild",
+   "cost": {
+    "gold": 300
+   },
+   "level": 1,
+   "category": "guild"
+  },
+  {
+   "id": "test:building/ember-temple",
+   "cost": {
+    "gold": 300
+   },
+   "level": 1,
+   "category": "heal"
+  },
+  {
+   "id": "test:building/ember-tower",
+   "cost": {
+    "gold": 350
+   },
+   "level": 1,
+   "category": "magic"
   }
  ]
 }

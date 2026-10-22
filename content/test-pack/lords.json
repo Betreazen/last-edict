@@ -52,6 +52,32 @@
      }
     }
    ]
+  },
+  {
+   "id": "test:lord/ember-lord",
+   "race": "test:race/ember",
+   "category": "warrior",
+   "buildings": [
+    "test:building/ember-barracks",
+    "test:building/ember-range",
+    "test:building/ember-guild",
+    "test:building/ember-temple",
+    "test:building/ember-tower"
+   ],
+   "research": [
+    {
+     "spell": "test:spell/ember-bolt",
+     "cost": {
+      "infernal": 150
+     }
+    },
+    {
+     "spell": "test:spell/ember-ward",
+     "cost": {
+      "infernal": 150
+     }
+    }
+   ]
   }
  ]
 }

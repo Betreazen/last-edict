@@ -908,6 +908,459 @@
    "upgradeBuilding": "test:building/moon-range"
   },
   {
+   "id": "test:unit/ember-colossus",
+   "role": "guardian",
+   "level": 1,
+   "race": "test:race/ember",
+   "subrace": "heretic",
+   "branch": "hero",
+   "small": true,
+   "male": true,
+   "hireCost": {
+    "gold": 8000
+   },
+   "attack": "test:attack/ember-colossus",
+   "attacksTwice": false,
+   "hitPoints": 700,
+   "armor": 40,
+   "regeneration": 40,
+   "reviveCost": {
+    "gold": 4000
+   },
+   "healCost": {
+    "gold": 1
+   },
+   "trainingCost": {
+    "gold": 4
+   },
+   "xpForKill": 5000,
+   "xpForNextLevel": 6000,
+   "growth": {
+    "early": "test:growth/ember-colossus",
+    "switchLevel": 10,
+    "late": "test:growth/ember-colossus"
+   },
+   "deathAnimation": "heretic",
+   "move": 20,
+   "scout": 4,
+   "leadership": 6,
+   "negotiate": 60
+  },
+  {
+   "id": "test:unit/ember-thief",
+   "role": "noble",
+   "level": 1,
+   "race": "test:race/ember",
+   "subrace": "heretic",
+   "branch": "noble",
+   "small": true,
+   "male": true,
+   "hireCost": {
+    "gold": 180
+   },
+   "attack": "test:attack/ember-thief",
+   "attacksTwice": false,
+   "hitPoints": 90,
+   "armor": 0,
+   "regeneration": 5,
+   "reviveCost": {
+    "gold": 90
+   },
+   "healCost": {
+    "gold": 1
+   },
+   "trainingCost": {
+    "gold": 4
+   },
+   "xpForKill": 20,
+   "xpForNextLevel": 90,
+   "growth": {
+    "early": "test:growth/ember-thief",
+    "switchLevel": 10,
+    "late": "test:growth/ember-thief"
+   },
+   "deathAnimation": "heretic",
+   "move": 24,
+   "scout": 5,
+   "leadership": 1,
+   "negotiate": 15,
+   "leaderCategory": "noble"
+  },
+  {
+   "id": "test:unit/ember-captain",
+   "role": "leader",
+   "level": 1,
+   "race": "test:race/ember",
+   "subrace": "heretic",
+   "branch": "hero",
+   "small": true,
+   "male": true,
+   "hireCost": {
+    "gold": 450
+   },
+   "attack": "test:attack/ember-captain",
+   "attacksTwice": false,
+   "hitPoints": 140,
+   "armor": 0,
+   "regeneration": 5,
+   "reviveCost": {
+    "gold": 225
+   },
+   "healCost": {
+    "gold": 1
+   },
+   "trainingCost": {
+    "gold": 4
+   },
+   "xpForKill": 55,
+   "xpForNextLevel": 140,
+   "growth": {
+    "early": "test:growth/ember-captain",
+    "switchLevel": 10,
+    "late": "test:growth/ember-captain"
+   },
+   "deathAnimation": "heretic",
+   "move": 20,
+   "scout": 4,
+   "leadership": 4,
+   "negotiate": 10,
+   "leaderCategory": "fighter"
+  },
+  {
+   "id": "test:unit/ember-ranger",
+   "role": "leader",
+   "level": 1,
+   "race": "test:race/ember",
+   "subrace": "heretic",
+   "branch": "hero",
+   "small": true,
+   "male": true,
+   "hireCost": {
+    "gold": 420
+   },
+   "attack": "test:attack/ember-ranger",
+   "attacksTwice": false,
+   "hitPoints": 110,
+   "armor": 0,
+   "regeneration": 5,
+   "reviveCost": {
+    "gold": 210
+   },
+   "healCost": {
+    "gold": 1
+   },
+   "trainingCost": {
+    "gold": 4
+   },
+   "xpForKill": 45,
+   "xpForNextLevel": 130,
+   "growth": {
+    "early": "test:growth/ember-ranger",
+    "switchLevel": 10,
+    "late": "test:growth/ember-ranger"
+   },
+   "deathAnimation": "heretic",
+   "move": 26,
+   "scout": 6,
+   "leadership": 3,
+   "negotiate": 10,
+   "leaderCategory": "explorer"
+  },
+  {
+   "id": "test:unit/ember-sage",
+   "role": "leader",
+   "level": 1,
+   "race": "test:race/ember",
+   "subrace": "heretic",
+   "branch": "hero",
+   "small": true,
+   "male": true,
+   "hireCost": {
+    "gold": 480
+   },
+   "attack": "test:attack/ember-sage",
+   "attacksTwice": false,
+   "hitPoints": 90,
+   "armor": 0,
+   "regeneration": 5,
+   "reviveCost": {
+    "gold": 240
+   },
+   "healCost": {
+    "gold": 1
+   },
+   "trainingCost": {
+    "gold": 4
+   },
+   "xpForKill": 50,
+   "xpForNextLevel": 140,
+   "growth": {
+    "early": "test:growth/ember-sage",
+    "switchLevel": 10,
+    "late": "test:growth/ember-sage"
+   },
+   "deathAnimation": "heretic",
+   "move": 20,
+   "scout": 4,
+   "leadership": 3,
+   "negotiate": 10,
+   "leaderCategory": "mage"
+  },
+  {
+   "id": "test:unit/ember-warden",
+   "role": "leader",
+   "level": 1,
+   "race": "test:race/ember",
+   "subrace": "heretic",
+   "branch": "hero",
+   "small": true,
+   "male": true,
+   "hireCost": {
+    "gold": 400
+   },
+   "attack": "test:attack/ember-warden",
+   "attacksTwice": false,
+   "hitPoints": 100,
+   "armor": 0,
+   "regeneration": 5,
+   "reviveCost": {
+    "gold": 200
+   },
+   "healCost": {
+    "gold": 1
+   },
+   "trainingCost": {
+    "gold": 4
+   },
+   "xpForKill": 45,
+   "xpForNextLevel": 130,
+   "growth": {
+    "early": "test:growth/ember-warden",
+    "switchLevel": 10,
+    "late": "test:growth/ember-warden"
+   },
+   "deathAnimation": "heretic",
+   "move": 20,
+   "scout": 4,
+   "leadership": 3,
+   "negotiate": 10,
+   "leaderCategory": "rod"
+  },
+  {
+   "id": "test:unit/ember-footman",
+   "role": "soldier",
+   "level": 1,
+   "race": "test:race/ember",
+   "subrace": "heretic",
+   "branch": "fighter",
+   "small": true,
+   "male": true,
+   "hireCost": {
+    "gold": 55
+   },
+   "attack": "test:attack/ember-footman",
+   "attacksTwice": false,
+   "hitPoints": 110,
+   "armor": 0,
+   "regeneration": 5,
+   "reviveCost": {
+    "gold": 50
+   },
+   "healCost": {
+    "gold": 1
+   },
+   "trainingCost": {
+    "gold": 4
+   },
+   "xpForKill": 18,
+   "xpForNextLevel": 85,
+   "growth": {
+    "early": "test:growth/ember-footman",
+    "switchLevel": 10,
+    "late": "test:growth/ember-footman"
+   },
+   "deathAnimation": "heretic"
+  },
+  {
+   "id": "test:unit/ember-bowman",
+   "role": "soldier",
+   "level": 1,
+   "race": "test:race/ember",
+   "subrace": "heretic",
+   "branch": "archer",
+   "small": true,
+   "male": true,
+   "hireCost": {
+    "gold": 45
+   },
+   "attack": "test:attack/ember-bowman",
+   "attacksTwice": false,
+   "hitPoints": 50,
+   "armor": 0,
+   "regeneration": 5,
+   "reviveCost": {
+    "gold": 50
+   },
+   "healCost": {
+    "gold": 1
+   },
+   "trainingCost": {
+    "gold": 4
+   },
+   "xpForKill": 16,
+   "xpForNextLevel": 75,
+   "growth": {
+    "early": "test:growth/ember-bowman",
+    "switchLevel": 10,
+    "late": "test:growth/ember-bowman"
+   },
+   "deathAnimation": "heretic"
+  },
+  {
+   "id": "test:unit/ember-adept",
+   "role": "soldier",
+   "level": 1,
+   "race": "test:race/ember",
+   "subrace": "heretic",
+   "branch": "mage",
+   "small": true,
+   "male": true,
+   "hireCost": {
+    "gold": 50
+   },
+   "attack": "test:attack/ember-adept",
+   "attacksTwice": false,
+   "hitPoints": 40,
+   "armor": 0,
+   "regeneration": 5,
+   "reviveCost": {
+    "gold": 50
+   },
+   "healCost": {
+    "gold": 1
+   },
+   "trainingCost": {
+    "gold": 4
+   },
+   "xpForKill": 18,
+   "xpForNextLevel": 80,
+   "growth": {
+    "early": "test:growth/ember-adept",
+    "switchLevel": 10,
+    "late": "test:growth/ember-adept"
+   },
+   "deathAnimation": "heretic"
+  },
+  {
+   "id": "test:unit/ember-scorcher",
+   "role": "soldier",
+   "level": 1,
+   "race": "test:race/ember",
+   "subrace": "heretic",
+   "branch": "special",
+   "small": true,
+   "male": true,
+   "hireCost": {
+    "gold": 50
+   },
+   "attack": "test:attack/ember-scorcher",
+   "attacksTwice": false,
+   "hitPoints": 55,
+   "armor": 0,
+   "regeneration": 5,
+   "reviveCost": {
+    "gold": 50
+   },
+   "healCost": {
+    "gold": 1
+   },
+   "trainingCost": {
+    "gold": 4
+   },
+   "xpForKill": 18,
+   "xpForNextLevel": 80,
+   "growth": {
+    "early": "test:growth/ember-scorcher",
+    "switchLevel": 10,
+    "late": "test:growth/ember-scorcher"
+   },
+   "deathAnimation": "heretic"
+  },
+  {
+   "id": "test:unit/ember-veteran",
+   "role": "soldier",
+   "level": 2,
+   "race": "test:race/ember",
+   "subrace": "heretic",
+   "branch": "fighter",
+   "small": true,
+   "male": true,
+   "hireCost": {
+    "gold": 280
+   },
+   "attack": "test:attack/ember-veteran",
+   "attacksTwice": false,
+   "hitPoints": 160,
+   "armor": 0,
+   "regeneration": 5,
+   "reviveCost": {
+    "gold": 140
+   },
+   "healCost": {
+    "gold": 1
+   },
+   "trainingCost": {
+    "gold": 4
+   },
+   "xpForKill": 55,
+   "xpForNextLevel": 400,
+   "growth": {
+    "early": "test:growth/ember-veteran",
+    "switchLevel": 10,
+    "late": "test:growth/ember-veteran"
+   },
+   "deathAnimation": "heretic",
+   "previousLevel": "test:unit/ember-footman",
+   "upgradeBuilding": "test:building/ember-barracks"
+  },
+  {
+   "id": "test:unit/ember-marksman",
+   "role": "soldier",
+   "level": 2,
+   "race": "test:race/ember",
+   "subrace": "heretic",
+   "branch": "archer",
+   "small": true,
+   "male": true,
+   "hireCost": {
+    "gold": 260
+   },
+   "attack": "test:attack/ember-marksman",
+   "attacksTwice": false,
+   "hitPoints": 75,
+   "armor": 0,
+   "regeneration": 5,
+   "reviveCost": {
+    "gold": 130
+   },
+   "healCost": {
+    "gold": 1
+   },
+   "trainingCost": {
+    "gold": 4
+   },
+   "xpForKill": 50,
+   "xpForNextLevel": 380,
+   "growth": {
+    "early": "test:growth/ember-marksman",
+    "switchLevel": 10,
+    "late": "test:growth/ember-marksman"
+   },
+   "deathAnimation": "heretic",
+   "previousLevel": "test:unit/ember-bowman",
+   "upgradeBuilding": "test:building/ember-range"
+  },
+  {
    "id": "test:unit/wild-wolf",
    "role": "neutralSoldier",
    "level": 1,

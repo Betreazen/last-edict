@@ -114,6 +114,62 @@
    ]
   },
   {
+   "id": "test:race/ember",
+   "guardian": "test:unit/ember-colossus",
+   "noble": "test:unit/ember-thief",
+   "leaders": [
+    "test:unit/ember-captain",
+    "test:unit/ember-ranger",
+    "test:unit/ember-sage",
+    "test:unit/ember-warden"
+   ],
+   "soldiers": [
+    "test:unit/ember-footman",
+    "test:unit/ember-bowman",
+    "test:unit/ember-adept",
+    "test:unit/ember-scorcher"
+   ],
+   "scout": 4,
+   "capitalRegeneration": 30,
+   "income": {
+    "gold": 120,
+    "infernal": 20
+   },
+   "protection": "test:modifier/ember-capital",
+   "kind": "heretic",
+   "playable": true,
+   "land": "heretic",
+   "turnOrder": 2,
+   "eventFlag": 3,
+   "neutral": false,
+   "heroNames": [
+    {
+     "text": "Sable",
+     "male": true
+    },
+    {
+     "text": "Tarn",
+     "male": false
+    },
+    {
+     "text": "Ulric",
+     "male": true
+    },
+    {
+     "text": "Vesna",
+     "male": false
+    },
+    {
+     "text": "Wyre",
+     "male": true
+    },
+    {
+     "text": "Xana",
+     "male": false
+    }
+   ]
+  },
+  {
    "id": "test:race/wild",
    "income": {
     "gold": 50

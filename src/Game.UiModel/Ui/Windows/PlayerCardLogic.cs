@@ -34,7 +34,7 @@ public sealed class PlayerCardLogic(WindowContext context, string playerId) : IW
     {
         ArgumentNullException.ThrowIfNull(ui);
         if (!context.Map.Players.TryGetValue(playerId, out var player)) return;
-        _face = LordFaces.Large(RaceType(player), player.Face);
+        _face = LordFaces.Large(context.Session.RequireBook().LookOf(player.RaceId), player.Face);
         _text = Text(player);
         ui.SetImage("IMG_FACE", _face);
         ui.SetText("TXT_PLAYER", _text);
@@ -71,9 +71,6 @@ public sealed class PlayerCardLogic(WindowContext context, string playerId) : IW
         };
 
     private int Party(MapPlayer player) => Diplomacy.PartyOf(player, context.Session.RequireBook().Economy.Races) ?? -1;
-
-    private int RaceType(MapPlayer player) =>
-        context.Session.RequireBook().Economy.Races.TryGetValue(player.RaceId, out var race) ? race.RaceType : -1;
 
     public void Handle(UiEvent e, UiScreenState ui)
     {

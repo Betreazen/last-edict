@@ -74,9 +74,9 @@ public class CustomCampaignTests
             Assert.Equal(("2", "1", "disciples-godot ui-maps"), (ui.TextOf("TXT_QTY"), ui.TextOf("TXT_LEVEL"), ui.TextOf("TXT_AUTHOR")));
             logic.Handle(new UiClicked("BTN_LOAD"), ui);
             Assert.Equal(new CampaignRun("ui-camp", 0, 2, Custom: true), setup.Campaign);
-            Assert.Equal([0], setup.RaceLimit);
+            Assert.Equal([BaseRaces.Empire], setup.RaceLimit);
 
-            setup.Race = 0;
+            setup.RaceId = BaseRaces.Empire;
             var state = NewGame.Start(ScenarioFile.Read(setup.Scenario!.File), setup, catalog, book, new Random(1));
             Assert.Equal(setup.Campaign, state.Info.Campaign);
             Assert.Equal("ui-camp:ui-camp-1", state.Info.ScenarioId);

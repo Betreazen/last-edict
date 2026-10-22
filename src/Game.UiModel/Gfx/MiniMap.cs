@@ -28,6 +28,10 @@ public sealed class MiniMap
     private readonly Func<string, RgbaImage?> _art;
     private readonly Func<int, int, bool>? _hidden;
 
+    /// <summary>Код расы для значков (<c>CITY{код}</c>, <c>CAP…</c>, <c>STCK…</c>) по id расы — вид расы (<c>RaceLook.Code</c>, Э5: у расы мода
+    /// свои значки); не задан — по номеру расы оригинала в id.</summary>
+    public Func<string, string>? RaceCode { get; init; }
+
     public MiniMap(MapLooks looks, Func<string, RgbaImage?> art, Func<int, int, bool>? hidden = null)
     {
         ArgumentNullException.ThrowIfNull(looks);
@@ -149,6 +153,7 @@ public sealed class MiniMap
     private string Race(string player)
     {
         if (!_looks.Map.Players.TryGetValue(player, out var p)) return "NE";
+        if (RaceCode is { } code) return code(p.RaceId);
         string race = Ui.ArtNames.Of(p.RaceId);   // номер расы — по id оригинала
         if (race.Length != 10) return "NE";
         return int.TryParse(race[6..], out int n) && n >= 0 && n < RaceIcon.Length ? RaceIcon[n] : "NE";

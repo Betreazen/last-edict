@@ -57,8 +57,7 @@ public sealed class TradeOfferLogic(WindowContext context, TradeOffer offer, IRe
             ("OFFER", name), ("PRICE", offer.Price), ("VALUE", value)));
         ui.SetText("TXT_ITEM_NAME", name);
         ui.SetImage("IMG_TRADED_ITEM", offer.IsItem ? ItemCells.IconFrame(offer.ThingId, context) : $"IconSpel:{ArtNames.Of(offer.ThingId)}");
-        int type = book.Economy.Races.TryGetValue(from.RaceId, out var r) ? r.RaceType : 0;
-        ui.SetImage("IMG_FACE2", LordFaces.Large(type, from.Face));
+        ui.SetImage("IMG_FACE2", LordFaces.Large(book.LookOf(from.RaceId), from.Face));
         ui.SetText("TXT_GOLD", $"{Gold}");
     }
 

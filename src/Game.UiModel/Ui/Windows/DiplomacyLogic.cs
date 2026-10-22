@@ -59,8 +59,8 @@ public sealed class DiplomacyModel(WindowContext context, IReadOnlyDictionary<st
 
     public void Notify() => Changed?.Invoke();
 
-    public int RaceType(MapPlayer p) =>
-        context.Session.RequireBook().Economy.Races.TryGetValue(p.RaceId, out var r) ? r.RaceType : -1;
+    /// <summary>Вид расы игрока (портреты лорда, <see cref="LordFaces"/>).</summary>
+    public LastEdict.Data.Content.Schema.RaceLook Look(MapPlayer p) => context.Session.RequireBook().LookOf(p.RaceId);
 
     public string RaceName(MapPlayer p) => raceNames.TryGetValue(p.RaceId, out var txt) ? context.Text(txt) : p.RaceId;
 
@@ -122,9 +122,13 @@ public sealed class DiplomacyFieldLogic(DiplomacyModel model) : IWindowLogic
 
     public string Summary => $"дипломатия выбран={model.SelectedPlayer.Id} игроков={model.Players.Count} страница={model.Page + 1}/{model.Pages}";
 
-    /// <summary>Листание соперников (Р15): кнопки поверх поля внизу, есть только при нескольких страницах. Кадры — стрелки тенденции окна
-    /// (вверх — следующая страница); свой вид — Э5.</summary>
+    /// <summary>Листание соперников (Р15): кнопки поверх поля внизу, есть только при нескольких страницах. Вид (Э5) — стрелки «влево/вправо»
+    /// меню (<see cref="PrevSprites"/>, <see cref="NextSprites"/>, 37×37 — место кнопки) со всеми кадрами кнопки: обычный, наведение, нажатие,
+    /// погашен; прежде — значки тенденции окна «вверх/вниз» одним кадром, кнопка не отзывалась на мышь.</summary>
     public const string NextPage = "BTN_PAGE_NEXT", PrevPage = "BTN_PAGE_PREV", PageText = "TXT_PAGE";
+
+    public static readonly UiSprites PrevSprites = new("_MENU_ARROW_LEFT_N", "_MENU_ARROW_LEFT_H", "_MENU_ARROW_LEFT_C", "_MENU_ARROW_LEFT_D"),
+        NextSprites = new("_MENU_ARROW_RIGHT_N", "_MENU_ARROW_RIGHT_H", "_MENU_ARROW_RIGHT_C", "_MENU_ARROW_RIGHT_D");
 
     /// <summary>Курсоры шкал — отдельные картинки поверх шкал (место — по значению отношения).</summary>
     public UiScreen Shape(UiScreen screen)
@@ -144,11 +148,9 @@ public sealed class DiplomacyFieldLogic(DiplomacyModel model) : IWindowLogic
             }
         if (model.Pages > 1)
             elements.AddRange([
-                new UiElement { Id = PrevPage, Kind = UiKind.Button, Rect = new UiRect(250, 562, 37, 37),
-                                Sprites = new UiSprites("DLG_ISO_DIPLO_ARROW_DOWN_N", "DLG_ISO_DIPLO_ARROW_DOWN_N", "DLG_ISO_DIPLO_ARROW_DOWN_N") },
+                new UiElement { Id = PrevPage, Kind = UiKind.Button, Rect = new UiRect(250, 562, 37, 37), Sprites = PrevSprites },
                 new UiElement { Id = PageText, Kind = UiKind.Text, Rect = new UiRect(290, 570, 60, 20) },
-                new UiElement { Id = NextPage, Kind = UiKind.Button, Rect = new UiRect(353, 562, 37, 37),
-                                Sprites = new UiSprites("DLG_ISO_DIPLO_ARROW_UP_N", "DLG_ISO_DIPLO_ARROW_UP_N", "DLG_ISO_DIPLO_ARROW_UP_N") },
+                new UiElement { Id = NextPage, Kind = UiKind.Button, Rect = new UiRect(353, 562, 37, 37), Sprites = NextSprites },
             ]);
         var players = model.Players;
         for (int i = 1; i < DiplomacyModel.Slots; i++)
@@ -214,7 +216,7 @@ public sealed class DiplomacyFieldLogic(DiplomacyModel model) : IWindowLogic
             ui.SetHidden($"IMG_RACE{i + 1}", !shown);
             ui.SetHidden($"TXT_RACE{i + 1}", !shown);
             if (!shown) continue;
-            string face = LordFaces.Round(players[i].RaceId, players[i].Face);
+            string face = LordFaces.Round(model.Look(players[i]), players[i].Face);
             ui.SetImage($"IMG_RACE{i + 1}", i == 0 ? face : UiFrameRef.Mirrored(face));
             ui.SetText($"TXT_RACE{i + 1}", players[i].Name);
         }
@@ -306,7 +308,7 @@ public sealed class DiplomacyPanelLogic(DiplomacyModel model, IReadOnlyDictionar
         var self = model.Players[0];
         var sel = model.SelectedPlayer;
         bool me = model.Selected == 0;
-        ui.SetImage("IMG_LORD_FACE", LordFaces.Small(model.RaceType(sel), sel.Face));
+        ui.SetImage("IMG_LORD_FACE", LordFaces.Small(model.Look(sel), sel.Face));
         ui.SetText("TXT_LABEL1", me ? c.Text("X005TA0325") : UiTemplate.Fill(c.Text("X005TA0324"), ("LORDNAME", sel.Name)));
         ui.SetText("TXT_LABEL2", "");
         foreach (string b in (string[])["BTN_TRADE_ITEM", "BTN_TRADE_SPELL", "BTN_GIVE_RESS", "BTN_EXCHANGE_FOG"]) ui.SetEnabled(b, !me);
@@ -421,8 +423,8 @@ public sealed class GiveResourceLogic(DiplomacyModel model) : IWindowLogic
         var sel = model.SelectedPlayer;
         ui.SetText("TXT_ACTION", UiTemplate.Fill(c.Text("X005TA0329"), ("PLAYER", sel.Name)));
         ui.SetText("TXT_INFO", c.Text("X005TA0322"));
-        ui.SetImage("IMG_FACE1", LordFaces.Small(model.RaceType(self), self.Face));
-        ui.SetImage("IMG_FACE2", LordFaces.Small(model.RaceType(sel), sel.Face));
+        ui.SetImage("IMG_FACE1", LordFaces.Small(model.Look(self), self.Face));
+        ui.SetImage("IMG_FACE2", LordFaces.Small(model.Look(sel), sel.Face));
         Refresh(ui);
     }
 

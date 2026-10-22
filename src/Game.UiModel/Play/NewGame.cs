@@ -66,12 +66,12 @@ public static class NewGame
         var map = scenario.Map;
         // Люди: одиночная игра — выбор меню, партия нескольких людей — места лобби (CMenusReqRaceMsg / CMenusReqLordMsg на каждого).
         IReadOnlyList<PlayerSeat> seats = setup.Seats.Count > 0 ? setup.Seats
-            : [new PlayerSeat(setup.Race, setup.LordName ?? "", setup.Face, setup.LordCategory, setup.ImportedLeader)];
+            : [new PlayerSeat(catalog.PlayerRace(setup.RaceId).Id, setup.LordName ?? "", setup.Face, setup.LordCategory, setup.ImportedLeader)];
         var chosen = new Dictionary<string, (string Lord, PlayerSeat Seat)>(StringComparer.OrdinalIgnoreCase);
         // Места со своим игроком — первыми, затем прочие — первому свободному игроку своей расы по id (двое одной расы — два места, Э4).
         foreach (var seat in seats.Where(s => s.PlayerId is not null).Concat(seats.Where(s => s.PlayerId is null)))
         {
-            var race = catalog.Race(seat.Race);
+            var race = catalog.Race(seat.RaceId);
             var player = (seat.PlayerId is { } id ? map.Players.GetValueOrDefault(id)
                           : map.Players.Values.OrderBy(p => p.Id, StringComparer.Ordinal)
                                 .FirstOrDefault(p => p.RaceId.Equals(race.Id, StringComparison.OrdinalIgnoreCase) && !chosen.ContainsKey(p.Id)))
@@ -125,7 +125,7 @@ public static class NewGame
         {
             looks = StartLeader(looks, player, book, suggested, player.IsHuman ? random ?? new Random() : null);
             // Герой только своей расы (окно выбора других не берёт; выбор мог остаться от другой расы).
-            if (chosen.TryGetValue(player.Id, out var c) && c.Seat.Leader is { } imported && imported.Race == c.Seat.Race)
+            if (chosen.TryGetValue(player.Id, out var c) && c.Seat.Leader is { } imported && imported.Race == catalog.Race(c.Seat.RaceId).Type)
                 looks = ImportLeader(looks, player.Id, imported, book);
             if (player.IsHuman && setup.Carry is { } carry) looks = Carry(looks, player.Id, carry, book);
             looks = FreeBuilding(looks, player.Id, book);

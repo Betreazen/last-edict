@@ -23,7 +23,7 @@ public class SeveralHumansTests
         var setup = new NewGameSetup
         {
             Scenario = content.Catalog.Scenarios.Single(s => s.Id == "Power to Corrupt"), Difficulty = 1,
-            Seats = [new PlayerSeat(3, "", 0, 0), new PlayerSeat(2, "", 0, 1)],
+            Seats = [new PlayerSeat(BaseRaces.Clans, "", 0, 0), new PlayerSeat(BaseRaces.Legions, "", 0, 1)],
         };
         var state = NewGame.Start(data, setup, content.Catalog, book, new Random(1));
         Assert.Equal(["S073PL000A", "S073PL000B"], state.Info.Humans.Select(h => h.ToUpperInvariant()));
@@ -69,7 +69,7 @@ public class SeveralHumansTests
         var setup = new NewGameSetup
         {
             Scenario = content.Catalog.Scenarios.Single(s => s.Id == "Power to Corrupt"), Difficulty = 1,
-            Seats = [new PlayerSeat(3, "", 0, 0), new PlayerSeat(2, "", 0, 1)],
+            Seats = [new PlayerSeat(BaseRaces.Clans, "", 0, 0), new PlayerSeat(BaseRaces.Legions, "", 0, 1)],
         };
         bool[] heretic = [false, false, false, true, false, false];   // HUMAN, DWARF, UNDEAD, HERETIC, NEUTRAL, ELF
         var legions = new LastEdict.Rules.Map.ScenarioEvent("S999EV0000", true, false, 100, -1, heretic,
@@ -103,7 +103,7 @@ public class SeveralHumansTests
         var setup = new NewGameSetup
         {
             Scenario = content.Catalog.Scenarios.Single(s => s.Id == "Power to Corrupt"), Difficulty = 1,
-            Seats = [new PlayerSeat(3, "", 0, 0), new PlayerSeat(2, "", 0, 1)],
+            Seats = [new PlayerSeat(BaseRaces.Clans, "", 0, 0), new PlayerSeat(BaseRaces.Legions, "", 0, 1)],
         };
         var state = NewGame.Start(ScenarioFile.Read(scenario), setup, content.Catalog, book, new Random(1));
         var map = state.Looks.Map;
@@ -151,7 +151,7 @@ public class SeveralHumansTests
         var setup = new NewGameSetup
         {
             Scenario = content.Catalog.Scenarios.Single(s => s.Id == "Power to Corrupt"), Difficulty = 1,
-            Seats = [new PlayerSeat(3, "", 0, 0), new PlayerSeat(2, "", 0, 1)],
+            Seats = [new PlayerSeat(BaseRaces.Clans, "", 0, 0), new PlayerSeat(BaseRaces.Legions, "", 0, 1)],
         };
         var session = new GameSession(NewGame.Start(ScenarioFile.Read(scenario), setup, content.Catalog, book, new Random(1)), content.MapArt, book);
         foreach (string human in session.State.Info.Humans)

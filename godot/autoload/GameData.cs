@@ -76,7 +76,7 @@ public partial class GameData : Node
     private static LastEdict.Data.Play.GameBook? _book;
 
     /// <summary>Экраны и кадры с наложенными модами. Читается при первом обращении.</summary>
-    public static GameContent Content => _content ??= Report(GameContent.Load(_dataDir, _mods, GameDataDir));
+    public static GameContent Content => _content ??= Report(GameContent.Load(_dataDir, _mods, GameDataDir, () => Rules));
 
     /// <summary>Язык строк игры (<c>data/ui</c>) — одна настройка на весь запуск: <c>--lang</c>, по умолчанию <c>ru</c>. Её берут все
     /// экраны (меню, окна, карта, бой), а не каждый свой разбор аргументов.</summary>

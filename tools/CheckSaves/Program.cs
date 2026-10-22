@@ -33,7 +33,7 @@ string race = scenario.Looks.Map.Players[player].RaceId;
 var setup = new NewGameSetup
 {
     Scenario = catalog.Scenario(name) ?? throw new ArgumentException($"сценария «{name}» нет в каталоге"),
-    Race = catalog.Races.First(r => r.Id.Equals(race, StringComparison.OrdinalIgnoreCase)).Type,
+    RaceId = catalog.Race(race).Id,
 };
 var start = NewGame.Start(scenario, setup, catalog, book, new Random(1));
 if (!start.Info.Humans.Contains(player, StringComparer.OrdinalIgnoreCase))

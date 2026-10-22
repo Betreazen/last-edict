@@ -9,8 +9,8 @@ public sealed class NewGameSetup
 {
     public ScenarioInfo? Scenario { get; set; }
 
-    /// <summary>Тип расы (<see cref="RaceInfo.Type"/>).</summary>
-    public int Race { get; set; }
+    /// <summary>Раса игрока по id (<see cref="RaceInfo.Id"/>; Э5 — не по роду: раса мода бывает того же рода, что и раса оригинала).</summary>
+    public string RaceId { get; set; } = "";
 
     /// <summary>Тип лорда (<c>Llord</c>: 0 — маг, 1 — воин, 2 — вор).</summary>
     public int LordCategory { get; set; } = 1;
@@ -49,15 +49,15 @@ public sealed class NewGameSetup
     public Play.CarryOver? Carry { get; set; }
 
     /// <summary>Какие расы можно выбрать (своя кампания — только раса её заголовка, <c>0x4eae60</c>); null — расы сценария.</summary>
-    public IReadOnlyList<int>? RaceLimit { get; set; }
+    public IReadOnlyList<string>? RaceLimit { get; set; }
 }
 
-/// <summary>Место человека в лобби: тип расы, имя лорда, лицо (0…3) и категория лорда (<c>Llord</c>).</summary>
+/// <summary>Место человека в лобби: раса (id), имя лорда, лицо (0…3) и категория лорда (<c>Llord</c>).</summary>
 /// <param name="Leader">Импортированный герой (<c>BTN_IMPORT_LEADER</c>); null — стартовый герой сценария.</param>
-/// <param name="PlayerId">Игрок сценария этого места; null — первый ещё не занятый игрок расы <paramref name="Race"/> (у сценария бывает
+/// <param name="PlayerId">Игрок сценария этого места; null — первый ещё не занятый игрок расы <paramref name="RaceId"/> (у сценария бывает
 /// несколько игроков одной расы, Э4).</param>
 /// <param name="Team">Команда игрока (<see cref="LastEdict.Rules.Map.Teams"/>); null — как в сценарии.</param>
-public sealed record PlayerSeat(int Race, string Name, int Face, int LordCategory, Leaders.ExportedLeader? Leader = null,
+public sealed record PlayerSeat(string RaceId, string Name, int Face, int LordCategory, Leaders.ExportedLeader? Leader = null,
                                  string? PlayerId = null, string? Team = null);
 
 /// <summary>Что нужно логике экранов: каталог, строки языка, выбор игрока и системное имя (им игра заполняет поле

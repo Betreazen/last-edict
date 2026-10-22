@@ -126,7 +126,7 @@ public class LeaderImportTests
             var empty = new LastEdict.Data.Ui.UiScreenState(lordScreen);
             empty.Apply(content.Defaults.For(lordScreen.Id));
             MenuLogic.For("DLG_CHOOSE_LORD", new MenuContext(content.Catalog, new Dictionary<string, string>(),
-                                                            new NewGameSetup { Scenario = content.Catalog.Scenarios[0], Race = 0 }, "Игрок")
+                                                            new NewGameSetup { Scenario = content.Catalog.Scenarios[0], RaceId = BaseRaces.Empire }, "Игрок")
             { LeadersDir = dir })!.Open(empty);
             Assert.False(empty.IsHidden("BTN_IMPORT_LEADER"));
             Assert.False(empty.IsEnabled("BTN_IMPORT_LEADER"));
@@ -137,7 +137,7 @@ public class LeaderImportTests
                 Attack = new LeaderAttack("base:attack/archmage", 1, "Молния", 80, 0, 30, 7, 40, 1),
             };
             LeaderFile.Write(Path.Combine(dir, "Merlot.json"), hero);
-            var setup = new NewGameSetup { Scenario = content.Catalog.Scenarios[0], Race = 0 };
+            var setup = new NewGameSetup { Scenario = content.Catalog.Scenarios[0], RaceId = BaseRaces.Empire };
             var context = new MenuContext(content.Catalog, new Dictionary<string, string>(), setup, "Игрок") { LeadersDir = dir };
             var logic = (LastEdict.Data.Ui.Windows.IWindowLogic)MenuLogic.For("DLG_CHOOSE_LORD", context)!;
             var screen = content.Screens.Single(s => s.Id == "DLG_CHOOSE_LORD");
@@ -158,7 +158,7 @@ public class LeaderImportTests
             Assert.Equal(("Мерло", "Мерло"), (setup.ImportedLeader?.Name, ui.TextOf("TXT_IMPORT_NAME")));
 
             // Назад в меню, другая раса: выбор прежней расы не этой партии.
-            setup.Race = 3;
+            setup.RaceId = BaseRaces.Clans;
             var again = MenuLogic.For("DLG_CHOOSE_LORD", context)!;
             var ui2 = new LastEdict.Data.Ui.UiScreenState(screen);
             ui2.Apply(content.Defaults.For(screen.Id));
@@ -290,7 +290,7 @@ public class LeaderImportTests
         var setup = new NewGameSetup
         {
             Scenario = content.Catalog.Scenarios.Single(s => s.Id == "Power to Corrupt"),
-            Seats = [new PlayerSeat(3, "Гимли", 0, 1, leader), new PlayerSeat(2, "Б", 0, 1)],
+            Seats = [new PlayerSeat(BaseRaces.Clans, "Гимли", 0, 1, leader), new PlayerSeat(BaseRaces.Legions, "Б", 0, 1)],
         };
         var state = NewGame.Start(ScenarioFile.Read(path), setup, content.Catalog, book, new Random(1));
         var map = state.Looks.Map;
@@ -304,7 +304,7 @@ public class LeaderImportTests
         Assert.Equal("Мерло", state.Looks.Stacks.Single(s => s.Id == stack.Id).LeaderName);
 
         // Герой чужой расы (Империя в ячейке Кланов) не встаёт: лидер — стартовый.
-        setup.Seats = [new PlayerSeat(3, "Гимли", 0, 1, leader with { Race = 0 }), new PlayerSeat(2, "Б", 0, 1)];
+        setup.Seats = [new PlayerSeat(BaseRaces.Clans, "Гимли", 0, 1, leader with { Race = 0 }), new PlayerSeat(BaseRaces.Legions, "Б", 0, 1)];
         var foreign = NewGame.Start(ScenarioFile.Read(path), setup, content.Catalog, book, new Random(1)).Looks.Map;
         var foreignStack = foreign.Stacks[foreign.Sites.Single(s => s.Id == capital.Id).StackId];
         Assert.NotEqual("base:unit/archmage", foreign.Units[foreignStack.LeaderId].TypeId);

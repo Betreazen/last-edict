@@ -55,8 +55,8 @@ public class GameCatalogTests
             Races = [.. Catalog.Races.Select(r => r.Type == 0 ? r with { Lords = r.Lords.Take(2).ToList() } : r)],
         };
         var problems = broken.Problems();
-        Assert.Contains(problems, p => p.Contains("нет расы 7"));
-        Assert.Contains(problems, p => p.Contains("раса 0"));
+        Assert.Contains(problems, p => p.Contains("нет расы рода 7"));
+        Assert.Contains(problems, p => p.Contains($"раса {Catalog.Race(0).Id}:"));
     }
 
     [Fact]

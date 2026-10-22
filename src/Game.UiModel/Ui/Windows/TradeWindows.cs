@@ -208,8 +208,7 @@ public sealed class TradePriceLogic(WindowContext context, string targetId, AiTr
 
     private string Face(MapPlayer player)
     {
-        int type = context.Session.RequireBook().Economy.Races.TryGetValue(player.RaceId, out var r) ? r.RaceType : 0;
-        return LordFaces.Small(type, player.Face);
+        return LordFaces.Small(context.Session.RequireBook().LookOf(player.RaceId), player.Face);
     }
 
     private void Show(UiScreenState ui) => ui.SetText("TXT_GOLD", Amount.ToString(System.Globalization.CultureInfo.InvariantCulture));

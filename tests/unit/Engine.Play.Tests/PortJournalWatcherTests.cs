@@ -29,7 +29,7 @@ public class PortJournalWatcherTests(ITestOutputHelper output)
         var (content, book) = Shared.Value;
         var setup = new NewGameSetup
         {
-            Scenario = content.Catalog.Scenarios.Single(s => s.Id == Scenario), Race = 3, LordCategory = 0, Difficulty = 1,
+            Scenario = content.Catalog.Scenarios.Single(s => s.Id == Scenario), RaceId = BaseRaces.Clans, LordCategory = 0, Difficulty = 1,
         };
         var state = NewGame.Start(ScenarioFile.Read(ScenarioPath), setup, content.Catalog, book, new Random(1));
         return new GameSession(state, content.MapArt, book);
@@ -220,7 +220,7 @@ public class PortJournalWatcherTests(ITestOutputHelper output)
         var (content, book) = Shared.Value;
         var setup = new NewGameSetup
         {
-            Scenario = content.Catalog.Scenarios.Single(s => s.Id == Scenario), Race = 3, LordCategory = 0, Difficulty = 1,
+            Scenario = content.Catalog.Scenarios.Single(s => s.Id == Scenario), RaceId = BaseRaces.Clans, LordCategory = 0, Difficulty = 1,
         };
         var session = NewGame.Begin(ScenarioFile.Read(ScenarioPath), setup, content.Catalog, book, content.MapArt, new Random(1));
         string path = Path.Combine(Path.GetTempPath(), $"portwatch-{Guid.NewGuid():N}.jsonl");

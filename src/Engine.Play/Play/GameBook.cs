@@ -56,6 +56,18 @@ public sealed class GameBook
     public IReadOnlyDictionary<string, IReadOnlyList<string>> RaceLeaders { get; private init; } =
         new Dictionary<string, IReadOnlyList<string>>();
 
+    /// <summary>Вид рас (<see cref="RaceLook"/>, Э5): имена графики портретов лорда, значков мини-карты и прочего — по расе, а не по роду.</summary>
+    public IReadOnlyDictionary<string, RaceLook> RaceLooks { get; private init; } = new Dictionary<string, RaceLook>();
+
+    /// <summary>Вид расы <paramref name="raceId"/>: из содержимого, иначе по её роду (правила без содержимого), иначе нейтральный.</summary>
+    public RaceLook LookOf(string raceId)
+    {
+        ArgumentNullException.ThrowIfNull(raceId);
+        if (RaceLooks.TryGetValue(raceId, out var look)) return look;
+        var kind = Economy.Races.TryGetValue(raceId, out var race) ? (RaceKind)race.RaceType : RaceKind.Neutral;
+        return Content.Schema.RaceLooks.Legacy(kind, Legacy.ArtOf(raceId));
+    }
+
     /// <summary>Мужские имена героев расы (<c>Tleader.dbf</c>): человеку при старте партии даётся случайное.</summary>
     public IReadOnlyDictionary<string, IReadOnlyList<string>> LeaderNames { get; private init; } =
         new Dictionary<string, IReadOnlyList<string>>();
@@ -230,6 +242,7 @@ public sealed class GameBook
             Legacy = legacy,
             Lords = content.Lords.ToDictionary(l => l.Key, l => (int)l.Category, StringComparer.OrdinalIgnoreCase),
             RaceLeaders = content.Races.ToDictionary(r => r.Key, r => EconomyLoader.LeadersOf(content, r), StringComparer.OrdinalIgnoreCase),
+            RaceLooks = content.Races.ToDictionary(r => r.Key, Content.Schema.RaceLooks.Of, StringComparer.OrdinalIgnoreCase),
             LeaderNames = content.Races.Where(r => r.HeroNames.Any(n => n.Male))
                 .ToDictionary(r => r.Key, r => (IReadOnlyList<string>)[.. r.HeroNames.Where(n => n.Male).Select(n => n.Text.Trim())],
                               StringComparer.OrdinalIgnoreCase),

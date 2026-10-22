@@ -58,6 +58,6 @@ internal sealed class CustomCampaignLogic(MenuContext context) : IScreenLogic
         context.Setup.Scenario = campaign.Chapters[0].Scenario;
         context.Setup.Campaign = new Play.CampaignRun(campaign.Id, 0, campaign.Chapters.Count, Custom: true);
         context.Setup.Carry = null;
-        context.Setup.RaceLimit = [campaign.Race];
+        context.Setup.RaceLimit = [campaign.RaceId.Length > 0 ? campaign.RaceId : context.Catalog.Race(campaign.Race).Id];
     }
 }

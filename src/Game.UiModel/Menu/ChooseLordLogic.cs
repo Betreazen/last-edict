@@ -30,7 +30,8 @@ internal sealed class ChooseLordLogic(MenuContext context) : IWindowLogic
     public void Open(UiScreenState ui)
     {
         var setup = context.Setup;
-        var race = context.Catalog.Race(setup.Race);
+        var race = context.Catalog.PlayerRace(setup.RaceId);
+        setup.RaceId = race.Id;   // не выбрана (меню без выбора расы) — первая раса круга
         // Картинка расы — под рамкой BG1TRANS (41 % прозрачных точек; снимок 28.09 — рамка поверх пейзажа Империи).
         ui.SetUnderlay($"DLG_CHOOSE_LORD_{race.Art}_BG");
         ui.SetText("TXT_TITLE", context.Text(Title));
@@ -39,8 +40,8 @@ internal sealed class ChooseLordLogic(MenuContext context) : IWindowLogic
         ShowFace(ui);
         ReadGroups(ui);
         bool canImport = context.LeadersDir.Length > 0 && Leaders.LeaderStore.List(context.LeadersDir).Count > 0;
-        // Герой, выбранный раньше для другой расы (назад в меню, другая раса), — не этой партии.
-        if (setup.ImportedLeader is { } old && (old.Race != setup.Race || !canImport)) setup.ImportedLeader = null;
+        // Герой, выбранный раньше для другой расы (назад в меню, другая раса), — не этой партии (у героя .ldr раса — родом).
+        if (setup.ImportedLeader is { } old && (old.Race != race.Type || !canImport)) setup.ImportedLeader = null;
         // Каталог пуст — кнопка видна, но выключена (0x4e5b6a: setEnabled(false), снимок 28.09 — серая).
         ui.SetEnabled("BTN_IMPORT_LEADER", canImport);
         ui.SetText("TXT_IMPORT_NAME", setup.ImportedLeader?.Name ?? "");
@@ -71,7 +72,7 @@ internal sealed class ChooseLordLogic(MenuContext context) : IWindowLogic
             case UiClicked { Element: "BTN_IMPORT_LEADER" }:
                 var setup = context.Setup;
                 _requests.Add(new UiOpen("DLG_IMPORT_LEADER", new ImportLeaderLogic(context,
-                    new LeaderPick(setup.Race, setup.Scenario?.SuggestedLevel ?? 1, _importFile, chosen =>
+                    new LeaderPick(context.Catalog.PlayerRace(setup.RaceId).Type, setup.Scenario?.SuggestedLevel ?? 1, _importFile, chosen =>
                     {
                         (_importFile, setup.ImportedLeader) = (chosen?.FileName ?? "", chosen?.Leader);
                         ui.SetText("TXT_IMPORT_NAME", chosen?.Leader.Name ?? "");
@@ -102,14 +103,14 @@ internal sealed class ChooseLordLogic(MenuContext context) : IWindowLogic
         ui.SetSprites(Face, new UiSprites(face, face, face, face));
     }
 
-    private string FaceName(int face) => $"FACE_{context.Catalog.Race(context.Setup.Race).Code}_{face}";
+    private string FaceName(int face) => $"FACE_{context.Catalog.PlayerRace(context.Setup.RaceId).Code}_{face}";
 
     private void ReadGroups(UiScreenState ui)
     {
         var setup = context.Setup;
         string lordToggle = Checked(ui, "RAD_LORD");
         setup.LordCategory = LordOf[lordToggle];
-        var lord = context.Catalog.Race(setup.Race).Lords.Single(l => l.Category == setup.LordCategory);
+        var lord = context.Catalog.PlayerRace(setup.RaceId).Lords.Single(l => l.Category == setup.LordCategory);
         ui.SetText("TXT_LORD_TYPE", context.Text(lord.DescText));
 
         setup.Difficulty = ui.GroupIndex("RAD_DIFF");

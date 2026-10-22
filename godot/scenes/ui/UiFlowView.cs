@@ -306,7 +306,7 @@ public partial class UiFlowView : Node
         string human = state.ActiveHuman.Length > 0 ? state.ActiveHuman : state.Info.Humans.FirstOrDefault() ?? "";
         if (state.Looks.Map.Players.TryGetValue(human, out var player)
             && _menu.Catalog.Races.FirstOrDefault(r => r.Id.Equals(player.RaceId, StringComparison.OrdinalIgnoreCase)) is { } race)
-            setup.Race = race.Type;
+            setup.RaceId = race.Id;
         _loaded = path;
         _nav = new UiNavigator(GameData.Content.Flow, Briefing, UiPhase.Game);
         _replacedTop = true;
@@ -425,7 +425,7 @@ public partial class UiFlowView : Node
         var human = session.Map.Players.GetValueOrDefault(session.ActiveHuman);
         if (human is not null && _menu.Catalog.Races.FirstOrDefault(r => r.Id.Equals(human.RaceId, StringComparison.OrdinalIgnoreCase)) is { } race)
         {
-            setup.Race = race.Type;
+            setup.RaceId = race.Id;
             setup.LordCategory = race.Lords.FirstOrDefault(l => l.Id.Equals(human.LordId, StringComparison.OrdinalIgnoreCase))?.Category ?? setup.LordCategory;
             setup.Face = human.Face;
             setup.LordName = human.Name;
@@ -671,7 +671,7 @@ public partial class UiFlowView : Node
     private string? TransitionVideo(UiTransition t)
     {
         if (t.Target is null || t.Action is not (UiFlowAction.Goto or UiFlowAction.Open) || _menu is null) return null;
-        string race = _menu.Catalog.Races.FirstOrDefault(r => r.Type == _menu.Setup.Race)?.Code ?? "";
+        string race = _menu.Catalog.Races.FirstOrDefault(r => r.Id.Equals(_menu.Setup.RaceId, StringComparison.OrdinalIgnoreCase))?.Code ?? "";
         return GameData.Content.Transitions.VideoFor(t.From, t.Target, race);
     }
 

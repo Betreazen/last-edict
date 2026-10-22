@@ -24,10 +24,15 @@ git, старые снимки удаляются без переписыван�
 Снимки — только во временный каталог, **не в репозиторий**.
 
 Снимки оригинала для сравнения — экраны, снятые в самой игре (F12 под зондом эталона, `../disciples-godot/tools/shot_pairs.py`
-раскладывает их по экранам в `.cache/shots`). Пара склеивается рядом с подписями (EB Garamond из `data/fonts`).
+раскладывает их по экранам в `.cache/shots`), или кадр «было» сборкой начала этапа: `git worktree add ../le-before <коммит>`, туда —
+`cp -rn data/. ../le-before/data/` (без замены файлов коммита; новые поля содержимого, которых та сборка не знает, — убрать), затем
+`screenshots.py --repo ../le-before --only <имя>`; рабочую копию потом убрать `py tools/wt_remove.py ../le-before` (без `--branch`).
+Широкие снимки (`wide-map`, `settings`, `controls`, `gamepad`, `options-old` — окно оригинала для пары) — 1280×720 в режиме «чёткий».
+Пара склеивается рядом с подписями: `py tools/publish/compare.py <было> <стало> --left … --right … --out <каталог>/compare-<имя>.png`
+(EB Garamond из `data/fonts`, рядом `-small.png` ≤ 200 КБ).
 
 Сейчас в выпуске: `main-menu`, `world-map`, `battle`, `battle-queue`, `city`, `spellbook`, `hero`, `diplomacy` (каждый — полный и
-`-small`), `compare-battle-queue` (+ `-small`).
+`-small`), `compare-battle-queue` (+ `-small`); с Э5 — `compare-widescreen`, `compare-settings`, `controls`, `gamepad` (каждый + `-small`).
 
 ## Как выложить
 

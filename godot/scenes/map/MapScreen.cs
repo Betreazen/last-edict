@@ -1221,7 +1221,9 @@ public partial class MapScreen : Node
             var held = DateTime.UtcNow;
             while ((DateTime.UtcNow - held).TotalMilliseconds < hold) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
         }
-        if (shot is not null) GetViewport().GetTexture().GetImage().SavePng(shot);
+        // --shot-window — всё окно, как видит игрок (с верхними слоями: подсказки геймпада), а не буфер стенда показа.
+        var shotView = OS.GetCmdlineUserArgs().Contains("--shot-window") ? GetTree().Root : GetViewport();
+        if (shot is not null) shotView.GetTexture().GetImage().SavePng(shot);
         _mini?.Place();
         // Места подписей экранов (--labels): верх блока строк от верха места — проверка вертикального правила движка (UiTextBlock).
         if (OS.GetCmdlineUserArgs().Contains("--labels"))

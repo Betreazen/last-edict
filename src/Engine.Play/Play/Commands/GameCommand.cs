@@ -344,7 +344,7 @@ public sealed record TrainCommand(string Stack, string Site, string Unit) : Game
     internal override object? Run(GameSession s, List<string> report) => (s.Train(Stack, Site, Unit, out var paid), paid);
 }
 
-/// <summary>Действие вора; бросок — генератором партии (<see cref="GameSession.Rng"/>).</summary>
+/// <summary>Действие вора; бросок — потоком карты (<see cref="GameSession.MapRng"/>).</summary>
 public sealed record ThiefCommand(string Stack, string Target, ThiefAction Action, string? Pick = null) : GameCommand
 {
     internal override object? Run(GameSession s, List<string> report) => s.Thief(Stack, Target, Action, s.MapRng, Pick);

@@ -49,8 +49,11 @@ public sealed partial class GameSession(GameState state, MapArtData art, GameBoo
     /// <summary>Сколько бросков взяли все потоки — отпечаток для аудита правок мимо команд (<see cref="Execute"/>).</summary>
     private long RngSteps => _rng.Values.Sum(r => (long)r.Steps);
 
+    /// <summary>Потоки из записи; записи нет — потоки зерна 0. В записи нет потока — порча (сохранение 12+ пишет все), а не тихое зерно 0.</summary>
     private static IReadOnlyDictionary<RngStream, EngineRng> Streams(RandomStreams? saved) =>
-        RngStreams.All.ToDictionary(s => s, s => saved?.Of(s) is { } at ? EngineRng.FromSeed(at.Table, at.Index) : RngStreams.Derive(0, s));
+        RngStreams.All.ToDictionary(s => s, s => saved is null ? RngStreams.Derive(0, s)
+            : saved.Of(s) is { } at ? EngineRng.FromSeed(at.Table, at.Index)
+            : throw new InvalidDataException($"в генераторах партии нет потока «{RngStreams.Name(s)}»"));
 
     /// <summary>Места потоков и CRT для записи.</summary>
     private RandomStreams CurrentRandom() =>

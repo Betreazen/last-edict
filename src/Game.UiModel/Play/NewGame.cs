@@ -68,14 +68,17 @@ public static class NewGame
         IReadOnlyList<HotseatSeat> seats = setup.Hotseat.Count > 0 ? setup.Hotseat
             : [new HotseatSeat(setup.Race, setup.LordName ?? "", setup.Face, setup.LordCategory, setup.ImportedLeader)];
         var chosen = new Dictionary<string, (string Lord, HotseatSeat Seat)>(StringComparer.OrdinalIgnoreCase);
-        foreach (var seat in seats)
+        // Места со своим игроком — первыми, затем прочие — первому свободному игроку своей расы по id (двое одной расы — два места, Э4).
+        foreach (var seat in seats.Where(s => s.PlayerId is not null).Concat(seats.Where(s => s.PlayerId is null)))
         {
             var race = catalog.Race(seat.Race);
-            // Место — своему игроку; без него — первому свободному игроку расы по id (двое одной расы — два места, Э4).
             var player = (seat.PlayerId is { } id ? map.Players.GetValueOrDefault(id)
                           : map.Players.Values.OrderBy(p => p.Id, StringComparer.Ordinal)
                                 .FirstOrDefault(p => p.RaceId.Equals(race.Id, StringComparison.OrdinalIgnoreCase) && !chosen.ContainsKey(p.Id)))
                          ?? throw new InvalidOperationException($"в сценарии нет свободного игрока расы {race.Id}");
+            if (!player.RaceId.Equals(race.Id, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException($"игрок {player.Id} — расы {player.RaceId}, а место — расы {race.Id}");
+            if (chosen.ContainsKey(player.Id)) throw new InvalidOperationException($"игрок {player.Id} занят двумя местами");
             var lord = race.Lords.FirstOrDefault(l => l.Category == seat.LordCategory)
                        ?? throw new InvalidOperationException($"у расы {race.Id} нет лорда типа {seat.LordCategory}");
             chosen[player.Id] = (lord.Id, seat);
@@ -147,8 +150,9 @@ public static class NewGame
     public const int FirstOwnParty = 10;
 
     /// <summary>Своя сторона второму и следующим играбельным игрокам одной стороны (обычно — одной расы без <see cref="MapPlayer.Party"/>):
-    /// у движка сторона — род расы, и двое одной расы делили бы отношения. Первый (по id) остаётся на своей; новые — с
-    /// <see cref="FirstOwnParty"/>, мимо занятых. Нечего делить — та же карта.</summary>
+    /// у движка сторона — род расы, и двое одной расы делили бы отношения. Явная сторона (<see cref="MapPlayer.Party"/>) остаётся за игроком;
+    /// из сторон по роду первый (по id) остаётся на своей, прочие — с <see cref="FirstOwnParty"/>, мимо занятых. Нечего делить — та же
+    /// карта.</summary>
     public static MapState Sides(MapState map, GameBook book)
     {
         ArgumentNullException.ThrowIfNull(map);
@@ -159,7 +163,7 @@ public static class NewGame
         var used = new HashSet<int>();
         int next = FirstOwnParty;
         Dictionary<string, MapPlayer>? players = null;
-        foreach (var p in playable)
+        foreach (var p in playable.Where(p => p.Party is not null).Concat(playable.Where(p => p.Party is null)))
         {
             int party = Diplomacy.PartyOf(p, races)!.Value;
             if (used.Add(party)) continue;

@@ -18,7 +18,7 @@ public interface ITurnObserver
 
     /// <summary>Бой ИИ собран (<see cref="GameSession.StartBattle"/> уже вызван, <paramref name="state"/> — то состояние, которое
     /// примет <see cref="GameSession.FinishBattle"/>). Вернуть журнал боя, сыгранного на этом состоянии генератором партии
-    /// (<see cref="GameSession.Rng"/>), — или null: тогда бой идёт автобоем, как без наблюдателя.</summary>
+    /// (<see cref="GameSession.BattleRng"/>), — или null: тогда бой идёт автобоем, как без наблюдателя.</summary>
     IReadOnlyList<TurnRecord>? Battle(BattleState state);
 
     /// <summary>Запрос решения боя (<c>docs/game-commands.md</c> §2): ядро спрашивает так, ответ — данные. Журнал боя и, если бой вёл

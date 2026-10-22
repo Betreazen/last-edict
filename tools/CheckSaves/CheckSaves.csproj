@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Сохранения середины партии для проверок экранов (ui-render-check, Э5): ИИ за всех на сценарии импорта, снимки дней. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Engine.Play\Engine.Play.csproj" />
+  </ItemGroup>
+
+</Project>

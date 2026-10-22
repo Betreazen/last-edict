@@ -45,6 +45,9 @@ from contextlib import contextmanager
 from functools import partial
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import ui_check_maps  # noqa: E402  (рядом, в tools/)
+
 # Семь экранов: маленький диалог, боевой экран (58 элементов), самый большой по элементам (77), городской,
 # книга заклинаний и два с настоящими подписями — главное меню (8 надписей) и выбор одиночной игры (6).
 # У всех семи вся графика есть в описи — проверка обязана быть зелёной.
@@ -337,6 +340,42 @@ def dotnet_tool(repo: Path, name: str) -> list[str]:
     return ["dotnet", str(repo / "tools" / name / "bin" / "Release" / "net10.0" / f"{name}.dll")]
 
 
+# Партии середины игры для шагов карты (Э5): сохранений живых партий корпуса в Last Edict нет — их заменяют снимки партии стенда
+# (tools/CheckSaves: ИИ за всех, постоянное зерно, игрок — человек в снимке). Сценарий импорта → (игрок, дни). Снимки пишутся раз за прогон.
+CHECK_SAVES = {"Power to Corrupt": ("S073PL000a", (5, 21, 30))}
+_SAVES_LOCK = threading.Lock()
+_SAVES_DONE: dict[str, str] = {}   # сценарий → «» (готово) или причина пропуска
+
+
+def check_save(repo: Path, scenario: str, day: int) -> tuple[Path | None, str]:
+    """Сохранение дня `day` партии стенда на сценарии импорта: (путь, «») или (None, причина пропуска — нет импорта)."""
+    player, days = CHECK_SAVES[scenario]
+    out = repo / ".cache" / "ui-check" / "check-saves"
+    with _SAVES_LOCK:
+        if scenario not in _SAVES_DONE:
+            if not ui_check_maps.scenario_path(repo, scenario).is_file():
+                _SAVES_DONE[scenario] = f"нет сценария импорта «{scenario}»"
+            else:
+                run = subprocess.run([*dotnet_tool(repo, "CheckSaves"), "--scenario", scenario, "--player", player,
+                                      "--days", ",".join(map(str, days)), "--out", str(out)],
+                                     capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=repo)
+                if run.returncode != 0:
+                    raise RuntimeError(f"tools/CheckSaves «{scenario}» упал:\n{run.stdout[-2000:]}{run.stderr[-2000:]}")
+                _SAVES_DONE[scenario] = ""
+    if _SAVES_DONE[scenario]:
+        return None, _SAVES_DONE[scenario]
+    return out / f"{scenario}-d{day:02}.d2save", ""
+
+
+STAND_PLAYER = CHECK_SAVES["Power to Corrupt"][0]
+
+
+def stand(repo: Path, day: int) -> tuple[Path | None, ui_check_maps.ScenarioMap | None, str]:
+    """Сохранение дня `day` партии стенда «Power to Corrupt» и его карта; (None, None, причина) — нет импорта."""
+    save, why = check_save(repo, "Power to Corrupt", day)
+    return (save, ui_check_maps.load(save), "") if save is not None else (None, None, why)
+
+
 def godot(repo: Path, extra: list[str], scene: str = "res://scenes/ui/UiScreen.tscn") -> tuple[int, str]:
     slot = _SLOTS.get() if _SLOT_HOMES else None
     t0 = time.monotonic()
@@ -349,8 +388,16 @@ def godot(repo: Path, extra: list[str], scene: str = "res://scenes/ui/UiScreen.t
             _STEP.calls.append(time.monotonic() - t0)
 
 
+# Бой-образец сцены боя, когда шаг не задал свой (--stacks, --journal, --synth): журнала корпуса (corpus/sample) в Last Edict нет —
+# бой с карты импортированного сценария.
+BATTLE_SCENE = "res://scenes/battle/BattleScreen.tscn"
+BATTLE_SAMPLE = ["--scenario", "Mercantile", "--stacks", "S135KC0000,S135KC0020"]
+
+
 def _godot(repo: Path, extra: list[str], scene: str, slot: int | None) -> tuple[int, str]:
     exe = os.environ.get("GODOT", r"C:\Tools\bin\godot.cmd")
+    if scene == BATTLE_SCENE and not {"--stacks", "--journal", "--synth"} & set(extra):
+        extra = [*BATTLE_SAMPLE, *extra]
     proc = subprocess.Popen([exe, "--headless", "--path", str(repo / "godot"), scene,
                              "--", *([] if "--mods" in extra else ["--no-mods"]), *extra],
                             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8", errors="replace",
@@ -838,467 +885,129 @@ def corpus_dir(repo: Path) -> Path:
 
 # Окна города (docs/ui-windows.md): шаги проверки сцены карты и что должна содержать строка каждого шага. Клетки групп —
 # «x» воин, «b» большой, «.» пусто; позиции 0…5, чётные — передний ряд.
-CITY_CASES = [
-    # Десятый круг: «Поставить жезл» (BTN_DROP_ROD, CTaskDropRod) — жезлоносец человека Империи на f7-m6-rods: режим с панелью DLG_DROP_BAG,
-    # курсор DROPRODVAL, первый щелчок — путь, второй — вопрос с ценой, «Да» — жезл; повторно — отказ кнопки (очков хода нет, X005TA0542).
-    ("../20260919-f7/f7-m6-rods-human-t01-021.sg", "S143PL0001", [
-        ("select S143KC0001", ["выделен=S143KC0001"]),
-        ("panel click BTN_DROP_ROD", ["окна=-"]),
-        ("rod 29,9", ["курсор=DROPRODVAL", "после: жезл=S143KC0001", "панель=DLG_DROP_BAG"]),
-        ("rod 29,9", ["окна=DLG_MESSAGE_BOX", "сообщение=вопрос", "текст=Водрузитьжезл"]),
-        ("ui click BTN_YES", ["окна=-"]),
-        ("select S143KC0001", ["выделен=S143KC0001"]),
-        ("panel click BTN_DROP_ROD", ["окна=DLG_MESSAGE_BOX", "текст=Длятогочтобы"]),
-    ]),
-    # Замечание 11.10, п. 31: жезл через клетку (29,10 от жезлоносца на 29,8) — «Да», отряд идёт, встаёт рядом (29,9) и ставит жезл
-    # (сервер 0x440cfc): ход списан целиком, повторная кнопка — отказ «нет очков хода» (X005TA0542). Прежде жезла не было, ход оставался.
-    ("../20260919-f7/f7-m6-rods-human-t01-021.sg", "S143PL0001", [
-        ("select S143KC0001", ["выделен=S143KC0001"]),
-        ("panel click BTN_DROP_ROD", ["окна=-"]),
-        ("rod 29,10", ["курсор=DROPRODVAL", "панель=DLG_DROP_BAG"]),
-        ("rod 29,10", ["окна=DLG_MESSAGE_BOX", "сообщение=вопрос", "текст=Водрузитьжезл"]),
-        ("ui click BTN_YES", ["окна=-"]),
-        ("select S143KC0001", ["выделен=S143KC0001"]),
-        ("panel click BTN_DROP_ROD", ["окна=DLG_MESSAGE_BOX", "текст=Длятогочтобы"]),
-    ]),
-    # Ответ пользователя 11.10: вопрос с ценой и тогда, когда сегодня доходим только до соседней клетки (18,8 от 29,8: до самой клетки не
-    # дойти, до 19,8 — да; DropRodTests.AsksToday_BesideOnlyCellsExistOnRodsMap). «Да» — отряд встаёт рядом и ставит жезл, ход списан.
-    ("../20260919-f7/f7-m6-rods-human-t01-021.sg", "S143PL0001", [
-        ("select S143KC0001", ["выделен=S143KC0001"]),
-        ("panel click BTN_DROP_ROD", ["окна=-"]),
-        ("rod 18,8", ["курсор=DROPRODVAL", "панель=DLG_DROP_BAG"]),
-        ("rod 18,8", ["окна=DLG_MESSAGE_BOX", "сообщение=вопрос", "текст=Водрузитьжезл"]),
-        ("ui click BTN_YES", ["окна=-"]),
-        ("select S143KC0001", ["выделен=S143KC0001"]),
-        ("panel click BTN_DROP_ROD", ["окна=DLG_MESSAGE_BOX", "текст=Длятогочтобы"]),
-    ]),
-    # День 5 живой партии, Кланы: столица → окно армии, перетаскивание гостя в гарнизон, найм по пустой ячейке с вопросом.
-    ("rastlennaya-vlast-dwarf-t05-011.sg", "S073PL000a", [
-        ("panel click BTN_CAPITAL", ["панель=DLG_CAPITAL"]),
-        ("panel click BTN_UNITS", ["окна=DLG_CITY_STACK ", "L=.xxx.x R=bb.x.."]),
-        # Тащение (CDragAndDropInterf 0x56c158): портрет тащимого на курсоре (0x56efc5, замечание 10), вне мест броска — NODRAGDROP.
-        # Рамки допустимости (0x56c58a → 0x56eaef, 0x56e02d → 0x56e487): с нажатия — у обеих групп; свой отряд — все шесть жёлтые,
-        # гарнизон — жёлтые там, куда бросок пройдёт (колонка большого и страж R3 — без рамки); 74×89 по середине ячейки (−2,−2).
-        ("ui press 200,80", ["L=.xxx.x", "тащимое=Faces:", "курсор=IsoCursr:DEFAULT+Faces:", "рамки=9 ",
-                             "IMG_LDROP1:SMALL_VALID@188,66:74x89", "IMG_LDROP0:SMALL_VALID@268,66:74x89",
-                             "IMG_RDROP2:SMALL_VALID@455,172:74x89", "!IMG_RDROPB0", "!IMG_RDROP3"]),
-        ("ui move 700,40", ["тащение=NODRAGDROP", "курсор=IsoCursr:NODRAGDROP+Faces:", "рамки=9 "]),
-        ("ui release 470,190", ["L=..xx.x R=bbxx..", "!рамки="]),
-        ("ui click 470,290", ["окна=DLG_CITY_STACK>DLG_HIRE_LEADER_2 ", "найм=Unit", "LBOX_LEADER=4"]),
-        ("ui click BTN_HIRE_LEADER", ["окна=DLG_CITY_STACK>DLG_HIRE_LEADER_2>DLG_MESSAGE_BOX"]),
-        ("ui click BTN_YES", ["окна=DLG_CITY_STACK ", "R=bbxxx.", "золото=250"]),
-        ("ui click BTN_CLOSE", ["окна=-"]),
-        ("panel click BTN_BACK", ["панель=DLG_STRATEGIC"]),
-    ]),
-    # День 5: зелье из сумки гостя на воинов (0x500d03 → 0x5de495, бросок 0x4ff396; журнал human seq 2199562 — то же зелье лидеру L2,
-    # 79 → 150): с нажатия рамки у обеих групп — раненый лидер жёлтая, здоровые красные (и колонка большого гарнизона), склад принимает
-    # предмет (DRAGDROP_INVENT_VALID), сумка-источник — нет; бросок на
-    # здорового — «Воин не ранен» (X005TA0594), зелье на месте; на лидера — выпито, рамок нет.
-    ("rastlennaya-vlast-dwarf-t05-011.sg", "S073PL000a", [
-        ("panel click BTN_CAPITAL", ["панель=DLG_CAPITAL"]),
-        ("panel click BTN_UNITS", ["окна=DLG_CITY_STACK ", "сумка=8"]),
-        ("ui press 50,414", ["тащимое=IconItem:G000IG0006", "рамки=7 ", "IMG_LDROP2:SMALL_VALID@268,172:74x89",
-                             "IMG_LDROP1:SMALL_INVALID@188,66:74x89", "IMG_RDROPB0:LARGE_INVALID@456,68:152x85", "!IMG_LDROP0",
-                             "MLBOX_RINVENTORY_DROP:INVENT_VALID@484,404:275x93", "!MLBOX_LINVENTORY_DROP"]),
-        ("ui release 225,110", ["окна=DLG_CITY_STACK>DLG_MESSAGE_BOX", "сообщение=ОК", "текст=Воиннеранен"]),
-        ("ui click BTN_OK", ["окна=DLG_CITY_STACK ", "сумка=8", "отказ=AlreadyAtFullHp"]),
-        ("ui press 50,414", ["IMG_LDROP2:SMALL_VALID@268,172:74x89"]),
-        ("ui release 305,216", ["окна=DLG_CITY_STACK ", "сумка=7", "отказ=- ", "!рамки="]),
-    ]),
-    # День 5, второй круг: карточка по правой кнопке (пока держится), кукла гостя, отпуск (страж — «ОК», воин — вопрос),
-    # предмет из сумки гостя на склад перетаскиванием; третий круг — «Остановить продвижение» (страж — отказ, воин — вопрос).
-    ("rastlennaya-vlast-dwarf-t05-011.sg", "S073PL000a", [
-        ("panel click BTN_CAPITAL", ["панель=DLG_CAPITAL"]),
-        ("panel click BTN_UNITS", ["имя=Сатория", "R=bb.x..", "сумка=8", "склад=0"]),
-        ("ui rpress 470,120", ["окна=DLG_CITY_STACK>DLG_R_C_UNIT ", "карточка="]),
-        ("ui rrelease 470,120", ["окна=DLG_CITY_STACK "]),
-        # Большой юнит гарнизона: одна рамка на колонку (DRAGDROP_LARGE_VALID 152×85, −1,0); у гостя рамок нет (лидерство, лидер в колонке).
-        ("ui press 470,120", ["рамки=5 ", "IMG_RDROPB0:LARGE_VALID@456,68:152x85", "!IMG_LDROP", "!IMG_RDROP0", "!IMG_RDROP1"]),
-        ("ui release 470,120", ["R=bb.x..", "!рамки="]),
-        ("ui click TOG_PAPERDOLL", ["кукла=1"]),
-        ("ui click TOG_PAPERDOLL", ["кукла=0"]),
-        # Инструмент отпуска — тоже перетаскивание (CMidDropAction): страж гарнизона красная (0x502186, код 2), лидер гостя — без рамки.
-        ("ui click TOG_DISMISS", ["инструмент=Dismiss", "рамки=5 ", "IMG_RDROP3:SMALL_INVALID@535,172:74x89", "!IMG_LDROP3"]),
-        ("ui click 550,190", ["сообщение=ОК"]),
-        ("ui click BTN_OK", ["окна=DLG_CITY_STACK ", "гарнизон=2"]),
-        ("ui click TOG_DISMISS", ["инструмент=Dismiss"]),
-        ("ui click 470,120", ["сообщение=вопрос"]),
-        ("ui click BTN_YES", ["гарнизон=1", "R=...x.."]),
-        ("ui press 50,414", ["сумка=8"]),
-        ("ui release 494,414", ["сумка=7", "склад=1"]),
-        ("ui click TOG_DYNLEVEL", ["инструмент=StopGrowth"]),
-        ("ui click 550,190", ["сообщение=ОК", "Вынеможетеостановить"]),
-        ("ui click BTN_OK", ["окна=DLG_CITY_STACK ", "инструмент=None"]),
-        ("ui click TOG_DYNLEVEL", ["инструмент=StopGrowth"]),
-        ("ui click 200,80", ["сообщение=вопрос", "Выдействительн"]),
-        ("ui click BTN_YES", ["окна=DLG_CITY_STACK ", "отказ=-"]),
-    ]),
-    # День 5, третий круг: картинка столицы — наведение на постройку даёт DLG_BUILDING на месте DLG_ISO_PAL, мимо — прежнюю
-    # панель; правая кнопка по постройке — её энциклопедия; щелчок по картинке — окно построек; одна анимация идёт.
-    ("rastlennaya-vlast-dwarf-t05-011.sg", "S073PL000a", [
-        ("panel click BTN_CAPITAL", ["панель=DLG_CAPITAL"]),
-        ("cap 360,400", ["постройка=G000BB0026", "пал=DLG_BUILDING", "анимаций=1"]),
-        ("cap 5,5", ["постройка=-", "пал=DLG_ISO_PAL"]),
-        ("cap rclick 360,400", ["окна=DLG_R_C_BUILDING ", "постройка=G000BB0026"]),
-        ("ui rrelease 360,400", ["окна=-"]),
-        ("cap click", ["окна=DLG_BUILD_STRUCTURE "]),
-        ("ui click BTN_CLOSE", ["окна=-"]),
-    ]),
-    # День 5: «Вывести героя» из окна армии столицы — окно и столица закрываются, на панели снова команды.
-    ("rastlennaya-vlast-dwarf-t05-011.sg", "S073PL000a", [
-        ("panel click BTN_CAPITAL", ["панель=DLG_CAPITAL"]),
-        ("panel click BTN_UNITS", ["гость=4"]),
-        ("ui click BTN_EXIT_CITY", ["окна=-", "панель=DLG_STRATEGIC"]),
-        ("city capital", ["гость=0", "L=------"]),
-    ]),
-    # Прогон 11.10, B1: щелчок по столице с гостем — первый выбирает гостя (0x4d4331), второй по сердцу укрепления — окно армии
-    # (0x4d0e2c → 0x486c8e; замечание 8); портрет героя на панели после окна и после вывода из столицы (замечание 11); отпускание на
-    # портрете гостя панели столицы — окно армии (CFortInterf 0x4867ca; замечание 21).
-    ("rastlennaya-vlast-dwarf-t05-011.sg", "S073PL000a", [
-        ("53,34", ["выбран=S073KC0001", "столица=0", "окна=-"]),
-        ("52,33", ["окна=DLG_CITY_STACK "]),
-        ("ui click BTN_CLOSE", ["окна=-", "портрет=1"]),
-        ("panel click BTN_CAPITAL", ["панель=DLG_CAPITAL", "портрет=0"]),
-        ("panel release IMG_LEADER", ["окна=DLG_CITY_STACK ", "гость=4"]),
-        ("ui click BTN_EXIT_CITY", ["окна=-", "панель=DLG_STRATEGIC", "портрет=1", "выбран=S073KC0001"]),
-    ]),
-    # Прогон 3 11.10, п. 6: сердце укрепления (вход и три клетки над ним и левее, 0x5e948d) без гостя щелчок не берёт (0x4d4262 даёт там
-    # гостя или ничего) — выбранному отряду это путь к столице; щелчок вне сердца выбирает столицу (CTaskSelectCity, 0x4d45a6), второе
-    # нажатие двойного открывает экран столицы, а не окно построек (0x4cf79d → CCapitalInterf; замечания 8, 28); в окне армии — подсказка
-    # найма героя (X005TA0159, CDDUnitNoGroup 0x573131; замечание 29). Клетка сердца щёлкается одна: второй щелчок по другой клетке той же
-    # столицы подтвердил бы путь (0x4cc8c2: та же цель-вход и тот же конец — docs/map-path.md §4, «Прицел щелчка»), и отряд пошёл бы.
-    ("rastlennaya-vlast-dwarf-t24-045.sg", "S073PL000a", [
-        ("panel click BTN_NEXT_LEADER", ["выбран=S073KC0001"]),
-        ("52,33", ["выбран=S073KC0001", "путь=18 ", "укрепление=-", "столица=0", "окна=-"]),
-        ("51,32", ["выбран=- ", "путь=0 ", "укрепление=S073FT0001", "столица=0", "окна=-"]),
-        ("51,32", ["столица=1", "окна=-"]),
-        ("panel click BTN_BACK", ["панель=DLG_STRATEGIC"]),
-        ("city capital", ["гость=0", "подсказка_найма=Щелкнитемышкойчт"]),
-        ("ui click BTN_CLOSE", ["окна=-"]),
-    ]),
-    # Прогон 3 11.10, п. 6: столица с гостем — щелчок вне сердца выбирает столицу, а не гостя; второй открывает экран столицы (0x4cf79d:
-    # 0x4cf6a9 даёт гостя только на самой клетке входа).
-    ("rastlennaya-vlast-dwarf-t05-011.sg", "S073PL000a", [
-        ("50,31", ["выбран=- ", "укрепление=S073FT0001", "столица=0", "окна=-"]),
-        ("50,31", ["столица=1", "окна=-"]),
-    ]),
-    # День 24, столица без гостя: найм героя — окно имени (набранная буква дописывается), найм под этим именем.
-    ("rastlennaya-vlast-dwarf-t24-045.sg", "S073PL000a", [
-        ("city capital", ["гость=0", "золото=1650"]),
-        ("ui click 265,216", ["найм=Leader", "LBOX_LEADER=5"]),
-        ("ui click BTN_HIRE_LEADER", ["DLG_HIRE_LEADER_2>DLG_GETINFO_BOX "]),
-        ("ui type Z", ["DLG_GETINFO_BOX "]),
-        ("ui click BTN_CLOSE", ["окна=DLG_CITY_STACK ", "гость=1", "L=..x...", "золото=1150"]),
-    ]),
-    # День 19, снос чужого жезла жезлоносцем (пометка 4 партии 15.10; журнал human seq 4173754…4173813): рядом с жезлом — вопрос
-    # X005TA0272 с первого щелчка (0x4d0e2c → 0x4d144d), «Да» — снос (0x4d1ec7 → 0x4408cb), жезлов 20 → 19.
-    ("rastlennaya-vlast-dwarf-t19-033.sg", "S073PL000a", [
-        ("83,33", ["выбран=S073KC0075", "жезлов=20"]),
-        ("83,34", ["окна=DLG_MESSAGE_BOX ", "жезлов=20"]),
-        ("ui click BTN_YES", ["окна=-", "жезлов=19"]),
-    ]),
-    # Тот же жезл через клетку: первый щелчок — путь, второй — вопрос (сегодня дойдёт), «Да» — ход к жезлу и снос.
-    ("rastlennaya-vlast-dwarf-t19-033.sg", "S073PL000a", [
-        ("83,33", ["выбран=S073KC0075"]),
-        ("81,33", ["путь=3 "]),
-        ("81,33", ["идёт=1"]),
-        ("83,34", ["путь=2 ", "окна=- ", "жезлов=20"]),
-        ("83,34", ["окна=DLG_MESSAGE_BOX ", "жезлов=20"]),
-        ("ui click BTN_YES", ["окна=-", "жезлов=19"]),
-    ]),
-    # День 24: окно построек из столицы — ветка магов Кланов, выбор значка 46 (можно строить), «Построить» с вопросом.
-    ("rastlennaya-vlast-dwarf-t24-045.sg", "S073PL000a", [
-        ("panel click BTN_CAPITAL", ["панель=DLG_CAPITAL"]),
-        ("panel click BTN_BUILD_STRUCTURE", ["окна=DLG_BUILD_STRUCTURE ", "ветка=TOG_FIGHTER", "построек=8"]),
-        # Правая кнопка по портрету воина постройки — его карточка, пока держится (0x4ac52d; замечание 20).
-        # Портрет воина постройки — в рамке карточки отряда по размеру (0x4abaa1: малый 0x5b680b, большой 0x5b6870; пометка 1 партии 15.10).
-        ("ui click 209,57", ["выбрано=G000BB0026", "портрет=Icons:BORDERUNITSMALL&Faces:G000UU0037FACE"]),
-        ("ui rpress 518,300", ["DLG_BUILD_STRUCTURE>DLG_R_C_UNIT ", "карточка=g000uu0037"]),
-        ("ui rrelease 518,300", ["окна=DLG_BUILD_STRUCTURE "]),
-        # Большой: место портрета — на всю рамку 164 (0x4abb08…0x4abbd7), правая кнопка правее малого места — тоже карточка.
-        ("ui click TOG_OTHER", ["ветка=TOG_OTHER"]),
-        ("ui click 215,59", ["выбрано=G000BB0041", "портрет=Icons:BORDERUNITLARGE&Faces:G000UU0030FACE"]),
-        ("ui rpress 620,300", ["DLG_BUILD_STRUCTURE>DLG_R_C_UNIT ", "карточка=g000uu0030"]),
-        ("ui rrelease 620,300", ["окна=DLG_BUILD_STRUCTURE "]),
-        ("ui click TOG_MAGE", ["ветка=TOG_MAGE", "46@302,58:+"]),
-        ("ui click 302,58", ["выбрано=G000BB0046"]),
-        ("ui click BTN_BUILD", ["DLG_BUILD_STRUCTURE>DLG_MESSAGE_BOX "]),
-        # Построено — окно закрывается само (0x4ab364 → 0x5c8f71 в 0x4ab3d1; корпус: 23 постройки из 23); снова открытое — на той же ветке.
-        ("ui click BTN_YES", ["окна=-"]),
-        ("panel click BTN_BUILD_STRUCTURE", ["окна=DLG_BUILD_STRUCTURE ", "ветка=TOG_MAGE", "построено=7", "золото=900", "46@302,58:b"]),
-        ("ui click BTN_CLOSE", ["окна=-"]),
-    ]),
-    # День 24: окно отряда с портрета героя панели команд; предмет боевого слота — в сумку и обратно. Рамки предметов (памятка 3
-    # партии 15.10; CDDBaseEquip 0x5713c9/0x571b20/0x571c80, CDDFoldedInv 0x56cff7): надетое зелье — боевые слоты жёлтые
-    # (DRAGDROP_SMALL по середине слота 70×85, −2,−2), сумка DRAGDROP_INVENT_VALID в точке списка, воины — рамки зелья; из сумки — у
-    # сумки рамки нет, прочие слоты (не того рода) — тоже.
-    ("rastlennaya-vlast-dwarf-t24-045.sg", "S073PL000a", [
-        ("panel click BTN_NEXT_LEADER", ["окна=-"]),
-        ("panel release IMG_LEADER", ["окна=DLG_MANAGE_STACK ", "отряд=S073KC0001", "кукла=..xx...", "сумка=7", "MLBOX_INVENTORY=3"]),
-        ("ui rpress 494,414", ["окна=DLG_MANAGE_STACK>DLG_R_C_ITEM ", "предмет="]),
-        ("ui rrelease 494,414", ["окна=DLG_MANAGE_STACK "]),
-        ("ui press 506,203", ["кукла=..xx...", "IMG_BATTLE1_DROP:SMALL_VALID@469,159:74x89", "IMG_BATTLE2_DROP:SMALL_VALID@707,159:74x89",
-                              "MLBOX_INVENTORY_DROP:INVENT_VALID@484,404:275x93", "!IMG_BANNER_DROP", "!IMG_BOOTS_DROP"]),
-        ("ui release 494,414", ["кукла=...x...", "сумка=8", "!рамки="]),
-        ("ui press 494,414", ["сумка=8", "IMG_BATTLE1_DROP:SMALL_VALID@469,159:74x89", "!MLBOX_INVENTORY_DROP", "!IMG_TOME_DROP"]),
-        ("ui release 506,203", ["кукла=..xx...", "сумка=7", "!рамки="]),
-        ("ui click BTN_CLOSE", ["окна=-"]),
-    ]),
-    # День 24, курсор окон (CInterface::setCursor 0x5308aa из строки DIALOG, 0x50cd54; выбор CCursorImpl 0x54021c → 0x5308d5): над окном —
-    # курсор его разметки, кинжал _CUDEFAUL с горячей точкой 0,0 (поля 7–8 DIALOG); окно поверх окна — верхнего; тащение — свой курсор,
-    # бросили — снова кинжал; окно закрылось — снова курсор карты (решение пользователя 15.10: «как в оригинале»).
-    ("rastlennaya-vlast-dwarf-t24-045.sg", "S073PL000a", [
-        ("panel click BTN_NEXT_LEADER", ["окна=-"]),
-        ("wcursor", ["окна=0 ", "чей=карта"]),
-        ("ui click BTN_OPTIONS", ["окна=DLG_OPTIONS"]),
-        ("wcursor", ["верх=DLG_OPTIONS ", "курсор=ui:_CUDEFAUL ", "кадров=1 ", "точка=0,0 ", "чей=окно"]),
-        ("ui click BTN_CLOSE", ["окна=-"]),
-        ("wcursor", ["окна=0 ", "чей=карта"]),
-        ("panel release IMG_LEADER", ["окна=DLG_MANAGE_STACK "]),
-        ("wcursor", ["верх=DLG_MANAGE_STACK ", "курсор=ui:_CUDEFAUL ", "точка=0,0 "]),
-        ("ui press 506,203", ["кукла=..xx...", "тащимое=IconItem:", "курсор=IsoCursr:"]),
-        ("ui release 494,414", ["кукла=...x...", "сумка=8"]),
-        ("wcursor", ["верх=DLG_MANAGE_STACK ", "курсор=ui:_CUDEFAUL "]),
-        ("ui click BTN_CLOSE", ["окна=-"]),
-        ("wcursor", ["окна=0 ", "чей=карта"]),
-        ("site merchant", ["окна=DLG_MERCHANT ", "курсор=ui:_CUDEFAUL "]),
-        ("ui press 494,413", ["окна=DLG_MERCHANT "]),
-        ("ui release 50,413", ["сообщение=вопрос"]),
-        ("wcursor", ["окна=2 ", "верх=DLG_MESSAGE_BOX ", "курсор=ui:_CUDEFAUL "]),
-        ("ui click BTN_NO", ["окна=DLG_MERCHANT "]),
-        ("ui click BTN_CLOSE", ["окна=-"]),
-        ("wcursor", ["окна=0 ", "чей=карта"]),
-        ("city capital", ["окна=DLG_CITY_STACK "]),
-        ("wcursor", ["верх=DLG_CITY_STACK ", "курсор=ui:_CUDEFAUL ", "чей=окно"]),
-        ("ui click BTN_CLOSE", ["окна=-"]),
-        ("wcursor", ["окна=0 ", "чей=карта"]),
-    ]),
-    # День 24: исследование из столицы — вопрос X005TA0269, «Да» — заклинание изучено, окно остаётся.
-    ("rastlennaya-vlast-dwarf-t24-045.sg", "S073PL000a", [
-        ("panel click BTN_CAPITAL", ["панель=DLG_CAPITAL"]),
-        ("panel click BTN_RESEARCH_SPELL", ["окна=DLG_RESEARCH_SPELL ", "заклинаний=5", "известно=0"]),
-        ("ui click BTN_RESEARCH_SPELL", ["сообщение=вопрос", "Исследоватьзаклинание"]),
-        # Отметка изученного (Icons:ICNSY001, opacity 300) ложится сложением, а не чёрным квадратом (замечание 23).
-        ("ui click BTN_YES", ["окна=DLG_RESEARCH_SPELL ", "известно=1", "сложением=1"]),
-    ]),
-    # День 24, площадки отрядом S073KC0001 (имя площадки из сценария): торговец — товар в сумку с вопросом, кукла вместо отряда; маг —
-    # книга известных заклинаний; наёмники — «нет места»; тренер — обучение и итог.
-    ("rastlennaya-vlast-dwarf-t24-045.sg", "S073PL000a", [
-        ("panel click BTN_NEXT_LEADER", ["окна=-"]),
-        # Окно закрывает место отряда фоном DLG_MERCHANT_GROUP_BG во всю картинку (0x49a449), курсор карты сменён курсором окна — кинжалом
-        # _CUDEFAUL из разметки (партия 15.10, пометки 2 и 5; 0x5308d5). Двойной щелчок по товару — как бросок в сумку (решение
-        # пользователя 15.10, у движка его нет, 0x53616c): вопрос с подставленными именем и ценой, не шаблон с «%NAME%»; «Нет» — ничего не куплено.
-        ("site merchant", ["окна=DLG_MERCHANT ", "имя=Лавка_Кру", "товаров=7", "сумка=7", "золото=1650", "курсор=ui:_CUDEFAUL ",
-                           "фон=DLG_MERCHANT_GROUP_BG@0,0:350x386:135100"]),
-        ("ui double 494,413", ["DLG_MERCHANT>DLG_MESSAGE_BOX ", "сообщение=вопрос", "текст=ЭтотпредметЭликсирЖизни", "числа=400 "]),
-        ("ui click BTN_NO", ["окна=DLG_MERCHANT ", "сумка=7", "золото=1650"]),
-        # Картинка лавки SITE0002 260×248 в месте IMG_MERCHANT 260×219 — лишнее обрезано (снимок «Лавка Веррика» 17.10; 0x49938e → 0x530db8).
-        ("ui move 600,200", ["окна=DLG_MERCHANT ", "!IMG_MERCHANT:"]),
-        # Товар «приклеивается» к курсору (пользователь 17.10): нажатие — картинка тащимого на курсоре, над складом — «нельзя», над сумкой —
-        # основа DEFAULT (CDDFoldedInv 0x56d84d, наложение 0x532df9). Рамка сумки — товар по карману (0x5056f7 → 0x5df9ea), складу — нет.
-        ("ui press 494,413", ["окна=DLG_MERCHANT ", "тащимое=IconItem:G000IG0001", "курсор=IsoCursr:NODRAGDROP+IconItem:G000IG0001",
-                              "MLBOX_RINVENTORY_DROP:INVENT_VALID@40,403:275x93", "!MLBOX_LINVENTORY_DROP"]),
-        ("ui move 50,413", ["тащимое=IconItem:G000IG0001", "курсор=IsoCursr:DEFAULT+IconItem:G000IG0001"]),
-        ("ui release 50,413", ["сообщение=вопрос", "Этотпредмет", "!MLBOX_RINVENTORY_DROP"]),
-        ("ui click BTN_YES", ["сумка=8", "золото=1250"]),
-        ("ui click TOG_PAPERDOLL", ["кукла=1"]),
-        # Кукла торговца рисует рамки, как кукла окна отряда (Ин40; CDDEquipment 0x4cbcea → 0x50401c, 0x571b20/0x571c80): надетое из
-        # первого боевого слота — оба боевых жёлтые по середине слота, сумка (0x5056f7) и склад (CMidDropInventory 0x572585, купит —
-        # 0x4fe84a) — DRAGDROP_INVENT_VALID; прочие слоты — нет. Бросили мимо — рамок нет.
-        ("ui press 50,200", ["IMG_BATTLE1_DROP:SMALL_VALID@19,159:74x89", "IMG_BATTLE2_DROP:SMALL_VALID@257,159:74x89",
-                             "MLBOX_RINVENTORY_DROP:INVENT_VALID@40,403:275x93", "MLBOX_LINVENTORY_DROP:INVENT_VALID@484,403:275x93",
-                             "!IMG_BANNER_DROP", "!IMG_BOOTS_DROP"]),
-        ("ui release 0,0", ["кукла=1", "!рамки="]),
-        ("ui click TOG_PAPERDOLL", ["кукла=0"]),
-        ("ui click BTN_CLOSE", ["окна=-"]),
-        ("site mage", ["окна=DLG_MAGE ", "имя=Лавка_волш", "предлагает=7"]),
-        # Заклинание мага тоже тянется под курсором (значок IconSpel), примет только левый список купленных.
-        ("ui press 600,420", ["тащимое=IconSpel:G000SS0005", "курсор=IsoCursr:NODRAGDROP+IconSpel:G000SS0005"]),
-        ("ui move 200,440", ["курсор=IsoCursr:DEFAULT+IconSpel:G000SS0005"]),
-        ("ui release 0,0", ["окна=DLG_MAGE ", "!тащимое="]),
-        ("ui click BTN_KNOWN_SPELL", ["окна=DLG_MAGE>DLG_CAST_SPELL "]),
-        ("ui click BTN_CLOSE", ["окна=DLG_MAGE "]),
-        ("ui click BTN_CLOSE", ["окна=-"]),
-        ("site mercenaries", ["DLG_MERCENARIES>DLG_MESSAGE_BOX ", "Ввашемотряде"]),
-        # Строка ростера (0x503e47): портрет в левом верхнем углу ячейки 486,396 (левая рамка подложки), подпись 0x61fe1e «имя, ОЗ, цена» —
-        # в месте (14, 115) ячейки, на пергаменте (пользователь 17.10: «поползли портреты, текста нет»).
-        ("ui click BTN_OK", ["окна=DLG_MERCENARIES ", "ростер=4",
-                             "ростер0=Faces:G000UU5002FACE@486,396_текст@500,511:251x79=ОполченецОЗ:95/95Цена:50"]),
-        ("ui press 496,406", ["тащимое=Faces:G000UU5002FACE", "курсор=IsoCursr:"]),
-        ("ui release 0,0", ["окна=DLG_MERCENARIES ", "!тащимое="]),
-        ("ui click BTN_BACK", ["окна=-"]),
-        # Длинное имя героя (пометка 12 партии 17.10, «S1 покупатель и продавец»): вторая строка не выходит за место TXT_LEADER_NAME 179×22 —
-        # движок режет картинку текста местом элемента (CTextBoxInterf 0x533862, виджет 0x53e18b); короткое имя не режется.
-        ("site merchant", ["окна=DLG_MERCHANT ", "срезано=TXT_GOLD "]),
-        ("ui click BTN_CLOSE", ["окна=-"]),
-        ("rename S1_покупатель_и_продавец", ["rename ok"]),
-        ("site merchant", ["окна=DLG_MERCHANT ", "срезано=TXT_GOLD,TXT_LEADER_NAME "]),
-        ("ui click BTN_CLOSE", ["окна=-"]),
-        # Слово длиннее места (Ин37): движок его не рвёт — кусок «слово + пробелы» один на строке и выходит за место (0x529b94, 0x52a1ba →
-        # 0x52a2f0); Godot WordSmart рвал по буквам — вторая строка, срезанная местом.
-        ("rename Безымяннейшийпревеликийгерой", ["rename ok"]),
-        ("site merchant", ["окна=DLG_MERCHANT ", "срезано=TXT_GOLD "]),
-        ("ui click BTN_CLOSE", ["окна=-"]),
-        # Колесо над картой — стрелки ↑/↓ (WM_MOUSEWHEEL → VK_UP/VK_DOWN, 0x5626a3; вид карты — шаг на клетку, 0x5418fb).
-        ("wheel down", ["сдвиг=0,16 "]),
-        ("wheel up", ["сдвиг=0,-16 "]),
-        ("site trainer", ["окна=DLG_TRAINING_CAMP ", "имя=Лагерь_тренировок"]),
-        ("ui click TOG_TRAINING", ["окна=DLG_TRAINING_CAMP "]),
-        ("ui click 200,80", ["сообщение=вопрос", "Обучениеэтого"]),
-        # Итог обучения: портрет в рамке BORDERUNITSMALL/LARGE по размеру воина (0x49e5cb → 0x5b680b/0x5b6870; пометка 32 партии 17.10).
-        ("ui click BTN_YES", ["DLG_TRAINING_CONFIRM ", "полностью=1", "лицо=Icons:BORDERUNIT"]),
-        ("ui click BTN_OK", ["окна=DLG_TRAINING_CAMP ", "золото=1230"]),
-    ]),
-    # День 24, пятый круг: дипломатия — поле на месте карты и панель; выбран другой лорд — дань 150 золотых удержанием стрелки; «Назад»;
-    # «Задание» (брифинг поверх карты) и журнал.
-    ("rastlennaya-vlast-dwarf-t24-045.sg", "S073PL000a", [
-        ("panel click BTN_DIPLOMACY", ["панель=DLG_DIPLOMACY"]),
-        ("diplo 2", ["игроков=4", "дань=1", "золото=1650", "полоса_золота=1"]),
-        # Карточка игрока DLG_R_C_PLAYER (0x48522d → 0x577a0c), пока держится правая кнопка: над портретом слота поля и над лицом выбранного.
-        ("panel field rpress IMG_RACE2", ["окна=DLG_R_C_PLAYER ", "игрок=S073PL0009 ", "лицо=Lords:LORDHUL0", "один_из_Ваших_соперников!//"]),
-        ("panel field rrelease IMG_RACE2", ["окна=- "]),
-        ("panel rpress IMG_LORD_FACE", ["окна=DLG_R_C_PLAYER ", "игрок=S073PL0009 "]),
-        ("panel rrelease IMG_LORD_FACE", ["окна=- "]),
-        ("panel field rpress IMG_RACE1", ["окна=DLG_R_C_PLAYER ", "игрок=S073PL000a ", "Вы_за_него_играете!"]),
-        ("panel field rrelease IMG_RACE1", ["окна=- "]),
-        ("panel click BTN_GIVE_RESS", ["окна=DLG_GIVE_RESOURCE ", "дань=0"]),
-        # Стрелка с автоповтором: нажатие — без шага, 600 мс удержания — два шага (250, 500), отпускание — ещё один.
-        ("ui press BTN_UP", ["дань=0 "]),
-        ("ui wait 600", ["дань=100 "]),
-        ("ui release BTN_UP", ["дань=150 "]),
-        # Подсказка: 250 мс покоя над «ОК», соседняя — сразу, нажатие прячет.
-        ("ui move BTN_OK", ["подсказка=-"]),
-        ("ui wait 300", ["подсказка=Подтвердить"]),
-        ("ui move BTN_CANCEL", ["подсказка=Отмена"]),
-        # Дань ИИ — его сообщение дарителю PLAYER_GIVE_GOLD (0x474dd2) окном DLG_CHAT_AI (CCmdChatMsg → 0x4b9747; корпус legions 8 из 8).
-        ("ui click BTN_OK", ["окна=DLG_CHAT_AI ", "реплика="]),
-        ("ui click BTN_OK", ["окна=-"]),
-        ("diplo 2", ["золото=1500"]),
-        # Шестой круг: продажа предмета — окно склада своих крепостей; обмен областями — вопрос или отказ сообщением.
-        ("panel click BTN_TRADE_ITEM", ["окна=DLG_TRADE_ITEM ", "продажа крепость="]),
-        ("ui click BTN_CLOSE", ["окна=-"]),
-        ("panel click BTN_EXCHANGE_FOG", ["окна=DLG_MESSAGE_BOX"]),
-        ("ui click BTN_OK", ["окна=-"]),
-        ("panel click BTN_BACK", ["панель=DLG_STRATEGIC"]),
-        ("ui click BTN_REPORT", ["окна=DLG_SCENARIO_BRIEFING ", "задание="]),
-        ("ui click BTN_CONTINUE", ["окна=-"]),
-        ("ui click BTN_QUESTLOG", ["окна=DLG_QUEST_LOG ", "журнал="]),
-        ("ui click BTN_CLOSE", ["окна=-"]),
-        # Девятый круг: окно полученного DLG_ITEM (docs/ui-windows.md §14) — пустой мешок, два заклинания из библиотеки подряд.
-        ("given empty", ["окна=DLG_MESSAGE_BOX ", "получено=ничего"]),
-        ("ui click BTN_OK", ["окна=-"]),
-        ("given spell", ["окна=DLG_ITEM ", "получено=заклинание", "библиотека=1 первое=1"]),
-        ("ui click BTN_OK", ["окна=DLG_ITEM ", "первое=0"]),
-        ("ui click BTN_OK", ["окна=-"]),
-        ("given", ["окна=DLG_ITEM ", "получено=предмет", "первое=1"]),
-    ]),
-    # День 66, пятый круг: обмен — главный отряд S073KC0001 и S073KC00b7 вплотную; выбор (панель DLG_DROP_BAG, курсор EXCHANGE над
-    # соседом), окно DLG_EXCHANGE, предмет из левой сумки в правую, куклы, «Закрыть».
-    ("rastlennaya-vlast-dwarf-t66-112.sg", "S073PL000a", [
-        ("select S073KC0001", ["выделен=S073KC0001", "обмен=1"]),
-        ("panel click BTN_EXCHANGE", ["панель=DLG_DROP_BAG"]),
-        ("pick 90,90", ["курсор=- ", "панель=DLG_DROP_BAG", "окна=-"]),
-        ("pick 85,66", ["курсор=EXCHANGE ", "отметка=85,66:SELECT_NO ", "панель=- ", "окна=DLG_EXCHANGE ", "R=S073KC00b7", "кукла=0"]),
-        ("ui press 80,445", ["сумкаR=0"]),
-        ("ui release 520,445", ["сумкаR=1", "отказ=-"]),
-        ("ui click TOG_PAPERDOLL", ["кукла=1"]),
-        ("ui click BTN_CLOSE", ["окна=-"]),
-        # Шестой круг: «Посох или свиток» — герой умеет, свитков в сумке нет — пустой список.
-        ("panel click BTN_WAND_SCROLL", ["окна=DLG_WAND_SCROLL ", "посох предметов=0"]),
-        ("ui click BTN_CLOSE", ["окна=-"]),
-    ]),
-    # День 24, шестой круг, глазами S073PL0009: вор S073KC0076 у отряда S073KC0032 — окно действий (весь список, доступные чёрным),
-    # «Отмена» — вопрос X005TA0766, «Нет» — окно остаётся, «Да» — окно закрыто.
-    ("rastlennaya-vlast-dwarf-t24-045.sg", "S073PL0009", [
-        ("thief S073KC0076 S073KC0032", ["открыто=1", "окна=DLG_THIEF_ACTIONS ", "действий=2 доступно=2"]),
-        ("ui click BTN_CANCEL", ["окна=DLG_THIEF_ACTIONS>DLG_MESSAGE_BOX", "сообщение=вопрос"]),
-        ("ui click BTN_NO", ["окна=DLG_THIEF_ACTIONS "]),
-        ("ui click BTN_CANCEL", ["DLG_MESSAGE_BOX"]),
-        ("ui click BTN_YES", ["окна=-"]),
-    ]),
-    # День 30, седьмой круг: одиночная игра — итогов хода нет (ShowTurnSummary по умолчанию 0, 0x48a363); флажок «Всегда показывать
-    # результаты хода» в окне настроек — на следующем дне окно итогов (DLG_TURNSUMMARY), «ОК».
-    # 28.09: день 29 — после правок ИИ (очередь дня, заклинания) в ходе ИИ дня 31 событий для итогов PL000a нет, окно итогов не нужно.
-    ("rastlennaya-vlast-dwarf-t29-053.sg", "S073PL000a", [
-        ("end", ["день=30", "окна=-"]),
-        ("ui click BTN_OPTIONS", ["окна=DLG_OPTIONS"]),
-        ("ui click TOG_SHOWTURNSUMMARY", ["ok=1", "окна=DLG_OPTIONS"]),
-        ("ui click BTN_CLOSE", ["окна=-"]),
-        ("end", ["день=31", "окна=DLG_TURNSUMMARY ", "итоги записей="]),
-        ("ui click BTN_OK", ["окна=-"]),
-    ]),
-    # День 24: «Бросить предмет» из окна отряда — панель DLG_DROP_BAG; далёкая клетка и гора не годятся, соседняя равнина — мешок и
-    # его окно, предмет на землю.
-    ("rastlennaya-vlast-dwarf-t24-045.sg", "S073PL000a", [
-        ("panel click BTN_NEXT_LEADER", ["окна=-"]),
-        ("panel release IMG_LEADER", ["окна=DLG_MANAGE_STACK ", "сумка=7"]),
-        ("ui click BTN_PICK_UP_DROP", ["окна=-"]),
-        ("drop 75,34", ["окна=-", "панель=DLG_DROP_BAG"]),
-        ("drop 72,35", ["окна=-"]),
-        ("drop 72,34", ["окна=DLG_PICKUP_DROP ", "на_земле=0"]),
-        ("ui press 50,413", ["сумка=7"]),
-        ("ui release 494,413", ["сумка=6", "на_земле=1"]),
-        ("ui click TOG_PAPERDOLL", ["кукла=1"]),
-        ("ui click BTN_BACK", ["окна=-"]),
-    ]),
-    # День 44 глазами S073PL000c (у человека заклинаний нет): книга, прицел призывом — туман молча, годная клетка — брошено,
-    # второй раз за день — X005TA0445.
-    ("rastlennaya-vlast-dwarf-t44-077.sg", "S073PL000c", [
-        ("panel click BTN_CAST_SPELL", ["окна=DLG_CAST_SPELL ", "выбрано=G000SS0061", "LBOX_SPELL_LIST=4"]),
-        # Правая кнопка по строке — карточка заклинания, пока держится.
-        ("ui rpress 200,90", ["окна=DLG_CAST_SPELL>DLG_R_C_SPELL ", "заклинание="]),
-        ("ui rrelease 200,90", ["окна=DLG_CAST_SPELL "]),
-        # Колесо — стрелки: BTN_NEXT_PAGE/BTN_PREV_PAGE с горячими клавишами 40/38 листают книгу (WM_MOUSEWHEEL → VK_DOWN/VK_UP, 0x5626a3).
-        ("ui wheeldown 200,90", ["выбрано=G000SS0062"]),
-        ("ui wheelup 200,90", ["выбрано=G000SS0061"]),
-        ("ui click BTN_CAST_SPELL", ["окна=-", "прицел=G000SS0061"]),
-        # Колесо в прицеле — шаг вида, как стрелки (WM_MOUSEWHEEL = VK_UP/VK_DOWN, 0x5626a3 → 0x5418fb); прицел остаётся.
-        ("wheel down", ["сдвиг=0,16 ", "прицел=G000SS0061"]),
-        ("wheel up", ["сдвиг=0,-16 ", "прицел=G000SS0061"]),
-        ("hover 1,1", ["курсор=SPELLINV:1"]),
-        ("hover 73,84", ["курсор=SPELLVAL:15", "цель=-"]),
-        ("target 1,1", ["прицел=G000SS0061"]),
-        ("target 73,84", ["прицел=-"]),
-        ("panel click BTN_CAST_SPELL", ["окна=DLG_CAST_SPELL "]),
-        ("ui click BTN_CAST_SPELL", ["сообщение=ОК", "Выможетеприменять"]),
-    ]),
-    # Прогон 3 11.10, п. 3: «призрак» предмета — у свитков нет своих значков в IconItem, ячейка свитка показывала одно число; значок —
-    # расы заклинания (0x5c5d89: SCROLLHU/UN/HE/DW/EL, раса первого лорда с заклинанием в GspellR, 0x5c5f4f). День 66 глазами
-    # S073PL000b: гость деревни S073FT000b с двумя G000IG5025 (g000ss0025, гномы) — свиток на склад и обратно; склад снова пуст.
-    ("rastlennaya-vlast-dwarf-t66-112.sg", "S073PL000b", [
-        ("city village", ["город=S073FT000b", "сумка=24", "склад=0", "MLBOX_LINVENTORY=3", "!MLBOX_RINVENTORY="]),
-        # Свиток на лидера гостя без навыка (ворота 0x5de6dc = 0xE): рамка красная, бросок — X005TA0592 «Нет навыка», литья нет.
-        ("ui press 260,450", ["тащимое=IconItem:SCROLLDW", "IMG_LDROP4:SMALL_INVALID@268,278:74x89"]),
-        ("ui release 305,320", ["DLG_CITY_STACK>DLG_MESSAGE_BOX ", "НетнавыкаЭтотгеройнеумее", "прицел=- "]),
-        ("ui click BTN_OK", ["окна=DLG_CITY_STACK ", "сумка=24"]),
-        ("ui press 260,450", ["тащимое=IconItem:SCROLLDW"]),
-        ("ui release 520,450", ["сумка=23", "склад=1", "MLBOX_LINVENTORY=3", "MLBOX_RINVENTORY=1"]),
-        ("ui press 520,450", ["тащимое=IconItem:SCROLLDW"]),
-        ("ui release 80,450", ["сумка=24", "склад=0", "MLBOX_LINVENTORY=3", "!MLBOX_RINVENTORY="]),
-    ]),
-    # День 44 глазами S073PL000b (у человека деревень нет): рост деревни с вопросом, столица без гостя — найм героя.
-    ("rastlennaya-vlast-dwarf-t44-077.sg", "S073PL000b", [
-        ("city village", ["город=S073FT000b", "золото=296"]),
-        ("ui click BTN_GROW_CITY", ["окна=DLG_CITY_STACK>DLG_MESSAGE_BOX "]),
-        ("ui click BTN_YES", ["окна=DLG_CITY_STACK ", "золото=46"]),
-        ("ui click BTN_CLOSE", ["окна=-"]),
-        ("city capital", ["гость=0", "L=------"]),
-        ("ui click 265,216", ["найм=Leader", "пунктов=5", "LBOX_LEADER=5"]),
-        ("ui click BTN_HIRE_LEADER", ["DLG_HIRE_LEADER_2>DLG_MESSAGE_BOX"]),   # 46 золота — «недостаточно золота»
-    ]),
-]
+def city_cases(repo: Path) -> list[tuple[Path, str, list[tuple[str, list[str]]]]] | str:
+    """Случаи окон на карте (пункт 6, задача 4.6; docs/ui-windows.md) — на сохранениях партии стенда (Э5): эталон шёл от живой партии
+    корпуса с её золотом, сумками и составом гарнизона, здесь ожидания — по смыслу: какое окно открыто, что выбрано, есть ли рамки и
+    карточка. Логику окон с числами держат CityWindowTests в dotnet test. Нет импорта — причина пропуска строкой."""
+    saves = {}
+    for day in (21, 30):
+        save, m, why = stand(repo, day)
+        if save is None:
+            return why
+        saves[day] = (save, m)
+    s21, m21 = saves[21]
+    s30, m30 = saves[30]
+    hero = max(m21.field_stacks(STAND_PLAYER), key=lambda st: (st.items, st.id))   # с сумкой: «Бросить предмет»
+    capital = m30.capital(STAND_PLAYER)
+    empty = "%d,%d" % m21.empty_cell()
+    return [
+        # Столица: экран столицы, наведение на картинку мимо построек — прежняя панель; щелчок — окно построек; окно армии без гостя
+        # с подсказкой найма героя (X005TA0159, CDDUnitNoGroup 0x573131), найм героя без золота — «недостаточно золота».
+        (s30, STAND_PLAYER, [
+            ("panel click BTN_CAPITAL", ["панель=DLG_CAPITAL"]),
+            ("cap 5,5", ["постройка=-", "пал=DLG_ISO_PAL"]),
+            ("cap click", ["окна=DLG_BUILD_STRUCTURE "]),
+            ("ui click TOG_MAGE", ["ветка=TOG_MAGE"]),
+            ("ui click BTN_CLOSE", ["окна=-"]),
+            ("panel click BTN_RESEARCH_SPELL", ["окна=DLG_RESEARCH_SPELL "]),
+            ("ui click BTN_CLOSE", ["окна=-"]),
+            ("panel click BTN_BACK", ["панель=DLG_STRATEGIC"]),
+            ("city capital", ["гость=0", "подсказка_найма=Щелкнитемышкойчт"]),
+            ("ui click 265,216", ["найм=Leader"]),
+            ("ui click BTN_HIRE_LEADER", ["DLG_HIRE_LEADER_2>DLG_MESSAGE_BOX", "Недостаточнозолота"]),   # у стенда 305 золотых
+        ]),
+        # Щелчок вне сердца столицы выбирает столицу (CTaskSelectCity 0x4d45a6), второй — экран столицы (0x4cf79d; замечания 8, 28).
+        (s30, STAND_PLAYER, [
+            (f"{capital.x + 2},{capital.y}", ["выбран=- ", f"укрепление={capital.id}", "столица=0", "окна=-"]),
+            (f"{capital.x + 2},{capital.y}", ["столица=1", "окна=-"]),
+        ]),
+        # Окно отряда с портрета панели команд; «Бросить предмет» — панель DLG_DROP_BAG.
+        (s21, STAND_PLAYER, [
+            (f"select {hero.id}", [f"выделен={hero.id}"]),
+            ("panel release IMG_LEADER", ["окна=DLG_MANAGE_STACK ", f"отряд={hero.id}"]),
+            ("ui click TOG_PAPERDOLL", ["кукла="]),
+            ("ui click BTN_PICK_UP_DROP", ["окна=-"]),
+            (f"drop {empty}", ["окна=-", "панель=DLG_DROP_BAG"]),
+        ]),
+        # Курсор окон (CInterface::setCursor 0x5308aa из строки DIALOG): над окном — кинжал _CUDEFAUL разметки, окно закрылось — снова курсор
+        # карты (решение пользователя 15.10).
+        (s21, STAND_PLAYER, [
+            (f"select {hero.id}", [f"выделен={hero.id}"]),
+            ("wcursor", ["окна=0 ", "чей=карта"]),
+            ("ui click BTN_OPTIONS", ["окна=DLG_OPTIONS"]),
+            ("wcursor", ["верх=DLG_OPTIONS ", "курсор=ui:_CUDEFAUL ", "кадров=1 ", "точка=0,0 ", "чей=окно"]),
+            ("ui click BTN_CLOSE", ["окна=-"]),
+            ("wcursor", ["окна=0 ", "чей=карта"]),
+            ("panel release IMG_LEADER", ["окна=DLG_MANAGE_STACK "]),
+            ("wcursor", ["верх=DLG_MANAGE_STACK ", "курсор=ui:_CUDEFAUL ", "точка=0,0 "]),
+            ("ui click BTN_CLOSE", ["окна=-"]),
+            ("wcursor", ["окна=0 ", "чей=карта"]),
+        ]),
+        # Площадки выбранным отрядом (по виду — первая площадка вида на карте): торговец — кинжал окна, фон места группы, кукла; маг —
+        # книга известных заклинаний; тренер — окно обучения. Колесо над картой — стрелки ↑/↓ (0x5626a3).
+        (s21, STAND_PLAYER, [
+            (f"select {hero.id}", [f"выделен={hero.id}"]),
+            ("site merchant", ["окна=DLG_MERCHANT ", "курсор=ui:_CUDEFAUL ", "фон=DLG_MERCHANT_GROUP_BG@0,0:350x386:"]),
+            ("ui click TOG_PAPERDOLL", ["кукла=1"]),
+            ("ui click TOG_PAPERDOLL", ["кукла=0"]),
+            ("ui click BTN_CLOSE", ["окна=-"]),
+            ("site mage", ["окна=DLG_MAGE "]),
+            ("ui click BTN_KNOWN_SPELL", ["окна=DLG_MAGE>DLG_CAST_SPELL "]),
+            ("ui click BTN_CLOSE", ["окна=DLG_MAGE "]),
+            ("ui click BTN_CLOSE", ["окна=-"]),
+            ("wheel down", ["сдвиг=0,16 "]),
+            ("wheel up", ["сдвиг=0,-16 "]),
+            ("site trainer", ["окна=DLG_TRAINING_CAMP "]),
+            ("ui click BTN_BACK", ["окна=-"]),
+        ]),
+        # Дипломатия — поле на месте карты и панель; карточка игрока DLG_R_C_PLAYER, пока держится правая кнопка (0x48522d → 0x577a0c); дань —
+        # стрелка с автоповтором: нажатие без шага, 600 мс удержания — два шага, отпускание — ещё один; подсказка через 250 мс покоя.
+        # «Задание», журнал, окно полученного (docs/ui-windows.md §14).
+        (s30, STAND_PLAYER, [
+            ("panel click BTN_DIPLOMACY", ["панель=DLG_DIPLOMACY"]),
+            ("diplo 2", ["полоса_золота=1"]),
+            ("panel field rpress IMG_RACE1", ["окна=DLG_R_C_PLAYER ", f"игрок={STAND_PLAYER} ", "Вы_за_него_играете!"]),
+            ("panel field rrelease IMG_RACE1", ["окна=- "]),
+            ("panel click BTN_GIVE_RESS", ["окна=DLG_GIVE_RESOURCE ", "дань=0"]),
+            ("ui press BTN_UP", ["дань=0 "]),
+            ("ui wait 600", ["дань=100 "]),
+            ("ui release BTN_UP", ["дань=150 "]),
+            ("ui move BTN_OK", ["подсказка=-"]),
+            ("ui wait 300", ["подсказка=Подтвердить"]),
+            ("ui move BTN_CANCEL", ["подсказка=Отмена"]),
+            ("ui click BTN_CANCEL", ["окна=-"]),
+            ("panel click BTN_BACK", ["панель=DLG_STRATEGIC"]),
+            ("ui click BTN_REPORT", ["окна=DLG_SCENARIO_BRIEFING ", "задание="]),
+            ("ui click BTN_CONTINUE", ["окна=-"]),
+            ("ui click BTN_QUESTLOG", ["окна=DLG_QUEST_LOG ", "журнал="]),
+            ("ui click BTN_CLOSE", ["окна=-"]),
+            ("given empty", ["окна=DLG_MESSAGE_BOX ", "получено=ничего"]),
+            ("ui click BTN_OK", ["окна=-"]),
+            ("given spell", ["окна=DLG_ITEM ", "получено=заклинание", "библиотека=1 первое=1"]),
+            ("ui click BTN_OK", ["окна=DLG_ITEM ", "первое=0"]),
+            ("ui click BTN_OK", ["окна=-"]),
+        ]),
+        # Итоги хода: флажок «Всегда показывать результаты хода» в окне настроек держится.
+        (s21, STAND_PLAYER, [
+            ("ui click BTN_OPTIONS", ["окна=DLG_OPTIONS"]),
+            ("ui click TOG_SHOWTURNSUMMARY", ["ok=1", "окна=DLG_OPTIONS"]),
+            ("ui click BTN_CLOSE", ["окна=-"]),
+        ]),
+    ]
 
 
 def city_windows(repo: Path) -> tuple[bool, str]:
     """Окна города (пункт 6, задача 4.6): столица и её окно армии, перетаскивание, найм воина и героя, рост деревни.
-    Каждый шаг печатает строку со стеком окон и клетками групп. Нет корпуса — пропуск."""
+    Каждый шаг печатает строку со стеком окон и клетками групп. Нет импорта — пропуск."""
     results = []
-    if any(not (corpus_dir(repo) / "20260919-human" / save).exists() for save, _, _ in CITY_CASES):
-        return True, "окна города: пропуск — нет корпуса"
-    outs = godot_all(repo, [(["--sg", str(corpus_dir(repo) / "20260919-human" / save), "--check", "--player", player,
+    cases = city_cases(repo)
+    if isinstance(cases, str):
+        return True, f"окна города: пропуск — {cases}"
+    outs = godot_all(repo, [(["--state", str(path), "--check", "--player", player,
                               "--clicks", ";".join(step for step, _ in steps)], "res://scenes/map/MapScreen.tscn")
-                            for save, player, steps in CITY_CASES])
-    for (save, player, steps), (code, out) in zip(CITY_CASES, outs):
+                            for path, player, steps in cases])
+    for n, ((path, player, steps), (code, out)) in enumerate(zip(cases, outs)):
+        save = f"{path.stem} №{n + 1}"
         lines = [l for l in out.splitlines() if l.startswith(("ui ", "panel ", "city ", "target ", "hover ", "cap ", "diplo ", "site ", "drop ", "pick ", "rod ", "given", "end день=", "click ", "wcursor ", "wheel ", "rename "))
                  and not l.startswith(("panel Open", "panel Goto"))]
         if code != 0 or len(lines) != len(steps):
@@ -1721,7 +1430,7 @@ def autosave_archives(repo: Path, saves: Path, scenario: str, steps: str) -> tup
     for path in manual:
         path.write_bytes(body)
         os.utime(path, (old - 3600, old - 3600))
-    # Предложение союза ИИ в ход дня 1 (OFFER_CLICKS) закрывается отказом — иначе второй конец хода не наступит.
+    # Окно, если ИИ что-то предложит в ход дня 1, закрывается отказом — иначе второй конец хода не наступит.
     code, out = godot(repo, ["--check", "--saves", str(saves), "--input", steps, "--clicks",
                              "ok;end;ui click BTN_CANCEL;ui click BTN_OK;ok;end"], "res://scenes/ui/UiFlow.tscn")
     pattern = re.compile(rf"^{re.escape(scenario)} T(\d{{4}})\.d2save$", re.I)
@@ -1772,10 +1481,12 @@ def map_arrows(repo: Path) -> tuple[bool, str]:
     return True, f"прокрутка стрелкой: карта — сдвиг {rows[0][0]} точек, под окном {rows[1][1]} — стоит"
 
 
-# Предложение союза — в ход ИИ дня 1. С раздачей стратегических приказов дня 1 (0x44e29e, 15.10) у ИИ S092PL0003 (Greenskins)
-# проход стратегии без экономического действия наступает уже в день 1 (бисекция по сцене: 4ebcbb4 — день 2, 5a523ca — день 1);
-# раздача подтверждена журналами оригинала (AiStrategicOrdersHarnessTests, 66/66 ходов ИИ дня 1), у Greenskins журнала нет.
-OFFER_CLICKS = "ok;end"
+# Предложение союза ИИ S092PL0003 (Greenskins) — в ход ИИ после третьего конца хода: с потоком ИИ от зерна партии (Э4,
+# docs/own-rules.md §2) броски стратегии другие, чем у общего генератора оригинала (там — день 1). OFFER_DAYS — две строки
+# «end» до него.
+OFFER_CLICKS = "ok;end;end;end"
+OFFER_DAYS = [["end день=2 окна=- "], ["end день=3 окна=- "]]
+OFFER_DAY = 3
 
 
 def command_journal(repo: Path) -> tuple[bool, str]:
@@ -1820,7 +1531,8 @@ def alliance_offer(repo: Path) -> tuple[bool, str]:
                  "--clicks", f"{OFFER_CLICKS};ui click {button};ui click BTN_OK"]
         code, out = godot(repo, extra, "res://scenes/ui/UiFlow.tscn")
         lines = [l for l in out.splitlines() if l.startswith(("end ", "ui "))]
-        wants = [["end день=1 окна=DLG_DIPLO_BOX ", "предлагает="], ["окна=DLG_CHAT_AI ", "реплика="], ["окна=- "]]
+        wants = OFFER_DAYS + [[f"end день={OFFER_DAY} окна=DLG_DIPLO_BOX ", "предлагает="], ["окна=DLG_CHAT_AI ", "реплика="],
+                              ["окна=- "]]
         if code != 0 or len(lines) != len(wants) or any(w not in line + " " for want, line in zip(wants, lines) for w in want):
             return False, f"предложение союза ({word}): код {code}\n" + "\n".join(lines or [out.strip()])
         # Сообщения ИИ человеку в ход ИИ дня 1 (ненависть, CCmdChatMsg → DLG_CHAT_AI 0x4b9747): каждое — окно, ход ждёт «Закрыть» (Ин36).
@@ -2874,15 +2586,20 @@ def menu_cursors(repo: Path) -> tuple[bool, str]:
 
 
 def map_cursors(repo: Path) -> tuple[bool, str]:
-    """Курсоры карты (CTaskStrat/CTaskSelectUnit, docs/ai-screen.md §10): день 21 живой партии — над своим отрядом SELECTUNIT, выбрав
-    его — MANAGESTK, над врагом BATTLE, пустая проходимая клетка MOVE, вне дела DEFAULT; картинки обрезаны до размера курсора Godot
-    (не больше 256×256). Нет корпуса — пропуск."""
-    sg = corpus_dir(repo) / "20260919-human" / "rastlennaya-vlast-dwarf-t21-037.sg"
-    if not sg.exists():
-        return True, "курсоры карты: пропуск — нет корпуса"
-    want = [("42,14", "SELECTUNIT"), ("42,14", "MANAGESTK"), ("37,9", "BATTLE"), ("43,14", "MOVE"), ("1,1", "DEFAULT")]
-    code, out = godot(repo, ["--sg", str(sg), "--check", "--player", "S073PL000a",
-                             "--clicks", "cursor 42,14;42,14;cursor 42,14;cursor 37,9;cursor 43,14;cursor 1,1"], "res://scenes/map/MapScreen.tscn")
+    """Курсоры карты (CTaskStrat/CTaskSelectUnit, docs/ai-screen.md §10): день 21 партии стенда — над своим отрядом SELECTUNIT, выбрав
+    его — MANAGESTK, над ближним чужим отрядом BATTLE, свободная проходимая клетка рядом MOVE, гора DEFAULT; картинки обрезаны до размера
+    курсора Godot (не больше 256×256). Нет импорта — пропуск."""
+    save, why = check_save(repo, "Power to Corrupt", 21)
+    if save is None:
+        return True, f"курсоры карты: пропуск — {why}"
+    m = ui_check_maps.load(save)
+    own = m.field_stacks("S073PL000a")[0]
+    foe = m.nearest_foe(own.owner, own.x, own.y)
+    move, rock = "%d,%d" % m.free_near(own.x, own.y), "%d,%d" % m.landmark_cells()[0]
+    want = [(own.cell, "SELECTUNIT"), (own.cell, "MANAGESTK"), (foe.cell, "BATTLE"), (move, "MOVE"), (rock, "DEFAULT")]
+    code, out = godot(repo, ["--state", str(save), "--check", "--player", own.owner, "--clicks",
+                             f"cursor {own.cell};{own.cell};cursor {own.cell};cursor {foe.cell};cursor {move};cursor {rock}"],
+                      "res://scenes/map/MapScreen.tscn")
     got = [(m["cell"], m["name"], m["size"]) for m in CURSOR.finditer(out)]
     small = all(s != "-" and max(int(v) for v in s.split("x")) <= 256 for _, _, s in got)
     if code != 0 or CSHARP_ERROR in out or [(c, n) for c, n, _ in got] != want or not small:
@@ -2896,21 +2613,24 @@ CARD = re.compile(r"^card (?P<cell>\d+,\d+) карточка=(?P<screen>\S+)(?: 
 
 
 def map_cards(repo: Path) -> tuple[bool, str]:
-    """Карточки правой кнопки на карте (DLG_R_C_*, docs/ai-screen.md §10): день 21 живой партии — свой отряд и нейтральный отряд —
-    DLG_R_C_STACK с именем лидера, гора — DLG_R_C_LANDMARK, пустая клетка — окна нет. Нет корпуса — пропуск."""
-    sg = corpus_dir(repo) / "20260919-human" / "rastlennaya-vlast-dwarf-t21-037.sg"
-    if not sg.exists():
-        return True, "карточки карты: пропуск — нет корпуса"
-    code, out = godot(repo, ["--sg", str(sg), "--check", "--player", "S073PL000a",
-                             "--clicks", "card 42,14;card 37,9;card 1,1;card 45,45"], "res://scenes/map/MapScreen.tscn")
+    """Карточки правой кнопки на карте (DLG_R_C_*, docs/ai-screen.md §10): день 21 партии стенда — свой отряд и ближний чужой —
+    DLG_R_C_STACK с именем лидера, гора — DLG_R_C_LANDMARK, пустая клетка — окна нет. Нет импорта — пропуск."""
+    save, m, why = stand(repo, 21)
+    if save is None:
+        return True, f"карточки карты: пропуск — {why}"
+    own = m.field_stacks(STAND_PLAYER)[0]
+    foe = m.nearest_foe(own.owner, own.x, own.y)
+    rock, empty = "%d,%d" % m.landmark_cells()[0], "%d,%d" % m.empty_cell()
+    code, out = godot(repo, ["--state", str(save), "--check", "--player", own.owner,
+                             "--clicks", f"card {own.cell};card {foe.cell};card {rock};card {empty}"], "res://scenes/map/MapScreen.tscn")
     matches = {m["cell"]: m for m in CARD.finditer(out)}
     got = {c: (m["screen"], m["text"] or "") for c, m in matches.items()}
-    want = {"42,14": "DLG_R_C_STACK", "37,9": "DLG_R_C_STACK", "1,1": "DLG_R_C_LANDMARK", "45,45": "-"}
+    want = {own.cell: "DLG_R_C_STACK", foe.cell: "DLG_R_C_STACK", rock: "DLG_R_C_LANDMARK", empty: "-"}
     # Карточка отряда (11.10, замечание 7): лидер — картина во весь рост из Events (0x57c0a9), а не круглый FACEB; все кадры нашлись.
     pictures = all((matches[c]["leader"] or "").startswith("gfx:Events/") and matches[c]["missing"] == "-"
-                   for c in ("42,14", "37,9") if c in matches)
+                   for c in (own.cell, foe.cell) if c in matches)
     if (code != 0 or CSHARP_ERROR in out or {c: s for c, (s, _) in got.items()} != want
-            or not all(got[c][1] for c in ("42,14", "37,9", "1,1")) or not pictures):
+            or not all(got[c][1] for c in (own.cell, foe.cell, rock)) or not pictures):
         return False, f"карточки карты: код {code}, {got}\n{out.strip()}"
     ok, framed = card_frames(repo)
     if not ok:
@@ -2919,20 +2639,23 @@ def map_cards(repo: Path) -> tuple[bool, str]:
     if not ok:
         return False, battle
     return True, "карточки карты: " + ", ".join(f"{c} {s} {t}".rstrip() for c, (s, t) in got.items()) + \
-        f"; лидер {matches['42,14']['leader']}; {framed}; {battle}"
+        f"; лидер {matches[own.cell]['leader']}; {framed}; {battle}"
 
 
 def card_frames(repo: Path) -> tuple[bool, str]:
     """Рамки портретов карточек (прогон 2 пользователя 11.10, снимок 31: у портретов карточки столицы не было рамок): день 5 живой партии,
     столица Кланов — клетка 50,30 (DLG_R_C_CITY: гость и гарнизон, в гарнизоне большой), вход — 49,30 (DLG_R_C_STACK гостя). Каждый портрет —
-    в рамке Icons BORDERUNITSMALL 84×99, большой — BORDERUNITLARGE 164×99 (0x57c443 → 0x5b6559, таблица 0x7ae938); кадры все нашлись."""
-    sg = corpus_dir(repo) / "20260919-human" / "rastlennaya-vlast-dwarf-t05-011.sg"
-    if not sg.exists():
-        return True, "рамки карточек: пропуск — нет корпуса"
-    code, out = godot(repo, ["--sg", str(sg), "--check", "--player", "S073PL000a", "--clicks", "card 50,30;card 49,30"],
+    в рамке Icons BORDERUNITSMALL 84×99, большой — BORDERUNITLARGE 164×99 (0x57c443 → 0x5b6559, таблица 0x7ae938); кадры все нашлись.
+    Last Edict: день 5 партии стенда — столица Кланов (гарнизон с большим юнитом) и свой отряд на карте."""
+    save, m, why = stand(repo, 5)
+    if save is None:
+        return True, f"рамки карточек: пропуск — {why}"
+    capital, own = m.capital(STAND_PLAYER), m.field_stacks(STAND_PLAYER)[0]
+    town = f"{capital.x + 1},{capital.y + 1}"
+    code, out = godot(repo, ["--state", str(save), "--check", "--player", STAND_PLAYER, "--clicks", f"card {town};card {own.cell}"],
                       "res://scenes/map/MapScreen.tscn")
     got = {m["cell"]: m for m in CARD.finditer(out)}
-    city, stack = got.get("50,30"), got.get("49,30")
+    city, stack = got.get(town), got.get(own.cell)
 
     def framed(m, *borders: str) -> bool:
         return (m is not None and m["missing"] == "-" and int(m["faces"]) > 0 and m["faces"] == m["framed"]
@@ -2951,11 +2674,14 @@ BATTLE_CARD = re.compile(r"^battle card карточка=(?P<kind>\S+) таб=(?
 def battle_card(repo: Path) -> tuple[bool, str]:
     """Карточка воина в бою с карты по правой кнопке (прогон 2 пользователя 11.10, снимок 33): та же, что на карте (UnitCardLogic.InBattle),
     место табуляции 110, «Опыт:» табуляция «N / M», «Иммунитет» и «Стойкость» — каждая своей строкой со значением. Бой A (32,38) против
-    A (34,38) из сохранения ai-q14-crit."""
-    sg = corpus_dir(repo) / "20260928-shots" / "ai-q14-crit-elf-t01-010.sg"
-    if not sg.exists():
-        return True, "карточка в бою: пропуск — нет корпуса"
-    code, out = godot(repo, ["--sg", str(sg), "--check", "--clicks", "fight 32,38 34,38 1;battle card"], "res://scenes/map/MapScreen.tscn")
+    A (34,38) из сохранения ai-q14-crit; в Last Edict — свой отряд дня 21 партии стенда против ближнего чужого."""
+    save, m, why = stand(repo, 21)
+    if save is None:
+        return True, f"карточка в бою: пропуск — {why}"
+    own = m.field_stacks(STAND_PLAYER)[0]
+    foe = m.nearest_foe(own.owner, own.x, own.y)
+    code, out = godot(repo, ["--state", str(save), "--check", "--player", own.owner, "--clicks", f"fight {own.cell} {foe.cell} 1;battle card"],
+                      "res://scenes/map/MapScreen.tscn")
     m = BATTLE_CARD.search(out)
     lines = m["stats"].split("|") if m else []
     # Без CSHARP_ERROR, как у «раскладки боя»: бой остаётся открытым до выхода, и GameAudio.FadeThen при выходе падает на снятом узле

@@ -29,16 +29,7 @@ public static class BalanceStand
     /// <paramref name="maxDays"/> дней. Люди сценария — тоже ИИ.</summary>
     public static IReadOnlyList<BalanceRow> Play(ScenarioData scenario, GameBook book, uint seed, int maxDays)
     {
-        ArgumentNullException.ThrowIfNull(scenario);
-        ArgumentNullException.ThrowIfNull(book);
-        var map = scenario.Looks.Map;
-        var players = map.Players.ToDictionary(p => p.Key, p => p.Value with { IsHuman = false }, StringComparer.OrdinalIgnoreCase);
-        var looks = GameSession.Retold(scenario.Looks, GameSession.With(map, players: players), scenario.Looks.Stacks);
-        var state = new GameState(GameInfo.FromMap(scenario.Id, looks), looks)
-        {
-            Events = scenario.Events, EventProgress = EventProgress.From(scenario.Events),
-        }.Reseeded(seed);
-        var session = new GameSession(state, MapArtData.Empty, book);
+        var session = Start(scenario, book, seed);
         var playable = Playable(session.Map, book);
         var order = GameSession.DayOrder(session.Map, [], book).Where(playable.Contains).ToList();
         int early = Math.Max(1, maxDays / 4), days = 0;
@@ -58,6 +49,45 @@ public static class BalanceStand
                                   session.Over ? session.Won(id) == true : top.Contains(id), p.CapturedBy.Length == 0,
                                   end.Sites.Count(s => Owns(s, id)), Score(end, id), p.Bank.Gold, leaders.Contains(id));
         })];
+    }
+
+    /// <summary>Начало партии стенда: люди сценария — ИИ, все потоки генераторов — от <paramref name="seed"/>, графики нет.</summary>
+    public static GameSession Start(ScenarioData scenario, GameBook book, uint seed)
+    {
+        ArgumentNullException.ThrowIfNull(scenario);
+        ArgumentNullException.ThrowIfNull(book);
+        var map = scenario.Looks.Map;
+        var players = map.Players.ToDictionary(p => p.Key, p => p.Value with { IsHuman = false }, StringComparer.OrdinalIgnoreCase);
+        var looks = GameSession.Retold(scenario.Looks, GameSession.With(map, players: players), scenario.Looks.Stacks);
+        var state = new GameState(GameInfo.FromMap(scenario.Id, looks), looks)
+        {
+            Events = scenario.Events, EventProgress = EventProgress.From(scenario.Events),
+        }.Reseeded(seed);
+        return new GameSession(state, MapArtData.Empty, book);
+    }
+
+    /// <summary>Снимки партии стенда в начале дней <paramref name="days"/> (день — <see cref="MapState.Turn"/>, как в окне карты) с игроком
+    /// <paramref name="human"/>-человеком: положения середины партии для проверок экранов (<c>tools/CheckSaves</c>, ui-render-check) — в
+    /// Last Edict нет сохранений живых партий корпуса. До дня <paramref name="human"/> ходил ИИ, поэтому его отряды уже на карте.</summary>
+    public static IEnumerable<(int Day, GameState State)> Snapshots(ScenarioData scenario, GameBook book, uint seed, IEnumerable<int> days,
+                                                                     string human)
+    {
+        var session = Start(scenario, book, seed);
+        foreach (int want in days.Order())
+        {
+            while (session.Map.Turn < want && !session.Over) session.Execute(new EndTurnCommand());
+            if (session.Map.Turn != want) yield break;
+            yield return (want, AsHuman(session.Snapshot(), human));
+        }
+    }
+
+    private static GameState AsHuman(GameState state, string human)
+    {
+        var map = state.Looks.Map;
+        var players = map.Players.ToDictionary(p => p.Key, p => p.Value with { IsHuman = p.Key.Equals(human, StringComparison.OrdinalIgnoreCase) },
+                                               StringComparer.OrdinalIgnoreCase);
+        var looks = GameSession.Retold(state.Looks, GameSession.With(map, players: players), state.Looks.Stacks);
+        return state with { Looks = looks, Info = state.Info with { Humans = [human] } };
     }
 
     /// <summary>Счёт игрока: <see cref="SitePoints"/> за каждый его город и столицу (не взятую) плюс сумма уровней его юнитов в отрядах на

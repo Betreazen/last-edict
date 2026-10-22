@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Сохранения середины партии для проверок экранов (ui-render-check, Э5): ИИ за всех на сценарии импорта, снимки дней. -->
+  <!-- Сохранения середины партии для проверок экранов (ui-render-check, Э5): новая партия меню на сценарии импорта, ИИ за всех, снимки дней. -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Engine.Play\Engine.Play.csproj" />
+    <ProjectReference Include="..\..\src\Game.UiModel\Game.UiModel.csproj" />
   </ItemGroup>
 
 </Project>

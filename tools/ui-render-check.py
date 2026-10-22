@@ -340,39 +340,45 @@ def dotnet_tool(repo: Path, name: str) -> list[str]:
     return ["dotnet", str(repo / "tools" / name / "bin" / "Release" / "net10.0" / f"{name}.dll")]
 
 
-# Партии середины игры для шагов карты (Э5): сохранений живых партий корпуса в Last Edict нет — их заменяют снимки партии стенда
-# (tools/CheckSaves: ИИ за всех, постоянное зерно, игрок — человек в снимке). Сценарий импорта → (игрок, дни). Снимки пишутся раз за прогон.
-CHECK_SAVES = {"Power to Corrupt": ("S073PL000a", (5, 21, 30))}
+# Партии для шагов карты (Э5): сохранений живых партий корпуса в Last Edict нет — их заменяют снимки партии стенда (tools/CheckSaves:
+# новая партия меню за игрока, затем ИИ за всех с постоянным зерном, игрок — человек в снимке; день 1 — начало партии).
+# (сценарий импорта, игрок) → дни. Снимки пишутся раз за прогон.
+STAND_SCENARIO, STAND_PLAYER, LEGIONS = "Power to Corrupt", "S073PL000a", "S073PL000b"
+CHECK_SAVES = {(STAND_SCENARIO, STAND_PLAYER): (5, 21, 22, 30), (STAND_SCENARIO, LEGIONS): (1,)}
+STAND_GOLD = 5000   # казна человека в снимке: ИИ за него тратит, а окнам нужны найм и дань
 _SAVES_LOCK = threading.Lock()
-_SAVES_DONE: dict[str, str] = {}   # сценарий → «» (готово) или причина пропуска
+_SAVES_DONE: dict[tuple[str, str], str] = {}   # (сценарий, игрок) → «» (готово) или причина пропуска
 
 
-def check_save(repo: Path, scenario: str, day: int) -> tuple[Path | None, str]:
+def check_save(repo: Path, scenario: str, day: int, player: str = STAND_PLAYER) -> tuple[Path | None, str]:
     """Сохранение дня `day` партии стенда на сценарии импорта: (путь, «») или (None, причина пропуска — нет импорта)."""
-    player, days = CHECK_SAVES[scenario]
-    out = repo / ".cache" / "ui-check" / "check-saves"
+    key = (scenario, player)
+    out = repo / ".cache" / "ui-check" / "check-saves" / player
     with _SAVES_LOCK:
-        if scenario not in _SAVES_DONE:
+        if key not in _SAVES_DONE:
             if not ui_check_maps.scenario_path(repo, scenario).is_file():
-                _SAVES_DONE[scenario] = f"нет сценария импорта «{scenario}»"
+                _SAVES_DONE[key] = f"нет сценария импорта «{scenario}»"
             else:
                 run = subprocess.run([*dotnet_tool(repo, "CheckSaves"), "--scenario", scenario, "--player", player,
-                                      "--days", ",".join(map(str, days)), "--out", str(out)],
+                                      "--days", ",".join(map(str, CHECK_SAVES[key])), "--gold", str(STAND_GOLD), "--out", str(out)],
                                      capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=repo)
                 if run.returncode != 0:
-                    raise RuntimeError(f"tools/CheckSaves «{scenario}» упал:\n{run.stdout[-2000:]}{run.stderr[-2000:]}")
-                _SAVES_DONE[scenario] = ""
-    if _SAVES_DONE[scenario]:
-        return None, _SAVES_DONE[scenario]
+                    raise RuntimeError(f"tools/CheckSaves «{scenario}» за {player} упал:\n{run.stdout[-2000:]}{run.stderr[-2000:]}")
+                _SAVES_DONE[key] = ""
+    if _SAVES_DONE[key]:
+        return None, _SAVES_DONE[key]
     return out / f"{scenario}-d{day:02}.d2save", ""
 
 
-STAND_PLAYER = CHECK_SAVES["Power to Corrupt"][0]
+def ruin_raid(m: ui_check_maps.ScenarioMap) -> tuple[ui_check_maps.Stack, ui_check_maps.Site]:
+    """Отряд игрока стенда с сумкой (герой) и ближняя к нему руина с охраной — бой за руину приходом (`arrive`)."""
+    hero = max(m.field_stacks(STAND_PLAYER), key=lambda st: (st.items, st.id))
+    return hero, m.nearest_site("Ruin", hero.x, hero.y, guarded=True)
 
 
-def stand(repo: Path, day: int) -> tuple[Path | None, ui_check_maps.ScenarioMap | None, str]:
-    """Сохранение дня `day` партии стенда «Power to Corrupt» и его карта; (None, None, причина) — нет импорта."""
-    save, why = check_save(repo, "Power to Corrupt", day)
+def stand(repo: Path, day: int, player: str = STAND_PLAYER) -> tuple[Path | None, ui_check_maps.ScenarioMap | None, str]:
+    """Сохранение дня `day` партии стенда «Power to Corrupt» за `player` и его карта; (None, None, причина) — нет импорта."""
+    save, why = check_save(repo, STAND_SCENARIO, day, player)
     return (save, ui_check_maps.load(save), "") if save is not None else (None, None, why)
 
 
@@ -853,15 +859,16 @@ def paperdoll(repo: Path) -> tuple[bool, str]:
     """«Меню героя» после боя (BTN_PAPERDOLL → closeBattleWindow(true) 0x633e20 → CRequestPaperdollMsg → RequestPaperdoll 0x41f397):
     день 1 живой партии (корпус 20260919-human), отряд Кланов S073KC0001 бьёт нейтрала S073KC0063 и побеждает — как в журнале; бой закрыт
     «Меню героя» (--paperdoll): после итога боя проверка событий с отрядом и окно отряда DLG_MANAGE_STACK (CCmdStackActionMsg(отряд, 0) →
-    0x48ee26 → CManageStkInterf). Нужен корпус (вне git); нет его — пропуск."""
-    sg = corpus_dir(repo) / "20260919-human" / "rastlennaya-vlast-dwarf-t01-002.sg"
-    if not sg.exists():
-        return True, "«Меню героя»: пропуск — нет корпуса"
-    code, out = godot(repo, ["--sg", str(sg), "--check", "--player", "S073PL000a", "--clicks", "select S073KC0001;56,37;56,37;arrows",
+    0x48ee26 → CManageStkInterf). Last Edict: день 5 партии стенда, герой Кланов берёт ближнюю охраняемую руину. Нет импорта — пропуск."""
+    save, m, why = stand(repo, 5)
+    if save is None:
+        return True, f"«Меню героя»: пропуск — {why}"
+    hero, ruin = ruin_raid(m)
+    code, out = godot(repo, ["--state", str(save), "--check", "--player", STAND_PLAYER, "--clicks", f"arrive {hero.id} {ruin.id};arrows",
                              "--paperdoll"], "res://scenes/map/MapScreen.tscn")
     lines = out.splitlines()
-    closed = next((i for i, line in enumerate(lines) if line.startswith("mapbattle end winner=S073KC0001 ")), -1)
-    asked = next((i for i, line in enumerate(lines) if line.startswith("paperdoll stack=S073KC0001 запрос окно=DLG_MANAGE_STACK")), -1)
+    closed = next((i for i, line in enumerate(lines) if line.startswith(f"mapbattle end winner={hero.id} ")), -1)
+    asked = next((i for i, line in enumerate(lines) if line.startswith(f"paperdoll stack={hero.id} запрос окно=DLG_MANAGE_STACK")), -1)
     shown = next((i for i, line in enumerate(lines) if line.startswith("arrows ") and "окна=DLG_MANAGE_STACK" in line), -1)
     if code != 0 or not 0 <= closed < asked < shown:
         return False, f"«Меню героя»: код {code}, итог боя {closed}, запрос {asked}, окно {shown}\n{out.strip()}"
@@ -902,7 +909,7 @@ def city_cases(repo: Path) -> list[tuple[Path, str, list[tuple[str, list[str]]]]
     empty = "%d,%d" % m21.empty_cell()
     return [
         # Столица: экран столицы, наведение на картинку мимо построек — прежняя панель; щелчок — окно построек; окно армии без гостя
-        # с подсказкой найма героя (X005TA0159, CDDUnitNoGroup 0x573131), найм героя без золота — «недостаточно золота».
+        # с подсказкой найма героя (X005TA0159, CDDUnitNoGroup 0x573131), найм героя — окно имени, набранная буква, герой в столице.
         (s30, STAND_PLAYER, [
             ("panel click BTN_CAPITAL", ["панель=DLG_CAPITAL"]),
             ("cap 5,5", ["постройка=-", "пал=DLG_ISO_PAL"]),
@@ -914,7 +921,10 @@ def city_cases(repo: Path) -> list[tuple[Path, str, list[tuple[str, list[str]]]]
             ("panel click BTN_BACK", ["панель=DLG_STRATEGIC"]),
             ("city capital", ["гость=0", "подсказка_найма=Щелкнитемышкойчт"]),
             ("ui click 265,216", ["найм=Leader"]),
-            ("ui click BTN_HIRE_LEADER", ["DLG_HIRE_LEADER_2>DLG_MESSAGE_BOX", "Недостаточнозолота"]),   # у стенда 305 золотых
+            ("ui click BTN_HIRE_LEADER", ["DLG_HIRE_LEADER_2>DLG_GETINFO_BOX "]),
+            ("ui type Z", ["DLG_GETINFO_BOX "]),
+            ("ui click BTN_CLOSE", ["окна=DLG_CITY_STACK ", "гость=1"]),
+            ("ui click BTN_EXIT_CITY", ["окна=-", "панель=DLG_STRATEGIC"]),
         ]),
         # Щелчок вне сердца столицы выбирает столицу (CTaskSelectCity 0x4d45a6), второй — экран столицы (0x4cf79d; замечания 8, 28).
         (s30, STAND_PLAYER, [
@@ -1031,14 +1041,15 @@ def city_windows(repo: Path) -> tuple[bool, str]:
 
 
 def siege(repo: Path) -> tuple[bool, str]:
-    """Бой за руину (пункт 6): сохранение дня 3 живой партии, отряд Кланов идёт к охраняемой руине, путь кончается
-    у входа, бой с охраной на фоне RUIN доигрывается. Нужен корпус (вне git); нет его — пропуск."""
-    sg = corpus_dir(repo) / "20260919-human" / "rastlennaya-vlast-dwarf-t03-008.sg"
-    if not sg.exists():
-        return True, "бой за руину: пропуск — нет корпуса"
-    code, out = godot(repo, ["--sg", str(sg), "--check", "--player", "S073PL000a", "--clicks", "59,22;52,16;52,16"],
+    """Бой за руину (пункт 6): день 21 партии стенда, герой Кланов приходит к ближней охраняемой руине, бой с охраной на фоне RUIN
+    доигрывается. Нет импорта — пропуск."""
+    save, m, why = stand(repo, 21)
+    if save is None:
+        return True, f"бой за руину: пропуск — {why}"
+    hero, ruin = ruin_raid(m)
+    code, out = godot(repo, ["--state", str(save), "--check", "--player", STAND_PLAYER, "--clicks", f"arrive {hero.id} {ruin.id}"],
                       "res://scenes/map/MapScreen.tscn")
-    start = re.search(r"mapbattle start attacker=S073KC0070 defender=S073RU000a units=\d+ place=RUIN", out)
+    start = re.search(rf"mapbattle start attacker={hero.id} defender={ruin.id} units=\d+ place=RUIN", out)
     end = MAPBATTLE.search(out)
     if code != 0 or start is None or end is None or end["winner"] == "-":
         return False, f"бой за руину: код {code}\n{out.strip()}"
@@ -2012,10 +2023,10 @@ AIFLICKER = re.compile(r"провалов_земли=(?P<gaps>\d+) удержа�
 
 # Ход ИИ на экране (docs/ai-screen.md): сохранение, глазами человека, что должно быть видно.
 AI_TURN_CASES = [
-    # День 1 партии за Легионы, туман закрыт: ходы ИИ за туманом не показываются, открытые — идут по клеткам.
-    ("20260920-legions", "rastlennaya-vlast-heretic-t01-001.sg", "S073PL000b", "туман"),
-    # День 30 партии за Кланы: Нежить (S073KC0003) нападает на отряд человека — экран боя поверх карты, итог в ход ИИ.
-    ("20260919-human", "rastlennaya-vlast-dwarf-t30-055.sg", "S073PL000a", "бой"),
+    # День 1 новой партии за Легионы, туман закрыт: ходы ИИ за туманом не показываются, открытые — идут по клеткам.
+    (1, LEGIONS, "туман"),
+    # День 22 партии стенда за Кланы: ИИ нападает на отряд человека — экран боя поверх карты, итог в ход ИИ.
+    (22, STAND_PLAYER, "бой"),
 ]
 
 
@@ -2034,11 +2045,14 @@ def walk_steps(repo: Path) -> tuple[bool, str]:
     """Ход отряда человека (замечание 11.10, пп. 19 и 34): ключевые кадры задачи движения (StackWalk), вид на отряде на каждом кадре
     (0x4f6539), туман открывается на первом кадре каждого шага (0x4f6856 → 0x5d52fe), а не куском по концу пути. Легионы, день 1 (туман
     закрыт): S073KC0002 из столицы к 14,92 — 7 шагов. Второе — мешок (п. 26): на дне 24 Кланов брошенный рядом мешок берётся щелчком
-    по нему (путь из одной точки — только подбор, 0x43fcb5), окно полученного DLG_ITEM. Нет корпуса — пропуск."""
-    sg = corpus_dir(repo) / "20260920-legions" / "rastlennaya-vlast-heretic-t01-001.sg"
-    if not sg.exists():
-        return True, "ход и туман по шагам: пропуск — нет корпуса"
-    code, out = godot(repo, ["--sg", str(sg), "--check", "--player", "S073PL000b", "--clicks", "select S073KC0002;14,92;14,92"],
+    по нему (путь из одной точки — только подбор, 0x43fcb5), окно полученного DLG_ITEM. Last Edict: день 1 — новая партия за Легионы,
+    мешок — день 21 партии стенда, герой с сумкой бросает предмет на соседнюю клетку. Нет импорта — пропуск."""
+    first, _, why = stand(repo, 1, LEGIONS)
+    save, m, _ = stand(repo, 21)
+    if first is None or save is None:
+        return True, f"ход и туман по шагам: пропуск — {why}"
+    start = ["--state", str(first)]
+    code, out = godot(repo, [*start, "--check", "--player", LEGIONS, "--clicks", "select S073KC0002;14,92;14,92"],
                       "res://scenes/map/MapScreen.tscn")
     w = WALKED.search(out)
     if (code != 0 or w is None or (w["x"], w["y"]) != ("14", "91") or w["steps"] != "7" or int(w["opened"]) < 2
@@ -2050,7 +2064,7 @@ def walk_steps(repo: Path) -> tuple[bool, str]:
     settings = repo / ".cache" / "ui-check" / "walk-settings.json"
     settings.parent.mkdir(parents=True, exist_ok=True)
     settings.write_text(json.dumps({"StackSmoothScroll": False}), encoding="utf-8")
-    code, out = godot(repo, ["--sg", str(sg), "--check", "--player", "S073PL000b", "--settings", str(settings),
+    code, out = godot(repo, [*start, "--check", "--player", LEGIONS, "--settings", str(settings),
                              "--clicks", "select S073KC0002;14,92;14,92"], "res://scenes/map/MapScreen.tscn")
     slow = WALKED.search(out)
     if (code != 0 or slow is None or (slow["x"], slow["y"]) != ("14", "91") or not walk_clock_ok(slow, 66)
@@ -2058,10 +2072,11 @@ def walk_steps(repo: Path) -> tuple[bool, str]:
         return False, f"ход без плавности: код {code}\n{out.strip()}"
     walk += (f"; без плавности — ключевых кадров {slow['frames']}, кадр {slow['key_ms']} мс (не короче {slow['key_min']}, "
              f"группа {slow['group']})")
-    sg = corpus_dir(repo) / "20260919-human" / "rastlennaya-vlast-dwarf-t24-045.sg"
-    code, out = godot(repo, ["--sg", str(sg), "--check", "--player", "S073PL000a", "--clicks",
-                             "panel click BTN_NEXT_LEADER;panel release IMG_LEADER;ui click BTN_PICK_UP_DROP;drop 72,34;ui press 50,413;"
-                             "ui release 494,413;ui click BTN_BACK;72,34;72,34;ui click BTN_OK"], "res://scenes/map/MapScreen.tscn")
+    hero = max(m.field_stacks(STAND_PLAYER), key=lambda st: (st.items, st.id))
+    bag = "%d,%d" % m.free_near(hero.x, hero.y)
+    code, out = godot(repo, ["--state", str(save), "--check", "--player", STAND_PLAYER, "--clicks",
+                             f"select {hero.id};panel release IMG_LEADER;ui click BTN_PICK_UP_DROP;drop {bag};ui press 50,413;"
+                             f"ui release 494,413;ui click BTN_BACK;{bag};{bag};ui click BTN_OK"], "res://scenes/map/MapScreen.tscn")
     visit = re.search(r"^visit (S073BG\w+) добыча", out, re.M)
     if code != 0 or visit is None or "fx Midgard/TAKEBAG " not in out or "ui click_BTN_OK on=DLG_ITEM " not in out:
         return False, f"мешок рядом: код {code}\n{out.strip()}"
@@ -2082,13 +2097,14 @@ def ai_turn(repo: Path) -> tuple[bool, str]:
     """Ход ИИ на экране (пункт 6, задача 4.4): «конец хода» проводит ходы ИИ в фоне; на каждого игрока ИИ — строка окна
     ожидания DLG_STRAT_WAIT с портретом лорда, на каждый показанный ход отряда — строка aimove; показано + под туманом = все
     ходы отрядов ИИ; бой ИИ с человеком открывает экран боя (aibattle start/end), и ход ИИ продолжается; вода анимирована
-    (WATERBKGND1, 16 кадров). Нет корпуса — пропуск."""
+    (WATERBKGND1, 16 кадров). Нет импорта — пропуск."""
     results = []
-    for corpus, save, player, want in AI_TURN_CASES:
-        sg = corpus_dir(repo) / corpus / save
-        if not sg.exists():
-            return True, "ход ИИ: пропуск — нет корпуса"
-        code, out = godot(repo, ["--sg", str(sg), "--check", "--player", player, "--clicks", "end"], "res://scenes/map/MapScreen.tscn")
+    for day, player, want in AI_TURN_CASES:
+        path, _, why = stand(repo, day, player)
+        if path is None:
+            return True, f"ход ИИ: пропуск — {why}"
+        save = f"день {day} за {player}"
+        code, out = godot(repo, ["--state", str(path), "--check", "--player", player, "--clicks", "end"], "res://scenes/map/MapScreen.tscn")
         turn = AITURN.search(out)
         flicker = AIFLICKER.search(out)
         wait = AIWAIT.search(out)
@@ -2202,11 +2218,11 @@ def fog_change(repo: Path) -> tuple[bool, str]:
     """Смена тумана кольцами (CMidAnim2ChangeFog, MapView.Fog.cs): Легионы, день 1 — эффект CEffectFog зрителю (шаг fogtest: квадрат ±r без
     углов открыт в модели) в 60,60 с радиусом 3 и у угла карты 1,1 с радиусом 4. Сначала вид едет к центру (плавная прокрутка), затем туман
     догоняет модель кольцами: шагов и клетки каждого шага — по своему пересчёту колец, шаг не короче 66 мс (медленная группа); после
-    показа показанный туман равен модели. Нет корпуса — пропуск."""
-    sg = corpus_dir(repo) / "20260920-legions" / "rastlennaya-vlast-heretic-t01-001.sg"
-    if not sg.exists():
-        return True, "смена тумана: пропуск — нет корпуса"
-    code, out = godot(repo, ["--sg", str(sg), "--check", "--player", "S073PL000b", "--clicks", "fogtest 60,60,3;fogtest 1,1,4"],
+    показа показанный туман равен модели. Last Edict: день 1 новой партии за Легионы. Нет импорта — пропуск."""
+    save, _, why = stand(repo, 1, LEGIONS)
+    if save is None:
+        return True, f"смена тумана: пропуск — {why}"
+    code, out = godot(repo, ["--state", str(save), "--check", "--player", LEGIONS, "--clicks", "fogtest 60,60,3;fogtest 1,1,4"],
                       "res://scenes/map/MapScreen.tscn")
     changes, tests = list(FOGCHANGE.finditer(out)), list(FOGTEST.finditer(out))
     if code != 0 or len(changes) != 2 or len(tests) != 2 or any(t["left"] != "0" for t in tests):
@@ -2232,11 +2248,11 @@ def smooth_scroll(repo: Path) -> tuple[bool, str]:
     """Плавная прокрутка к событиям (CMidAnimSmoothScroll, MapView.Scroll.cs): ход ИИ дня 30 Кланов — перед ходами отрядов и событиями на
     виду вид едет к месту; положения по тикам совпадают с разгоном движка (свой пересчёт отрезка 0x51f452 и номеров 0x4f4b51 от первого
     сдвига), последнее — (0, 0), тик не короче 33 мс (быстрая группа). Флажок «Прокрутка между действиями» выключен — ни одной плавной
-    прокрутки, вид встаёт сразу. Нет корпуса — пропуск."""
-    sg = corpus_dir(repo) / "20260919-human" / "rastlennaya-vlast-dwarf-t30-055.sg"
-    if not sg.exists():
-        return True, "плавная прокрутка: пропуск — нет корпуса"
-    code, out = godot(repo, ["--sg", str(sg), "--check", "--player", "S073PL000a", "--clicks", "end"], "res://scenes/map/MapScreen.tscn")
+    прокрутки, вид встаёт сразу. Last Edict: ход ИИ дня 30 партии стенда. Нет импорта — пропуск."""
+    save, _, why = stand(repo, 30)
+    if save is None:
+        return True, f"плавная прокрутка: пропуск — {why}"
+    code, out = godot(repo, ["--state", str(save), "--check", "--player", STAND_PLAYER, "--clicks", "end"], "res://scenes/map/MapScreen.tscn")
     scrolls = list(SMOOTH.finditer(out))
     if code != 0 or not scrolls or AITURN.search(out) is None:
         return False, f"плавная прокрутка: код {code}, прокруток {len(scrolls)}\n{out.strip()}"
@@ -2253,7 +2269,7 @@ def smooth_scroll(repo: Path) -> tuple[bool, str]:
     settings = repo / ".cache" / "ui-check" / "scroll-settings.json"
     settings.parent.mkdir(parents=True, exist_ok=True)
     settings.write_text(json.dumps({"SmoothScroll": False}), encoding="utf-8")
-    code, off = godot(repo, ["--sg", str(sg), "--check", "--player", "S073PL000a", "--settings", str(settings), "--clicks", "end"],
+    code, off = godot(repo, ["--state", str(save), "--check", "--player", STAND_PLAYER, "--settings", str(settings), "--clicks", "end"],
                       "res://scenes/map/MapScreen.tscn")
     turn = AITURN.search(off)
     if code != 0 or turn is None or turn["error"] != "0" or SMOOTH.search(off):
@@ -2337,17 +2353,28 @@ def path_event(repo: Path) -> tuple[bool, str]:
 
 
 def battle_opening(repo: Path) -> tuple[bool, str]:
-    """Экран боя от хозяина доигрывает ходы ИИ до первого хода человека (docs/ai-screen.md §5): бой за руину на сохранении
-    дня 3 живой партии — охрана ходит первой, экран открывается уже с ходом человека. Нет корпуса — пропуск."""
-    sg = corpus_dir(repo) / "20260919-human" / "rastlennaya-vlast-dwarf-t03-008.sg"
-    if not sg.exists():
-        return True, "начало боя: пропуск — нет корпуса"
-    code, out = godot(repo, ["--sg", str(sg), "--check", "--player", "S073PL000a", "--clicks", "59,22;52,16;52,16"],
-                      "res://scenes/map/MapScreen.tscn")
-    opened = re.search(r"battle open ходов_ИИ_до_игрока=(?P<steps>\d+) ждёт_игрока=(?P<waits>\d)", out)
-    if code != 0 or opened is None or opened["waits"] != "1" or int(opened["steps"]) == 0:
-        return False, f"начало боя: код {code}\n{out.strip()}"
-    return True, f"начало боя: ИИ сделал {opened['steps']} ходов до первого хода человека"
+    """Экран боя от хозяина доигрывает ходы ИИ до первого хода человека (docs/ai-screen.md §5): бои за ближнюю охраняемую руину всех
+    отрядов дня 21 партии стенда разом — экран всегда открывается с ходом человека, и хотя бы в одном бою охрана ходит первой. Нет
+    импорта — пропуск."""
+    save, m, why = stand(repo, 21)
+    if save is None:
+        return True, f"начало боя: пропуск — {why}"
+    raids = [(st, m.nearest_site("Ruin", st.x, st.y, guarded=True)) for st in m.field_stacks(STAND_PLAYER)]
+    outs = godot_all(repo, [(["--state", str(save), "--check", "--player", STAND_PLAYER, "--clicks", f"arrive {st.id} {ruin.id}"],
+                             "res://scenes/map/MapScreen.tscn") for st, ruin in raids])
+    opened = []
+    for (st, ruin), (code, out) in zip(raids, outs):
+        found = re.search(r"battle open ходов_ИИ_до_игрока=(?P<steps>\d+) ждёт_игрока=(?P<waits>\d)", out)
+        if code != 0:
+            return False, f"начало боя {st.id} у {ruin.id}: код {code}\n{out.strip()}"
+        if found is not None:   # вор и прочие без боя у руины экран не открывают
+            if found["waits"] != "1":
+                return False, f"начало боя {st.id} у {ruin.id}: экран открыт не на ходе человека\n{found.group(0)}"
+            opened.append((st.id, int(found["steps"])))
+    first = [f"{sid} ({steps})" for sid, steps in opened if steps > 0]
+    if not first:
+        return False, f"начало боя: ни в одном из {len(opened)} боёв охрана не ходила первой — {opened}"
+    return True, f"начало боя: {len(opened)} боёв, экран — на ходе человека; ИИ ходил первым у {', '.join(first)}"
 
 
 def hotseat_ai(repo: Path) -> tuple[bool, str]:
@@ -2595,7 +2622,7 @@ def map_cursors(repo: Path) -> tuple[bool, str]:
     m = ui_check_maps.load(save)
     own = m.field_stacks("S073PL000a")[0]
     foe = m.nearest_foe(own.owner, own.x, own.y)
-    move, rock = "%d,%d" % m.free_near(own.x, own.y), "%d,%d" % m.landmark_cells()[0]
+    move, rock = "%d,%d" % m.free_near(own.x, own.y), "%d,%d" % m.landmark_cells(seen_by=own.owner)[0]
     want = [(own.cell, "SELECTUNIT"), (own.cell, "MANAGESTK"), (foe.cell, "BATTLE"), (move, "MOVE"), (rock, "DEFAULT")]
     code, out = godot(repo, ["--state", str(save), "--check", "--player", own.owner, "--clicks",
                              f"cursor {own.cell};{own.cell};cursor {own.cell};cursor {foe.cell};cursor {move};cursor {rock}"],
@@ -2620,7 +2647,7 @@ def map_cards(repo: Path) -> tuple[bool, str]:
         return True, f"карточки карты: пропуск — {why}"
     own = m.field_stacks(STAND_PLAYER)[0]
     foe = m.nearest_foe(own.owner, own.x, own.y)
-    rock, empty = "%d,%d" % m.landmark_cells()[0], "%d,%d" % m.empty_cell()
+    rock, empty = "%d,%d" % m.landmark_cells(seen_by=STAND_PLAYER)[0], "%d,%d" % m.empty_cell(seen_by=STAND_PLAYER)
     code, out = godot(repo, ["--state", str(save), "--check", "--player", own.owner,
                              "--clicks", f"card {own.cell};card {foe.cell};card {rock};card {empty}"], "res://scenes/map/MapScreen.tscn")
     matches = {m["cell"]: m for m in CARD.finditer(out)}

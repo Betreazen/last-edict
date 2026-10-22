@@ -66,28 +66,42 @@ public static class BalanceStand
         return new GameSession(state, MapArtData.Empty, book);
     }
 
-    /// <summary>Снимки партии стенда в начале дней <paramref name="days"/> (день — <see cref="MapState.Turn"/>, как в окне карты) с игроком
+    /// <summary>Снимки партии в начале дней <paramref name="days"/> (день — <see cref="MapState.Turn"/>, как в окне карты) с игроком
     /// <paramref name="human"/>-человеком: положения середины партии для проверок экранов (<c>tools/CheckSaves</c>, ui-render-check) — в
-    /// Last Edict нет сохранений живых партий корпуса. До дня <paramref name="human"/> ходил ИИ, поэтому его отряды уже на карте.</summary>
-    public static IEnumerable<(int Day, GameState State)> Snapshots(ScenarioData scenario, GameBook book, uint seed, IEnumerable<int> days,
+    /// Last Edict нет сохранений живых партий корпуса. Партия идёт от <paramref name="start"/> (новая партия меню, <c>NewGame.Start</c>)
+    /// с зерном <paramref name="seed"/>, за всех ходит ИИ, поэтому и отряды <paramref name="human"/> к снимку уже на карте; день начала —
+    /// сам <paramref name="start"/>.</summary>
+    public static IEnumerable<(int Day, GameState State)> Snapshots(GameState start, GameBook book, uint seed, IEnumerable<int> days,
                                                                      string human)
     {
-        var session = Start(scenario, book, seed);
+        ArgumentNullException.ThrowIfNull(start);
+        var session = new GameSession(AsHuman(start, null).Reseeded(seed), MapArtData.Empty, book);
         foreach (int want in days.Order())
         {
             while (session.Map.Turn < want && !session.Over) session.Execute(new EndTurnCommand());
             if (session.Map.Turn != want) yield break;
-            yield return (want, AsHuman(session.Snapshot(), human));
+            yield return (want, HumanTurn(session.Snapshot(), book, human));
         }
     }
 
-    private static GameState AsHuman(GameState state, string human)
+    /// <summary>Снимок дня с началом хода человека <paramref name="human"/>: смена дня в партии без людей начинает ход только ИИ, поэтому
+    /// запас хода, регенерацию и доход человеку даёт <see cref="GameSession.BeginFirstDay"/> (как на старте партии: без роста земли и
+    /// событий начала хода). Попапы событий и предложения, накопленные, пока за человека ходил ИИ, — не его: ход начинается без окон.</summary>
+    private static GameState HumanTurn(GameState state, GameBook book, string human)
+    {
+        var session = new GameSession(AsHuman(state, human) with { Messages = [], Offers = [] }, MapArtData.Empty, book);
+        session.BeginFirstDay(human);
+        return session.Snapshot();
+    }
+
+    /// <summary>Люди партии — только <paramref name="human"/> (null — никого: ходит ИИ).</summary>
+    private static GameState AsHuman(GameState state, string? human)
     {
         var map = state.Looks.Map;
         var players = map.Players.ToDictionary(p => p.Key, p => p.Value with { IsHuman = p.Key.Equals(human, StringComparison.OrdinalIgnoreCase) },
                                                StringComparer.OrdinalIgnoreCase);
         var looks = GameSession.Retold(state.Looks, GameSession.With(map, players: players), state.Looks.Stacks);
-        return state with { Looks = looks, Info = state.Info with { Humans = [human] } };
+        return state with { Looks = looks, Info = state.Info with { Humans = human is null ? [] : [human] }, ActiveHuman = human ?? "" };
     }
 
     /// <summary>Счёт игрока: <see cref="SitePoints"/> за каждый его город и столицу (не взятую) плюс сумма уровней его юнитов в отрядах на

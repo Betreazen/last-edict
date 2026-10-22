@@ -42,6 +42,15 @@ class Fort:
 
 
 @dataclass(frozen=True)
+class Site:
+    id: str
+    kind: str        # Capital, Village, Ruin, Merchant… (MapSite.Kind)
+    x: int
+    y: int
+    guards: int      # живых охранников (руина, город)
+
+
+@dataclass(frozen=True)
 class ScenarioMap:
     name: str
     size: int
@@ -51,6 +60,8 @@ class ScenarioMap:
     forts: tuple[Fort, ...]
     objects: dict[str, tuple[str, int, int]]       # id → (вид, x, y)
     players: dict[str, str]                        # id игрока → id расы
+    sites: tuple[Site, ...] = ()
+    fog: dict[str, bytes] | None = None            # игрок → туман по клеткам (1 — скрыто), строка за строкой
 
     def ground_at(self, x: int, y: int) -> int:
         return (self.ground[y * self.size + x] >> 3) & 0b111
@@ -78,18 +89,30 @@ class ScenarioMap:
         foes = [s for s in self.stacks if s.owner != owner and not s.inside]
         return min(foes, key=lambda s: (max(abs(s.x - x), abs(s.y - y)), s.id))
 
-    def landmark_cells(self, kind: str = "MM") -> list[tuple[int, int]]:
-        """Клетки объектов вида (`MM` — ориентиры: горы, деревья…), по плану клеток."""
-        return sorted(cell for cell, ids in self.plan.items() if any(self.objects.get(i, ("",))[0] == kind for i in ids))
+    def seen(self, player: str, x: int, y: int) -> bool:
+        """Клетка открыта игроку (нет тумана — тоже открыта)."""
+        fog = (self.fog or {}).get(player)
+        return fog is None or fog[y * self.size + x] == 0
+
+    def landmark_cells(self, kind: str = "MM", seen_by: str | None = None) -> list[tuple[int, int]]:
+        """Клетки объектов вида (`MM` — ориентиры: горы, деревья…), по плану клеток; seen_by — только открытые игроку."""
+        return sorted(cell for cell, ids in self.plan.items() if any(self.objects.get(i, ("",))[0] == kind for i in ids)
+                      and (seen_by is None or self.seen(seen_by, *cell)))
+
+    def nearest_site(self, kind: str, x: int, y: int, guarded: bool = False) -> Site:
+        """Ближняя к клетке площадка вида (`Ruin`…); guarded — только с живой охраной."""
+        found = [s for s in self.sites if s.kind == kind and (s.guards > 0 or not guarded)]
+        return min(found, key=lambda s: (max(abs(s.x - x), abs(s.y - y)), s.id))
 
     def capital(self, owner: str) -> Fort:
         return next(f for f in self.forts if f.owner == owner and f.capital)
 
-    def empty_cell(self) -> tuple[int, int]:
-        """Пустая клетка подальше от всего: проходимая, без объектов в квадрате ±2 (карточки нет)."""
+    def empty_cell(self, seen_by: str | None = None) -> tuple[int, int]:
+        """Пустая клетка подальше от всего: проходимая, без объектов в квадрате ±2 (карточки нет); seen_by — открытая игроку."""
         for y in range(2, self.size - 2):
             for x in range(2, self.size - 2):
-                if all(self.free(x + dx, y + dy) for dx in range(-2, 3) for dy in range(-2, 3)):
+                if (all(self.free(x + dx, y + dy) for dx in range(-2, 3) for dy in range(-2, 3))
+                        and (seen_by is None or self.seen(seen_by, x, y))):
                     return x, y
         raise LookupError(f"{self.name}: нет пустой клетки")
 
@@ -114,4 +137,7 @@ def load(path: Path) -> ScenarioMap:
         forts=tuple(Fort(f["Id"], f.get("Owner") or "", f["X"], f["Y"], f["Kind"] == "Capital")
                     for f in m["Sites"] if f["Kind"] in ("Capital", "Village")),
         objects={o["Id"]: (o["Kind"], o["X"], o["Y"]) for o in m["Objects"].values()},
-        players={p["Id"]: p["RaceId"] for p in m["Players"].values()})
+        players={p["Id"]: p["RaceId"] for p in m["Players"].values()},
+        sites=tuple(Site(f["Id"], f["Kind"], f["X"], f["Y"], sum(1 for g in f.get("Guards") or [] if m["Units"].get(g, {}).get("Hp", 0) > 0))
+                    for f in m["Sites"]),
+        fog={p["Id"]: base64.b64decode(m["Fog"][p["FogId"]]["data"]) for p in m["Players"].values() if p.get("FogId") in m["Fog"]})

@@ -225,13 +225,14 @@ public partial class MapScreen
         else ShowWindowCursor(view);
     }
 
-    /// <summary>Левый верхний угол окна меньше экрана карты — по середине 800×600; во весь экран — null.</summary>
     /// <summary>Окно размером с экран оригинала (800×600 и больше): в оригинале оно закрывало всё, на холсте шире — по середине.</summary>
     private static bool FullScreen(string screen) =>
         GameData.Content.Screens.FirstOrDefault(s => s.Id == screen)?.Design is { Width: >= 800, Height: >= 600 };
 
+    /// <summary>Окно по якорям (<c>ui/layout.json</c>, <see cref="UiFit.Anchors"/>) — раскладывается на весь холст карты.</summary>
     private static bool Anchored(string screen) => GameData.Content.Screens.FirstOrDefault(s => s.Id == screen)?.Fit == UiFit.Anchors;
 
+    /// <summary>Левый верхний угол окна меньше экрана карты — по середине 800×600; во весь экран — null.</summary>
     private Vector2? Centered(string screen)
     {
         var design = GameData.Content.Screens.FirstOrDefault(s => s.Id == screen)?.Design;

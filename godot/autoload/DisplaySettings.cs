@@ -47,6 +47,8 @@ public static class DisplaySettings
         bool full = DisplayServer.WindowGetMode() is DisplayServer.WindowMode.Fullscreen or DisplayServer.WindowMode.ExclusiveFullscreen;
         var next = full ? DisplayMode.Windowed : DisplayMode.Fullscreen;
         SetMode(next);
+        // Размер окна и разрешение полного экрана — те же, что у «Применить» (файл настроек с новым режимом).
+        SetSize(MapSettings.Load(FilePath).Clamped() with { WindowMode = DisplayModes.Name(next) });
         try
         {
             MapSettings.Update(FilePath, s => s with { WindowMode = DisplayModes.Name(next) });
@@ -58,26 +60,65 @@ public static class DisplaySettings
         GD.Print($"display окно={DisplayModes.Name(next)} (Alt+Enter)");
     }
 
-    /// <summary>Размер окна (окно, без рамки — по центру экрана, не больше его рабочей области) и разрешение полного экрана: корень рисует
-    /// кадр в выбранном размере (<c>ContentScaleMode.Viewport</c>), движок растягивает его на экран с полями по форме. По умолчанию —
-    /// окно как есть, полный экран в разрешении экрана.</summary>
-    private static void SetSize(MapSettings settings)
+    /// <summary>Разрешение, в котором корень рисует кадр в полном экране (<see cref="MapSettings.Resolution"/>); null — в размере окна.
+    /// Растяжением корня распоряжается <see cref="ScreenStage"/> (<see cref="RootScale"/>): он же меняет его при смене вписывания.</summary>
+    public static Vector2I? RenderSize { get; private set; }
+
+    /// <summary>Размер окна, применённый последним (<see cref="MapSettings.WindowSize"/>), и размер окна до первого выбранного — для отката
+    /// на «по умолчанию».</summary>
+    private static int _appliedSize;
+    private static Vector2I? _sizeBefore;
+
+    /// <summary>Растяжение корня: разрешение полного экрана — кадр в нём (<c>Viewport</c>), движок растягивает его на экран с полями по
+    /// форме; иначе — по вписыванию (<paramref name="nearest"/>: растяжение холстов, иначе без растяжения).</summary>
+    public static void RootScale(Window root, bool nearest)
     {
-        var root = ((SceneTree)Engine.GetMainLoop()).Root;
-        if (settings.Display == DisplayMode.Fullscreen && DisplaySizes.Decode(settings.Resolution) is { } res)
+        ArgumentNullException.ThrowIfNull(root);
+        if (RenderSize is { } size)
         {
             root.ContentScaleMode = Window.ContentScaleModeEnum.Viewport;
             root.ContentScaleAspect = Window.ContentScaleAspectEnum.Keep;
-            root.ContentScaleSize = new Vector2I(res.W, res.H);
+            root.ContentScaleSize = size;
             return;
         }
-        root.ContentScaleMode = Window.ContentScaleModeEnum.Disabled;
-        if (settings.Display == DisplayMode.Fullscreen || DisplaySizes.Decode(settings.WindowSize) is not { } want) return;
-        int screen = DisplayServer.WindowGetCurrentScreen();
-        var usable = DisplayServer.ScreenGetUsableRect(screen);
-        var size = new Vector2I(Math.Min(want.W, usable.Size.X), Math.Min(want.H, usable.Size.Y));
+        root.ContentScaleMode = nearest ? Window.ContentScaleModeEnum.CanvasItems : Window.ContentScaleModeEnum.Disabled;
+    }
+
+    /// <summary>Размер окна (окно, без рамки — по центру экрана, вместе с рамкой не больше его рабочей области; только когда выбор сменился,
+    /// иначе размер, который пользователь задал мышью, остаётся) и разрешение полного экрана (<see cref="RenderSize"/>).</summary>
+    private static void SetSize(MapSettings settings)
+    {
+        bool full = settings.Display == DisplayMode.Fullscreen;
+        var render = full && DisplaySizes.Decode(settings.Resolution) is { } res ? new Vector2I(res.W, res.H) : (Vector2I?)null;
+        if (render != RenderSize)
+        {
+            RenderSize = render;
+            if (ScreenStage.Current is { } stage) stage.RefreshRootScale();
+            else if (render is not null) RootScale(((SceneTree)Engine.GetMainLoop()).Root, nearest: false);
+        }
+        if (full || settings.WindowSize == _appliedSize) return;
+        if (DisplaySizes.Decode(settings.WindowSize) is { } want)
+        {
+            _sizeBefore ??= DisplayServer.WindowGetSize();
+            Resize(new Vector2I(want.W, want.H));
+        }
+        else if (_sizeBefore is { } before)
+        {
+            Resize(before);
+            _sizeBefore = null;
+        }
+        _appliedSize = settings.WindowSize;
+    }
+
+    /// <summary>Окно этого размера по центру рабочей области экрана; с рамкой и заголовком — не больше неё.</summary>
+    private static void Resize(Vector2I want)
+    {
+        var usable = DisplayServer.ScreenGetUsableRect(DisplayServer.WindowGetCurrentScreen());
+        var decorations = DisplayServer.WindowGetSizeWithDecorations() - DisplayServer.WindowGetSize();
+        var room = usable.Size - decorations;
+        var size = new Vector2I(Math.Min(want.X, room.X), Math.Min(want.Y, room.Y));
         DisplayServer.WindowSetSize(size);
-        DisplayServer.WindowSetPosition(usable.Position + ((usable.Size - size) / 2));
+        DisplayServer.WindowSetPosition(usable.Position + ((usable.Size - size - decorations) / 2));
     }
 
     private static void SetMode(DisplayMode mode)

@@ -153,7 +153,11 @@ public partial class MapScreen
             var logic = _logics[i] ?? DialogLogic(want[i]);
             _logics[i] = logic;
             var view = new UiScreenView { Hosted = want[i], Name = want[i], SlotHost = _host, Logic = logic };
-            if (Centered(want[i]) is { } at) view.SlotAt = at;
+            if (Centered(want[i]) is { } at)
+            {
+                view.SlotAt = at;
+                view.Backdrop = FullScreen(want[i]);   // окно во весь экран оригинала — бока закрыты градиентом
+            }
             view.Fired += events => OnWindowEvents(view, events);
             view.DragCursorChanged += cursor => DragCursor(view, cursor);
             view.Pointed += () =>
@@ -216,6 +220,10 @@ public partial class MapScreen
     }
 
     /// <summary>Левый верхний угол окна меньше экрана карты — по середине 800×600; во весь экран — null.</summary>
+    /// <summary>Окно размером с экран оригинала (800×600 и больше): в оригинале оно закрывало всё, на холсте шире — по середине.</summary>
+    private static bool FullScreen(string screen) =>
+        GameData.Content.Screens.FirstOrDefault(s => s.Id == screen)?.Design is { Width: >= 800, Height: >= 600 };
+
     private Vector2? Centered(string screen)
     {
         var design = GameData.Content.Screens.FirstOrDefault(s => s.Id == screen)?.Design;

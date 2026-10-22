@@ -104,13 +104,22 @@ public partial class UiScreenView
         return new Vector2(Mathf.Max(0, (slot.X - shaped.Design.Width) / 2), Mathf.Max(0, (slot.Y - shaped.Design.Height) / 2));
     }
 
-    /// <summary>Поля вокруг экрана по середине места — растяжка его фона (<see cref="AmbientFill"/>), под экраном.</summary>
+    /// <summary>Окно во весь экран оригинала (800×600) над сценой: бока холста хозяина закрывает градиент (<see cref="SideFade"/>) — карта и
+    /// её панели за окном не видны (гарнизон, войско, торговцы; ответ пользователя 22.10).</summary>
+    public bool Backdrop { get; set; }
+
+    /// <summary>Поля вокруг экрана: по середине места (<see cref="SlotInset"/>) — до краёв места, окно во весь экран (<see cref="Backdrop"/>)
+    /// — до краёв холста хозяина; градиент <see cref="SideFade"/>, под экраном.</summary>
     private void SlotAmbient()
     {
         if (_slotAmbient is not null && IsInstanceValid(_slotAmbient)) _slotAmbient.QueueFree();
         _slotAmbient = null;
-        if (_root is null || SlotInset() == Vector2.Zero || _backgroundSprite?.Texture is not { } texture || SlotSize is not { } slot) return;
-        _slotAmbient = AmbientFill.Create(texture, new Rect2(Vector2.Zero, texture.GetSize()), _design / 2f, slot, -1);
+        if (_root is null || SlotAt is not { } at) return;
+        var inset = SlotInset();
+        Rect2? area = inset != Vector2.Zero && SlotSize is { } slot ? new Rect2(-inset, slot)
+            : Backdrop ? new Rect2(-at, SlotHost) : null;
+        if (area is not { } a || SideFade.Create(a, new Rect2(Vector2.Zero, _design), 0) is not { } fade) return;
+        _slotAmbient = fade;
         _root.AddChild(_slotAmbient);
         _root.MoveChild(_slotAmbient, 0);
     }

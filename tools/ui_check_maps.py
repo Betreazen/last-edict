@@ -26,6 +26,7 @@ class Stack:
     inside: str      # город, в котором стоит («» — на карте)
     leader_alive: bool
     items: int = 0   # предметов в сумке
+    leader: str = ""  # тип лидера (id содержимого: base:unit/thief-clans)
 
     @property
     def cell(self) -> str:
@@ -94,6 +95,11 @@ class ScenarioMap:
         fog = (self.fog or {}).get(player)
         return fog is None or fog[y * self.size + x] == 0
 
+    def fogged_cell(self, player: str, x: int, y: int) -> tuple[int, int]:
+        """Ближняя к клетке (x, y) клетка под туманом игрока."""
+        cells = [(cx, cy) for cy in range(self.size) for cx in range(self.size) if not self.seen(player, cx, cy)]
+        return min(cells, key=lambda c: (max(abs(c[0] - x), abs(c[1] - y)), c[1], c[0]))
+
     def landmark_cells(self, kind: str = "MM", seen_by: str | None = None) -> list[tuple[int, int]]:
         """Клетки объектов вида (`MM` — ориентиры: горы, деревья…), по плану клеток; seen_by — только открытые игроку."""
         return sorted(cell for cell, ids in self.plan.items() if any(self.objects.get(i, ("",))[0] == kind for i in ids)
@@ -132,7 +138,7 @@ def load(path: Path) -> ScenarioMap:
         name=path.stem, size=m["Size"], ground=base64.b64decode(m["Tiles"]["data"]),
         plan={(p["X"], p["Y"]): tuple(p["Ids"]) for p in m["Plan"]},
         stacks=tuple(Stack(s["Id"], s["Owner"], s["X"], s["Y"], s.get("Inside") or "", s.get("LeaderAlive", True),
-                           len(s.get("Items") or []))
+                           len(s.get("Items") or []), m["Units"].get(s.get("LeaderId") or "", {}).get("TypeId", ""))
                      for s in m["Stacks"].values()),
         forts=tuple(Fort(f["Id"], f.get("Owner") or "", f["X"], f["Y"], f["Kind"] == "Capital")
                     for f in m["Sites"] if f["Kind"] in ("Capital", "Village")),

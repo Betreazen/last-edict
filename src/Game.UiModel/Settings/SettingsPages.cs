@@ -80,6 +80,12 @@ public static class SettingsPages
                        new((int)ScreenScaling.Nearest, "LE_SET_SCALING_NEAREST")],
             Display = true,
         },
+        new("largeUi", SettingsTab.Display, SettingKind.Choice, "LE_SET_LARGE_UI", "LE_SET_LARGE_UI_HELP", s => s.LargeUi,
+            (s, v) => s with { LargeUi = v })
+        {
+            Choices = [new(MapSettings.LargeUiAuto, "LE_SET_LARGE_AUTO"), new(MapSettings.LargeUiOn, "LE_SET_LARGE_ON"),
+                       new(MapSettings.LargeUiOff, "LE_SET_LARGE_OFF")],
+        },
         Toggle("animatedMap", SettingsTab.Display, "X005TA0706", "X005TA0851", s => s.AnimatedIso, (s, v) => s with { AnimatedIso = v }),
         Toggle("cellHighlight", SettingsTab.Display, "X005TA0762", "X005TA0855", s => s.IsoHighlight, (s, v) => s with { IsoHighlight = v }),
         Toggle("clouds", SettingsTab.Display, "X005TA0817", "X005TA0857", s => s.IsoClouds, (s, v) => s with { IsoClouds = v }),

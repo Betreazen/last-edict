@@ -43,6 +43,9 @@ public sealed record InputConfig
     public IReadOnlyList<InputGroup> Groups { get; init; } = [];
     public IReadOnlyList<InputActionDef> Actions { get; init; } = [];
 
+    /// <summary>Экраны, где крестовина — стрелки (прокрутка карты), а не шаг указателя по кнопкам (<see cref="UiNavigation"/>).</summary>
+    public IReadOnlyList<string> ArrowScreens { get; init; } = [];
+
     /// <summary>Привязки геймпада по умолчанию у выведенных действий: id → <c>pad:…</c>/<c>axis:…</c>.</summary>
     public IReadOnlyDictionary<string, IReadOnlyList<string>> Pad { get; init; } = new Dictionary<string, IReadOnlyList<string>>();
 
@@ -56,7 +59,7 @@ public sealed record InputConfig
 
     public static InputConfig? Load(string path) => File.Exists(path) ? FromJson(File.ReadAllText(path)) : null;
 
-    /// <summary>Слой мода поверх: группы и действия — по id целиком, кнопки геймпада — по id действия.</summary>
+    /// <summary>Слой мода поверх: группы и действия — по id целиком, кнопки геймпада — по id действия, экраны стрелок — добавляются.</summary>
     public static InputConfig Merge(InputConfig under, InputConfig over)
     {
         ArgumentNullException.ThrowIfNull(under);
@@ -65,7 +68,11 @@ public sealed record InputConfig
         var actions = under.Actions.Where(a => over.Actions.All(o => o.Id != a.Id)).Concat(over.Actions).ToList();
         var pad = new Dictionary<string, IReadOnlyList<string>>(under.Pad);
         foreach (var (id, buttons) in over.Pad) pad[id] = buttons;
-        return new InputConfig { Groups = groups, Actions = actions, Pad = pad };
+        return new InputConfig
+        {
+            Groups = groups, Actions = actions, Pad = pad,
+            ArrowScreens = [.. under.ArrowScreens.Concat(over.ArrowScreens).Distinct(StringComparer.OrdinalIgnoreCase)],
+        };
     }
 }
 
@@ -160,8 +167,36 @@ public static class InputActions
         return result;
     }
 
+    /// <summary>Подсказки кнопок геймпада для экранов, что сейчас принимают ввод (полоса внизу, когда играют геймпадом): щелчок указателем,
+    /// «Отмена», затем действия групп этих экранов с кнопкой геймпада — по первой кнопке на действие, не больше <paramref name="limit"/>. Оси
+    /// (стики, курки), крестовина и движение указателя не подсказываются — их назначение одно на всю игру.</summary>
+    public static IReadOnlyList<(InputAction Action, string Binding)> Hints(IReadOnlyList<InputAction> actions,
+                                                                             IReadOnlyDictionary<string, IReadOnlyList<string>>? overrides,
+                                                                             IReadOnlyCollection<string> screens, int limit = 7)
+    {
+        ArgumentNullException.ThrowIfNull(actions);
+        ArgumentNullException.ThrowIfNull(screens);
+        static bool Button(string b) => b.StartsWith("pad:", StringComparison.Ordinal) && !b.StartsWith("pad:Dpad", StringComparison.Ordinal);
+        var on = actions.Where(a => a.Everywhere || a.Screens.Intersect(screens, StringComparer.OrdinalIgnoreCase).Any()).ToList();
+        var first = on.Where(a => a.Id == "pointer.click").Concat(on.Where(a => a.Id == "cancel"));
+        var own = on.Where(a => a.Group is not null);
+        return [.. first.Concat(own)
+            .Select(a => (Action: a, Binding: BindingsOf(a, overrides).FirstOrDefault(Button)))
+            .Where(h => h.Binding is not null)
+            .Select(h => (h.Action, h.Binding!))
+            .Take(limit)];
+    }
+
     /// <summary>Устройство привязки: <c>key</c> — клавиатура, <c>pad</c> — кнопки и оси геймпада.</summary>
     public static string DeviceOf(string binding) => binding.StartsWith("key:", StringComparison.Ordinal) ? "key" : "pad";
+}
+
+/// <summary>Надписи на кнопках геймпада: Xbox (и прочие XInput), PlayStation, Steam Deck.</summary>
+public enum PadStyle
+{
+    Xbox,
+    PlayStation,
+    SteamDeck,
 }
 
 /// <summary>Имена клавиш Godot (<c>Key</c>) для кодов клавиш Windows разметки (ASCII-буквы и цифры совпадают, F1…F12 подряд, прочие — таблица).</summary>
@@ -181,8 +216,8 @@ public static class InputNames
         _ => Special.GetValueOrDefault(vk),
     };
 
-    /// <summary>Короткие подписи кнопок и осей геймпада (раскладка Xbox — её же отдаёт Steam Deck): имя <c>JoyButton</c>/<c>JoyAxis</c> Godot →
-    /// подпись; чего нет в таблице — само имя.</summary>
+    /// <summary>Короткие подписи кнопок и осей геймпада Xbox: имя <c>JoyButton</c>/<c>JoyAxis</c> Godot → подпись; чего нет в таблице — само
+    /// имя. У PlayStation и Steam Deck свои надписи поверх (<see cref="Styled"/>).</summary>
     private static readonly Dictionary<string, string> Pad = new(StringComparer.OrdinalIgnoreCase)
     {
         ["pad:LeftShoulder"] = "LB", ["pad:RightShoulder"] = "RB", ["pad:Back"] = "View", ["pad:Start"] = "Menu", ["pad:Guide"] = "Home",
@@ -193,10 +228,36 @@ public static class InputNames
         ["axis:TriggerLeft+"] = "LT", ["axis:TriggerRight+"] = "RT",
     };
 
-    /// <summary>Подпись привязки геймпада (<c>pad:LeftShoulder</c> → «LB», <c>axis:TriggerRight+</c> → «RT», <c>pad:A</c> → «A»).</summary>
-    public static string PadLabel(string binding)
+    private static readonly Dictionary<PadStyle, Dictionary<string, string>> Styled = new()
+    {
+        [PadStyle.PlayStation] = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["pad:A"] = "✕", ["pad:B"] = "○", ["pad:X"] = "□", ["pad:Y"] = "△", ["pad:LeftShoulder"] = "L1", ["pad:RightShoulder"] = "R1",
+            ["axis:TriggerLeft+"] = "L2", ["axis:TriggerRight+"] = "R2", ["pad:Back"] = "Create", ["pad:Start"] = "Options",
+            ["pad:LeftStick"] = "L3", ["pad:RightStick"] = "R3", ["pad:Guide"] = "PS",
+        },
+        [PadStyle.SteamDeck] = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["pad:LeftShoulder"] = "L1", ["pad:RightShoulder"] = "R1", ["axis:TriggerLeft+"] = "L2", ["axis:TriggerRight+"] = "R2",
+            ["pad:LeftStick"] = "L3", ["pad:RightStick"] = "R3", ["pad:Guide"] = "Steam",
+        },
+    };
+
+    /// <summary>Подпись привязки геймпада в надписях устройства (<c>pad:LeftShoulder</c> → «LB» у Xbox, «L1» у PlayStation и Steam Deck;
+    /// <c>pad:A</c> → «A» или «✕»).</summary>
+    public static string PadLabel(string binding, PadStyle style = PadStyle.Xbox)
     {
         ArgumentNullException.ThrowIfNull(binding);
+        if (Styled.TryGetValue(style, out var own) && own.TryGetValue(binding, out string? styled)) return styled;
         return Pad.TryGetValue(binding, out string? label) ? label : binding[(binding.IndexOf(':', StringComparison.Ordinal) + 1)..];
+    }
+
+    /// <summary>Надписи кнопок по имени устройства (<c>Input.GetJoyName</c>): Steam Deck, PlayStation (DualShock, DualSense), иначе Xbox.</summary>
+    public static PadStyle StyleOf(string? joyName)
+    {
+        string name = joyName ?? "";
+        if (name.Contains("Steam Deck", StringComparison.OrdinalIgnoreCase)) return PadStyle.SteamDeck;
+        string[] sony = ["PS3", "PS4", "PS5", "DualShock", "DualSense", "Sony", "PlayStation"];
+        return sony.Any(s => name.Contains(s, StringComparison.OrdinalIgnoreCase)) ? PadStyle.PlayStation : PadStyle.Xbox;
     }
 }

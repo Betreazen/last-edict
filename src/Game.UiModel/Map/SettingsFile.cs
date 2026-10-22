@@ -47,6 +47,7 @@ public static class SettingsFile
         new(Display, "vsync", nameof(MapSettings.VSync)),
         new(Display, "maxFps", nameof(MapSettings.MaxFps)),
         new(Display, "scaling", nameof(MapSettings.Scaling)),
+        new(Display, "largeUi", nameof(MapSettings.LargeUi)),
         new(Display, "animatedMap", nameof(MapSettings.AnimatedIso)),
         new(Display, "cellHighlight", nameof(MapSettings.IsoHighlight)),
         new(Display, "clouds", nameof(MapSettings.IsoClouds)),

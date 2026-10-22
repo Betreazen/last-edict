@@ -19,7 +19,13 @@ public static class InputBindings
     /// <summary>Порог стика и курков: дальше — нажато (как у <c>ui_*</c> Godot по умолчанию).</summary>
     public const float Deadzone = 0.5f;
 
+    /// <summary>Порог стика указателя (<c>pointer.*</c>): он водится плавно, половина хода стика не должна пропадать.</summary>
+    public const float PointerDeadzone = 0.15f;
+
     private static IReadOnlyList<InputAction>? _applied;
+
+    /// <summary>Имена действий в <c>InputMap</c> — для <see cref="Has"/> без вызова движка (его зовут каждый кадр).</summary>
+    private static HashSet<string> _names = new(StringComparer.Ordinal);
     private static KeyBindings? _overrides;
     private static readonly Dictionary<string, InputAction[]> ByScreen = new(StringComparer.OrdinalIgnoreCase);
 
@@ -35,6 +41,9 @@ public static class InputBindings
     private static HashSet<string> _motionPressed = new(StringComparer.Ordinal);
 
     public static IReadOnlyList<InputAction> Actions => GameData.Content.Input;
+
+    /// <summary>Переназначенные привязки, что сейчас стоят в <c>InputMap</c>.</summary>
+    public static KeyBindings? Current => _overrides;
 
     /// <summary>Имя действия в <c>InputMap</c>.</summary>
     public static string NameOf(InputAction action) => action.Godot ?? action.Id;
@@ -54,10 +63,11 @@ public static class InputBindings
             string name = NameOf(action);
             if (InputMap.HasAction(name)) InputMap.ActionEraseEvents(name);
             else InputMap.AddAction(name, Deadzone);
-            InputMap.ActionSetDeadzone(name, Deadzone);
+            InputMap.ActionSetDeadzone(name, name.StartsWith("pointer.", StringComparison.Ordinal) ? PointerDeadzone : Deadzone);
             foreach (string binding in InputActions.BindingsOf(action, overrides?.Map))
                 if (EventOf(binding) is { } e) InputMap.ActionAddEvent(name, e);
         }
+        _names = new HashSet<string>(_applied.Select(NameOf), StringComparer.Ordinal);
         _axes = [.. _applied.Where(a => InputActions.BindingsOf(a, overrides?.Map).Any(b => b.StartsWith("axis:", StringComparison.Ordinal)))];
     }
 
@@ -129,7 +139,7 @@ public static class InputBindings
     public static bool Has(string name)
     {
         Ensure();
-        return InputMap.HasAction(name);
+        return _names.Contains(name);
     }
 
     /// <summary>Событие привязки: <c>key:Space</c>, <c>pad:A</c>, <c>axis:LeftX-</c>; имя не разобралось — null.</summary>

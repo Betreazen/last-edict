@@ -311,7 +311,8 @@ public partial class MapView : Node2D
     /// <summary>Отпускание, съеденное панелью или окном, не оставляет нажатие «висеть»: следующее отпускание без своего нажатия — не щелчок.</summary>
     private void ForgetLeftDown()
     {
-        if (_leftDown && !Input.IsMouseButtonPressed(MouseButton.Left)) _leftDown = false;
+        // Кнопка геймпада, щёлкающая указателем (GamepadPointer), состояние мыши Input не меняет — её зажатие держит нажатие тоже.
+        if (_leftDown && !Input.IsMouseButtonPressed(MouseButton.Left) && !GamepadPointer.Holding(MouseButton.Left)) _leftDown = false;
     }
 
     public override void _UnhandledInput(InputEvent e)
@@ -340,19 +341,23 @@ public partial class MapView : Node2D
             case InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true }:
                 _leftDown = true;
                 break;
-            case InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: false }:
+            case InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: false } up:
                 if (!_leftDown) break;
                 _leftDown = false;
-                var world = GetGlobalMousePosition();
+                var world = WorldOf(up);
                 var (cx, cy) = GroundGeometry.CellAt(world.X, world.Y);
                 Click(cx, cy);
                 break;
             case InputEventMouseButton { ButtonIndex: MouseButton.Right } right:
-                var at = GetGlobalMousePosition();
+                var at = WorldOf(right);
                 RightButton?.Invoke(right.Pressed ? GroundGeometry.CellAt(at.X, at.Y) : null);
                 break;
         }
     }
+
+    /// <summary>Точка мира под событием мыши — из самого события (у вложенного вьюпорта положение мыши Godot берёт у ОС: щелчок указателя
+    /// геймпада и проверки без окна его не меняют).</summary>
+    private Vector2 WorldOf(InputEventMouse e) => GetCanvasTransform().AffineInverse() * e.Position;
 
     /// <summary>Правая кнопка над картой: нажата над клеткой — клетка, отпущена — null (карточка объекта, MapScreen.Cards.cs).</summary>
     public event System.Action<(int X, int Y)?>? RightButton;
@@ -464,15 +469,21 @@ public partial class MapView : Node2D
     /// <summary>Шаг прокрутки: 8 направлений по клеткам. Направление берётся от клавиш и от края окна под мышью;
     /// краем окна шаг делается не чаще, чем раз в <see cref="ScrollDelayMs"/>, стрелками — без задержки (у движка темп клавиш — автоповтор,
     /// <c>0x5418fb</c>).</summary>
+    // Имена действий прокрутки — один раз (каждый кадр строка превращалась бы в StringName заново).
+    private static readonly StringName UiLeft = "ui_left", UiRight = "ui_right", UiUp = "ui_up", UiDown = "ui_down",
+        StickLeft = "map.scrollLeft", StickRight = "map.scrollRight", StickUp = "map.scrollUp", StickDown = "map.scrollDown";
+
     private void Scroll(float delta)
     {
         if (!ScrollEnabled) return;
         _sinceScroll += delta * 1000;
         int dx = 0, dy = 0;
-        if (Input.IsActionPressed("ui_left")) dx -= 1;
-        if (Input.IsActionPressed("ui_right")) dx += 1;
-        if (Input.IsActionPressed("ui_up")) dy -= 1;
-        if (Input.IsActionPressed("ui_down")) dy += 1;
+        // Стрелки (и крестовина) и правый стик геймпада (map.scroll*, data/ui/input.json).
+        bool stick = InputBindings.Has("map.scrollLeft");
+        if (Input.IsActionPressed(UiLeft) || (stick && Input.IsActionPressed(StickLeft))) dx -= 1;
+        if (Input.IsActionPressed(UiRight) || (stick && Input.IsActionPressed(StickRight))) dx += 1;
+        if (Input.IsActionPressed(UiUp) || (stick && Input.IsActionPressed(StickUp))) dy -= 1;
+        if (Input.IsActionPressed(UiDown) || (stick && Input.IsActionPressed(StickDown))) dy += 1;
         bool keyed = (dx, dy) != (0, 0);
         if (DisplayServer.GetName() != "headless" && GetWindow().HasFocus() && MouseOverWindow())
         {

@@ -124,7 +124,31 @@ public partial class AnimatedCursor : Node
             return;
         }
         var frame = _frames[_frame];
-        Input.SetCustomMouseCursor(frame.Texture, Input.CursorShape.Arrow, frame.Hotspot);
+        float scale = UiScale.CursorScale;
+        if (scale == 1f) Input.SetCustomMouseCursor(frame.Texture, Input.CursorShape.Arrow, frame.Hotspot);
+        else
+        {
+            var large = Scaled(frame.Texture, scale);
+            var k = large.GetSize() / frame.Texture.GetSize();   // у курсора больше 256 точек множитель меньше заданного
+            Input.SetCustomMouseCursor(large, Input.CursorShape.Arrow, frame.Hotspot * k);
+        }
+    }
+
+    /// <summary>Крупный интерфейс (<see cref="UiScale"/>) — показанный курсор заново, в новом размере.</summary>
+    public static void Refresh() => _active?.Apply();
+
+    /// <summary>Увеличенные кадры — по самому кадру (кадры курсоров живут в <see cref="Cache"/> до конца запуска).</summary>
+    private static readonly Dictionary<(Texture2D, float), Texture2D> Large = [];
+
+    /// <summary>Кадр курсора в крупном режиме: увеличен (не больше 256 — предел курсора Godot), без размытия краёв.</summary>
+    private static Texture2D Scaled(Texture2D texture, float scale)
+    {
+        var key = (texture, scale);
+        if (Large.TryGetValue(key, out var done)) return done;
+        var image = texture.GetImage();
+        int w = Math.Min(256, (int)Math.Round(image.GetWidth() * scale)), h = Math.Min(256, (int)Math.Round(image.GetHeight() * scale));
+        image.Resize(w, h, Image.Interpolation.Nearest);
+        return Large[key] = ImageTexture.CreateFromImage(image);
     }
 
     /// <summary>Первый кадр курсора (обрезанный) — для проверок; нет картинки — null.</summary>

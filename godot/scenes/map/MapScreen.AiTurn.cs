@@ -143,6 +143,7 @@ public partial class MapScreen
         _map.AiAnimate = _settings.PlayAiMoves;
         GameAudio.Of(this).Apply(_settings, preview);
         InputBindings.Apply(_settings.Bindings);
+        UiScale.Apply(_settings);
         _map.RegionCount = _settings.AudioRegions;
         _map.AnimatedIso = _settings.AnimatedIso;
         _map.Clouds = _settings.IsoClouds;

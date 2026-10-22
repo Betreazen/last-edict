@@ -2,6 +2,8 @@
 // становятся действиями групп. Группы — экраны с общим смыслом клавиш: каждая горячая клавиша элемента разметки на экранах группы —
 // действие «группа.ЭЛЕМЕНТ», клавиша оригинала по умолчанию. Pad — кнопки геймпада по умолчанию у выведенных действий.
 // Привязки: key:<имя Key Godot>, pad:<имя JoyButton>, axis:<имя JoyAxis><+|->. Моды кладут свой файл — наложение по id.
+// Геймпад (GamepadPointer): левый стик водит указатель мыши, A — щелчок, X — правый щелчок; крестовина на окнах переводит указатель на
+// соседнюю кнопку (UiNavigation), на экранах ArrowScreens — стрелки (прокрутка карты); правый стик — прокрутка карты.
 {
   "Groups": [
     { "Id": "map", "Label": "LE_IN_GROUP_MAP", "Screens": ["DLG_STRATEGIC", "DLG_ISO_PAL", "DLG_ISO_LAND"] },
@@ -14,34 +16,43 @@
     { "Id": "diplomacy", "Label": "LE_IN_GROUP_DIPLOMACY", "Screens": ["DLG_DIPLOMACY"] },
     { "Id": "briefing", "Label": "LE_IN_GROUP_BRIEFING", "Screens": ["DLG_SCENARIO_BRIEFING", "DLG_END_WIN_LOSE_"] }
   ],
+  "ArrowScreens": ["DLG_STRATEGIC", "DLG_ISO_PAL", "DLG_ISO_LAND", "DLG_ISO", "DLG_ISO_VIEW", "DLG_ISO_RESPOPUP"],
   "Actions": [
-    { "Id": "accept", "Label": "LE_IN_ACCEPT", "Godot": "ui_accept", "Vk": [13], "Bindings": ["key:Enter", "key:KpEnter", "pad:A"] },
+    { "Id": "accept", "Label": "LE_IN_ACCEPT", "Godot": "ui_accept", "Vk": [13], "Bindings": ["key:Enter", "key:KpEnter"] },
     { "Id": "cancel", "Label": "LE_IN_CANCEL", "Godot": "ui_cancel", "Vk": [27], "Bindings": ["key:Escape", "pad:B"] },
-    { "Id": "up", "Label": "LE_IN_UP", "Godot": "ui_up", "Vk": [38], "Bindings": ["key:Up", "pad:DpadUp", "axis:LeftY-"] },
-    { "Id": "down", "Label": "LE_IN_DOWN", "Godot": "ui_down", "Vk": [40], "Bindings": ["key:Down", "pad:DpadDown", "axis:LeftY+"] },
-    { "Id": "left", "Label": "LE_IN_LEFT", "Godot": "ui_left", "Vk": [37], "Bindings": ["key:Left", "pad:DpadLeft", "axis:LeftX-"] },
-    { "Id": "right", "Label": "LE_IN_RIGHT", "Godot": "ui_right", "Vk": [39], "Bindings": ["key:Right", "pad:DpadRight", "axis:LeftX+"] },
+    { "Id": "up", "Label": "LE_IN_UP", "Godot": "ui_up", "Vk": [38], "Bindings": ["key:Up", "pad:DpadUp"] },
+    { "Id": "down", "Label": "LE_IN_DOWN", "Godot": "ui_down", "Vk": [40], "Bindings": ["key:Down", "pad:DpadDown"] },
+    { "Id": "left", "Label": "LE_IN_LEFT", "Godot": "ui_left", "Vk": [37], "Bindings": ["key:Left", "pad:DpadLeft"] },
+    { "Id": "right", "Label": "LE_IN_RIGHT", "Godot": "ui_right", "Vk": [39], "Bindings": ["key:Right", "pad:DpadRight"] },
     { "Id": "pageUp", "Label": "LE_IN_PAGE_UP", "Godot": "ui_page_up", "Vk": [33], "Bindings": ["key:Pageup", "axis:TriggerLeft+"] },
     { "Id": "pageDown", "Label": "LE_IN_PAGE_DOWN", "Godot": "ui_page_down", "Vk": [34], "Bindings": ["key:Pagedown", "axis:TriggerRight+"] },
-    { "Id": "map.quicksave", "Label": "LE_IN_QUICKSAVE", "Group": "map", "Bindings": ["key:Q"] }
+    { "Id": "pointer.click", "Label": "LE_IN_POINTER_CLICK", "Bindings": ["pad:A"] },
+    { "Id": "pointer.alt", "Label": "LE_IN_POINTER_ALT", "Bindings": ["pad:X"] },
+    { "Id": "pointer.left", "Label": "LE_IN_POINTER_LEFT", "Bindings": ["axis:LeftX-"] },
+    { "Id": "pointer.right", "Label": "LE_IN_POINTER_RIGHT", "Bindings": ["axis:LeftX+"] },
+    { "Id": "pointer.up", "Label": "LE_IN_POINTER_UP", "Bindings": ["axis:LeftY-"] },
+    { "Id": "pointer.down", "Label": "LE_IN_POINTER_DOWN", "Bindings": ["axis:LeftY+"] },
+    { "Id": "map.quicksave", "Label": "LE_IN_QUICKSAVE", "Group": "map", "Bindings": ["key:Q"] },
+    { "Id": "map.scrollLeft", "Label": "LE_IN_SCROLL_LEFT", "Group": "map", "Bindings": ["axis:RightX-"] },
+    { "Id": "map.scrollRight", "Label": "LE_IN_SCROLL_RIGHT", "Group": "map", "Bindings": ["axis:RightX+"] },
+    { "Id": "map.scrollUp", "Label": "LE_IN_SCROLL_UP", "Group": "map", "Bindings": ["axis:RightY-"] },
+    { "Id": "map.scrollDown", "Label": "LE_IN_SCROLL_DOWN", "Group": "map", "Bindings": ["axis:RightY+"] }
   ],
   "Pad": {
     "map.BTN_END_TURN": ["pad:Y"],
     "map.BTN_NEXT_LEADER": ["pad:RightShoulder"],
     "map.BTN_CAPITAL": ["pad:LeftShoulder"],
-    "map.BTN_CAST_SPELL": ["pad:X"],
     "map.BTN_OPTIONS": ["pad:Start"],
     "map.BTN_QUESTLOG": ["pad:Back"],
-    "capital.BTN_BUILD_STRUCTURE": ["pad:X"],
-    "capital.BTN_UNITS": ["pad:Y"],
-    "capital.BTN_RESEARCH_SPELL": ["pad:RightShoulder"],
+    "capital.BTN_BUILD_STRUCTURE": ["pad:Y"],
+    "capital.BTN_UNITS": ["pad:RightShoulder"],
+    "capital.BTN_RESEARCH_SPELL": ["pad:LeftShoulder"],
     "stack.TOG_PAPERDOLL": ["pad:RightShoulder"],
-    "stack.TOG_DISMISS": ["pad:X"],
     "stack.TOG_HEAL": ["pad:Y"],
-    "battle.BTN_DEFEND": ["pad:X"],
+    "stack.TOG_DISMISS": ["pad:LeftShoulder"],
     "battle.BTN_WAIT": ["pad:Y"],
-    "battle.TOG_RIGHTUNITS": ["pad:RightShoulder"],
-    "battle.BTN_PAPERDOLL": ["pad:LeftShoulder"],
+    "battle.BTN_DEFEND": ["pad:RightShoulder"],
+    "battle.TOG_RIGHTUNITS": ["pad:LeftShoulder"],
     "battle.TOG_AUTOBATTLE": ["pad:Start"],
     "battle.BTN_RETREAT": ["pad:Back"],
     "briefing.BTN_REPLAY": ["pad:Y"]

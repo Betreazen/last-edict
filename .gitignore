@@ -60,3 +60,6 @@ tools/synth-maps/out/
 
 # MCP-серверы на этой машине (REA на Ghidra: пути профиля и установок) — локально, не в публичный репозиторий
 .mcp.json
+
+# рабочие копии подагентов Claude Code
+.claude/worktrees/

@@ -66,12 +66,12 @@ public class TurnOrderTests
     {
         var state = State(("a", 65, 0, true), ("b", 50, 0, false));
         state.Unit("b")!.Hp = 20;
-        var rng = new ScriptedRng([0, 0, 0, 0, 0, 0, 0, 0]);   // 2+2 очереди, удар (3), очередь раунда 2 (1 живой)
+        var rng = new ScriptedRng([0, 0, 0, 0, 0, 0, 0]);   // раунд 1 и раунд 2 вперёд (2+2, Р4; второе построение раунда 1 — без бросков), удар (3)
         var sim = new BattleSim(state, rng, C);
         var log = sim.Run();
 
         Assert.Equal([new TurnRecord(1, "a", "b", false, 25, 0)], log);
-        Assert.Equal(8, rng.Used);
+        Assert.Equal(7, rng.Used);   // очередь раунда 2 — по брошенным заранее, бой кончен — раунд 3 не бросается
         Assert.Equal("G1", sim.Winner);
     }
 

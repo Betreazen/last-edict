@@ -416,8 +416,25 @@ public sealed class BattleSim(BattleState state, IRng rng, RulesConstants consta
     /// <summary>Очередь текущего раунда: её раздвигает GiveAttack и удлиняет <see cref="Wait"/>.</summary>
     private List<BattleUnit> _queue = [];
 
+    /// <summary>Случайные части инициативы по раундам (Р4): раунд N+1 бросается в начале раунда N (<see cref="BeginRound"/>), дальше не
+    /// меняется. Ключ — id юнита.</summary>
+    private readonly Dictionary<int, Dictionary<string, int>> _rolls = [];
+
+    private Dictionary<string, int> RollsOf(int round) =>
+        _rolls.TryGetValue(round, out var rolls) ? rolls : _rolls[round] = new Dictionary<string, int>(StringComparer.Ordinal);
+
+    /// <summary>Очередь следующего раунда, какой она будет, если до его начала ничего не изменится: заранее брошенные случайные части и
+    /// характеристики на этот миг (<see cref="TurnOrder.Order"/> без построения — состояние не меняется, бросков нет). Ходы «Ждать» и дар атаки
+    /// следующего раунда ещё не известны. Сторона пала — пусто: следующий раунд — лекари победителя или конец боя.</summary>
+    public IReadOnlyList<BattleUnit> NextRound() =>
+        Winner is not null || Finished ? [] : TurnOrder.Order(state, RollsOf(state.Round + 1), constants, commit: false);
+
     /// <summary>Один вызов beforeBattleRound: номер раунда, сброс <see cref="BattleUnit.Waited"/>
-    /// (<c>0x622078</c>) и одно построение очереди. Удвоение раунда 1 — в <see cref="Run"/>; журнальный
+    /// (<c>0x622078</c>) и одно построение очереди.
+    /// <para><b>Инициатива на раунд вперёд (Р4, Р17).</b> Очередь раунда строится по случайным частям, брошенным в начале прошлого раунда
+    /// (у первого раунда и у юнита без броска — бросок сейчас), и характеристикам на этот миг; следом бросается случайная часть следующего
+    /// раунда всем, кто встанет в его очередь (бой кончился этим построением — не бросается). Повторное построение того же раунда (раунд 1
+    /// строится дважды) бросков не тратит.</para> Удвоение раунда 1 — в <see cref="Run"/>; журнальный
     /// прогон С2 зовёт это на каждое событие round.
     /// <para><b>Предел раундов</b> (<see cref="BattleState.LimitRounds"/>, ранг 1 по коду, корпус слеп — боёв ИИ с ИИ дольше
     /// 10 раундов в нём нет): переход раунда <c>0x62689c</c> до нового раунда спрашивает <c>0x626b2c</c> — в бою нет человека
@@ -433,7 +450,9 @@ public sealed class BattleSim(BattleState state, IRng rng, RulesConstants consta
         // изгоняемый бросает инициативу (20261014-replay [245844] seq 245966: раунд 3 — два броска, S143UN025e в их числе).
         ClearFallenSummons(orphans: false);
         foreach (var u in state.Units) u.Waited = false;
-        _queue = [.. TurnOrder.Build(state, rng, constants)];
+        var rolls = RollsOf(round);
+        TurnOrder.Roll(state, rng, constants, rolls);
+        _queue = [.. TurnOrder.Order(state, rolls, constants, commit: true)];
         if (Winner is not null) AfterBattleQueue(round);
         if (state.LimitRounds && round == constants.BatRound + 1 && _queue.Count > 0)
             foreach (var u in state.Units.Where(u => u.Attacker && u.Alive && !u.Retreated && !u.Hidden))
@@ -441,6 +460,8 @@ public sealed class BattleSim(BattleState state, IRng rng, RulesConstants consta
                 u.Retreating = true;
                 u.Paralyzed = u.Petrified = u.DisableLong = false;
             }
+        // Случайная часть следующего раунда — сейчас (Р4); бой кончился этим построением — бросать нечего.
+        if (!Finished) TurnOrder.Roll(state, rng, constants, RollsOf(round + 1));
         return _queue;
     }
 
@@ -659,6 +680,9 @@ public sealed class BattleSim(BattleState state, IRng rng, RulesConstants consta
     {
         if (!unit.BoostDamageLong) unit.BoostDamageLevel = 0;
         if (!unit.LowerDamageLong) unit.LowerDamageLevel = 0;
+        // Воскрешённый и призванный этим ходом встанут в следующий раунд — их случайная часть бросается сейчас, чтобы полоса
+        // следующего раунда была точной (Р4). Раунд, начатый не этой моделью (ход собран в проверке), заранее не бросает.
+        if (Winner is null && _rolls.TryGetValue(state.Round + 1, out var next)) TurnOrder.Roll(state, rng, constants, next);
     }
 
     /// <summary>Действие «защита» вместо удара: статус Defend до следующего <see cref="BeginTurn"/>

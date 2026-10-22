@@ -36,7 +36,7 @@ public partial class BattleScreen
         FillStrip();
     }
 
-    private void FillStrip() => _strip?.Fill(_session.Upcoming);
+    private void FillStrip() => _strip?.Fill(_session.TwoRounds);
 
     /// <summary>Отписка от сессии при снятии экрана.</summary>
     private void DropQueueStrip()
@@ -59,7 +59,7 @@ public partial class BattleScreen
     /// <summary>
     /// Проверка «--queue-check» (с <c>--queue-strip</c>): бой идёт ход за ходом сессией (ИИ за всех, «Защищаться» за человека, один раз
     /// «Ждать»), пока не начнутся два новых раунда. На каждом ходу и после каждого действия — порядок портретов полосы против
-    /// <see cref="BattleSession.Upcoming"/> (строка «battle queue ход=…»). Затем: пометка «пропустит» (паралич ставится юниту в хвосте полосы,
+    /// <see cref="BattleSession.TwoRounds"/> (строка «battle queue ход=…»). Затем: пометка «пропустит» (паралич ставится юниту в хвосте полосы,
     /// полоса пересобирается явно — правка состояния мимо сессии события не даёт), наведение на портрет и на юнита поля, свободно ли место
     /// (элементы разметки в полосе, верх зон мыши поля) — строка «battle queue итог».
     /// </summary>
@@ -78,7 +78,7 @@ public partial class BattleScreen
         bool Compare()
         {
             checks++;
-            var model = _session.Upcoming.Take(BattleQueueStrip.MaxCells).ToList();
+            var model = _session.TwoRounds.Take(BattleQueueStrip.MaxCells).ToList();
             bool ok = Marks(model) == Marks(_strip.Shown) && _strip.Cells.Count == model.Count;
             if (ok) same++;
             most = Math.Max(most, _strip.Cells.Count);
@@ -94,13 +94,13 @@ public partial class BattleScreen
             if (_session.Round != round) (newRounds, round) = (newRounds + 1, _session.Round);
             turns++;
             bool ok = Compare();
-            GD.Print($"battle queue ход={turns} раунд={round} ходит={mover.Id} модель={Marks(_session.Upcoming.Take(BattleQueueStrip.MaxCells))} " +
+            GD.Print($"battle queue ход={turns} раунд={round} ходит={mover.Id} модель={Marks(_session.TwoRounds.Take(BattleQueueStrip.MaxCells))} " +
                      $"полоса={Marks(_strip.Shown)} совпало={(ok ? 1 : 0)}");
             if ((waiters.Count == 0 || newRounds >= 2) && _session.WaitsPlayer && _session.Allowed.Contains(BattleCommand.Wait))
             {
                 _session.Wait();
                 waiters.Add(mover.Id);
-                waitMarks.Add(_strip.Shown.LastOrDefault(e => ReferenceEquals(e.Unit, mover)) is { } entry ? Code(entry.Mark) : "-");
+                waitMarks.Add(_strip.Shown.LastOrDefault(e => ReferenceEquals(e.Unit, mover) && !e.NextRound) is { } entry ? Code(entry.Mark) : "-");
             }
             else if (_session.WaitsPlayer) _session.Defend();
             else _session.AiStep();

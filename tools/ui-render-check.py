@@ -897,6 +897,44 @@ def settings_file(path: Path) -> dict:
     return {**flat, "version": data.get("version")}
 
 
+def rebinding(repo: Path) -> tuple[bool, str]:
+    """Переназначение клавиш (Э5, Р12; вкладка «Управление», data/ui/input.json): на карте дня 21 стенда «Конец хода» — E вместо пробела,
+    «Охранять» — пробел; ожидание клавиши «Активировать посох» снято Esc без изменений. «Применить» — файл настроек (controls.bindings);
+    закрыли окно — пробел конец хода больше не жмёт. Запуск 2 с тем же файлом: E — конец хода. Запуск 3 без файла: кнопка Y геймпада —
+    конец хода по умолчанию. Конец хода — строка aiturn. Нет импорта — пропуск."""
+    save, _, why = stand(repo, 21)
+    if save is None:
+        return True, f"переназначение клавиш: пропуск — {why}"
+    settings = repo / ".cache" / "ui-check" / "rebind-settings.json"
+    if settings.exists():
+        settings.unlink()
+    base = ["--state", str(save), "--check", "--player", STAND_PLAYER]
+    runs = [
+        ([*base, "--settings", str(settings)],
+         "ui click BTN_OPTIONS;ui tab Controls;ui capture map.BTN_END_TURN key;ui key 69;ui capture map.BTN_GUARD key;ui key 32;"
+         "ui capture map.BTN_WAND_SCROLL key;ui key 27;ui apply;ui click BTN_CLOSE;ui key 32"),
+        ([*base, "--settings", str(settings)], "ui key 69"),
+        (base, "ui pad Y"),
+    ]
+    outs = []
+    for extra, clicks in runs:
+        code, out = godot(repo, [*extra, "--clicks", clicks], "res://scenes/map/MapScreen.tscn")
+        outs.append((code, out, len(re.findall(r"^aiturn ", out, re.M))))
+    first = outs[0][1]
+    bound = re.findall(r"^settings привязка (\S+) (\S+) теперь=(\S+)$", first, re.M)
+    saved = settings_file(settings).get("controls.bindings")
+    want_bound = [("map.BTN_END_TURN", "key=key:E", "pad:Y,key:E"), ("map.BTN_GUARD", "key=key:Space", "key:Space")]
+    want_saved = {"map.BTN_END_TURN": ["pad:Y", "key:E"], "map.BTN_GUARD": ["key:Space"]}
+    open_after_esc = re.search(r"^ui key_27 on=LE_SETTINGS .* окна=LE_SETTINGS ", first, re.M)
+    turns = [t for _, _, t in outs]
+    if (any(code != 0 for code, _, _ in outs) or bound != want_bound or saved != want_saved or open_after_esc is None
+            or turns != [0, 1, 1]):
+        return False, (f"переназначение клавиш: коды {[c for c, _, _ in outs]}, привязки {bound}, файл {saved}, Esc оставил окно "
+                       f"{open_after_esc is not None}, концов хода {turns}\n{first.strip()[-3000:]}")
+    return True, ("переназначение клавиш: «Конец хода» — E, «Охранять» — пробел, Esc снял ожидание; файл записан по «Применить»; "
+                  "пробел хода не кончает, E — кончает (между запусками), Y геймпада — по умолчанию")
+
+
 # Окна города (docs/ui-windows.md): шаги проверки сцены карты и что должна содержать строка каждого шага. Клетки групп —
 # «x» воин, «b» большой, «.» пусто; позиции 0…5, чётные — передний ряд.
 def city_cases(repo: Path) -> list[tuple[Path, str, list[tuple[str, list[str]]]]] | str:
@@ -2671,7 +2709,7 @@ def steps(repo: Path, screens: list[str], window: bool) -> list[tuple[str, Calla
         ("импорт героя", leader_import), ("горячий стул", hotseat), ("гонец", courier), ("окна города", city_windows),
         ("ход и туман по шагам, мешок", walk_steps), ("ход ИИ", ai_turn), ("плавная прокрутка", smooth_scroll),
         ("смена тумана", fog_change), ("звук", sound), ("начало боя", battle_opening), ("подсветка клетки", highlight),
-        ("облака", clouds), ("снос гор", mountains), ("попап в ходе ИИ", ai_popup), ("настройки показа", map_settings), ("окно настроек", settings_window),
+        ("облака", clouds), ("снос гор", mountains), ("попап в ходе ИИ", ai_popup), ("настройки показа", map_settings), ("окно настроек", settings_window), ("переназначение клавиш", rebinding),
         ("литьё на карте", spell_anim), ("предметы в бою", battle_items), ("гибель отряда", stack_death),
         ("курсоры карты", map_cursors), ("курсор меню", menu_cursors), ("карточки карты", map_cards),
         ("вписывание экранов", screen_fit), ("рамка и слои карты", map_frame), ("палитра карты", map_palette), ("вор у цели", noble), ("выбор навыка лидера", upgrade_leader)]]

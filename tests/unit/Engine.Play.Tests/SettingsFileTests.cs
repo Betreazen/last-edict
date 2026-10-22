@@ -87,7 +87,7 @@ public sealed class SettingsFileTests : IDisposable
         var laid = SettingsFile.Layout.Select(s => s.Field).Order().ToList();
         Assert.Equal(fields, laid);
         Assert.Equal(SettingsFile.Layout.Count, SettingsFile.Layout.Select(s => (s.Section, s.Key)).Distinct().Count());
-        Assert.Equal(["audio", "battle", "display", "game", "interface"], SettingsFile.Layout.Select(s => s.Section).Distinct().Order());
+        Assert.Equal(["audio", "battle", "controls", "display", "game", "interface"], SettingsFile.Layout.Select(s => s.Section).Distinct().Order());
         Assert.Contains(SettingsFile.Layout, s => s is { Section: "battle", Key: "queueStrip" });   // место полосы очереди ходов
     }
 

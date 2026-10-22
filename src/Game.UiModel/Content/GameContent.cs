@@ -22,8 +22,10 @@ public sealed class GameContent
 
     private GameContent(IReadOnlyList<UiScreen> screens, IReadOnlyList<UiAsset> assets, UiFlow flow,
         UiDefaults defaults, GameCatalog catalog, UiTransitions transitions, IReadOnlyList<UiVideo> videos,
-        GfxAssets gfx, MapArtData mapArt, IReadOnlyList<ModInfo> mods, string dataDir, string gameDataDir)
+        GfxAssets gfx, MapArtData mapArt, IReadOnlyList<ModInfo> mods, string dataDir, string gameDataDir,
+        IReadOnlyList<LastEdict.Data.Input.InputAction> input)
     {
+        Input = input;
         _dataDir = dataDir;
         _gameDir = gameDataDir;
         Gfx = gfx;
@@ -40,6 +42,10 @@ public sealed class GameContent
 
     public IReadOnlyList<UiScreen> Screens { get; }
     public IReadOnlyList<UiAsset> Assets { get; }
+
+    /// <summary>Действия ввода (<c>ui/input.json</c> и горячие клавиши разметки экранов, <see cref="LastEdict.Data.Input.InputActions"/>):
+    /// что переназначает вкладка «Управление». Нет файла — только выведенные из разметки без групп, то есть ничего.</summary>
+    public IReadOnlyList<LastEdict.Data.Input.InputAction> Input { get; }
 
     /// <summary>Граф экранов (<c>ui/flow.json</c>, выведенный из журналов, плюс ручные дополнения
     /// <c>ui/flow.manual.json</c> — переходы, которых зонд не видел): какой элемент куда ведёт. Нет файла — граф пуст.</summary>
@@ -196,6 +202,7 @@ public sealed class GameContent
         if (LoadFlow(Path.Combine(dataDir, "ui", "flow.manual.json")) is { } manual) flow = UiFlows.Merge(flow, manual);
         var defaults = LoadDefaults(Path.Combine(dataDir, "ui", "defaults.json")) ?? UiDefaults.Empty;
         var layout = UiLayouts.Load(Path.Combine(dataDir, "ui", "layout.json")) ?? new Dictionary<string, UiLayoutRule>();
+        var input = LastEdict.Data.Input.InputConfig.Load(Path.Combine(dataDir, "ui", "input.json")) ?? new LastEdict.Data.Input.InputConfig();
         var catalog = GameCatalog.Load(Path.Combine(gameDir, "game"));
         var transitions = LoadTransitions(Path.Combine(dataDir, "ui", "transitions.json")) ?? UiTransitions.Empty;
         string videosJson = Path.Combine(gameDir, "video", "videos.json");
@@ -215,6 +222,8 @@ public sealed class GameContent
                     flow = UiFlows.Merge(flow, modFlow);
                 if (UiLayouts.Load(Path.Combine(mod.Dir, "data", "ui", "layout.json")) is { } modLayout)
                     layout = UiLayouts.Merge(layout, modLayout);
+                if (LastEdict.Data.Input.InputConfig.Load(Path.Combine(mod.Dir, "data", "ui", "input.json")) is { } modInput)
+                    input = LastEdict.Data.Input.InputConfig.Merge(input, modInput);
                 if (LoadDefaults(Path.Combine(mod.Dir, "data", "ui", "defaults.json")) is { } modDefaults)
                     defaults = UiDefaults.Merge(defaults, modDefaults);
                 catalog = GameCatalog.Merge(catalog, GameCatalog.Load(Path.Combine(mod.Dir, "data", "game")));
@@ -240,7 +249,8 @@ public sealed class GameContent
             throw new InvalidDataException($"каталог игры (data/game и моды): {string.Join("; ", problems)}");
         // Политика вписывания (ui/layout.json) — после всех слоёв: правило базы ложится и на экран, заменённый модом.
         screens = UiLayouts.Apply(screens, layout);
-        return new GameContent(screens, assets, flow, defaults, catalog, transitions, videos, gfx, mapArt, layers, dataDir, gameDir);
+        return new GameContent(screens, assets, flow, defaults, catalog, transitions, videos, gfx, mapArt, layers, dataDir, gameDir,
+                               LastEdict.Data.Input.InputActions.Build(input, screens));
     }
 
     private static UiFlow? LoadFlow(string path) => File.Exists(path) ? UiFlows.Load(path) : null;

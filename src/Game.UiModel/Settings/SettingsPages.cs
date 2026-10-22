@@ -139,7 +139,7 @@ public static class SettingsPages
     ];
 
     /// <summary>Поля файла настроек без пункта окна: окна для них нет — только файл (переназначение клавиш — своя вкладка «Управление»).</summary>
-    public static readonly IReadOnlyList<string> Unlisted = [];
+    public static readonly IReadOnlyList<string> Unlisted = [nameof(MapSettings.Bindings)];
 
     public static IEnumerable<SettingItem> Of(SettingsTab tab) => All.Where(i => i.Tab == tab);
 
@@ -186,6 +186,13 @@ public sealed class SettingsDraft(MapSettings saved)
     public MapSettings Defaults()
     {
         Current = new MapSettings();
+        return Current;
+    }
+
+    /// <summary>Привязки клавиш и кнопок (вкладка «Управление», <see cref="MapSettings.Bindings"/>); null — все по умолчанию.</summary>
+    public MapSettings Bind(LastEdict.Data.Input.KeyBindings? bindings)
+    {
+        Current = (Current with { Bindings = bindings }).Clamped();
         return Current;
     }
 

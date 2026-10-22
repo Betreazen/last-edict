@@ -40,7 +40,7 @@ public partial class SpellAim : Node
             _leftDown = button.Pressed;
             if (released && MouseCell() is { } cell) Clicked?.Invoke(cell);
         }
-        if (@event is InputEventKey { Pressed: true, Keycode: Key.Escape }) Cancelled?.Invoke();
+        if (@event.IsActionPressed("ui_cancel")) Cancelled?.Invoke();
     }
 
     public override void _Process(double delta)

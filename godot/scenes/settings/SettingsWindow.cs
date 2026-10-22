@@ -14,7 +14,7 @@ namespace LastEdict.Godot;
 /// «Отмена», «Применить» и в партии кнопки игры. Логика и черновик — <see cref="SettingsLogic"/> (без движка); окно стоит поверх экрана
 /// <see cref="SettingsLogic.Screen"/> в его разметке 800×600 (хозяин — <see cref="UiScreenView"/>, он вписывает окно в холст и передаёт
 /// события элементов графу экранов). Клавиатура и геймпад — фокусом Godot (<c>ui_*</c>): стрелки и крестовина между строками, влево/вправо —
-/// значение, «Отмена» (Esc, B) — закрыть.
+/// значение, «Отмена» (Esc, B) — закрыть. Вкладка «Управление» — переназначение клавиш и кнопок (<c>SettingsWindow.Controls.cs</c>).
 /// </summary>
 public partial class SettingsWindow : Control
 {
@@ -60,7 +60,12 @@ public partial class SettingsWindow : Control
         column.AddChild(_tabs);
         foreach (var tab in Enum.GetValues<SettingsTab>()) _tabs.AddChild(Page(tab));
         _tabs.CurrentTab = (int)_logic.Tab;
-        _tabs.TabChanged += index => _logic.Tab = (SettingsTab)(int)index;
+        _tabs.TabChanged += index =>
+        {
+            _logic.Tab = (SettingsTab)(int)index;
+            DropCapture();
+            Refresh();
+        };
         _help = new Label
         {
             AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(0, 46), VerticalAlignment = VerticalAlignment.Top,
@@ -94,8 +99,7 @@ public partial class SettingsWindow : Control
             presets.AddChild(Command(SettingsLogic.HighEndLabel, () => { _logic.Preset(lowEnd: false); Refresh(); }));
             rows.AddChild(presets);
         }
-        if (tab == SettingsTab.Controls)
-            rows.AddChild(new Label { Text = T("LE_SET_CONTROLS_SOON"), AutowrapMode = TextServer.AutowrapMode.WordSmart });
+        if (tab == SettingsTab.Controls) ControlsPage(rows);   // SettingsWindow.Controls.cs
         return scroll;
     }
 
@@ -262,6 +266,7 @@ public partial class SettingsWindow : Control
 
     private void Apply()
     {
+        DropCapture();
         if (!_logic.Apply())
         {
             Refresh();
@@ -295,6 +300,7 @@ public partial class SettingsWindow : Control
     /// <summary>«Отмена» и Esc: невыбранное — назад, окно закрывается (событие «Закрыть» хозяину).</summary>
     private void Close()
     {
+        DropCapture();
         if (_logic.Confirm is not null)
         {
             Answer(false);
@@ -338,10 +344,11 @@ public partial class SettingsWindow : Control
 
     /// <summary>Шаг сценария проверки (<c>UiScreenView.Step</c> отдаёт его окну): <c>tab Audio</c>, <c>set music 64</c>, <c>apply</c>, <c>keep</c>,
     /// <c>revert</c>, <c>wait 15000</c> (время подтверждения), <c>defaults</c>, <c>preset low|high</c>, <c>cancel</c>, <c>click BTN_SAVE</c> (кнопки
-    /// игры и «Закрыть»).
+    /// игры и «Закрыть»); вкладки «Управление» — <c>capture</c>, <c>unbind</c>, <c>resetkeys</c> (SettingsWindow.Controls.cs).
     /// false — шаг не окна.</summary>
     public bool Step(string verb, string arg)
     {
+        if (ControlsStep(verb, arg)) return true;
         switch (verb)
         {
             case "tab" when Enum.TryParse<SettingsTab>(arg, true, out var tab):

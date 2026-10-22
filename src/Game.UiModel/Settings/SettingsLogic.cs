@@ -1,3 +1,4 @@
+using LastEdict.Data.Input;
 using LastEdict.Data.Map;
 using LastEdict.Data.Menu;
 using LastEdict.Data.Ui;
@@ -110,6 +111,22 @@ public sealed class SettingsLogic(MapSettings settings, bool inGame, Action<MapS
 
     public const string LowEndLabel = "X150TA0031", HighEndLabel = "X150TA0030";
 
+    /// <summary>Вкладка «Управление»: у действия привязка устройства (<c>key</c>/<c>pad</c>) — <paramref name="binding"/> (null — снять), у
+    /// действий тех же экранов она снимается (<see cref="InputActions.Bind"/>); действует сразу, как выбор, в файл — по «Применить».</summary>
+    public void Bind(IReadOnlyList<InputAction> actions, InputAction action, string device, string? binding)
+    {
+        if (Confirm is not null) return;
+        var map = InputActions.Bind(actions, Draft.Current.Bindings?.Map, action, device, binding);
+        preview?.Invoke(Draft.Bind(new KeyBindings(map)));
+    }
+
+    /// <summary>Все привязки — по умолчанию (кнопка вкладки «Управление»).</summary>
+    public void ResetBindings()
+    {
+        if (Confirm is not null) return;
+        preview?.Invoke(Draft.Bind(null));
+    }
+
     /// <summary>«Отмена» или закрытие: невыбранное — назад к сохранённому, в игру.</summary>
     public void Cancel()
     {
@@ -122,5 +139,6 @@ public sealed class SettingsLogic(MapSettings settings, bool inGame, Action<MapS
         $"settings вкладка={Tab} изменено={(Draft.Changed ? 1 : 0)} экран={(Draft.DisplayChanged ? 1 : 0)} " +
         $"подтверждение={(Confirm is { } c ? c.Left.ToString(System.Globalization.CultureInfo.InvariantCulture) : "-")} " +
         $"окно={Draft.Current.WindowMode} музыка={Draft.Current.MusicVolume} противник={Draft.Current.OpponentSpeed} " +
+        $"привязок={Draft.Current.Bindings?.Count ?? 0} " +
         $"язык={(Draft.Current.Language.Length == 0 ? "-" : Draft.Current.Language)} сохранено_окно={Draft.Saved.WindowMode}";
 }

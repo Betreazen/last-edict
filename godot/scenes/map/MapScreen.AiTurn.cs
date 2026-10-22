@@ -142,6 +142,7 @@ public partial class MapScreen
         _map.AiSpeed = OS.GetCmdlineUserArgs().Contains("--check") ? MapView.CheckAiSpeed : MapSettings.SpeedFactor(_settings.OpponentSpeed);
         _map.AiAnimate = _settings.PlayAiMoves;
         GameAudio.Of(this).Apply(_settings, preview);
+        InputBindings.Apply(_settings.Bindings);
         _map.RegionCount = _settings.AudioRegions;
         _map.AnimatedIso = _settings.AnimatedIso;
         _map.Clouds = _settings.IsoClouds;

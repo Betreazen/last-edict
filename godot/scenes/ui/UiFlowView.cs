@@ -59,6 +59,7 @@ public partial class UiFlowView : Node
     private Action<LastEdict.Data.Map.MapSettings> SettingsApplied(string[] args) => settings =>
     {
         GameAudio.Of(this).Apply(settings);
+        InputBindings.Apply(settings.Bindings);
         if (SettingsPath(args) is { } path)
         {
             try
@@ -163,9 +164,17 @@ public partial class UiFlowView : Node
                                     SystemName()) { SavesDir = SavesDir(args), Screens = content.Screens, LeadersDir = LeadersDir(args),
                                         Book = GameData.Book, ItemTexts = StackTexts.Load(GameData.Rules),
                                         Rules = RulesTexts.Load(GameData.Rules), SettingsChanged = SettingsChanged(args),
-                                        SettingsPreview = settings => GameAudio.Of(this).Apply(settings, preview: true),
+                                        SettingsPreview = settings =>
+                                        {
+                                            GameAudio.Of(this).Apply(settings, preview: true);
+                                            InputBindings.Apply(settings.Bindings);
+                                        },
                                         SettingsApplied = SettingsApplied(args) };
-            if (SettingsPath(args) is { } settings) _menu.Settings = LastEdict.Data.Map.MapSettings.Load(settings);
+            if (SettingsPath(args) is { } settings)
+            {
+                _menu.Settings = LastEdict.Data.Map.MapSettings.Load(settings);
+                InputBindings.Apply(_menu.Settings.Bindings);
+            }
             // Герои игры (Exports\*.ldr) — в каталог героев порта один раз; дальше меню читает только его (docs/day-cycle.md §12).
             int imported = LastEdict.Data.Leaders.LeaderStore.Import(Arg(args, "--ldr") ?? LastEdict.Data.GamePaths.Exports, _menu.LeadersDir);
             if (imported > 0) GD.Print($"leaders imported={imported}");

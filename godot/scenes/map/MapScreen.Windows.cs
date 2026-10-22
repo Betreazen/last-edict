@@ -153,7 +153,17 @@ public partial class MapScreen
             var logic = _logics[i] ?? DialogLogic(want[i]);
             _logics[i] = logic;
             var view = new UiScreenView { Hosted = want[i], Name = want[i], SlotHost = _host, Logic = logic };
-            if (Centered(want[i]) is { } at) view.SlotAt = at;
+            if (Anchored(want[i]))
+            {
+                // Окно по якорям (ui/layout.json, окно построек) — на весь холст карты, панели карты под ним.
+                view.SlotAt = Vector2.Zero;
+                view.SlotSize = new Vector2I((int)_host.X, (int)_host.Y);
+            }
+            else if (Centered(want[i]) is { } at)
+            {
+                view.SlotAt = at;
+                view.Backdrop = FullScreen(want[i]);   // окно во весь экран оригинала — бока закрыты градиентом
+            }
             view.Fired += events => OnWindowEvents(view, events);
             view.DragCursorChanged += cursor => DragCursor(view, cursor);
             view.Pointed += () =>
@@ -214,6 +224,13 @@ public partial class MapScreen
         else if (cursor is not null) Cursor.Show(cursor);
         else ShowWindowCursor(view);
     }
+
+    /// <summary>Окно размером с экран оригинала (800×600 и больше): в оригинале оно закрывало всё, на холсте шире — по середине.</summary>
+    private static bool FullScreen(string screen) =>
+        GameData.Content.Screens.FirstOrDefault(s => s.Id == screen)?.Design is { Width: >= 800, Height: >= 600 };
+
+    /// <summary>Окно по якорям (<c>ui/layout.json</c>, <see cref="UiFit.Anchors"/>) — раскладывается на весь холст карты.</summary>
+    private static bool Anchored(string screen) => GameData.Content.Screens.FirstOrDefault(s => s.Id == screen)?.Fit == UiFit.Anchors;
 
     /// <summary>Левый верхний угол окна меньше экрана карты — по середине 800×600; во весь экран — null.</summary>
     private Vector2? Centered(string screen)

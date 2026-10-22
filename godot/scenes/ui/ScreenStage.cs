@@ -80,7 +80,9 @@ public partial class ScreenStage : Node
         var root = GetTree().Root;
         // Корень без растяжения: точка вьюпорта = точка окна, экраны масштабирует буфер. Прежний режим без окна (проверки headless) оставляет
         // растяжение проекта — числа его строк в точках вьюпорта 1280×720.
-        if (Mode != ScreenScaling.Nearest || DisplayServer.GetName() != "headless") root.ContentScaleMode = Window.ContentScaleModeEnum.Disabled;
+        // Разрешение полного экрана (настройки) — кадр корня в нём (DisplaySettings.RootScale).
+        if (DisplaySettings.RenderSize is not null) DisplaySettings.RootScale(root, nearest: false);
+        else if (Mode != ScreenScaling.Nearest || DisplayServer.GetName() != "headless") root.ContentScaleMode = Window.ContentScaleModeEnum.Disabled;
         // Буфер — с настройками корня, которыми рисовались экраны (фильтр Nearest проекта: у SubViewport по умолчанию Linear).
         Stage.CanvasItemDefaultTextureFilter = root.CanvasItemDefaultTextureFilter;
         Stage.CanvasItemDefaultTextureRepeat = root.CanvasItemDefaultTextureRepeat;
@@ -173,7 +175,13 @@ public partial class ScreenStage : Node
     {
         if (mode == Mode) return;
         Mode = mode;
-        GetTree().Root.ContentScaleMode = mode == ScreenScaling.Nearest ? Window.ContentScaleModeEnum.CanvasItems : Window.ContentScaleModeEnum.Disabled;
+        RefreshRootScale();
+    }
+
+    /// <summary>Растяжение корня по вписыванию и разрешению полного экрана (<see cref="DisplaySettings.RootScale"/>), раскладка заново.</summary>
+    public void RefreshRootScale()
+    {
+        DisplaySettings.RootScale(GetTree().Root, Mode == ScreenScaling.Nearest);
         Refit();
     }
 

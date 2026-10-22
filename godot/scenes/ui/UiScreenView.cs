@@ -316,6 +316,13 @@ public partial class UiScreenView : Node2D
             else problem = $" (нет {frame} в описи графики или на диске)";
             return UiArt.Remember(frame, image, problem);
         }
+        // Плашка из картинки (Plate:кадр@x,y): светлый прямоугольник под точкой с тёмной окантовкой — плашки названий построек.
+        if (frame.StartsWith(PlatePrefix, StringComparison.Ordinal) && frame.LastIndexOf('@') is var at && at > PlatePrefix.Length
+            && frame[(at + 1)..].Split(',') is [var px, var py] && int.TryParse(px, out int x) && int.TryParse(py, out int y))
+        {
+            if (FrameImage(frame[PlatePrefix.Length..at], out problem) is { } source) image = Plate(source, x, y);
+            return UiArt.Remember(frame, image, problem);
+        }
         if (GfxImage(frame) is { } gfx)
         {
             problem = gfx.Problem;
@@ -338,6 +345,7 @@ public partial class UiScreenView : Node2D
     {
         if (UiFrameRef.Parse(frame) is not { } reference) return null;
         if (reference.Archive == "Outline") return (Outline(reference), null);
+        if (reference.Archive == "Gradient") return (Gradient(reference), null);
         var info = GameData.Content.Gfx.Image(reference.Archive, reference.Name);
         if (info is null) return (null, null);
         string path = LastEdict.Data.Gfx.GfxAssets.PathOf(info, GameData.GfxRoot);
@@ -363,6 +371,48 @@ public partial class UiScreenView : Node2D
         for (int x = 0; x < w; x++) { image.SetPixel(x, 0, color); image.SetPixel(x, h - 1, color); }
         for (int y = 0; y < h; y++) { image.SetPixel(0, y, color); image.SetPixel(w - 1, y, color); }
         return image;
+    }
+
+    /// <summary>Вертикальный градиент (<c>Gradient:ШxВ#RRGGBB</c>): цвет сверху, к низу темнее на четверть — фон окон Last Edict (дерево
+    /// построек).</summary>
+    private static Image? Gradient(UiFrameRef reference)
+    {
+        var size = reference.Name.Split('x');
+        if (size.Length != 2 || !int.TryParse(size[0], out int w) || !int.TryParse(size[1], out int h) || w < 1 || h < 2) return null;
+        var c = reference.Tint ?? new UiColor(120, 118, 114);
+        var top = Color.Color8(c.R, c.G, c.B);
+        var bottom = top.Darkened(0.25f);
+        var column = Image.CreateEmpty(1, h, false, Image.Format.Rgba8);
+        for (int y = 0; y < h; y++) column.SetPixel(0, y, top.Lerp(bottom, y / (float)(h - 1)));
+        column.Resize(w, h, Image.Interpolation.Nearest);
+        return column;
+    }
+
+    private const string PlatePrefix = "Plate:";
+
+    /// <summary>Порог яркости мрамора плашки (окантовка и фон вокруг — темнее).</summary>
+    private const int PlateLight = 110;
+
+    /// <summary>Окантовка плашки за краем мрамора, в точках.</summary>
+    private const int PlateBorder = 3;
+
+    /// <summary>Плашка из картинки: от точки (<paramref name="x"/>, <paramref name="y"/>, в логических точках) — светлый прямоугольник по
+    /// строке и столбцу через неё и окантовка вокруг. Точка не на светлом — null.</summary>
+    private static Image? Plate(Image source, int x, int y)
+    {
+        var image = ImageScales.ToLogical(source);
+        if (image.GetFormat() != Image.Format.Rgba8) image = Converted(image);
+        bool Light(int px, int py) => px >= 0 && py >= 0 && px < image.GetWidth() && py < image.GetHeight()
+            && image.GetPixel(px, py) is var c && (c.R8 + c.G8 + c.B8) / 3 > PlateLight;
+        if (!Light(x, y)) return null;
+        int l = x, r = x, t = y, b = y;
+        while (Light(l - 1, y)) l--;
+        while (Light(r + 1, y)) r++;
+        while (Light(x, t - 1)) t--;
+        while (Light(x, b + 1)) b++;
+        var region = new Rect2I(l - PlateBorder, t - PlateBorder, r - l + 1 + (2 * PlateBorder), b - t + 1 + (2 * PlateBorder))
+            .Intersection(new Rect2I(Vector2I.Zero, image.GetSize()));
+        return image.GetRegion(region);
     }
 
     /// <summary>Маска поверх кадра (<see cref="UiFrameRef.Mask"/>): точки смешиваются наполовину по всей картинке, прозрачность —

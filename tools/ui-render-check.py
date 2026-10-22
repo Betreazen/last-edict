@@ -931,7 +931,8 @@ def gamepad(repo: Path) -> tuple[bool, str]:
     щелчок («Одиночная игра»), B — «Назад». Карта (день 21 стенда): указатель в середину поля карты над своим отрядом, A — отряд выделен
     настоящим путём (кнопка геймпада → щелчок мыши → вьюпорт карты); Start — окно настроек, указатель к строке с фокусом, крестовина вниз —
     к следующей; B — закрыто; Y — конец хода. Подсказки кнопок внизу: на карте — A, B, Y (конец хода), LB, RB и прокрутка RS; в окне
-    настроек — A, B и «✥» (крестовина по фокусу)."""
+    настроек — A, B и «✥» (крестовина по фокусу). B на пустой карте опций не открывает (Esc — горячая клавиша «Опций», а у них на
+    геймпаде своя кнопка — Start)."""
     code, out = godot(repo, ["--input", "pad DpadDown; pad DpadDown; pad DpadUp; stick -1,0 400; pad DpadDown; pad DpadUp; pad A; pad B"],
                       "res://scenes/ui/UiFlow.tscn")
     focus = [(m[2], m[3]) for m in PAD_FOCUS.finditer(out)]
@@ -948,22 +949,23 @@ def gamepad(repo: Path) -> tuple[bool, str]:
         return True, f"геймпад: меню — крестовина, стик, A, B; карта — пропуск: {why}"
     own = m.field_stacks(STAND_PLAYER)[0]
     code, out = godot(repo, ["--state", str(save), "--check", "--player", STAND_PLAYER, "--clicks",
-                             f"padcell {own.x},{own.y};pointer;ui pad Start;pointer;ui pad DpadDown;pointer;ui pad B;ui pad Y"],
+                             f"padcell {own.x},{own.y};pointer;ui pad Start;pointer;ui pad DpadDown;pointer;ui pad B;ui pad B;pointer;ui pad Y"],
                       "res://scenes/map/MapScreen.tscn")
     picked = re.search(rf"^padcell {own.x},{own.y} выбран=(\S+) ", out, re.M)
     rows = [(int(x), int(y), pad, hints, windows) for x, y, pad, hints, windows in POINTER.findall(out)]
     turns = len(re.findall(r"^aiturn ", out, re.M))
-    points = rows[1:]
+    points = rows[1:3]
+    no_options = len(rows) == 4 and rows[3][4] == "-"   # B на пустой карте — окон нет
     follows = (len(points) == 2 and all(w == "LE_SETTINGS" and pad == "1" for _, _, pad, _, w in points)
                and points[1][1] > points[0][1])
     map_hints = rows[0][3].split("___") if rows else []
     hinted = ([h.split("_")[0] for h in map_hints[:2]] == ["A", "B"] and {"Y", "LB", "RB"} <= {h.split("_")[0] for h in map_hints}
               and map_hints[-1].startswith("RS_") and len(points) == 2 and points[0][3].split("___")[-1].startswith("✥_"))
-    if code != 0 or picked is None or picked[1] != own.id or not follows or turns != 1 or not hinted:
+    if code != 0 or picked is None or picked[1] != own.id or not follows or turns != 1 or not hinted or not no_options:
         return False, (f"геймпад, карта: код {code}, выбран {picked and picked[1]} (ждали {own.id}), указатель {rows}, концов хода {turns}"
                        f"\n{out.strip()[-3000:]}")
     return True, (f"геймпад: меню — крестовина по кнопкам, стик −360 точек, A — «Одиночная игра», B — назад; карта — A выделил {own.id}, "
-                  f"Start — настройки, указатель за фокусом {points[0][:2]} → {points[1][:2]}, B — закрыто, Y — конец хода; подсказки "
+                  f"Start — настройки, указатель за фокусом {points[0][:2]} → {points[1][:2]}, B — закрыто, B на пустой карте — без опций, Y — конец хода; подсказки "
                   f"{len(map_hints)} на карте, «✥» в окне")
 
 

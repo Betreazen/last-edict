@@ -102,11 +102,22 @@ public static class InputBindings
             if (action.Vk.Count == 0 || !(motion ? _motionPressed.Contains(action.Id) : Pressed(@event, NameOf(action)))) continue;
             int code = action.Group is null ? action.Vk[0]
                 : action.Vk.FirstOrDefault(v => screen.Elements.Any(e => e.Hotkeys.Contains(v)), action.Vk[0]);
+            if (action.Group is null && @event is InputEventJoypadButton or InputEventJoypadMotion && OwnPadButton(screen, code, on)) continue;
             if (!result.Contains(code)) result.Add(code);
         }
         if (result.Count > 0 || @event is not InputEventKey { Pressed: true } key) return result;
         int? vk = raw(key.Keycode);
         return vk is int own && on.Any(a => a.Vk.Contains(own)) ? [] : [vk];
+    }
+
+    /// <summary>Кнопка геймпада общего действия не жмёт элемент со своей кнопкой геймпада: на панели карты Esc — вторая горячая клавиша
+    /// «Опций» (F4, Esc), и B («отмена») открывал бы опции, а у них на геймпаде — Start. Клавиатура — как в оригинале.</summary>
+    private static bool OwnPadButton(UiScreen screen, int code, IReadOnlyList<InputAction> on)
+    {
+        var targets = screen.Elements.Where(e => e.Hotkeys.Contains(code)).ToList();
+        return targets.Count > 0 && targets.All(e => on.Any(a => a.Group is not null && a.Id == $"{a.Group}.{e.Id}"
+            && InputMap.HasAction(NameOf(a))
+            && InputMap.ActionGetEvents(NameOf(a)).Any(ev => ev is InputEventJoypadButton or InputEventJoypadMotion)));
     }
 
     /// <summary>Клавиша и кнопка — нажатием.</summary>

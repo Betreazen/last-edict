@@ -56,7 +56,7 @@ public partial class CapitalView : Node2D
     private Sprite2D? _ambient;
 
     /// <summary>Место картинки на экране карты (место карты <c>IMG_MAIN</c> на холсте формы окна, Э5): картинка 640×600 — по его середине
-    /// (позицию ставит хозяин), поля вокруг — растяжкой самой картинки (<see cref="AmbientFill"/>).</summary>
+    /// (позицию ставит хозяин), поля по бокам — градиент от серого у картинки к чёрному у края (<see cref="SideFade"/>).</summary>
     public Vector2 Area
     {
         get => _area;
@@ -68,13 +68,14 @@ public partial class CapitalView : Node2D
         }
     }
 
-    /// <summary>Поля вокруг картинки: растяжка нижнего слоя (сама картинка столицы) на всё место; место — размер картинки — полей нет.</summary>
+    /// <summary>Поля по бокам картинки: градиент на всё место (картинка — по его середине); место — размер картинки — полей нет.</summary>
     private void Ambient()
     {
         _ambient?.QueueFree();
         _ambient = null;
-        if ((_area.X <= Size.X && _area.Y <= Size.Y) || _layers.Count == 0 || _layers[0].Sprite.Texture is not { } texture) return;
-        _ambient = AmbientFill.Create(texture, new Rect2(Vector2.Zero, texture.GetSize()), Size / 2f, _area, -1);
+        var inset = ((_area - Size) / 2f).Floor();
+        if (_layers.Count == 0 || SideFade.Create(new Rect2(-inset, _area), new Rect2(Vector2.Zero, Size), 0) is not { } fade) return;
+        _ambient = fade;
         AddChild(_ambient);
         MoveChild(_ambient, 0);
     }

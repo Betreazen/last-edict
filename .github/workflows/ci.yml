@@ -26,6 +26,6 @@ jobs:
           python-version: "3.12"
       - name: Python tools
         run: |
-          python -m pip install --quiet pytest
+          python -m pip install --quiet pytest pillow   # pillow — tests/test_hd_layer.py (HD-слой, Э5)
           python tools/test_pack.py --check
           python -m pytest -q tests

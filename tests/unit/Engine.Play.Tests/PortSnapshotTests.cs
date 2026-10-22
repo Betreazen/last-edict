@@ -30,7 +30,7 @@ public class PortSnapshotTests
     public void AiDays_MatchTheSnapshot(string name, string scenario)
     {
         var (session, _) = Start(scenario);
-        PortSnapshot.Verify($"imported-{name}-days", PortSnapshot.AiDays(session, Days, hashesOnly: true));
+        PortSnapshot.Verify($"imported-{name}-days", PortSnapshot.AiDays(session, Days, hashesOnly: true, trace: $"imported-{name}-days"));
     }
 
     [SkippableTheory]
@@ -38,7 +38,7 @@ public class PortSnapshotTests
     public void Battles_MatchTheSnapshot(string name, string scenario)
     {
         var (session, book) = Start(scenario);
-        PortSnapshot.Verify($"imported-{name}-battles", PortSnapshot.Battles(session.Map, book, Battles, (int)Seed, hashesOnly: true));
+        PortSnapshot.Verify($"imported-{name}-battles", PortSnapshot.Battles(session.Map, book, Battles, (int)Seed, hashesOnly: true, trace: $"imported-{name}-battles"));
     }
 
     /// <summary>Партия из сценария без людей (игроки сценария — ИИ) с генератором от зерна <see cref="Seed"/>.</summary>

@@ -58,7 +58,7 @@ public sealed class AiWaitLogic(Func<AiWaitState> state) : IScreenLogic
         ArgumentNullException.ThrowIfNull(player);
         ArgumentNullException.ThrowIfNull(book);
         return book.Economy.Races.TryGetValue(player.RaceId, out var race) && race.Playable
-            ? LordFaces.Large(race.RaceType, player.Face)
+            ? LordFaces.Large(book.LookOf(player.RaceId), player.Face)
             : NeutralLord;
     }
 }

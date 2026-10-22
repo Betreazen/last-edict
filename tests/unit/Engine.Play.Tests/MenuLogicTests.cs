@@ -70,7 +70,7 @@ public class MenuLogicTests
     {
         var setup = new NewGameSetup { Scenario = Content.Catalog.Scenarios.Single(s => s.Id == "Arrival of the Pilgrims") };
         var (ui, logic) = Open("DLG_CHOOSE_RACE", setup);
-        Assert.Equal(0, setup.Race);
+        Assert.Equal(BaseRaces.Empire, setup.RaceId);
         Assert.Equal("DLG_CHOOSE_RACE_GODHU_BG", ui.Underlay);
         Assert.Equal("DLG_CHOOSE_RACE_BG_CHOOSE_RACE", ui.Background);   // рамка остаётся поверх
         // 0x4ee08f: шаблон X005TA0484 «\fMedium;%RACE%» и полное имя расы X005TA0480, а не имя расы таблицы (X000TG0000).
@@ -78,17 +78,17 @@ public class MenuLogicTests
 
         // «Следующая раса» — кнопка с подписью X100TA0129 (в разметке это BTN_PREV).
         Fire(logic, ui, ui.Key(39));
-        Assert.Equal(5, setup.Race);
+        Assert.Equal(BaseRaces.Elves, setup.RaceId);
         Assert.Equal("DLG_CHOOSE_RACE_GODEL_BG", ui.Underlay);
         Assert.Null(ui.VideoOf(UiScreenState.BackgroundId)); // Империя и эльфы не соседи — ролика нет
         Fire(logic, ui, ui.Key(39));
-        Assert.Equal(2, setup.Race);
+        Assert.Equal(BaseRaces.Legions, setup.RaceId);
         Fire(logic, ui, ui.Key(39));
-        Assert.Equal(0, setup.Race);
+        Assert.Equal(BaseRaces.Empire, setup.RaceId);
         Assert.Equal("GOD_HE2HU", ui.VideoOf(UiScreenState.BackgroundId)!.Name);
 
         Fire(logic, ui, ui.Key(37)); // «Предыдущая раса»
-        Assert.Equal(2, setup.Race);
+        Assert.Equal(BaseRaces.Legions, setup.RaceId);
         Assert.Equal("GOD_HU2HE", ui.VideoOf(UiScreenState.BackgroundId)!.Name);
     }
 
@@ -97,8 +97,8 @@ public class MenuLogicTests
     {
         var setup = new NewGameSetup();
         var (ui, logic) = Open("DLG_CHOOSE_RACE", setup);
-        int[] seen = [.. Enumerable.Range(0, 5).Select(_ => { Fire(logic, ui, ui.Key(39)); return setup.Race; })];
-        Assert.Equal([1, 5, 3, 2, 0], seen);
+        string[] seen = [.. Enumerable.Range(0, 5).Select(_ => { Fire(logic, ui, ui.Key(39)); return setup.RaceId; })];
+        Assert.Equal([BaseRaces.Undead, BaseRaces.Elves, BaseRaces.Clans, BaseRaces.Legions, BaseRaces.Empire], seen);
     }
 
     /// <summary>Вода и светлячки выбора расы — свои у расы (<c>0x4ede4e</c>, <c>0x4edea7</c>): у Империи обе анимации
@@ -108,17 +108,17 @@ public class MenuLogicTests
     {
         var setup = new NewGameSetup();
         var (ui, logic) = Open("DLG_CHOOSE_RACE", setup);
-        var seen = new Dictionary<int, (string?, string?)> { [setup.Race] = (ui.Frame("IMG_WATER"), ui.Frame("IMG_FIREFLY")) };
+        var seen = new Dictionary<string, (string?, string?)> { [setup.RaceId] = (ui.Frame("IMG_WATER"), ui.Frame("IMG_FIREFLY")) };
         for (int i = 0; i < 4; i++)
         {
             Fire(logic, ui, ui.Key(39));
-            seen[setup.Race] = (ui.Frame("IMG_WATER"), ui.Frame("IMG_FIREFLY"));
+            seen[setup.RaceId] = (ui.Frame("IMG_WATER"), ui.Frame("IMG_FIREFLY"));
         }
-        Assert.Equal(("_WATER_HUMAN", "_FIREFLY_HUMAN"), seen[0]);
-        Assert.Equal(("_WATER_UNDEAD", null), seen[1]);
-        Assert.Equal(("_WATER_HERETIC", null), seen[2]);
-        Assert.Equal((null, null), seen[3]);
-        Assert.Equal((null, null), seen[5]);
+        Assert.Equal(("_WATER_HUMAN", "_FIREFLY_HUMAN"), seen[BaseRaces.Empire]);
+        Assert.Equal(("_WATER_UNDEAD", null), seen[BaseRaces.Undead]);
+        Assert.Equal(("_WATER_HERETIC", null), seen[BaseRaces.Legions]);
+        Assert.Equal((null, null), seen[BaseRaces.Clans]);
+        Assert.Equal((null, null), seen[BaseRaces.Elves]);
     }
 
     /// <summary>Вода закрывает «Продолжить» (в разметке она позже кнопки): логика рисует картинки под кнопками, как на кадрах
@@ -139,7 +139,7 @@ public class MenuLogicTests
     [SkippableFact]
     public void Lord_TitleNameFaceTypeAndDifficulty()
     {
-        var setup = new NewGameSetup { Race = 1 };
+        var setup = new NewGameSetup { RaceId = BaseRaces.Undead };
         var (ui, logic) = Open("DLG_CHOOSE_LORD", setup);
 
         Assert.Equal("Выберите лорда", ui.TextOf("TXT_TITLE"));
@@ -183,7 +183,7 @@ public class MenuLogicTests
     public void Briefing_HistoryThenGoals_AndRaceVideo()
     {
         var scenario = Content.Catalog.Scenarios.Single(s => s.Id == "Mercantile");
-        var setup = new NewGameSetup { Scenario = scenario, Race = 5 };
+        var setup = new NewGameSetup { Scenario = scenario, RaceId = BaseRaces.Elves };
         var (ui, logic) = Open("DLG_SCENARIO_BRIEFING", setup);
 
         // Текст — как у «Задания» из партии (общий CBriefingBase, 0x480659): X005TA0832 — имя, история, цель сценария.

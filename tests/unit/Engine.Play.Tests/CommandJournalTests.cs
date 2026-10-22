@@ -24,7 +24,7 @@ public class CommandJournalTests
         var content = SharedContent.Load(Data);
         var setup = new LastEdict.Data.Menu.NewGameSetup
         {
-            Scenario = content.Catalog.Scenarios.Single(s => s.Id == "Power to Corrupt"), Race = 3, LordCategory = 1, Difficulty = 1,
+            Scenario = content.Catalog.Scenarios.Single(s => s.Id == "Power to Corrupt"), RaceId = BaseRaces.Clans, LordCategory = 1, Difficulty = 1,
         };
         var book = GameBook.Load(Path.Combine(Data, "rules"));
         var state = LastEdict.Data.Play.NewGame.Start(ScenarioFile.Read(path), setup, content.Catalog, book, new Random(1));

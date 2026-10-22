@@ -26,7 +26,7 @@ internal static class BriefingLogic
     {
         string video = context.Setup.Scenario is { } s && context.Catalog.ChapterOf(s.Id) is { } ch && ch.Chapter.BriefingVideo.Length > 0
             ? ch.Chapter.BriefingVideo
-            : context.Catalog.Race(context.Setup.Race).BriefingVideo;
+            : context.Catalog.PlayerRace(context.Setup.RaceId).BriefingVideo;
         if (video.Length > 0) ui.SetVideo(Video, video);
     }
 

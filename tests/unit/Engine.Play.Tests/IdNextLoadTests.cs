@@ -70,7 +70,7 @@ public sealed class IdNextLoadTests
         var setup = new LastEdict.Data.Menu.NewGameSetup
         {
             Scenario = content.Catalog.Scenarios.Single(s => s.Id == "Power to Corrupt"), Difficulty = 1,
-            Seats = [new LastEdict.Data.Menu.PlayerSeat(3, "", 0, 0), new LastEdict.Data.Menu.PlayerSeat(2, "", 0, 1)],
+            Seats = [new LastEdict.Data.Menu.PlayerSeat(BaseRaces.Clans, "", 0, 0), new LastEdict.Data.Menu.PlayerSeat(BaseRaces.Legions, "", 0, 1)],
         };
         var map = NewGame.Start(scenario, setup, content.Catalog, book, new Random(1)).Looks.Map;
 

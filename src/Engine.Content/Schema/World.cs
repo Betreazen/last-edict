@@ -57,6 +57,7 @@ public sealed record RaceDef : ContentDef
     [Description("Нейтралы: хозяин ничьих отрядов и объектов карты. Нет — по роду (kind).")] public bool? Neutral { get; init; }
     [Description("Имена героев (Tleader) по порядку таблицы.")] public IReadOnlyList<HeroName> HeroNames { get; init; } = [];
     [Description("Сообщения ИИ (TAiMsg) по порядку таблицы.")] public IReadOnlyList<AiMessageLine> AiMessages { get; init; } = [];
+    [Description("Вид расы: имена графики и роликов для меню и окон (RaceLook). Нет — по роду (kind).")] public RaceLook? Look { get; init; }
 }
 
 /// <summary>Имя героя расы (строка <c>Tleader</c>).</summary>

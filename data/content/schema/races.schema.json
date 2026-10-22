@@ -195,6 +195,68 @@
        ],
        "additionalProperties": false
       }
+     },
+     "look": {
+      "description": "Вид расы: имена графики и роликов для меню и окон (RaceLook). Нет — по роду (kind).",
+      "type": [
+       "object",
+       "null"
+      ],
+      "properties": {
+       "code": {
+        "description": "Код расы в именах графики и роликов: LORD{code}L01, FACE_{code}_0, GOD{code}, GOD_{code}2{code}, значок мини-карты.",
+        "type": "string"
+       },
+       "art": {
+        "description": "Полное имя расы в именах графики: DLG_CHOOSE_LORD_{art}_BG.",
+        "type": "string"
+       },
+       "portraits": {
+        "description": "Начало имён круглых портретов лорда (Faces: {portraits}LORD1…).",
+        "type": "string"
+       },
+       "faces": {
+        "description": "Сколько лиц у лорда расы (портреты LORD{code}L01…); 1 — одно лицо (нейтралы).",
+        "type": "integer"
+       },
+       "briefingVideo": {
+        "description": "Ролик брифинга сценария за эту расу.",
+        "type": "string"
+       },
+       "titleText": {
+        "description": "Строка полного имени расы в окне выбора расы.",
+        "type": "string"
+       },
+       "choiceOrder": {
+        "description": "Место в круге выбора расы, меньше — раньше; нет — расы в круге нет (нейтралы).",
+        "type": [
+         "integer",
+         "null"
+        ]
+       },
+       "choiceWater": {
+        "description": "Анимация воды окна выбора расы; нет — без воды.",
+        "type": [
+         "string",
+         "null"
+        ]
+       },
+       "choiceFireflies": {
+        "description": "Анимация светлячков окна выбора расы; нет — без светлячков.",
+        "type": [
+         "string",
+         "null"
+        ]
+       },
+       "saga": {
+        "description": "Сага расы (кампания «Новой саги»); нет — расы в выборе саги нет.",
+        "type": [
+         "string",
+         "null"
+        ]
+       }
+      },
+      "additionalProperties": false
      }
     },
     "required": [

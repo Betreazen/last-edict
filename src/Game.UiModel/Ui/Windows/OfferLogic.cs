@@ -1,4 +1,5 @@
 using LastEdict.Data.Content;
+using LastEdict.Data.Content.Schema;
 using LastEdict.Data.Menu;
 using LastEdict.Data.Play;
 using LastEdict.Data.Play.Commands;
@@ -6,21 +7,28 @@ using LastEdict.Rules.Map;
 
 namespace LastEdict.Data.Ui.Windows;
 
-/// <summary>Портрет лорда игрока (<c>Lords.ff</c>): крупный <c>LORD{раса}L0{лицо}</c> (160×220) — <c>sprintf("LORD%s%s%02d", раса, "L"/"S", лицо + 1)</c>
-/// (<c>0x5c5563</c>, строки <c>0x7b0314</c>…<c>0x7b0334</c>). Буквы рас — по <c>Grace.RACE_TYPE</c>: 0 HU, 1 UN, 2 HE, 3 DW, 5 EL; нейтралы (4) —
-/// <c>NE</c> и всегда лицо 1 (<c>0x5c5615</c>: номер лица обнулён).</summary>
+/// <summary>Портрет лорда игрока (<c>Lords.ff</c>): крупный <c>LORD{код}L0{лицо}</c> (160×220) — <c>sprintf("LORD%s%s%02d", раса, "L"/"S", лицо + 1)</c>
+/// (<c>0x5c5563</c>, строки <c>0x7b0314</c>…<c>0x7b0334</c>). Код и число лиц — вид расы (<see cref="RaceLook"/>, Э5: не по роду — у расы мода
+/// свои портреты); у нейтралов лицо одно (<c>0x5c5615</c>: номер лица обнулён).</summary>
 public static class LordFaces
 {
-    public static string Large(int raceType, int face) =>
-        $"Lords:LORD{raceType switch { 1 => "UN", 2 => "HE", 3 => "DW", 4 => "NE", 5 => "EL", _ => "HU" }}L{(raceType == 4 ? 0 : Math.Clamp(face, 0, 3)) + 1:00}";
+    public static string Large(RaceLook look, int face)
+    {
+        ArgumentNullException.ThrowIfNull(look);
+        return $"Lords:LORD{look.Code}L{(look.Faces <= 1 ? 0 : Math.Clamp(face, 0, look.Faces - 1)) + 1:00}";
+    }
 
-    /// <summary>Малый портрет лорда 70×85 (<c>LORD{раса}S0{лицо}</c>): лицо выбранного в панели дипломатии <c>IMG_LORD_FACE</c> (снимки 28.09 —
+    /// <summary>Малый портрет лорда 70×85 (<c>LORD{код}S0{лицо}</c>): лицо выбранного в панели дипломатии <c>IMG_LORD_FACE</c> (снимки 28.09 —
     /// разница 2,3), окна дани и цены.</summary>
-    public static string Small(int raceType, int face) => Large(raceType, face).Replace("L0", "S0", StringComparison.Ordinal);
+    public static string Small(RaceLook look, int face) => Large(look, face).Replace("L0", "S0", StringComparison.Ordinal);
 
-    /// <summary>Круглый портрет лорда 130×142 (<c>Faces</c>): <c>sprintf("%sLORD%d", RACE_ID, лицо + 1)</c> (<c>0x5c5424</c>) — слоты поля
-    /// дипломатии (снимок 28.09 <c>CDiplomacyInterf</c>).</summary>
-    public static string Round(string raceId, int face) => $"Faces:{ArtNames.Of(raceId)}LORD{Math.Clamp(face, 0, 3) + 1}";
+    /// <summary>Круглый портрет лорда 130×142 (<c>Faces</c>): <c>sprintf("%sLORD%d", RACE_ID, лицо + 1)</c> (<c>0x5c5424</c>; начало имени —
+    /// <see cref="RaceLook.Portraits"/>) — слоты поля дипломатии (снимок 28.09 <c>CDiplomacyInterf</c>).</summary>
+    public static string Round(RaceLook look, int face)
+    {
+        ArgumentNullException.ThrowIfNull(look);
+        return $"Faces:{look.Portraits}LORD{Math.Clamp(face, 0, 3) + 1}";
+    }
 }
 
 /// <summary>Названия рас (строки имён) — для <c>%RACE%</c> в окнах дипломатии.</summary>
@@ -71,8 +79,7 @@ public sealed class AllianceOfferLogic(WindowContext context, AllianceOffer offe
         {
             var map = context.Map;
             if (!map.Players.TryGetValue(offer.From, out var from)) return null;
-            int type = context.Session.RequireBook().Economy.Races.TryGetValue(from.RaceId, out var race) ? race.RaceType : 0;
-            return LordFaces.Large(type, from.Face);
+            return LordFaces.Large(context.Session.RequireBook().LookOf(from.RaceId), from.Face);
         }
     }
 
@@ -156,9 +163,8 @@ public sealed class ChatLogic(string text, string? face, string message = "") : 
         ArgumentNullException.ThrowIfNull(text);
         var from = map.Players.GetValueOrDefault(sight.Id);
         string race = from is not null && raceNames.TryGetValue(from.RaceId, out var txt) ? text(txt) : "";
-        int type = from is not null && book.Economy.Races.TryGetValue(from.RaceId, out var r) ? r.RaceType : 0;
         string body = UiTemplate.Fill(text(TextId), ("NAME", from?.Name.Trim() ?? ""), ("RACE", race), ("MSG", sight.Text));
-        return new ChatLogic(body, from is null ? null : LordFaces.Large(type, from.Face), sight.Text);
+        return new ChatLogic(body, from is null ? null : LordFaces.Large(book.LookOf(from.RaceId), from.Face), sight.Text);
     }
 
     public UiRequest? TakeRequest() => _requests.Take();

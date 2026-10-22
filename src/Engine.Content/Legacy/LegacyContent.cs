@@ -201,6 +201,7 @@ public static class LegacyContent
                     // Признаки рода движка (LegacyRaces) — явно, чтобы раса в данных была полной и мод мог их править.
                     Land = (TerrainKind)LegacyRaces.Terrain(kind), TurnOrder = LegacyRaces.TurnOrder(kind),
                     EventFlag = LegacyRaces.EventFlag(kind), Neutral = kind == LegacyRaces.Neutral,
+                    Look = RaceLooks.Legacy(race.Kind, legacy),   // вид расы — тоже явно (Э5): имена графики, круг выбора, сага
                     HeroNames = [.. names[legacy].Select(n => new HeroName
                     {
                         Text = n.GetString("TEXT"), Male = n.GetBool("SEX_M"), Verified = Bool(n, "VERIFIED"), Context = Text(n, "CONTEXT"),

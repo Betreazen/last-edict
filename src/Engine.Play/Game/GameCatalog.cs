@@ -30,6 +30,21 @@ public sealed record RaceInfo
     /// «The Empire», «The Elven Alliance»…; пусто — «Not available» (<c>X005TA0479</c>).</summary>
     public string TitleText { get; init; } = "";
 
+    /// <summary>Место в круге выбора расы (<c>RaceLook.ChoiceOrder</c>); null — расы в круге нет.</summary>
+    public int? ChoiceOrder { get; init; }
+
+    /// <summary>Вода и светлячки окна выбора расы (анимации интерфейса); null — нет.</summary>
+    public string? ChoiceWater { get; init; }
+
+    public string? ChoiceFireflies { get; init; }
+
+    /// <summary>Сага расы (кампания «Новой саги»); null — нет.</summary>
+    public string? Saga { get; init; }
+
+    /// <summary>Раса оригинала (есть id оригинала); раса мода — нет. Род расы оригинала единственный — по нему переводятся сценарии и
+    /// герои импорта, где раса записана родом.</summary>
+    public bool Original { get; init; } = true;
+
     public IReadOnlyList<LordInfo> Lords { get; init; } = [];
 }
 
@@ -49,6 +64,10 @@ public sealed record ScenarioInfo
     public int SuggestedLevel { get; init; }
     public string Designer { get; init; } = "";
     public IReadOnlyList<int> Races { get; init; } = [];
+
+    /// <summary>Расы игроков по id (Э5: меню опознаёт расу по id — раса мода может быть того же рода, что и раса оригинала). У сценариев
+    /// импорта — из <see cref="Races"/> по роду (<see cref="GameCatalog.WithRaces"/>), сценарий мода задаёт их сам.</summary>
+    public IReadOnlyList<string> RaceIds { get; init; } = [];
 
     /// <summary>Текст эпилога при победе (<c>DEBUNKW…DEBUNKW5</c>, <c>CScenarioInfo +0x18</c>) и поражении (<c>DEBUNKL</c>,
     /// <c>+0x1C</c>) — экран <c>DLG_END_WIN_LOSE_</c> (<c>docs/scenario-events.md</c> §4).</summary>
@@ -85,6 +104,10 @@ public sealed record CampaignInfo
 {
     public required string Id { get; init; }
     public int Race { get; init; }
+
+    /// <summary>Раса игрока саги по id; у саг импорта — по роду <see cref="Race"/> (<see cref="GameCatalog.WithRaces"/>).</summary>
+    public string RaceId { get; init; } = "";
+
     public string NameText { get; init; } = "";
     public string DescText { get; init; } = "";
     public string Conclusion { get; init; } = "";
@@ -126,21 +149,57 @@ public sealed record GameCatalog
     public string? BriefingMusic(string? scenarioId) =>
         scenarioId is null ? null : ChapterOf(scenarioId)?.Chapter.BriefingMusic;
 
-    public RaceInfo Race(int type) => Races.FirstOrDefault(r => r.Type == type)
+    /// <summary>Раса по роду (<c>LRaceCategory</c>) — для данных, где раса записана родом (герои <c>.ldr</c>, свои кампании): раса оригинала
+    /// этого рода, иначе первая такого рода.</summary>
+    public RaceInfo Race(int type) => Races.Where(r => r.Type == type).OrderBy(r => r.Original ? 0 : 1).FirstOrDefault()
                                       ?? throw new KeyNotFoundException($"нет расы типа {type}");
+
+    /// <summary>Раса по id.</summary>
+    public RaceInfo Race(string id) => Races.FirstOrDefault(r => r.Id.Equals(id, StringComparison.OrdinalIgnoreCase))
+                                       ?? throw new KeyNotFoundException($"нет расы {id}");
+
+    /// <summary>Раса игрока меню: выбранная <paramref name="id"/>, а не выбрана (пусто — меню её ещё не ставило) или её нет — первая
+    /// играбельная по кругу выбора (Империя у рас оригинала, как прежний род 0 по умолчанию).</summary>
+    public RaceInfo PlayerRace(string? id) =>
+        Races.FirstOrDefault(r => r.Id.Equals(id ?? "", StringComparison.OrdinalIgnoreCase))
+        ?? Races.Where(r => r.Playable).OrderBy(r => r.ChoiceOrder ?? int.MaxValue).ThenBy(r => r.Original ? 0 : 1).FirstOrDefault()
+        ?? throw new KeyNotFoundException("в каталоге нет играбельной расы");
+
+    /// <summary>Каталог с расами <paramref name="races"/> (из содержимого — <see cref="MenuRaces"/>): у сценариев и саг без id рас они
+    /// выводятся из рода — расой оригинала этого рода.</summary>
+    public GameCatalog WithRaces(IReadOnlyList<RaceInfo> races)
+    {
+        ArgumentNullException.ThrowIfNull(races);
+        var byType = races.GroupBy(r => r.Type).ToDictionary(g => g.Key, g => g.OrderBy(r => r.Original ? 0 : 1).First().Id);
+        string IdOf(int type) => byType.GetValueOrDefault(type, "");
+        ScenarioInfo Resolve(ScenarioInfo s) =>
+            s.RaceIds.Count > 0 && s.RaceIds.All(id => id.Length > 0) ? s : s with { RaceIds = [.. s.Races.Select(IdOf)] };
+        return this with
+        {
+            Races = races,
+            Scenarios = [.. Scenarios.Select(Resolve)],
+            Campaigns = [.. Campaigns.Select(c => c with
+            {
+                RaceId = c.RaceId.Length > 0 ? c.RaceId : IdOf(c.Race),
+                Chapters = [.. c.Chapters.Select(ch => ch with { Scenario = Resolve(ch.Scenario) })],
+            })],
+        };
+    }
 
     /// <summary>Что в каталоге не сходится: сценарий ссылается на расу, которой нет, у играбельной расы нет лорда
     /// какого-то из трёх типов. Логика меню на это рассчитывает, поэтому <see cref="Content.GameContent"/> проверяет
     /// каталог при загрузке и не принимает несогласованный — лучше сразу, с названием, чем посреди меню.</summary>
     public IReadOnlyList<string> Problems()
     {
-        var types = Races.Select(r => r.Type).ToHashSet();
-        var problems = Scenarios.SelectMany(s => s.Races.Where(t => !types.Contains(t))
-                                                  .Select(t => $"сценарий {s.Id}: нет расы {t}")).ToList();
+        var ids = Races.Select(r => r.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        // Сценарий без id рас — по роду (WithRaces): рода нет среди рас — пустой id, это и есть «нет расы».
+        var problems = WithRaces(Races).Scenarios.SelectMany(s => s.RaceIds.Where(id => !ids.Contains(id))
+                                                  .Select(id => $"сценарий {s.Id}: нет расы {(id.Length > 0 ? id : "рода " + string.Join(",", s.Races))}"))
+                                .ToList();
         foreach (var race in Races.Where(r => r.Playable))
             for (int category = 0; category <= 2; category++)
                 if (race.Lords.Count(l => l.Category == category) != 1)
-                    problems.Add($"раса {race.Type}: лордов типа {category} не ровно один");
+                    problems.Add($"раса {race.Id}: лордов типа {category} не ровно один");
         return problems;
     }
 
@@ -159,32 +218,46 @@ public sealed record GameCatalog
 
     /// <summary>Каталог из <paramref name="dir"/> (<c>races.json</c>, <c>scenarios.json</c>, <c>campaigns.json</c>); нет файла — пусто. Расы и
     /// лорды — по id содержимого: файлы импорта пишут id оригинала, они переводятся здесь (<see cref="LegacyIds.Base"/>).</summary>
-    public static GameCatalog Load(string dir) => new()
+    public static GameCatalog Load(string dir)
     {
-        Races = [.. Read<RaceInfo>(Path.Combine(dir, "races.json")).Select(WithContentIds)],
-        Scenarios = Read<ScenarioInfo>(Path.Combine(dir, "scenarios.json")),
-        Campaigns = Read<CampaignInfo>(Path.Combine(dir, "campaigns.json")),
-    };
+        var races = Read<RaceInfo>(Path.Combine(dir, "races.json")).Select(WithContentIds).ToList();
+        return new GameCatalog
+        {
+            Races = races,
+            Scenarios = Read<ScenarioInfo>(Path.Combine(dir, "scenarios.json")),
+            Campaigns = Read<CampaignInfo>(Path.Combine(dir, "campaigns.json")),
+        }.WithRaces(races);
+    }
 
-    /// <summary>Наложить мод: раса опознаётся по типу, сценарий — по <c>Id</c>; совпавшее заменяется целиком,
+    /// <summary>Наложить мод: раса и сценарий опознаются по <c>Id</c>; совпавшее заменяется целиком,
     /// новое добавляется в конец.</summary>
     public static GameCatalog Merge(GameCatalog baseSet, GameCatalog overlay)
     {
         ArgumentNullException.ThrowIfNull(baseSet);
         ArgumentNullException.ThrowIfNull(overlay);
-        return new GameCatalog
+        var merged = new GameCatalog
         {
-            Races = Overlay(baseSet.Races, overlay.Races, r => r.Type.ToString(CultureInfo.InvariantCulture)),
+            Races = Overlay(baseSet.Races, overlay.Races, r => r.Id),
             Scenarios = Overlay(baseSet.Scenarios, overlay.Scenarios, s => s.Id),
             Campaigns = Overlay(baseSet.Campaigns, overlay.Campaigns, c => c.Id),
         };
+        return merged.WithRaces(merged.Races);
     }
 
-    private static RaceInfo WithContentIds(RaceInfo race) => race with
+    /// <summary>Раса файла импорта: id содержимого и вид расы оригинала по роду (круг выбора, вода, сага — <see cref="RaceLooks.Legacy"/>).</summary>
+    private static RaceInfo WithContentIds(RaceInfo race)
     {
-        Id = LegacyIds.Base.IdOf(race.Id) ?? race.Id,
-        Lords = [.. race.Lords.Select(l => l with { Id = LegacyIds.Base.IdOf(l.Id) ?? l.Id })],
-    };
+        var look = Content.Schema.RaceLooks.Legacy((Content.Schema.RaceKind)race.Type, race.Id);
+        return race with
+        {
+            Id = LegacyIds.Base.IdOf(race.Id) ?? race.Id,
+            Lords = [.. race.Lords.Select(l => l with { Id = LegacyIds.Base.IdOf(l.Id) ?? l.Id })],
+            ChoiceOrder = race.ChoiceOrder ?? (race.Playable ? look.ChoiceOrder : null),
+            ChoiceWater = race.ChoiceWater ?? look.ChoiceWater,
+            ChoiceFireflies = race.ChoiceFireflies ?? look.ChoiceFireflies,
+            Saga = race.Saga ?? look.Saga,
+        };
+    }
 
     private static IReadOnlyList<T> Read<T>(string path) => File.Exists(path) ? FromJson<T>(File.ReadAllText(path)) : [];
 

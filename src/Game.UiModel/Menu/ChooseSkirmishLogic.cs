@@ -45,7 +45,9 @@ internal sealed class ChooseSkirmishLogic(MenuContext context) : IScreenLogic
         ui.SetText("TXT_MAP_SIZE", context.Text(MapSizeText).Replace("%X%", size).Replace("%Y%", size));
         for (int i = 0; i < RaceImages.Length; i++)
         {
-            string? frame = i < scenario.Races.Count ? Icon(context.Catalog.Race(scenario.Races[i]).Code) : null;
+            string? code = i < scenario.RaceIds.Count
+                ? context.Catalog.Races.FirstOrDefault(r => r.Id.Equals(scenario.RaceIds[i], StringComparison.OrdinalIgnoreCase))?.Code : null;
+            string? frame = code is null ? null : Icon(code);
             ui.SetImage(RaceImages[i], frame);
         }
     }

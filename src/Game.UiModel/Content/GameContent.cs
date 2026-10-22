@@ -33,7 +33,7 @@ public sealed class GameContent
         MapArt = mapArt;
         Videos = videos;
         Transitions = transitions;
-        Catalog = catalog;
+        _catalog = catalog;
         Screens = screens;
         Assets = assets;
         Flow = flow;
@@ -56,7 +56,35 @@ public sealed class GameContent
     public UiFlow Flow { get; }
 
     /// <summary>Каталог меню (<c>game/races.json</c>, <c>game/scenarios.json</c>): расы, лорды, сценарии.</summary>
-    public GameCatalog Catalog { get; }
+    public GameCatalog Catalog
+    {
+        get
+        {
+            lock (_catalogLock)
+            {
+                if (_withRaces is not null) return _withRaces;
+                if (_catalogError is not null) throw new InvalidDataException(_catalogError);
+                if (Rules is not { } rules) return _withRaces = _catalog;
+                // Расы меню — из содержимого (Э5): расы модов есть и в выборе расы.
+                var catalog = _catalog.WithRaces(LastEdict.Data.Game.MenuRaces.From(rules()));
+                if (catalog.Problems() is { Count: > 0 } problems)
+                {
+                    _catalogError = $"расы содержимого для меню: {string.Join("; ", problems)}";
+                    throw new InvalidDataException(_catalogError);
+                }
+                return _withRaces = catalog;
+            }
+        }
+    }
+
+    private readonly GameCatalog _catalog;
+    private GameCatalog? _withRaces;
+    private string? _catalogError;
+    private readonly object _catalogLock = new();
+
+    /// <summary>Содержимое правил (база и моды, <see cref="LastEdict.Data.Content.ContentSet"/>): из него — расы меню (<see cref="Catalog"/>).
+    /// Не задано — расы из данных импорта (<c>game/races.json</c>; проверки без содержимого).</summary>
+    public Func<LastEdict.Data.Content.ContentSet>? Rules { get; init; }
 
     /// <summary>Графика карты и боя (<c>gfx/*.json</c>, файлы — <c>assets/gfx</c>). Нет описей — пусто.</summary>
     public GfxAssets Gfx { get; }
@@ -193,7 +221,9 @@ public sealed class GameContent
     /// <c>ui/assets.json</c>, строки, <c>game</c>, <c>gfx</c>, <c>map</c>, <c>video</c>, <c>scenarios</c>) — из <paramref name="gameDataDir"/>
     /// (импорт из копии игры, <c>docs/publishing.md</c>; не задан — тот же <paramref name="dataDir"/>, как в репозитории разработчика).</summary>
     /// <exception cref="InvalidDataException">Слой мода не читается.</exception>
-    public static GameContent Load(string dataDir, IEnumerable<ModInfo>? mods = null, string? gameDataDir = null)
+    /// <param name="rules">Содержимое правил — для рас меню (<see cref="Rules"/>); нет — расы данных импорта.</param>
+    public static GameContent Load(string dataDir, IEnumerable<ModInfo>? mods = null, string? gameDataDir = null,
+                                   Func<LastEdict.Data.Content.ContentSet>? rules = null)
     {
         ArgumentException.ThrowIfNullOrEmpty(dataDir);
         string gameDir = string.IsNullOrEmpty(gameDataDir) ? dataDir : gameDataDir;
@@ -253,7 +283,10 @@ public sealed class GameContent
             throw new InvalidDataException($"каталог игры (data/game и моды): {string.Join("; ", problems)}");
         // Политика вписывания (ui/layout.json) — после всех слоёв: правило базы ложится и на экран, заменённый модом.
         screens = UiLayouts.Apply(screens, layout);
-        return new GameContent(screens, assets, flow, defaults, catalog, transitions, videos, gfx, mapArt, layers, dataDir, gameDir, input);
+        return new GameContent(screens, assets, flow, defaults, catalog, transitions, videos, gfx, mapArt, layers, dataDir, gameDir, input)
+        {
+            Rules = rules,
+        };
     }
 
     private static UiFlow? LoadFlow(string path) => File.Exists(path) ? UiFlows.Load(path) : null;

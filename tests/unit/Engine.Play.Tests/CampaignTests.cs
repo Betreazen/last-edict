@@ -45,7 +45,7 @@ public class CampaignTests
     public void SagaMenu_RaceChoosesCampaign()
     {
         var content = Shared.Value.Content;
-        var setup = new NewGameSetup { Seats = [new PlayerSeat(3, "", 0, 0), new PlayerSeat(2, "", 0, 1)] };   // осталось от лобби
+        var setup = new NewGameSetup { Seats = [new PlayerSeat(BaseRaces.Clans, "", 0, 0), new PlayerSeat(BaseRaces.Legions, "", 0, 1)] };   // осталось от лобби
         var context = new MenuContext(content.Catalog, Strings, setup, "Игрок") { Screens = content.Screens };
         var single = MenuLogic.For("DLG_SINGLE_PLAYER", context)!;
         var sui = new UiScreenState(content.Screens.Single(s => s.Id == "DLG_SINGLE_PLAYER"));
@@ -57,13 +57,13 @@ public class CampaignTests
         var race = MenuLogic.For("DLG_CHOOSE_RACE", context)!;
         var ui = new UiScreenState(content.Screens.Single(s => s.Id == "DLG_CHOOSE_RACE"));
         race.Open(ui);
-        Assert.Equal(5, setup.Race);   // сага открывается на эльфах (0x4edc01)
+        Assert.Equal(BaseRaces.Elves, setup.RaceId);   // сага открывается на эльфах (0x4edc01)
         Assert.Equal(("S135SC0000", new CampaignRun("C000CC0006", 0, 8)), (setup.Scenario?.Id, setup.Campaign));
         var next = ui.Screen.Elements.First(e => e.TextId == "X100TA0129").Id;
-        for (int i = 0; i < 5 && setup.Race != 0; i++) race.Handle(new UiClicked(next), ui);
+        for (int i = 0; i < 5 && setup.RaceId != BaseRaces.Empire; i++) race.Handle(new UiClicked(next), ui);
         Assert.Equal(("S107SC0000", new CampaignRun("C000CC0002", 0, 7)), (setup.Scenario?.Id, setup.Campaign));
-        for (int i = 0; i < 5 && setup.Race != 3; i++) race.Handle(new UiClicked(next), ui);
-        Assert.Equal((3, "C000CC0003"), (setup.Race, setup.Campaign?.CampaignId));
+        for (int i = 0; i < 5 && setup.RaceId != BaseRaces.Clans; i++) race.Handle(new UiClicked(next), ui);
+        Assert.Equal((BaseRaces.Clans, "C000CC0003"), (setup.RaceId, setup.Campaign?.CampaignId));
         Assert.Equal(content.Catalog.Campaigns.Single(c => c.Id == "C000CC0003").Chapters[0].Scenario.Id, setup.Scenario?.Id);
 
         single.Open(sui);
@@ -78,7 +78,7 @@ public class CampaignTests
         var (content, book) = Shared.Value;
         var setup = new NewGameSetup
         {
-            Scenario = content.Catalog.Scenario("S107SC0000"), Race = 0, LordCategory = 1, Difficulty = 1,
+            Scenario = content.Catalog.Scenario("S107SC0000"), RaceId = BaseRaces.Empire, LordCategory = 1, Difficulty = 1,
             Campaign = new CampaignRun("C000CC0002", 0, 7),
         };
         var state = NewGame.Start(Chapter("S107SC0000"), setup, content.Catalog, book, new Random(1));
@@ -98,7 +98,7 @@ public class CampaignTests
         var (content, book) = Shared.Value;
         var first = new NewGameSetup
         {
-            Scenario = content.Catalog.Scenario("S107SC0000"), Race = 0, LordCategory = 1, Difficulty = 1,
+            Scenario = content.Catalog.Scenario("S107SC0000"), RaceId = BaseRaces.Empire, LordCategory = 1, Difficulty = 1,
             Campaign = new CampaignRun("C000CC0002", 0, 7),
         };
         var one = new GameSession(NewGame.Start(Chapter("S107SC0000"), first, content.Catalog, book, new Random(1)), content.MapArt, book);
@@ -111,7 +111,7 @@ public class CampaignTests
 
         var second = new NewGameSetup
         {
-            Scenario = content.Catalog.Scenario("S108SC0000"), Race = 0, LordCategory = 1, Difficulty = 1,
+            Scenario = content.Catalog.Scenario("S108SC0000"), RaceId = BaseRaces.Empire, LordCategory = 1, Difficulty = 1,
             Campaign = new CampaignRun("C000CC0002", 1, 7), Carry = carry with { Hero = carry.Hero! with { Xp = 77 } },
         };
         var two = new GameSession(NewGame.Start(Chapter("S108SC0000"), second, content.Catalog, book, new Random(2)), content.MapArt, book);
@@ -137,7 +137,7 @@ public class CampaignTests
         var talisman = book.Items.Values.First(i => i.Category == LastEdict.Rules.Magic.ItemCategory.Talisman);
         var setup = new NewGameSetup
         {
-            Scenario = content.Catalog.Scenario("S108SC0000"), Race = 0, LordCategory = 1, Difficulty = 1,
+            Scenario = content.Catalog.Scenario("S108SC0000"), RaceId = BaseRaces.Empire, LordCategory = 1, Difficulty = 1,
             Campaign = new CampaignRun("C000CC0002", 1, 7), Carry = new CarryOver { ItemTypes = [talisman.Id] },
         };
         var two = new GameSession(NewGame.Start(Chapter("S108SC0000"), setup, content.Catalog, book, new Random(2)), content.MapArt, book);
@@ -155,7 +155,7 @@ public class CampaignTests
         var (content, book) = Shared.Value;
         var setup = new NewGameSetup
         {
-            Scenario = content.Catalog.Scenario("S107SC0000"), Race = 0, LordCategory = 1, Difficulty = 1,
+            Scenario = content.Catalog.Scenario("S107SC0000"), RaceId = BaseRaces.Empire, LordCategory = 1, Difficulty = 1,
             Campaign = new CampaignRun("C000CC0002", 0, 7),
         };
         var session = new GameSession(NewGame.Start(Chapter("S107SC0000"), setup, content.Catalog, book, new Random(1)), content.MapArt, book);

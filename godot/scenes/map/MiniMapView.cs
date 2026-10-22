@@ -47,7 +47,7 @@ public partial class MiniMapView : SubViewportContainer
     {
         ArgumentNullException.ThrowIfNull(looks);
         _window = window;
-        _mini = new MiniMap(looks, name => Art(gfx, root, name), hidden);
+        _mini = new MiniMap(looks, name => Art(gfx, root, name), hidden) { RaceCode = id => GameData.Book.LookOf(id).Code };
         Stretch = false;
         Size = window;
         _viewport ??= Create(window);

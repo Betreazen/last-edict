@@ -296,7 +296,7 @@ public partial class DropFramesTests(ITestOutputHelper output)
     {
         var data = ScenarioFile.Read(ScenarioFile.PathOf(ImportedData.PathOf("scenarios"), Scenario));
         var catalog = Content.Value.Catalog;
-        var setup = new NewGameSetup { Scenario = catalog.Scenario(data.Id), Race = Clans, LordCategory = 1, Difficulty = 1 };
+        var setup = new NewGameSetup { Scenario = catalog.Scenario(data.Id), RaceId = BaseRaces.Clans, LordCategory = 1, Difficulty = 1 };
         var session = Session(NewGame.Start(data, setup, catalog, Book.Value, new Random(1)));
         var capital = Capital(session);
         string guest = capital.StackId;

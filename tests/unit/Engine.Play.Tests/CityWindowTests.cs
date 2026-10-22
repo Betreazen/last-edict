@@ -948,7 +948,7 @@ public class CityWindowTests(ITestOutputHelper output)
         var scenario = ScenarioFile.Read(ScenarioFile.PathOf(ImportedData.PathOf("scenarios"), Scenario));
         var setup = new NewGameSetup
         {
-            Scenario = content.Catalog.Scenarios.Single(s => s.Id == Scenario), Race = DwarfRaceType, LordCategory = WarriorLord, Difficulty = 1,
+            Scenario = content.Catalog.Scenarios.Single(s => s.Id == Scenario), RaceId = BaseRaces.Clans, LordCategory = WarriorLord, Difficulty = 1,
         };
         var start = NewGame.Start(scenario, setup, content.Catalog, book, new Random(1));
         return new Setup(content, book, start, UnitFaces.Load(ImportedData.Content), content.Strings("ru"));

@@ -232,7 +232,8 @@ public partial class MapScreen
             "DLG_SAVE_GAME" => _saving = new SaveGameLogic(dir, session.Snapshot, AutoSave.Title(session.State)),
             "DLG_OPTIONS" => OptionsLogic(),   // показ карты: скорости и ходы ИИ (MapScreen.AiTurn.cs)
             LastEdict.Data.Settings.SettingsLogic.Screen => SettingsLogic(),   // окно настроек Last Edict (MapScreen.AiTurn.cs)
-            "DLG_LOAD_GAME" => new LoadGameLogic(dir, path =>
+            // Партии нескольких людей («горячий стул» вырезан, Р33) не загружаются и в игре — до сетевой игры (Э7).
+            "DLG_LOAD_GAME" => new LoadGameLogic(dir, singlePlayer: true, load: path =>
             {
                 if (_leaving) return;
                 _leaving = true;

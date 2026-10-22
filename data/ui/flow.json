@@ -2249,12 +2249,6 @@
         {
           "Element": "BTN_END_TURN",
           "Action": "Open",
-          "Target": "DLG_HOTSEAT_POPUP",
-          "Seen": 7
-        },
-        {
-          "Element": "BTN_END_TURN",
-          "Action": "Open",
           "Target": "DLG_MESSAGE_BOX",
           "Message": "X005TA0000",
           "Seen": 5

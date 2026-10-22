@@ -269,7 +269,7 @@ public partial class UiFlowView : Node
             string id = _nav.Stack[i];
             var view = new UiScreenView
             {
-                Hosted = id, Language = _language, Name = id,
+                Hosted = id, Language = _language, Name = id, Framed = true,
                 Logic = _windows.TryGetValue(i, out var window) ? window : _menu is null ? null : MenuLogic.For(id, _menu),
             };
             if (_windows.ContainsKey(i) && Centered(id) is { } at) view.SlotAt = at;

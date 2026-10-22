@@ -384,7 +384,7 @@ public static class GfxTextures
         {
             Atlas = texture, Region = new Rect2(Vector2.Zero, size), Margin = new Rect2(loaded.At, loaded.Full - size),
         };
-        if (loaded.Scale > 1) atlas.SetMeta(ImageScales.HdMeta, true);
+        if (loaded.Scale > 1) ImageScales.MarkHd(atlas);
         return atlas;
     }
 

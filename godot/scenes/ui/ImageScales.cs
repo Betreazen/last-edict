@@ -82,17 +82,32 @@ public static class ImageScales
     }
 
     /// <summary>Метка HD-текстуры: по ней узел берёт сглаживание с mip-уровнями (<see cref="Filter"/>).</summary>
-    public const string HdMeta = "hd";
+    public static readonly StringName HdMeta = "hd";
+
+    /// <summary>HD-текстуры по обёртке C#: <see cref="Filter"/> зовётся на каждый спрайт карты и боя (тысячи при открытии карты), а
+    /// <c>HasMeta</c> — вызов в движок; на EliteBook он стоил открытию карты +30 мс (Э5). Метка в движке остаётся — для обёртки, которую
+    /// движок отдал заново.</summary>
+    private static readonly ConditionalWeakTable<Texture2D, object> HdTextures = new();
+    private static int _hdMarked;
 
     /// <summary>HD-текстура: логический размер и метка.</summary>
     public static void Mark(ImageTexture texture, Vector2I logical)
     {
         texture.SetSizeOverride(logical);
+        MarkHd(texture);
+    }
+
+    /// <summary>Метка HD (сглаживание с mip-уровнями, <see cref="Filter"/>) — и вырезке HD-текстуры (<see cref="AtlasTexture"/>).</summary>
+    public static void MarkHd(Texture2D texture)
+    {
         texture.SetMeta(HdMeta, true);
+        HdTextures.AddOrUpdate(texture, HdMeta);
+        _hdMarked++;
     }
 
     /// <summary>Фильтр узла текстуры: HD — сглаживание с mip-уровнями (у HD при показе в окне меньше полного размера ближайший рябит),
-    /// иначе — <paramref name="pixel"/> (пиксельная графика — «ближайший»).</summary>
+    /// иначе — <paramref name="pixel"/> (пиксельная графика — «ближайший»). Без HD-текстур за запуск — без вызовов в движок.</summary>
     public static CanvasItem.TextureFilterEnum Filter(Texture2D? texture, CanvasItem.TextureFilterEnum pixel) =>
-        texture is not null && texture.HasMeta(HdMeta) ? CanvasItem.TextureFilterEnum.LinearWithMipmaps : pixel;
+        texture is not null && _hdMarked > 0 && (HdTextures.TryGetValue(texture, out _) || texture.HasMeta(HdMeta))
+            ? CanvasItem.TextureFilterEnum.LinearWithMipmaps : pixel;
 }

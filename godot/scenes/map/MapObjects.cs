@@ -170,7 +170,8 @@ public partial class MapObjects : Node2D
             int frame = (_phases.TryGetValue(channel, out int phase) ? phase + i : i) % frames.Length;
             var sprite = new Sprite2D
             {
-                Texture = frames[frame], Centered = false, Position = new Vector2(s.X, s.Y), TextureFilter = TextureFilterEnum.Nearest,
+                Texture = frames[frame], Centered = false, Position = new Vector2(s.X, s.Y),
+                TextureFilter = ImageScales.Filter(frames[frame], TextureFilterEnum.Nearest),
             };
             GfxBlending.Apply(sprite, GfxBlending.Of(s, entry.Gfx));
             int at = UpperBound(s.Key);
@@ -215,7 +216,7 @@ public partial class MapObjects : Node2D
             var sprite = new Sprite2D
             {
                 Texture = frames[frame], Centered = false, Position = new Vector2(s.X, s.Y),
-                TextureFilter = TextureFilterEnum.Nearest,
+                TextureFilter = ImageScales.Filter(frames[frame], TextureFilterEnum.Nearest),
             };
             GfxBlending.Apply(sprite, GfxBlending.Of(s, gfx));
             Track(sprite, s);
@@ -355,7 +356,7 @@ public partial class MapObjects : Node2D
                 sprite = new Sprite2D
                 {
                     Texture = frames[frame], Centered = false, Position = new Vector2(s.X, s.Y),
-                    TextureFilter = TextureFilterEnum.Nearest,
+                    TextureFilter = ImageScales.Filter(frames[frame], TextureFilterEnum.Nearest),
                 };
                 GfxBlending.Apply(sprite, GfxBlending.Of(s, gfx));
             }

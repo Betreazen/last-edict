@@ -38,6 +38,7 @@
   --filter Category=Snapshot`, посмотреть `git diff tests/snapshots`.
 - `dotnet build godot/LastEdict.Godot.csproj` перед запуском сцен; `py tools/ui-render-check.py -j 16` — экраны без окна, числами, ~1,5 мин
   (нужны импорт и `D2_ASSETS_DIR`; партии середины игры — снимки стенда `tools/CheckSaves`, клетки — `tools/ui_check_maps.py`).
+- HD-графика (Р19): `py tools/hd/hd_layer.py export|import … --compress` — `docs/hd-graphics.md`.
 - Бенч сцен — `py tools/bench/run_all.py <имя>` → `bench/<имя>.json` (время, память); «до/после» — `py tools/bench/ab.py <до> <после>`,
   запись — `docs/perf-log.md`.
 - Всё, что меняет партию, — командой (`docs/game-commands.md`): окна и сцены зовут `Session.Run<T>(команда)`.

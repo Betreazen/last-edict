@@ -159,6 +159,12 @@ public partial class UiScreenView : Node2D
                  $"captions={text.Drawn} missing={List(text.Missing)} unknown={List(text.Unknown)}");
         if (skipped.Count > 0) GD.PrintErr($"нет кадров: {string.Join(", ", skipped)}");
         if (args.Contains("--fit")) GD.Print(FitLine());   // вписывание в окно (UiScreenView.Layout.cs)
+        // Спрайты элементов: кадр, место, нарисованный размер (логический — у HD тот же, Р19) и непрозрачные точки — сверка слоёв.
+        if (args.Contains("--sprites"))
+        {
+            foreach (var key in _sprites.Keys.Order(StringComparer.Ordinal)) GD.Print($"sprite {key} {SpriteLine(key)}");
+            GD.Print($"hd текстур_из_dds={ImageScales.FromDds}");
+        }
 
         if (skipped.Count > 0 || magenta > 0) { GetTree().Quit(1); return; }
         string? input = ArgValue(args, "--input");
@@ -188,6 +194,7 @@ public partial class UiScreenView : Node2D
     private static Image? Layered(Image? under, Image? over)
     {
         if (under is null || over is null) return null;
+        (under, over) = (ImageScales.ToLogical(under), ImageScales.ToLogical(over));   // HD: сложение — в логических точках
         int w = Math.Max(under.GetWidth(), over.GetWidth()), h = Math.Max(under.GetHeight(), over.GetHeight());
         var canvas = Image.CreateEmpty(w, h, false, Image.Format.Rgba8);
         foreach (var layer in (Image[])[under, over])
@@ -241,8 +248,8 @@ public partial class UiScreenView : Node2D
             }
             if (element is { Kind: UiKind.Image })
             {
-                var (dx, dy) = UiImagePlacement.Offset(_state.ImageAlign(id), element.Rect.Width, element.Rect.Height,
-                                                       image.GetWidth(), image.GetHeight());
+                var logical = ImageScales.Logical(image);
+                var (dx, dy) = UiImagePlacement.Offset(_state.ImageAlign(id), element.Rect.Width, element.Rect.Height, logical.X, logical.Y);
                 at += new Vector2I(dx, dy);
             }
             frames.Add(new Frame(id, image, at - origin, frame[0] == UiFrameRef.Add));
@@ -275,11 +282,13 @@ public partial class UiScreenView : Node2D
             var (whole, region) = crop;
             if (FrameImage(whole, out problem) is { } full)
             {
-                image = Image.CreateEmpty(region.Width, region.Height, false, Image.Format.Rgba8);
-                var src = new Rect2I(region.X, region.Y, region.Width, region.Height).Intersection(new Rect2I(Vector2I.Zero, full.GetSize()));
+                int s = ImageScales.Of(full);   // место вырезки — в логических точках, точки файла — в s раз гуще
+                image = ImageScales.With(Image.CreateEmpty(region.Width * s, region.Height * s, false, Image.Format.Rgba8), s);
+                var src = new Rect2I(region.X * s, region.Y * s, region.Width * s, region.Height * s)
+                    .Intersection(new Rect2I(Vector2I.Zero, full.GetSize()));
                 if (src.HasArea())
                     image.BlitRect(full.GetFormat() == Image.Format.Rgba8 ? full : Converted(full), src,
-                                   src.Position - new Vector2I(region.X, region.Y));
+                                   src.Position - (new Vector2I(region.X, region.Y) * s));
             }
             return UiArt.Remember(frame, image, problem);
         }
@@ -288,7 +297,7 @@ public partial class UiScreenView : Node2D
         {
             if (FrameImage(frame[..^1], out problem) is { } plain)
             {
-                image = (Image)plain.Duplicate();
+                image = ImageScales.With((Image)plain.Duplicate(), ImageScales.Of(plain));
                 image.FlipX();
             }
             return UiArt.Remember(frame, image, problem);
@@ -298,7 +307,7 @@ public partial class UiScreenView : Node2D
         {
             if (GameData.Content.Gfx.Image(archive, name) is { } info && LastEdict.Data.Gfx.GfxAssets.PathOf(info, GameData.GfxRoot) is { } world
                 && File.Exists(world))
-                image = GfxTextures.Canvas(world);
+                image = GfxTextures.CanvasHd(world);
             else problem = $" (нет {frame} в описи графики или на диске)";
             return UiArt.Remember(frame, image, problem);
         }
@@ -312,7 +321,7 @@ public partial class UiScreenView : Node2D
         if (assets.TryGetValue(frame, out var asset) || assets.TryGetValue($"{frame}/000", out asset))
         {
             string path = UiAssets.PathOf(asset, GameData.UiAssetsRoot);
-            if (File.Exists(path)) image = Keyed(path);
+            if (File.Exists(path)) image = ImageScales.With(Keyed(path), asset.Factor, path);
             else problem = $" (нет {path}; python tools/ui-assets/build_ui_assets.py)";
         }
         return UiArt.Remember(frame, image, problem);
@@ -328,11 +337,12 @@ public partial class UiScreenView : Node2D
         if (info is null) return (null, null);
         string path = LastEdict.Data.Gfx.GfxAssets.PathOf(info, GameData.GfxRoot);
         if (!File.Exists(path)) return (null, $" (нет {path}; python tools/gfx-assets)");
-        var image = GfxTextures.Canvas(path);
+        var image = GfxTextures.CanvasHd(path);
+        if (reference.Tint is not null || reference.Mask is not null) ImageScales.Detach(image);   // точки меняются — не из DDS файла
         if (reference.Tint is { } tint) Tint(image, tint, reference.FromPercent);
         if (reference.Mask is { } mask && GameData.Content.Gfx.Image(reference.Archive, mask) is { } maskInfo
             && LastEdict.Data.Gfx.GfxAssets.PathOf(maskInfo, GameData.GfxRoot) is var maskPath && File.Exists(maskPath))
-            Blend(image, GfxTextures.Canvas(maskPath));
+            Blend(image, GfxTextures.CanvasHd(maskPath));
         return (image, null);
     }
 
@@ -356,6 +366,12 @@ public partial class UiScreenView : Node2D
     {
         image.Convert(Image.Format.Rgba8);
         mask.Convert(Image.Format.Rgba8);
+        if (ImageScales.Of(mask) != ImageScales.Of(image))   // HD: маска — в точках кадра
+        {
+            var logical = ImageScales.Logical(mask);
+            int scale = ImageScales.Of(image);
+            mask.Resize(logical.X * scale, logical.Y * scale, Image.Interpolation.Nearest);
+        }
         int w = Math.Min(image.GetWidth(), mask.GetWidth()), h = Math.Min(image.GetHeight(), mask.GetHeight());
         byte[] data = image.GetData(), over = mask.GetData();
         int iw = image.GetWidth(), mw = mask.GetWidth();
@@ -569,8 +585,11 @@ public partial class UiScreenView : Node2D
     {
         Image canvas = Image.CreateEmpty(screen.Design.Width, screen.Design.Height, false, Image.Format.Rgba8);
         foreach (var item in frames)
-            if (item.Additive) AddRect(canvas, item.Image, item.At);
-            else canvas.BlendRect(item.Image, new Rect2I(Vector2I.Zero, item.Image.GetSize()), item.At);
+        {
+            var image = ImageScales.ToLogical(item.Image);
+            if (item.Additive) AddRect(canvas, image, item.At);
+            else canvas.BlendRect(image, new Rect2I(Vector2I.Zero, image.GetSize()), item.At);
+        }
         return canvas;
     }
 

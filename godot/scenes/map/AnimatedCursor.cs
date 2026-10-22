@@ -164,7 +164,8 @@ public partial class AnimatedCursor : Node
         if (GameData.Content.AssetsByName.TryGetValue(cursor.Frame, out var asset)
             && UiAssets.PathOf(asset, GameData.UiAssetsRoot) is var path && File.Exists(path))
         {
-            var full = Image.LoadFromFile(path);
+            // HD-кадр — в логических точках: курсор и горячая точка в размере кадра (крупнее — UiScale).
+            var full = ImageScales.ToLogical(ImageScales.With(Image.LoadFromFile(path), asset.Factor));
             full.Convert(Image.Format.Rgba8);
             var used = full.GetUsedRect();
             var cropped = used.Size == Vector2I.Zero ? full : full.GetRegion(used);

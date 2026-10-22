@@ -22,16 +22,30 @@ namespace LastEdict.Godot;
 /// в холсте — в описи (<see cref="GfxAssets.PlaceOf"/>), и здесь не разбирается весь холст и не ищется занятая часть. Кто смотрит точки
 /// файла в координатах холста, берёт <see cref="Canvas"/>.</para>
 ///
+/// <para>HD (Р19, <c>scale</c> в описи, <see cref="GfxAssets.ScaleOf"/>): файл крупнее холста в <c>scale</c> раз, холст и угол в описи —
+/// логические. Текстура получает логический размер (<c>SetSizeOverride</c>), поля обрезки — в логических точках: спрайты карты и боя
+/// стоят там же, что и без HD, а точки берутся из полной картинки. Кто смотрит точки картинки (маски, попадания, мини-карта, курсоры),
+/// получает холст логического размера (<see cref="Canvas"/>); HD-холст для окон — <see cref="CanvasHd"/>.</para>
+///
 /// <para>Освобождение: <see cref="Release"/> при выходе из партии в меню (текстуры отпускаются сразу, а не сборкой мусора); сверх
-/// <see cref="LimitBytes"/> кэш забывается без <c>Dispose</c> — кто ещё держит текстуру (кадры живого спрайта), держит её дальше.
-/// Все вызовы — из главного потока.</para></summary>
+/// <see cref="LimitBytes"/> кэш забывает давно не нужные текстуры (LRU, Э5 — для HD: прежде он сбрасывался целиком, и следующий кадр
+/// боя разбирал заново всё) без <c>Dispose</c> — кто ещё держит текстуру (кадры живого спрайта), держит её дальше. Все вызовы — из
+/// главного потока.</para></summary>
 public static class GfxTextures
 {
     /// <summary>Предел кэша по байтам разобранных картинок; дальше кэш начинается заново.</summary>
     public const long LimitBytes = 1L << 30;
 
-    private static readonly Dictionary<string, Texture2D> _cache = new(StringComparer.Ordinal);
+    private static readonly Dictionary<string, LinkedListNode<Cached>> _cache = new(StringComparer.Ordinal);
+
+    /// <summary>Порядок давности: в начале — последняя нужная текстура, с конца забываются.</summary>
+    private static readonly LinkedList<Cached> _order = new();
     private static long _bytes;
+
+    private sealed record Cached(string Path, Texture2D Texture, long Bytes);
+
+    /// <summary>Текстур, забытых по давности (LRU) с начала партии, — для проверок и замеров.</summary>
+    public static int Evicted { get; private set; }
 
     /// <summary>Текстур в кэше — для проверок и замеров.</summary>
     public static int Count => _cache.Count;
@@ -53,7 +67,12 @@ public static class GfxTextures
     /// файла нет — null.</summary>
     public static Texture2D? Of(string path)
     {
-        if (_cache.TryGetValue(path, out var cached)) return cached;
+        if (_cache.TryGetValue(path, out var cached))
+        {
+            _order.Remove(cached);
+            _order.AddFirst(cached);
+            return cached.Value.Texture;
+        }
         if (Warmed(path) is { } image) return Add(path, image);
         return File.Exists(path) ? Add(path, Load(path)) : null;
     }
@@ -237,20 +256,42 @@ public static class GfxTextures
         Interlocked.Increment(ref _generation);   // очереди Warm(…, threads) дальше не разбирают
         _queued.Clear();
         _pending.Clear();   // начатые разборы доделает пул потоков, картинки заберёт сборщик мусора
-        foreach (var texture in _cache.Values) texture.Dispose();
+        foreach (var cached in _order) cached.Texture.Dispose();
         _cache.Clear();
+        _order.Clear();
         _bytes = 0;
+        Evicted = 0;
     }
 
-    /// <summary>Разобранная картинка, обрезанная по непрозрачным точкам: сама обрезка, полный размер файла и угол обрезки в нём.</summary>
-    private sealed record Loaded(Image Image, Vector2I Full, Vector2I At);
+    /// <summary>Разобранная картинка, обрезанная по непрозрачным точкам: сама обрезка, полный размер холста и угол обрезки в нём — в
+    /// логических точках; <see cref="Scale"/> — множитель файла (HD).</summary>
+    private sealed record Loaded(Image Image, Vector2I Full, Vector2I At, int Scale = 1)
+    {
+        /// <summary>Логический размер обрезки.</summary>
+        public Vector2I Part => Scale <= 1 ? Image.GetSize() : Image.GetSize() / Scale;
+    }
 
     /// <summary>Разобрать файл и разложить по холсту: сборка уже записала только занятую часть и угол её в холсте (<see cref="GfxAssets.PlaceOf"/>,
     /// Г19) — без поиска занятой части (<see cref="Placed"/>); угла нет (мод, прежняя сборка) — обрезка здесь (<see cref="Trim"/>).</summary>
     private static Loaded? Load(string path)
     {
+        int scale = GfxAssets.ScaleOf(path);
+        // HD: сжатая копия (DDS BC7 с mip-уровнями рядом, godot/bench/hd_compress.gd) — в текстуру прямо, без разбора PNG.
+        if (scale > 1)
+            return Scaled((ImageScales.Dds(path) is { } dds ? ImageScales.LoadDds(dds) : null) ?? Image.LoadFromFile(path), GfxAssets.PlaceOf(path), scale);
         var image = Image.LoadFromFile(path);
         return GfxAssets.PlaceOf(path) is { } place ? Placed(image, place) : Trim(image);
+    }
+
+    /// <summary>HD-файл (<c>scale</c> &gt; 1): с углом в описи — обрезка в логическом месте холста, без угла — весь холст (занятую часть у
+    /// HD не ищем: угол в точках файла не делится на множитель).</summary>
+    private static Loaded? Scaled(Image? image, GfxPlace? place, int scale)
+    {
+        if (image is null) return null;
+        if (!image.IsCompressed() && image.GetFormat() != Image.Format.Rgba8) image.Convert(Image.Format.Rgba8);
+        var part = image.GetSize() / scale;
+        if (place is { } p && Fits(part, p)) return new Loaded(image, new Vector2I(p.W, p.H), new Vector2I(p.X, p.Y), scale);
+        return new Loaded(image, part, Vector2I.Zero, scale);
     }
 
     /// <summary>Файл сборки с углом в холсте из описи (<see cref="GfxPlace"/>): размером с холст — кадр как есть (занята больше половины —
@@ -278,6 +319,13 @@ public static class GfxTextures
     /// (<see cref="GfxAssets.PlaceOf"/>, Г19) кладётся в угол прозрачного холста RGBA8; без угла или размером с холст — файл как есть.</summary>
     public static Image Canvas(string path)
     {
+        if (GfxAssets.ScaleOf(path) > 1)   // HD — холст в логических точках; полный отпускается сразу (сотни МБ разом)
+        {
+            var hd = CanvasHd(path);
+            var logical = ImageScales.ToLogical(hd);
+            if (logical != hd) hd.Dispose();
+            return logical;
+        }
         var image = Image.LoadFromFile(path);
         if (image is null || GfxAssets.PlaceOf(path) is not { } place) return image!;
         var size = image.GetSize();
@@ -287,6 +335,24 @@ public static class GfxTextures
         canvas.BlitRect(image, new Rect2I(Vector2I.Zero, size), new Vector2I(place.X, place.Y));
         image.Dispose();
         return canvas;
+    }
+
+    /// <summary>Холст файла графики в точках файла: у HD (<c>scale</c> &gt; 1) — крупнее логического, множитель записан за картинкой
+    /// (<see cref="ImageScales"/>): окна рисуют портреты и картины в полной точности. Без множителя — как <see cref="Canvas"/>.</summary>
+    public static Image CanvasHd(string path)
+    {
+        int scale = GfxAssets.ScaleOf(path);
+        if (scale <= 1) return Canvas(path);
+        var image = Image.LoadFromFile(path);
+        if (image is null) return image!;
+        if (image.GetFormat() != Image.Format.Rgba8) image.Convert(Image.Format.Rgba8);
+        if (GfxAssets.PlaceOf(path) is not { } place || !Fits(image.GetSize() / scale, place)
+            || (image.GetSize() == new Vector2I(place.W, place.H) * scale && place.X == 0 && place.Y == 0))
+            return ImageScales.With(image, scale, path);   // файл как есть — его сжатая копия годится текстуре
+        var canvas = Image.CreateEmpty(place.W * scale, place.H * scale, false, Image.Format.Rgba8);
+        canvas.BlitRect(image, new Rect2I(Vector2I.Zero, image.GetSize()), new Vector2I(place.X, place.Y) * scale);
+        image.Dispose();
+        return ImageScales.With(canvas, scale);
     }
 
     /// <summary>Обрезать картинку по занятому прямоугольнику (<see cref="Image.GetUsedRect"/>), если он не больше половины площади: кадры
@@ -311,26 +377,37 @@ public static class GfxTextures
     {
         var texture = ImageTexture.CreateFromImage(loaded?.Image!);   // null (битый файл) — тот же вызов, что и прежде
         if (loaded is null) return texture;
-        var size = loaded.Image.GetSize();
+        var size = loaded.Part;
+        if (loaded.Scale > 1) ImageScales.Mark(texture, size);   // HD: текстура логического размера, точки — полные
         if (size == loaded.Full) return texture;
-        return new AtlasTexture
+        var atlas = new AtlasTexture
         {
             Atlas = texture, Region = new Rect2(Vector2.Zero, size), Margin = new Rect2(loaded.At, loaded.Full - size),
         };
+        if (loaded.Scale > 1) atlas.SetMeta(ImageScales.HdMeta, true);
+        return atlas;
     }
 
     private static Texture2D Add(string path, Loaded? loaded)
     {
         var image = loaded?.Image;
         long size = image?.GetDataSize() ?? 0;
-        if (_bytes + size > LimitBytes)
+        // Сверх предела — забыть самые давние (без Dispose: текстуры у живых спрайтов остаются, остальные заберёт сборщик мусора).
+        while (_bytes + size > LimitBytes && _order.Last is { } oldest)
         {
-            _cache.Clear();   // без Dispose: текстуры у живых спрайтов остаются, остальные заберёт сборщик мусора
-            _bytes = 0;
+            _order.RemoveLast();
+            _cache.Remove(oldest.Value.Path);
+            _bytes -= oldest.Value.Bytes;
+            Evicted++;
         }
         var texture = Texture(loaded);
         image?.Dispose();   // данные уже в текстуре; разобранная картинка не ждёт сборщика мусора (их тут сотни мегабайт разом)
-        _cache[path] = texture;
+        if (_cache.Remove(path, out var stale))
+        {
+            _order.Remove(stale);
+            _bytes -= stale.Value.Bytes;
+        }
+        _cache[path] = _order.AddFirst(new Cached(path, texture, size));
         _bytes += size;
         return texture;
     }

@@ -102,6 +102,7 @@ public partial class UiScreenView
             Centered = false,
             Visible = frame is not null,
         };
+        sprite.TextureFilter = ImageScales.Filter(sprite.Texture, TextureFilterEnum.ParentNode);   // HD — сглаживание с mip-уровнями
         root.AddChild(sprite);
         return sprite;
     }
@@ -181,7 +182,8 @@ public partial class UiScreenView
     {
         if (!_sprites.TryGetValue(id, out var sprite) || !sprite.Visible || !sprite.HasMeta(FrameMeta)) return "-";
         string frame = (string)sprite.GetMeta(FrameMeta);
-        if (frame.Length == 0 || FrameImage(frame, out _) is not { } image) return "-";
+        if (frame.Length == 0 || FrameImage(frame, out _) is not { } hd) return "-";
+        var image = ImageScales.ToLogical(hd);   // точки — в логических местах (HD — уменьшенная копия)
         var part = sprite.RegionEnabled ? new Rect2I((Vector2I)sprite.RegionRect.Position, (Vector2I)sprite.RegionRect.Size)
                                         : new Rect2I(Vector2I.Zero, image.GetSize());
         int opaque = 0;
@@ -344,14 +346,14 @@ public partial class UiScreenView
             _underlayFrame = _state.Underlay;
             Image? under = _underlayFrame is null ? null : FrameImage(_underlayFrame, out _);
             if (_underlayFrame is not null && under is null) GD.PrintErr($"{_state.Screen.Id}: нет кадра подложки {_underlayFrame}");
-            _underlaySprite.Texture = under is null ? null : Texture(under);
+            Show(_underlaySprite, under);
             _underlaySprite.Visible = under is not null;
         }
         if (_backgroundSprite is null || _state.Background == _backgroundFrame) return;
         _backgroundFrame = _state.Background;
         Image? image = _backgroundFrame.Length == 0 ? null : FrameImage(_backgroundFrame, out _);
         if (image is null && _backgroundFrame.Length > 0) GD.PrintErr($"{_state.Screen.Id}: нет кадра фона {_backgroundFrame}");
-        _backgroundSprite.Texture = image is null ? null : Texture(image);
+        Show(_backgroundSprite, image);
         _backgroundSprite.Visible = image is not null;
     }
 

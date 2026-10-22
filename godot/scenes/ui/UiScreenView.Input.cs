@@ -116,7 +116,7 @@ public partial class UiScreenView
         if (cursor == DragCursor && key == DragImageKey) return;
         DragCursor = cursor;
         DragImageKey = key;
-        DragImage = key.Length > 0 ? FrameImage(key, out _) : null;
+        DragImage = key.Length > 0 && FrameImage(key, out _) is { } drag ? ImageScales.ToLogical(drag) : null;   // HD — логический значок
         DragCursorChanged?.Invoke(cursor);
     }
 
@@ -172,7 +172,8 @@ public partial class UiScreenView
     private readonly Dictionary<string, string> _missing = [];
 
     /// <summary>Размер собранной картинки кадра «ШxВ» (для строки проверки окна); кадра нет — «-».</summary>
-    public string FrameSize(string frame) => FrameImage(frame, out _) is { } image ? $"{image.GetWidth()}x{image.GetHeight()}" : "-";
+    public string FrameSize(string frame) =>
+        FrameImage(frame, out _) is { } image ? $"{ImageScales.Logical(image).X}x{ImageScales.Logical(image).Y}" : "-";
 
     /// <summary>Видимые рамки допустимости перетаскивания (кадры <c>DRAGDROP_*</c>) для строки проверки: «элемент:кадр@x,y:ШxВ» — место
     /// спрайта в координатах разметки и размер его картинки, по узлам, а не по состоянию.</summary>
@@ -223,7 +224,7 @@ public partial class UiScreenView
                 _missing[id] = frame;
                 continue;
             }
-            sprite.Texture = Texture(image);
+            Show(sprite, image);
             Blend(sprite, frame);
             Fit(sprite, id, image);
             sprite.Visible = true;
@@ -243,30 +244,40 @@ public partial class UiScreenView
         var element = _state.Screen.Elements.First(e => e.Id == id);
         var rect = element.Rect;
         var align = element.Kind == UiKind.Image ? _state.ImageAlign(id) : UiImageAlign.Fit;
-        var (dx, dy) = UiImagePlacement.Offset(align, rect.Width, rect.Height, image.GetWidth(), image.GetHeight());
+        // Размеры — логические (HD: текстура того же логического размера, ImageScales), места и области — в точках разметки.
+        var size = ImageScales.Logical(image);
+        var (iw, ih) = (size.X, size.Y);
+        var (dx, dy) = UiImagePlacement.Offset(align, rect.Width, rect.Height, iw, ih);
         sprite.Position = new Vector2(rect.X + dx, rect.Y + dy) - (Vector2)Origin(_state.Screen);
         if (align == UiImageAlign.Clip && rect.Width > 0 && rect.Height > 0)
         {
             sprite.Scale = Vector2.One;
-            sprite.RegionEnabled = image.GetWidth() > rect.Width || image.GetHeight() > rect.Height;
-            sprite.RegionRect = new Rect2(0, 0, Math.Min(image.GetWidth(), rect.Width), Math.Min(image.GetHeight(), rect.Height));
+            sprite.RegionEnabled = iw > rect.Width || ih > rect.Height;
+            sprite.RegionRect = new Rect2(0, 0, Math.Min(iw, rect.Width), Math.Min(ih, rect.Height));
             return;
         }
-        if (align != UiImageAlign.Fit || rect.Width <= 0 || image.GetWidth() <= rect.Width)
+        if (align != UiImageAlign.Fit || rect.Width <= 0 || iw <= rect.Width)
         {
             sprite.Scale = Vector2.One;
             sprite.RegionEnabled = false;
             return;
         }
-        float k = rect.Width / (float)image.GetWidth();
+        float k = rect.Width / (float)iw;
         sprite.Scale = new Vector2(k, k);
-        float visible = Math.Min(image.GetHeight(), rect.Height / k);
+        float visible = Math.Min(ih, rect.Height / k);
         sprite.RegionEnabled = true;
-        sprite.RegionRect = new Rect2(0, 0, image.GetWidth(), visible);
+        sprite.RegionRect = new Rect2(0, 0, iw, visible);
     }
 
     /// <summary>Текстура кадра — общая на запуск (<see cref="UiArt.Texture"/>).</summary>
     private static ImageTexture Texture(Image image) => UiArt.Texture(image);
+
+    /// <summary>Текстура кадра на спрайт и фильтр по ней: HD — сглаживание с mip-уровнями, пиксельная — от родителя («ближайший»).</summary>
+    private static void Show(Sprite2D sprite, Image? image)
+    {
+        sprite.Texture = image is null ? null : Texture(image);
+        sprite.TextureFilter = ImageScales.Filter(sprite.Texture, CanvasItem.TextureFilterEnum.ParentNode);
+    }
 
     /// <summary>Начальное устройство элементов: высота строки текстовых списков — шаг строки их шрифта (в разметке её
     /// нет), число пунктов — из <c>--items СПИСОК=12,СЧЁТЧИК=5</c> (пока пункты не даёт логика экрана, иначе

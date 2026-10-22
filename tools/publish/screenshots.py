@@ -66,6 +66,7 @@ class Shot:
     clicks: str = ""
     at: str | None = None     # клетка в центре вида
     hold_ms: int = 800
+    extra: tuple[str, ...] = ()   # свои ключи сцены (--queue-strip — полоса очереди Last Edict, под --check она выключена)
 
 
 SHOTS = (
@@ -73,6 +74,8 @@ SHOTS = (
     Shot("world-map", SAVE_LATE, "ground_ready=True", at="60,55", hold_ms=1500),
     # Бой героя с охраной города (10 юнитов), автобой; выдержка — середина взрыва удара по площади (виден с 13,7 до 14,3 с).
     Shot("battle", SAVE_MID, "fight 70,44 55,50 бой=1", clicks="fight 70,44 55,50;battle ui click TOG_AUTOBATTLE", hold_ms=14000),
+    # Тот же бой, ход человека: полоса очереди ходов над полем (своя функция Last Edict, docs/own-version-roadmap.md §3.3).
+    Shot("battle-queue", SAVE_MID, "fight 70,44 55,50 бой=1", clicks="fight 70,44 55,50", hold_ms=4000, extra=("--queue-strip",)),
     Shot("city", SAVE_LATE, "панель=DLG_CAPITAL", clicks="panel click BTN_CAPITAL"),
     Shot("spellbook", SAVE_LATE, "окна=DLG_CAST_SPELL", clicks="panel click BTN_CAST_SPELL"),
     Shot("hero", SAVE_LATE, "окна=DLG_MANAGE_STACK", clicks="select S073KC0001;panel release IMG_LEADER"),
@@ -116,7 +119,7 @@ def godot_args(shot: Shot, raw: Path, menu_dirs: Path, corpus: Path) -> list[str
         args += ["--at", shot.at]
     if shot.clicks:
         args += ["--clicks", shot.clicks]
-    return args
+    return [*args, *shot.extra]
 
 
 def kill_tree(proc: subprocess.Popen) -> None:
@@ -199,6 +202,7 @@ def parse_holds(items: list[str]) -> dict[str, int]:
 
 
 def main(argv: list[str]) -> int:
+    sys.stdout.reconfigure(encoding="utf-8")
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0], formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--only", action="append", default=[], help="только этот снимок (ключ повторяется)")
     parser.add_argument("--hold-ms", action="append", default=[], help="выдержка снимка: ИМЯ=МС")

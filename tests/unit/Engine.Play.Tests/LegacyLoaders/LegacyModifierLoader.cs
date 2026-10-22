@@ -1,9 +1,9 @@
 // Загрузчики правил ДО схемы содержимого (main 639961ee): правила читались прямо из строк таблиц оригинала. Эталон сверки
 // «старая модель = новая» (ContentRulesParityTests) — не править; удаляется вместе с ней, когда таблицы уйдут из проверок.
-using D2.Data.Dbf;
-using D2.Rules.Units;
+using LastEdict.Data.Dbf;
+using LastEdict.Rules.Units;
 
-namespace D2.Data.Tests.LegacyLoaders;
+namespace LastEdict.Data.Tests.LegacyLoaders;
 
 /// <summary>Строка <c>GmodifL.dbf</c>, чей <c>BELONGS_TO</c> не находится в <c>Gmodif.dbf</c>:
 /// хозяин удалён (запись <c>0x2A</c>), а строка эффекта осталась. Не выбрасывается молча — таких
@@ -26,8 +26,8 @@ public sealed record ModifierTables(IReadOnlyDictionary<string, Modifier> Modifi
 /// Удалённые записи <c>.dbf</c> пропускает сам <see cref="DbfTable"/> (семантика
 /// <c>tools/dbf_dump.py:16</c>). Ключи регистронезависимы: в <c>.dbf</c> нижний регистр,
 /// в корпусе и <c>.sg</c> — верхний.
-/// <para>Записи <see cref="Modifier"/> и <see cref="ModifierElement"/> живут в <c>D2.Rules.Units</c>
-/// и строятся прямо здесь. Копия с <c>Type</c> числом, заведённая задачей 1 в <c>D2.Data.Battle</c>,
+/// <para>Записи <see cref="Modifier"/> и <see cref="ModifierElement"/> живут в <c>LastEdict.Rules.Units</c>
+/// и строятся прямо здесь. Копия с <c>Type</c> числом, заведённая задачей 1 в <c>LastEdict.Data.Battle</c>,
 /// снята задачей 3 — пока копий было две, а не четыре. Вместе с ней сняты <c>Gmodif.SOURCE</c> и
 /// <c>COMMENTS</c>: <c>SOURCE</c> дублирует то, что задаёт сам <see cref="ModifierElementType"/>,
 /// а <c>COMMENTS</c> прямо врут (<c>g000um2503</c> подписан «+25% Move» при <c>PERCENT</c> 20 —

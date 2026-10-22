@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using D2.Data.Gfx;
+using LastEdict.Data.Gfx;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>
 /// Сверка карты со снимком игры (<c>docs/ai-screen.md</c> §14): кадр вида карты собирается без окна (<see cref="MapComposite"/>) —
@@ -27,7 +27,7 @@ public partial class ShotCompare : Node
 
     /// <summary>Интерфейс поверх карты — не считается (ранг 2 по снимкам 27.09): полоса ресурсов вверху справа (<c>DLG_ISO_RESPOPUP</c>,
     /// строки 0–24, с x 320) и строка сообщений внизу («Игра записана…», строки 565–589). Рамку края поля <c>ISO_OUTLINE</c> порт рисует
-    /// сам (<see cref="D2.Data.Map.IsoViewLogic"/>) — она сравнивается со снимком; при поиске сдвига её полоса не считается.</summary>
+    /// сам (<see cref="LastEdict.Data.Map.IsoViewLogic"/>) — она сравнивается со снимком; при поиске сдвига её полоса не считается.</summary>
     private static readonly (int X, int Y, int Width, int Height)[] Interface = [(320, 0, 320, 25), (0, 565, 640, 25)];
 
     /// <summary>Полоса рамки <c>ISO_OUTLINE</c> в области вида (непрозрачные точки — x 594…639) — мимо поиска сдвига.</summary>
@@ -150,17 +150,17 @@ public partial class ShotCompare : Node
         return _images[(s.Archive, s.Name)] = result;
     }
 
-    /// <summary>Круги целей сценария глазами зрителя: события — из сохранения (<see cref="D2.Data.Map.EventLoader"/>), набор —
-    /// <see cref="D2.Data.Play.GameSession.Objectives"/>. Не сохранение или нет зрителя — без кругов.</summary>
-    private static MapObjectives? Objectives(D2.Data.Map.MapLooks looks, string path, string? viewer)
+    /// <summary>Круги целей сценария глазами зрителя: события — из сохранения (<see cref="LastEdict.Data.Map.EventLoader"/>), набор —
+    /// <see cref="LastEdict.Data.Play.GameSession.Objectives"/>. Не сохранение или нет зрителя — без кругов.</summary>
+    private static MapObjectives? Objectives(LastEdict.Data.Map.MapLooks looks, string path, string? viewer)
     {
         if (viewer is null || !path.EndsWith(".sg", StringComparison.OrdinalIgnoreCase)) return null;
-        var events = D2.Data.Map.EventLoader.Load(path);
-        var state = new D2.Data.Play.GameState(D2.Data.Play.GameInfo.FromMap(Path.GetFileNameWithoutExtension(path), looks), looks)
+        var events = LastEdict.Data.Map.EventLoader.Load(path);
+        var state = new LastEdict.Data.Play.GameState(LastEdict.Data.Play.GameInfo.FromMap(Path.GetFileNameWithoutExtension(path), looks), looks)
         {
-            Events = events, EventProgress = D2.Rules.Map.EventProgress.From(events),
+            Events = events, EventProgress = LastEdict.Rules.Map.EventProgress.From(events),
         };
-        var session = new D2.Data.Play.GameSession(state, GameData.Content.MapArt, GameData.Book);
+        var session = new LastEdict.Data.Play.GameSession(state, GameData.Content.MapArt, GameData.Book);
         var ids = session.Objectives(viewer);
         GD.Print($"objectives {viewer} {string.Join(",", ids)}");
         return new MapObjectives(ids, events.Zones);
@@ -169,8 +169,8 @@ public partial class ShotCompare : Node
     /// <summary>Рамка края поля <c>ISO_OUTLINE</c> из графики интерфейса (в 565, если кадр в 565); нет в описи или на диске — null.</summary>
     private static RgbaImage? Outline(bool rgb565)
     {
-        var asset = GameData.Content.Assets.FirstOrDefault(a => a.Name == D2.Data.Map.IsoViewLogic.Outline);
-        string? file = asset is null ? null : D2.Data.Ui.UiAssets.PathOf(asset, GameData.UiAssetsRoot);
+        var asset = GameData.Content.Assets.FirstOrDefault(a => a.Name == LastEdict.Data.Map.IsoViewLogic.Outline);
+        string? file = asset is null ? null : LastEdict.Data.Ui.UiAssets.PathOf(asset, GameData.UiAssetsRoot);
         if (file is null || !File.Exists(file)) return null;
         var loaded = Image.LoadFromFile(file);
         loaded.Convert(Image.Format.Rgba8);

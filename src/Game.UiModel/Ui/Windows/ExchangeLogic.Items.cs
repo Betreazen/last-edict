@@ -1,8 +1,8 @@
-using D2.Rules.Magic;
-using D2.Rules.Map;
-using D2.Data.Play.Commands;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Map;
+using LastEdict.Data.Play.Commands;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>Окно обмена: сумки и куклы обеих сторон (<see cref="ExchangeLogic"/>).</summary>
 public sealed partial class ExchangeLogic

@@ -1,4 +1,4 @@
-namespace D2.Data.Map;
+namespace LastEdict.Data.Map;
 
 /// <summary>
 /// Группа часов анимации — две скорости общего аниматора движка (<c>CTwoSpeedAnimator</c>, <c>MidAnim2System.cpp</c>): медленная — кадр раз в

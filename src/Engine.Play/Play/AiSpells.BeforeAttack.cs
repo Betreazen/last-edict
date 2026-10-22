@@ -1,10 +1,10 @@
-using D2.Rules.Battle;
-using D2.Rules.Magic;
-using D2.Rules.Map;
-using D2.Rules.Rng;
-using D2.Rules.Units;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Rng;
+using LastEdict.Rules.Units;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>Заклинание ИИ перед атакой — выбор <c>0x472142</c> (<c>docs/ai-spells.md</c> §5).</summary>
 public static partial class AiSpells

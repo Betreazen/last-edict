@@ -1,4 +1,4 @@
-﻿namespace D2.Rules.Map;
+﻿namespace LastEdict.Rules.Map;
 
 /// <summary>Тип стратегического списка ИИ (<c>vft[1]</c> оценки и действия, поле <c>type</c> событий
 /// <c>ai_budget</c>/<c>ai_strategic_step</c>). Ранг 1: <c>docs/synthetic-maps/analysis/O-re65-strategic.md</c>.</summary>

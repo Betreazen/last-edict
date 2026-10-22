@@ -1,8 +1,8 @@
-using D2.Rules.Battle;
-using D2.Rules.Map;
-using D2.Rules.Units;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Units;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>Действия в укреплении — общие для окна города человека и экономики ИИ (<c>docs/ai-turn-plan.md</c> срез 3):
 /// постройка в столице, найм в гарнизон, рост деревни, лечение и воскрешение. Проверки — правила движка
@@ -151,7 +151,7 @@ public sealed partial class GameSession
         plan[(fort.X, fort.Y)] = [.. plan.GetValueOrDefault((fort.X, fort.Y)) ?? [], stackId];
         var players = map.Players.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase);
         players[player.Id] = player with { Bank = Treasury.Pay(player.Bank, cost) };
-        var look = new D2.Data.Map.StackLook(stackId, fort.X, fort.Y, player.Id, fort.Subrace, type.Id.ToUpperInvariant(),
+        var look = new LastEdict.Data.Map.StackLook(stackId, fort.X, fort.Y, player.Id, fort.Subrace, type.Id.ToUpperInvariant(),
                                              LeaderAlive: true, AnyAlive: true, Facing: 4, Inside: fort.Id, Invisible: false, LeaderName: name);
         State = State with
         {
@@ -170,9 +170,9 @@ public sealed partial class GameSession
     /// <c>CVisitorCreateStackInside</c> <c>0x60e7fe</c>, apply <c>0x60e8da</c>), призыв (<c>CVisitorCreateStack</c> <c>0x60ceaf</c>) и отряд пустой
     /// столицы (<see cref="NewGame"/>). Прежде порт ставил всех в клетку 2 — по сохранениям, где ИИ успевал расставить отряд.
     /// </summary>
-    internal static int[] LeaderSlots(D2.Rules.Battle.UnitType type, D2.Rules.Battle.GameRules rules)
+    internal static int[] LeaderSlots(LastEdict.Rules.Battle.UnitType type, LastEdict.Rules.Battle.GameRules rules)
     {
-        bool front = !type.SizeSmall || rules.Attacks.TryGetValue(type.AttackId, out var attack) && attack.Reach == D2.Rules.Battle.AttackReach.Adjacent;
+        bool front = !type.SizeSmall || rules.Attacks.TryGetValue(type.AttackId, out var attack) && attack.Reach == LastEdict.Rules.Battle.AttackReach.Adjacent;
         int[] slots = Formation.EmptySlots();
         slots[front ? 2 : 3] = 0;
         if (!type.SizeSmall) slots[3] = 0;

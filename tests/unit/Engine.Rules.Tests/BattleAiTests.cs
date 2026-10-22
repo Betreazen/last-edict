@@ -1,6 +1,6 @@
-using D2.Rules.Battle;
-using D2.Rules.Rng;
-using D2.Rules.Units;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Rng;
+using LastEdict.Rules.Units;
 
 /// <summary>Политика ИИ в бою (<c>aiChooseBattleAction</c> <c>0x5ce2b9</c>) — случаи из разбора
 /// docs/synthetic-maps/analysis/G-ai-battle.md §2 и §5B. Модель на Python, по которой сверялся

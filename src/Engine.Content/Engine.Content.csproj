@@ -15,7 +15,7 @@
 
   <ItemGroup>
     <!-- id содержимого по смыслу для сущностей оригинала (tools/content_ids.py). -->
-    <EmbeddedResource Include="Legacy\legacy-ids.json" LogicalName="D2.Data.Content.Legacy.legacy-ids.json" />
+    <EmbeddedResource Include="Legacy\legacy-ids.json" LogicalName="LastEdict.Data.Content.Legacy.legacy-ids.json" />
   </ItemGroup>
 
   <ItemGroup>

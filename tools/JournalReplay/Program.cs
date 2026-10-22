@@ -1,6 +1,6 @@
-using D2.Data.Content;
-using D2.Data.Play;
-using D2.Data.Play.Commands;
+using LastEdict.Data.Content;
+using LastEdict.Data.Play;
+using LastEdict.Data.Play.Commands;
 
 // Повтор журнала команд партии (docs/game-commands.md §3): сохранение начала и журнал (их пишет сцена карты с D2_COMMAND_JOURNAL) → та же
 // партия заново, хеш состояния после каждой команды сверяется с записанным. Баг-репорт игрока — эти два файла.

@@ -1,7 +1,7 @@
-using D2.Data;
-using D2.Data.Battle;
-using D2.Rules.Battle;
-using D2.Rules.Rng;
+using LastEdict.Data;
+using LastEdict.Data.Battle;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Rng;
 using Xunit.Abstractions;
 
 /// <summary>

@@ -1,6 +1,6 @@
-using D2.Data.Map;
+using LastEdict.Data.Map;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Часы анимаций карты (<see cref="AnimClock"/>, <c>CTwoSpeedAnimator</c>) и отрезок движка (<see cref="PixelLine"/>, <c>0x51f452</c>).</summary>
 public class AnimClockTests

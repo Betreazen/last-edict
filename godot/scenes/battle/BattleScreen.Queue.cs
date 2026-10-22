@@ -1,19 +1,19 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using D2.Data.Battle;
-using D2.Data.Gfx;
-using D2.Rules.Battle;
+using LastEdict.Data.Battle;
+using LastEdict.Data.Gfx;
+using LastEdict.Rules.Battle;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Полоса очереди ходов (<see cref="BattleQueueStrip"/>, <c>docs/own-version-roadmap.md</c> §3.3): включение по настройке, обновление по
 /// событию сессии, связь наведения с полем; проверка <c>--queue-check</c> — числами, без окна.</summary>
 public partial class BattleScreen
 {
-    /// <summary>Показывать полосу очереди ходов (<see cref="D2.Data.Map.MapSettings.QueueStrip"/>; задаёт хозяин боя по настройкам).</summary>
-    public bool QueueStrip { get; set; } = new D2.Data.Map.MapSettings().QueueStrip;
+    /// <summary>Показывать полосу очереди ходов (<see cref="LastEdict.Data.Map.MapSettings.QueueStrip"/>; задаёт хозяин боя по настройкам).</summary>
+    public bool QueueStrip { get; set; } = new LastEdict.Data.Map.MapSettings().QueueStrip;
 
     private BattleQueueStrip? _strip;
 

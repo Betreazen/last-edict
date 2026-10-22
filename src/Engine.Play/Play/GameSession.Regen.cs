@@ -1,8 +1,8 @@
-using D2.Data.Map;
-using D2.Rules.Map;
-using D2.Rules.Units;
+using LastEdict.Data.Map;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Units;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>Лечение юнита в начале хода: слагаемое укрепления <see cref="FortPercent"/> и слагаемое юнита <see cref="UnitPercent"/>
 /// (своя регенерация, Воитель, своя земля), каждое — <c>⌊HPmax·p/100⌋</c> (<c>0x5d4099</c>). <see cref="Group"/> — отряд или

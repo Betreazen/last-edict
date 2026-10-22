@@ -1,9 +1,9 @@
-using D2.Data.Play;
-using D2.Rules.Magic;
-using D2.Rules.Map;
-using D2.Data.Play.Commands;
+using LastEdict.Data.Play;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Map;
+using LastEdict.Data.Play.Commands;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>
 /// Продажа предмета другому игроку из окна дипломатии (<c>DLG_TRADE_ITEM</c>, <c>CTradeItemInterf</c> <c>0x4b7409</c>): <c>TXT_TITLE</c> —

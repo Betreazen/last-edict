@@ -5,9 +5,9 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 
-using D2.Data.Content.Schema;
+using LastEdict.Data.Content.Schema;
 
-namespace D2.Data.Content;
+namespace LastEdict.Data.Content;
 
 /// <summary>JSON содержимого: поля и значения перечней — camelCase (<c>"class": "boostDamage"</c>), пустое не пишется (null, ноль, ложь,
 /// пустой список, группа без значений), отступы — для чтения и диффов. Файл слоя — объект с массивом сущностей вида под его именем

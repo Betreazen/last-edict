@@ -1,4 +1,4 @@
-namespace D2.Rules.Map;
+namespace LastEdict.Rules.Map;
 
 /// <summary>
 /// Квоты роста земли — поля одной строки <c>GVars.dbf</c>. Всё ранг 1: значения таблицы,
@@ -545,7 +545,7 @@ public sealed class LandModel
     /// такими ландмарками. <i>Было иначе:</i> «признак блокировки из <c>LMarkCat</c>».</para>
     /// </summary>
     /// <param name="mountainLandmarks">Типы ландмарков с <c>MOUNTAIN = T</c>
-    /// (<c>D2.Data.Map.EconomyLoader.LoadMountainLandmarks</c>, регистр не важен — набор с
+    /// (<c>LastEdict.Data.Map.EconomyLoader.LoadMountainLandmarks</c>, регистр не важен — набор с
     /// <see cref="StringComparer.OrdinalIgnoreCase"/>). <c>null</c> — ландмарки не проверяются.</param>
     public static IReadOnlySet<(int X, int Y)> BlockedCells(MapState map, IReadOnlyList<MapSite> sites,
                                                             IReadOnlySet<string>? mountainLandmarks = null)

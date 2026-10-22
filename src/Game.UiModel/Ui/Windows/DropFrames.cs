@@ -1,9 +1,9 @@
-using D2.Rules.Battle;
-using D2.Rules.Magic;
-using D2.Rules.Map;
-using D2.Rules.Units;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Units;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>Состояние места группы при перетаскивании (<c>CDDUnitGroup</c>, массив <c>+0x68</c> по шести позициям, <c>0x56eaef</c>):
 /// 0 — сюда можно (жёлтая рамка), 1 — нельзя (красная), 2 — рамки нет (так же после броска, <c>0x56eb4b</c>).</summary>

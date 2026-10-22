@@ -1,4 +1,4 @@
-namespace D2.Data.Leaders;
+namespace LastEdict.Data.Leaders;
 
 /// <summary>
 /// Герой, вывезенный из партии (экспорт после победы, <c>0x408307</c>), — для импорта в новую партию (лобби «горячего стула»,

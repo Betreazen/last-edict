@@ -1,7 +1,7 @@
 using System;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Ввод прицела заклинанием поверх карты: отдельный узел, чтобы экран карты не держал своих
 /// <c>_Process</c>/<c>_UnhandledInput</c> (их правят и другие части экрана). Сообщает клетку щелчка, Esc и смену клетки под

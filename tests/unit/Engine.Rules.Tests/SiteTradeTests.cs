@@ -1,7 +1,7 @@
-using D2.Rules.Magic;
-using D2.Rules.Map;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Map;
 
-namespace D2.Rules.Tests;
+namespace LastEdict.Rules.Tests;
 
 /// <summary>Торговля у сайтов на синтетике — правила, закрытые разбором синтетических карт 16.09.2026
 /// (<c>disciples-modding/docs/synthetic-maps/analysis</c>: A-leaders §5, E-map-economy §2).</summary>

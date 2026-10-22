@@ -1,12 +1,12 @@
-using D2.Data.Battle;
-using D2.Data.Content;
-using D2.Data.Content.Schema;
-using D2.Data.Map;
-using D2.Rules.Battle;
-using D2.Rules.Map;
-using D2.Rules.Units;
+using LastEdict.Data.Battle;
+using LastEdict.Data.Content;
+using LastEdict.Data.Content.Schema;
+using LastEdict.Data.Map;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Units;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>Правила, которые нужны партии: бой (<see cref="GameRules"/>), поля юнитов, которых в бою нет
 /// (<see cref="RulesLoader.RulesExtras"/>: категория, постройка улучшения, рост уровнем), экономика, ИИ, дипломатия. Собираются из
@@ -122,19 +122,19 @@ public sealed class GameBook
     private IReadOnlyDictionary<string, string> Sideshow { get; init; } = new Dictionary<string, string>();
 
     /// <summary>Навыки лидера по уровню (<c>GleaUpg.dbf</c>) в порядке таблицы — он же порядок равенства при выборе ИИ.</summary>
-    public IReadOnlyList<D2.Rules.Units.LeaderUpgrade> LeaderUpgrades { get; private init; } = [];
+    public IReadOnlyList<LastEdict.Rules.Units.LeaderUpgrade> LeaderUpgrades { get; private init; } = [];
 
     /// <summary>Врождённые способности типа лидера (<c>GLabi.dbf</c>): фильтр предложения навыков.</summary>
     public IReadOnlyDictionary<string, IReadOnlyList<int>> InnateAbilities { get; private init; } =
         new Dictionary<string, IReadOnlyList<int>>();
 
     /// <summary>Заклинания (<c>Gspells.dbf</c>): уровень и категория — для исследования.</summary>
-    public IReadOnlyDictionary<string, D2.Rules.Magic.Spell> Spells { get; private init; } =
-        new Dictionary<string, D2.Rules.Magic.Spell>();
+    public IReadOnlyDictionary<string, LastEdict.Rules.Magic.Spell> Spells { get; private init; } =
+        new Dictionary<string, LastEdict.Rules.Magic.Spell>();
 
     /// <summary>Предметы (<c>GItem.dbf</c>): категория, цена, модификаторы, лечение, атака.</summary>
-    public IReadOnlyDictionary<string, D2.Rules.Magic.Item> Items { get; private init; } =
-        new Dictionary<string, D2.Rules.Magic.Item>();
+    public IReadOnlyDictionary<string, LastEdict.Rules.Magic.Item> Items { get; private init; } =
+        new Dictionary<string, LastEdict.Rules.Magic.Item>();
 
     /// <summary>Подсказка выбора ИИ (<c>Gspells.AI_CAT</c>, перечень <c>LAiSpell</c>).</summary>
     public IReadOnlyDictionary<string, int> SpellAiCategory { get; private init; } = new Dictionary<string, int>();
@@ -148,7 +148,7 @@ public sealed class GameBook
     private IReadOnlyDictionary<string, int> SpellRaceType { get; init; } = new Dictionary<string, int>();
 
     /// <summary>
-    /// Имя значка предмета в архиве <c>IconItem</c> (<c>0x5c5d89</c>): у свитка (<see cref="D2.Rules.Magic.ItemCategory.Scroll"/>) своих
+    /// Имя значка предмета в архиве <c>IconItem</c> (<c>0x5c5d89</c>): у свитка (<see cref="LastEdict.Rules.Magic.ItemCategory.Scroll"/>) своих
     /// значков нет — значок расы его заклинания: <c>SCROLLHU</c>, <c>SCROLLUN</c>, <c>SCROLLHE</c>, <c>SCROLLDW</c>, <c>SCROLLEL</c> по категории
     /// расы (<c>0x5c5e1d</c>…<c>0x5c5e8b</c>; раса — первого лорда, у которого заклинание в списке исследований, <c>0x5c5f4f</c>; ни у кого —
     /// люди, <c>0x5c6005</c>); нейтральная — пустое имя (значка нет). Прочие предметы — по своему id. Соответствие категорий именам значков —
@@ -157,7 +157,7 @@ public sealed class GameBook
     public string ItemIcon(string itemType)
     {
         ArgumentNullException.ThrowIfNull(itemType);
-        if (!Items.TryGetValue(itemType, out var item) || item.Category != D2.Rules.Magic.ItemCategory.Scroll) return itemType.ToUpperInvariant();
+        if (!Items.TryGetValue(itemType, out var item) || item.Category != LastEdict.Rules.Magic.ItemCategory.Scroll) return itemType.ToUpperInvariant();
         int raceType = SpellRaceType.TryGetValue(item.SpellId, out int t) ? t : HumanRace;
         return raceType switch
         {
@@ -246,15 +246,15 @@ public sealed class GameBook
                 .GroupBy(u => content.KeyOf(u.Race), StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(gr => gr.Key, gr => content.KeyOf(gr.First().HireBuilding), StringComparer.OrdinalIgnoreCase),
             Treasury = EconomyLoader.LoadTreasury(content),
-            LeaderUpgrades = D2.Data.Battle.ModifierLoader.LoadLeaderUpgrades(content),
-            Spells = D2.Data.Magic.SpellLoader.Load(content),
-            Items = D2.Data.Magic.ItemLoader.Load(content),
+            LeaderUpgrades = LastEdict.Data.Battle.ModifierLoader.LoadLeaderUpgrades(content),
+            Spells = LastEdict.Data.Magic.SpellLoader.Load(content),
+            Items = LastEdict.Data.Magic.ItemLoader.Load(content),
             SpellAiCategory = content.Spells.ToDictionary(sp => sp.Key, sp => (int?)sp.AiUse ?? 0, StringComparer.OrdinalIgnoreCase),
             LordResearch = content.Lords.Where(l => l.Research.Count > 0)
                 .ToDictionary(l => l.Key, l => (IReadOnlyList<(string, Bank)>)[.. l.Research.Select(r => (content.KeyOf(r.Spell), Prices.ToBank(r.Cost)))],
                               StringComparer.OrdinalIgnoreCase),
             SpellRaceType = SpellRaces(content),
-            InnateAbilities = D2.Data.Magic.EquipLoader.LoadInnateAbilities(content),
+            InnateAbilities = LastEdict.Data.Magic.EquipLoader.LoadInnateAbilities(content),
             Diplomacy = EconomyLoader.LoadDiplomacy(content),
             AllianceBreak = (g.Diplomacy.AllianceBreakTurn, g.Diplomacy.AllianceBreakChance),
             GuardRange = g.Ai.GuardRange,
@@ -313,19 +313,19 @@ public sealed class GameBook
     public int XpNextOf(string typeId, int level) => Grown(typeId, level)?.Type.XpNext ?? 0;
 
     /// <summary>Цена найма юнита типа <paramref name="typeId"/> уровня <paramref name="level"/> — <c>ENROLL_C</c> с шагами
-    /// <c>GDynUpgr.ENROLL_C</c> (<see cref="D2.Rules.Map.Economy.HireCost(UnitHire, int, int, DynUpgrade?, DynUpgrade?)"/>, слот
+    /// <c>GDynUpgr.ENROLL_C</c> (<see cref="LastEdict.Rules.Map.Economy.HireCost(UnitHire, int, int, DynUpgrade?, DynUpgrade?)"/>, слот
     /// <c>0x54</c> порождённой реализации): так платят у наёмника за предложение его уровня. null — типа нет в справочниках.</summary>
     public Bank? HirePrice(string typeId, int level)
     {
         if (!TryGlobal(typeId, out var id, out _) || !Economy.Hire.TryGetValue(id, out var hire)
             || !Extras.Units.TryGetValue(id, out var ext)) return null;
-        return D2.Rules.Map.Economy.HireCost(hire, level, ext.DynUpgLevel, DynRow(ext.DynUpg1Id), DynRow(ext.DynUpg2Id));
+        return LastEdict.Rules.Map.Economy.HireCost(hire, level, ext.DynUpgLevel, DynRow(ext.DynUpg1Id), DynRow(ext.DynUpg2Id));
     }
 
     private DynUpgrade? DynRow(string id) => id.Length > 0 && Extras.DynUpgrades.TryGetValue(id, out var u) ? u : null;
 
     /// <summary><c>NEGOTIATE</c> типа, выращенный до уровня: база <c>Gunits</c> плюс шаги <c>GDynUpgr.NEGOTIATE</c>
-    /// (<see cref="UnitGrowth.StepsFor"/>) — сопротивление отряда действию вора (<see cref="D2.Rules.Map.Thieves.StackResistance"/>);
+    /// (<see cref="UnitGrowth.StepsFor"/>) — сопротивление отряда действию вора (<see cref="LastEdict.Rules.Map.Thieves.StackResistance"/>);
     /// нет типа — 0.</summary>
     public int NegotiateOf(string typeId, int level)
     {

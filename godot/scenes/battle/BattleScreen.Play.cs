@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using D2.Data.Battle;
-using D2.Data.Gfx;
-using D2.Data.Sound;
-using D2.Rules.Battle;
+using LastEdict.Data.Battle;
+using LastEdict.Data.Gfx;
+using LastEdict.Data.Sound;
+using LastEdict.Rules.Battle;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Показ действий боя: модель решает ход сразу, а экран показывает действия по одному — замах ходящего, эффект у него, эффект на
 /// цели, реакция целей (удар, смерть, эффекты <c>Battle.ff</c>), затем поле собирается заново и ходит следующий. Хронология — просмотр
@@ -588,7 +588,7 @@ public partial class BattleScreen
     /// Конец боя на поле (шаги 13–16 просмотра боя, <c>0x630a7b</c>): сообщения, которые модель дописала концом боя, по очереди — уход
     /// призванного <c>USUMMONANIM</c> (шаг 14, код 10), откат превращения <c>UTRANSF</c>/<c>UDOPPEL</c>/<c>UDRAINLVL</c> (шаги 13 и 16, код 4),
     /// рост <c>UPGRADE{раса}</c> (шаг 15, код 0; раса — владельца группы, <paramref name="raceTypeOf"/>) на месте юнита, подслой 12; облик
-    /// меняется на половине; звуки — <see cref="D2.Data.Sound.BattleNoteSounds"/> (у отката ещё <c>UTRANSF</c>, <c>0x5b4cb0</c> — файла нет).
+    /// меняется на половине; звуки — <see cref="LastEdict.Data.Sound.BattleNoteSounds"/> (у отката ещё <c>UTRANSF</c>, <c>0x5b4cb0</c> — файла нет).
     /// Потом <paramref name="done"/> — хозяин снимает экран (решение пользователя 28.09: экран ждёт анимаций конца боя). Без окна — сразу.
     /// </summary>
     public void PlayEnd(EndSnapshot before, Func<string, int> raceTypeOf, Action done)
@@ -608,22 +608,22 @@ public partial class BattleScreen
             {
                 BattleNoteKind.Unsummoned => "USUMMONANIM",
                 BattleNoteKind.Untransformed => before.Undo.GetValueOrDefault(note.UnitId, "UTRANSF"),
-                BattleNoteKind.LevelUp => D2.Data.Sound.BattleNoteSounds.Of(note.Kind, raceTypeOf(note.UnitId)),
+                BattleNoteKind.LevelUp => LastEdict.Data.Sound.BattleNoteSounds.Of(note.Kind, raceTypeOf(note.UnitId)),
                 _ => null,
             };
             var sprite = name is null || !unit.OnField && note.Kind != BattleNoteKind.Unsummoned ? null : _scene.UnitEffect(name, unit);
             int frames = sprite is null ? 0 : _field.Length([sprite]);
-            string sound = D2.Data.Sound.BattleNoteSounds.Of(note.Kind, raceTypeOf(note.UnitId));
+            string sound = LastEdict.Data.Sound.BattleNoteSounds.Of(note.Kind, raceTypeOf(note.UnitId));
             // Надпись и вспышка шагов 13, 14, 16 (0x63679b, 0x6368c3): откат понижения уровня — «Восстанавливает силы» X008TA0029 и пурпурным
             // (шаг 16, 0x6367e7: 0x1b − 4), прочий откат — «Прежний облик!»; изгнание в конце боя — без надписи (TurnStartFace). Рост — опыт (ShowEnd, XpNotes).
             var (text, flash) = note.Kind == BattleNoteKind.Untransformed && sprite is not null && name == "UDRAINLVL"
                 ? (Text("X008TA0029"), new BattleFlash(BattleFace.DrainLevel, true))
                 : TurnStartFace(note.Kind, unit, sprite is not null);
-            GD.Print(FormattableString.Invariant($"battle end {unit.Id} {note.Kind} эффект={sprite?.Name ?? "-"} звук={sound} с={at:0} до={frames * AnimFrameMs:0} надпись={(text is null ? "-" : D2.Data.Ui.UiTextStyle.Parse(text).Text.Replace(' ', '_'))}"));
+            GD.Print(FormattableString.Invariant($"battle end {unit.Id} {note.Kind} эффект={sprite?.Name ?? "-"} звук={sound} с={at:0} до={frames * AnimFrameMs:0} надпись={(text is null ? "-" : LastEdict.Data.Ui.UiTextStyle.Parse(text).Text.Replace(' ', '_'))}"));
             Later(at, () =>
             {
                 if (sprite is not null) _field.PlayOnce(sprite, "EFFECT", unit);
-                Queue(unit.Id, [new D2.Data.Sound.SoundCue(0, D2.Data.Sound.BattleNoteSounds.Archive, sound)]);
+                Queue(unit.Id, [new LastEdict.Data.Sound.SoundCue(0, LastEdict.Data.Sound.BattleNoteSounds.Archive, sound)]);
                 if (text is not null) Note(unit, text);   // 0x6370be: на группу стороны юнита шага, как начало хода
                 if (flash is { } f) _field.Flash(_scene, unit, f, src: "actor");
             });

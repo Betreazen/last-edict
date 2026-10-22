@@ -1,9 +1,9 @@
-using D2.Data.Content;
-using D2.Data.Menu;
-using D2.Data.Ui;
-using D2.Data.Ui.Windows;
+using LastEdict.Data.Content;
+using LastEdict.Data.Menu;
+using LastEdict.Data.Ui;
+using LastEdict.Data.Ui.Windows;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Ролики «Вступления» (<see cref="CinematicLogic"/>): что показывается при запуске и по кнопке, пропуск и конец на секундном тике —
 /// по разбору <c>CAnimInterf</c> (<c>0x4c66be</c>) и журналу зонда <c>20260919-human</c>.</summary>

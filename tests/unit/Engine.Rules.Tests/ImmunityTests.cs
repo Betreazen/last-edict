@@ -1,8 +1,8 @@
-using D2.Data;
-using D2.Data.Battle;
-using D2.Rules.Battle;
-using D2.Rules.Rng;
-using D2.Rules.Units;
+using LastEdict.Data;
+using LastEdict.Data.Battle;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Rng;
+using LastEdict.Rules.Units;
 using Xunit.Abstractions;
 
 /// <summary>
@@ -179,7 +179,7 @@ public class ImmunityTests(ITestOutputHelper output)
         Assert.Equal(expected.OrderBy(e => e.Unit, StringComparer.Ordinal).ToArray(),
                      carriers.Select(c => (c.Id, c.Class)).ToArray());
         Assert.All(carriers, c => Assert.Equal(ImmunityLevel.Always, c.Level));
-        Assert.Equal(13, D2.Data.Dbf.GameTables.Read(ImportedData.Tables, "GimmuC.dbf").Rows.Count);   // строк таблицы, с висячей
+        Assert.Equal(13, LastEdict.Data.Dbf.GameTables.Read(ImportedData.Tables, "GimmuC.dbf").Rows.Count);   // строк таблицы, с висячей
     }
 
     // ---- варды ---------------------------------------------------------------------------------

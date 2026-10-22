@@ -1,12 +1,12 @@
 using System.Globalization;
-using D2.Data.Content;
-using D2.Data.Menu;
-using D2.Rules.Magic;
-using D2.Rules.Map;
-using D2.Data.Play.Commands;
-using D2.Rules.Units;
+using LastEdict.Data.Content;
+using LastEdict.Data.Menu;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Map;
+using LastEdict.Data.Play.Commands;
+using LastEdict.Rules.Units;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>Имена предметов (<c>GItem.NAME_TXT</c>) и навыков героя (<c>GleaUpg.NAME_TXT</c> по <c>MODIF_ID</c>).</summary>
 public sealed record StackTexts(IReadOnlyDictionary<string, string> Items, IReadOnlyDictionary<string, string> Skills,
@@ -323,7 +323,7 @@ public sealed class ManageStackLogic : IWindowLogic
         var cells = _c.Session.GroupCells(StackId);
         int leadership = _c.Session.Leadership(stack);
         string lead = UiTemplate.Fill(_c.Text("X005TA0575"), ("USED", cells?.Occupied ?? 0), ("AVAIL", leadership));
-        int scout = D2.Rules.Map.Fog.Radius(stack, map, _c.Session.RequireBook().ScoutByType, fallback: 1,
+        int scout = LastEdict.Rules.Map.Fog.Radius(stack, map, _c.Session.RequireBook().ScoutByType, fallback: 1,
                                             modifiers: _c.Session.RequireBook().Rules.Modifiers);
         ui.SetText("TXT_STACK_STATS", UiTemplate.Fill(_c.Text("X005TA0400"), ("MOVE1", stack.Move),
             ("MOVE2", _c.Session.DayAllowance(stack)), ("LEADERSHIP", lead), ("SCOUTRNG", scout)));

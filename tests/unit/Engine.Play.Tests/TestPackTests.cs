@@ -1,8 +1,8 @@
 using System.Reflection;
-using D2.Data.Content;
-using D2.Data.Play;
+using LastEdict.Data.Content;
+using LastEdict.Data.Play;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Своё мини-содержимое <c>content/test-pack</c> (<c>tools/test_pack.py</c>, CC0): правила читают его так же, как импорт копии
 /// игры, — на нём CI нового репозитория проверяет цепочку «содержимое → правила» и гоняет снимки без данных оригинала.</summary>
@@ -50,8 +50,8 @@ public class TestPackSnapshotTests
         var data = ScenarioFile.Read(ScenarioFile.PathOf(Path.Combine(TestPackTests.Dir, "scenarios"), map));
         var state = new GameState(GameInfo.FromMap(data.Id, data.Looks), data.Looks)
         {
-            Events = data.Events, EventProgress = D2.Rules.Map.EventProgress.From(data.Events),
+            Events = data.Events, EventProgress = LastEdict.Rules.Map.EventProgress.From(data.Events),
         }.Reseeded(Seed);
-        return new GameSession(state, D2.Data.Map.MapArtData.Empty, book);
+        return new GameSession(state, LastEdict.Data.Map.MapArtData.Empty, book);
     }
 }

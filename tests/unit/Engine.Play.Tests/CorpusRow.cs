@@ -1,7 +1,7 @@
 using System.Reflection;
 using Xunit.Sdk;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Строка харнесса по корпусу — как <c>InlineData</c>, первый аргумент — имя каталога корпуса. Класс-наследник с
 /// <see cref="OnlyCorpusAttribute"/> получает только свою строку: xUnit гоняет параллельно классы, а не строки одной теории, и

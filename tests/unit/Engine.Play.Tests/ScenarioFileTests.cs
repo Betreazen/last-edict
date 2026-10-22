@@ -1,7 +1,7 @@
-using D2.Data.Play;
-using D2.Rules.Map;
+using LastEdict.Data.Play;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Сценарий в данных порта (<see cref="ScenarioFile"/>): запись и чтение ничего не теряют.</summary>
 public class ScenarioFileTests
@@ -45,10 +45,10 @@ public class ScenarioFileTests
         Skip.IfNot(Directory.Exists(GamePaths.Exports), "нет копии игры");
         string dir = Path.Combine(AppContext.BaseDirectory, "data", "scenarios");
         var sgs = Directory.GetFiles(GamePaths.Exports, "*.sg");
-        var sagas = Directory.Exists(GamePaths.Scens) ? D2.Data.Sg.ScensTables.Load(GamePaths.Scens) : null;
+        var sagas = Directory.Exists(GamePaths.Scens) ? LastEdict.Data.Sg.ScensTables.Load(GamePaths.Scens) : null;
         Assert.Equal(sgs.Length + (sagas?.Scenarios.Count ?? 0), Directory.GetFiles(dir, "*" + ScenarioFile.Extension).Length);
         var all = sgs.Select(ScenarioFile.FromSg).Concat((sagas?.Scenarios ?? []).Select(s =>
-            ScenarioFile.FromSg(s, D2.Data.Sg.SgFile.Load(D2.Data.Sg.SagaSg.Build(sagas!, s)))));
+            ScenarioFile.FromSg(s, LastEdict.Data.Sg.SgFile.Load(LastEdict.Data.Sg.SagaSg.Build(sagas!, s)))));
         foreach (var scenario in all)
             Assert.True(ScenarioFile.ToJson(scenario) == File.ReadAllText(ScenarioFile.PathOf(dir, scenario.Id)),
                         $"{scenario.Id}.json устарел — перезапустите tools/ScenarioImport");
@@ -92,7 +92,7 @@ public class ScenarioFileTests
             "имя", [true, true, false, false, false, false]);
         var set = new ScenarioEventSet([e], new Dictionary<string, EventZone> { ["S001LO0000"] = new("S001LO0000", 3, 4, 1) },
                                        new Dictionary<int, int> { [2] = 7 });
-        var looks = ScenarioFile.FromJson(ScenarioFile.ToJson(new ScenarioData("x", D2.Data.Map.MapLooksLoader.Load(tutorial), set))).Events;
+        var looks = ScenarioFile.FromJson(ScenarioFile.ToJson(new ScenarioData("x", LastEdict.Data.Map.MapLooksLoader.Load(tutorial), set))).Events;
         var got = Assert.Single(looks.Events);
         Assert.Equal(e.Conditions, got.Conditions);
         Assert.IsType<UnfogEffect>(got.Effects[2]);

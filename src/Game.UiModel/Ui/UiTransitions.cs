@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace D2.Data.Ui;
+namespace LastEdict.Data.Ui;
 
 /// <summary>Ролик смены экранов: с какого экрана на какой и что играет. В <see cref="Video"/> может стоять
 /// <c>{RACE}</c> — код выбранной расы (<c>TRANS_GOD2LORD_{RACE}</c> → <c>TRANS_GOD2LORD_UN</c>).</summary>

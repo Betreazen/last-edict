@@ -5,7 +5,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <RootNamespace>D2.Tools.ScenarioImport</RootNamespace>
+    <RootNamespace>LastEdict.Tools.ScenarioImport</RootNamespace>
     <AssemblyName>ScenarioImport</AssemblyName>
     <IsPackable>false</IsPackable>
   </PropertyGroup>

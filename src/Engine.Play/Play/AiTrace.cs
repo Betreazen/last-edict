@@ -1,6 +1,6 @@
-using D2.Rules.Map;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>
 /// Трасса решений ИИ (<see cref="GameSession.AiTrace"/>) — приёмник для зонда порта: по ней распределения выборов порта сравниваются с

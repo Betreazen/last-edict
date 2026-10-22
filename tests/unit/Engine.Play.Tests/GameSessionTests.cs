@@ -1,10 +1,10 @@
-using D2.Data.Content;
-using D2.Data.Map;
-using D2.Data.Play;
-using D2.Rules.Map;
+using LastEdict.Data.Content;
+using LastEdict.Data.Map;
+using LastEdict.Data.Play;
+using LastEdict.Rules.Map;
 using Xunit.Abstractions;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Ход партии без Godot (<see cref="GameSession"/>): конец дня и перемещение отряда.</summary>
 public class GameSessionTests(ITestOutputHelper output)

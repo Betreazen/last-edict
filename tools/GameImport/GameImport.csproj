@@ -5,7 +5,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <RootNamespace>D2.Tools.GameImport</RootNamespace>
+    <RootNamespace>LastEdict.Tools.GameImport</RootNamespace>
     <AssemblyName>GameImport</AssemblyName>
     <IsPackable>false</IsPackable>
   </PropertyGroup>

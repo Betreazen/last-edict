@@ -1,8 +1,8 @@
 using System.Globalization;
-using D2.Data.Map;
-using D2.Rules.Map;
+using LastEdict.Data.Map;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Gfx;
+namespace LastEdict.Data.Gfx;
 
 /// <summary>Картинка карты: где лежит (архив, имя, анимация или кадр), куда кладётся левым верхним углом
 /// (<see cref="X"/>, <see cref="Y"/> — мировые точки), слой и якорная клетка — ключ порядка. <see cref="Shadow"/> —
@@ -79,7 +79,7 @@ public sealed class MapScene
     /// <param name="hiddenStack">Отряд, который сейчас идёт: его картинки в сцену не попадают, их рисует сцена
     /// отдельно и двигает по пикселям (<c>docs/map-render-stacks.md</c> §6).</param>
     /// <param name="objectives">Цели сценария глазами зрителя (<c>GameSession.Objectives</c>) — круг <c>SYM_OBJECTIVE</c>; null — без них.</param>
-    /// <param name="fog">Туман, который сейчас показан зрителю, вместо тумана модели (смена тумана идёт кольцами, <see cref="D2.Data.Map.FogReveal"/>);
+    /// <param name="fog">Туман, который сейчас показан зрителю, вместо тумана модели (смена тумана идёт кольцами, <see cref="LastEdict.Data.Map.FogReveal"/>);
     /// null или другого размера — туман модели.</param>
     public static MapScene Build(MapLooks looks, MapArtData art, GfxAssets gfx, bool animated = true, string? viewer = null,
                                  string? hiddenStack = null, MapObjectives? objectives = null, bool[,]? fog = null)

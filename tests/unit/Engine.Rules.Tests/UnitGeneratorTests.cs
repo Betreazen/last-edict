@@ -1,6 +1,6 @@
-using D2.Data;
-using D2.Data.Battle;
-using D2.Rules.Units;
+using LastEdict.Data;
+using LastEdict.Data.Battle;
+using LastEdict.Rules.Units;
 using Xunit.Abstractions;
 
 /// <summary>Порождённые прокачкой реализации юнитов (<c>G000UG****</c>). Числа — из
@@ -74,7 +74,7 @@ public class UnitGeneratorTests(ITestOutputHelper output)
         Assert.Equal(240, impl.Type.HitPoints);
         Assert.Equal(70, impl.Attack!.QtyDamage);
         Assert.Equal(81, impl.Attack.Power);
-        Assert.Equal(400, D2.Rules.Battle.Formulas.DamageMax(rules.Constants, impl.Type.GlobalId));
+        Assert.Equal(400, LastEdict.Rules.Battle.Formulas.DamageMax(rules.Constants, impl.Type.GlobalId));
         output.WriteLine($"{impl.Type.Id}: hp {impl.Type.HitPoints}, урон {impl.Attack.QtyDamage}, " +
                          $"точность {impl.Attack.Power}");
     }

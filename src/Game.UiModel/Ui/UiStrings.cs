@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace D2.Data.Ui;
+namespace LastEdict.Data.Ui;
 
 /// <summary>Строки интерфейса порта: <c>data/ui/strings.&lt;язык&gt;.json</c>, плоская таблица
 /// «идентификатор → текст».

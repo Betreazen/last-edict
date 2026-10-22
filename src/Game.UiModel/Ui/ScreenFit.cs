@@ -1,4 +1,4 @@
-namespace D2.Data.Ui;
+namespace LastEdict.Data.Ui;
 
 /// <summary>Как экран игры 800×600 вписывается в окно (настройка порта <c>Scaling</c> в <c>settings.json</c>, ключ <c>--scale</c>).</summary>
 public enum ScreenScaling

@@ -1,4 +1,4 @@
-using D2.Data;
+using LastEdict.Data;
 using Xunit;
 
 public class GamePathsTests

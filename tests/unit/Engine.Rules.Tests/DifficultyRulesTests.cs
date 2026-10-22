@@ -1,11 +1,11 @@
-using D2.Data;
-using D2.Data.Battle;
-using D2.Data.Map;
-using D2.Rules.Battle;
-using D2.Rules.Map;
-using D2.Rules.Units;
+using LastEdict.Data;
+using LastEdict.Data.Battle;
+using LastEdict.Data.Map;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Units;
 
-namespace D2.Rules.Tests;
+namespace LastEdict.Rules.Tests;
 
 /// <summary>Правила сложности партии, перенесённые по листингам 16.09.2026 (решение пользователя: лёгкая сложность —
 /// режим игры). Числа — из журналов <c>20260914-smoke</c> и <c>20260915-passive</c> (обе партии на лёгкой).</summary>

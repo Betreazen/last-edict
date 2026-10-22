@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace D2.Data.Ui;
+namespace LastEdict.Data.Ui;
 
 /// <summary>
 /// Состояние экрана на снимке оригинала — для попиксельной сверки (<c>tools/pixel-compare.py</c>, <c>docs/ui-windows.md</c> §10).

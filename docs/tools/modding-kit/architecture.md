@@ -33,7 +33,7 @@ GameData (godot/autoload) ─┬─ GameContent.Load(dataDir, mods)  экран�
 `ref` и `meaning` — ручная разметка с источником (документ/адрес реверса). Тест: схема покрывает все колонки всех таблиц,
 все `ref` разрешаются на базе (0 висячих).
 
-## 4. Ядро `D2.Authoring` для модов
+## 4. Ядро `LastEdict.Authoring` для модов
 
 | Класс | Назначение |
 |---|---|
@@ -58,7 +58,7 @@ d2mod migrate   <каталог>                            # при смене 
 d2mod map …                                          # см. ../map-editor/architecture.md §4
 ```
 
-`tools/d2mod` — консольный проект .NET поверх `D2.Authoring`; Python-обёрток не нужно (проверки — `tests/test_d2mod.py`).
+`tools/d2mod` — консольный проект .NET поверх `LastEdict.Authoring`; Python-обёрток не нужно (проверки — `tests/test_d2mod.py`).
 
 ## 6. Окно «Мод» (позже, K4)
 

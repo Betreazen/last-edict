@@ -2,11 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using D2.Data.Gfx;
-using D2.Data.Map;
+using LastEdict.Data.Gfx;
+using LastEdict.Data.Map;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>
 /// Плавная прокрутка вида к месту события (<c>CMidAnimSmoothScroll</c>, <see cref="SmoothScrollPath"/>): перед анимацией команды вид едет к

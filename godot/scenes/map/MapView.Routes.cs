@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using D2.Data.Play;
+using LastEdict.Data.Play;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>
 /// Пути своих отрядов через конец хода и «Продолжить движение» (<c>docs/map-path.md</c> §4, «Путь через конец хода»): интерфейс помнит путь за
@@ -48,7 +48,7 @@ public partial class MapView
 
     /// <summary>
     /// Путь выбранного отряда стёрт (реестр Ин82, <c>0x4cc63b(1)</c> → <c>0x41a808</c>): «ОК» окна «расторгните альянс» (<c>0x4d201e</c>), «Нет» сносу
-    /// жезла (<c>0x4d1f06</c>), итог своего вора «Разведать руины» (<c>0x4d23a2</c>, <see cref="D2.Data.Ui.Windows.ThiefActionsLogic.DropsRoute"/>).
+    /// жезла (<c>0x4d1f06</c>), итог своего вора «Разведать руины» (<c>0x4d23a2</c>, <see cref="LastEdict.Data.Ui.Windows.ThiefActionsLogic.DropsRoute"/>).
     /// Модель показанного пути сброшена (клетки <c>+0x14…+0x28</c> = −1: следующий щелчок — новый путь, не подтверждение), а слой флажков
     /// <c>0x4cd329</c> здесь не снимается (его снимают команда хода <c>0x4d22e0</c> и показ другого пути) — флажки до следующего показа меток.
     /// </summary>

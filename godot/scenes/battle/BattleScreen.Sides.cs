@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using System.Linq;
-using D2.Data.Battle;
-using D2.Rules.Battle;
+using LastEdict.Data.Battle;
+using LastEdict.Rules.Battle;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Проверка «--sides» (пометка 1 партии 14.10): стороны панелей отрядов и чьи крупные портреты слева и справа — на ходу своего
 /// бойца, своего лекаря и врага, числами, без окна. Каждый ход человека — три строки: начало хода, мышь над первой целью, миг удара;

@@ -1,7 +1,7 @@
-using D2.Data.Play;
-using D2.Rules.Battle;
+using LastEdict.Data.Play;
+using LastEdict.Rules.Battle;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Наблюдатель хода для тестов: записывает события (<see cref="TurnSight"/>), бой не играет.</summary>
 internal sealed class SightRecorder : ITurnObserver

@@ -1,4 +1,4 @@
-namespace D2.Rules.Rng;
+namespace LastEdict.Rules.Rng;
 
 /// <summary>Генератор движка Disciples 2 (GOG 3.01): R250 с лагом 147 над таблицей из 250 слов,
 /// константа в образе на старте — <see cref="RngTable"/>. Восстановлен по коду 0x54851f /

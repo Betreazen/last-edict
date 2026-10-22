@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace D2.Data.Ui;
+namespace LastEdict.Data.Ui;
 
 /// <summary>Кадр интерфейса, вынутый из архива игры в обычную картинку (сборка — WebP без потерь; у мода — и <c>.png</c>, и
 /// <c>.webp</c>). <see cref="Name"/> — имя кадра в архиве (по нему на кадр ссылаются экраны), <see cref="File"/> — путь к файлу

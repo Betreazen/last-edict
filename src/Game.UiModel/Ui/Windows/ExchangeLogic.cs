@@ -1,8 +1,8 @@
-using D2.Rules.Map;
-using D2.Data.Play.Commands;
-using D2.Rules.Units;
+using LastEdict.Rules.Map;
+using LastEdict.Data.Play.Commands;
+using LastEdict.Rules.Units;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>
 /// Обмен между отрядами (<c>DLG_EXCHANGE</c>, <c>CExchangeInterf</c> <c>0x492cee</c>): слева выделенный отряд, справа тот, по которому

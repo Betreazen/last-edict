@@ -1,11 +1,11 @@
-using D2.Data.Content;
-using D2.Data.Game;
-using D2.Data.Menu;
-using D2.Data.Play;
-using D2.Data.Sg;
-using D2.Data.Ui;
+using LastEdict.Data.Content;
+using LastEdict.Data.Game;
+using LastEdict.Data.Menu;
+using LastEdict.Data.Play;
+using LastEdict.Data.Sg;
+using LastEdict.Data.Ui;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Свои кампании (<c>docs/day-cycle.md</c> §15): <c>Campaign\*.csg</c> (MQDB) → каталог порта (<c>d2-port-campaign</c>), окно
 /// <c>DLG_NEW_CUSTOM_TOURNEMENT</c>, раса — только из заголовка, первая глава начинается.</summary>

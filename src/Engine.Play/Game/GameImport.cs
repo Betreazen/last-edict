@@ -1,8 +1,8 @@
-using D2.Data.Dbf;
-using D2.Data.Sg;
+using LastEdict.Data.Dbf;
+using LastEdict.Data.Sg;
 using KSg = Kaitai.Sg;
 
-namespace D2.Data.Game;
+namespace LastEdict.Data.Game;
 
 /// <summary>Сборка каталога меню из копии игры: расы и лорды — из <c>Globals/Grace.dbf</c> и <c>Glord.dbf</c>,
 /// сценарии — из <c>Exports/*.sg</c>. Запускается инструментом <c>tools/GameImport</c>; порт в рантайме читает уже
@@ -34,7 +34,7 @@ public static class GameImport
 
     private static readonly HashSet<string> ConclusionPlayed = ["C000CC0002", "C000CC0003", "C000CC0004", "C000CC0005"];
 
-    private const int Neutral = D2.Rules.Map.LegacyRaces.Neutral;
+    private const int Neutral = LastEdict.Rules.Map.LegacyRaces.Neutral;
 
     public static IReadOnlyList<RaceInfo> Races(string globalsDir)
     {
@@ -143,7 +143,7 @@ public static class GameImport
                 // Запись главы — сама строка CScen (кампания саги и SCEN_ID главы): у эльфов ELFWIN, у последней главы — CMP3EL.
                 var ending = new Ending(Str(c, "SMK_WIN"), Str(c, "SMK_LOSE"), Str(c, "WAV_WIN"));
                 // Музыка брифа (0x48091e): у саги эльфов — озвучка "briefel" + номер главы в списке саги с 1, у прочих — общая GENBRIEF.
-                string? music = Int(r, "PLAY_RACE") == D2.Rules.Map.LegacyRaces.Elf ? $"BRIEFEL{index + 1}" : null;
+                string? music = Int(r, "PLAY_RACE") == LastEdict.Rules.Map.LegacyRaces.Elf ? $"BRIEFEL{index + 1}" : null;
                 return new ChapterInfo(Int(c, "SCEN_NO"), Scenario(file, id, "", typeById, _ => ending), Str(c, "SMK_BRIEF"), Str(c, "WAV_WIN"),
                                        music);
             })],

@@ -1,7 +1,7 @@
-using D2.Rules.Magic;
-using D2.Rules.Map;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>Партия — глава кампании (<c>docs/day-cycle.md</c> §15): сага из каталога или своя кампания, номер главы с 0 и число
 /// глав. У движка сага узнаётся по <c>campaignId</c> заголовка сохранения, своя кампания — по <c>CMidgard</c> <c>+0xDC</c> (путь),

@@ -31,7 +31,7 @@ _Написано 20.09.2026 по итогам пунктов 1–5. Этот ф
 ```sh
 dotnet test                       # 1118+ тестов, ~15 мин
 python tools/ui-render-check.py   # экраны, земля, экран карты, экран боя — числами, без окна
-dotnet build godot/D2.Godot.csproj
+dotnet build godot/LastEdict.Godot.csproj
 ```
 
 Отдельные сцены гоняются так (Godot — `C:\Tools\bin\godot.cmd`, `--headless` без окна):
@@ -83,8 +83,8 @@ HD-мод и масштабирование 16:9 (отдельная задач�
 - `src/Engine.Play/Battle/BattleSession.cs` — бой по шагам: `Current`, `WaitsPlayer`, `Allowed`, `Targets()`,
   `Attack(target)`, `Defend()`, `Wait()`, `Retreat()`, `UseItem(i, target)`, `AiStep()`, `Resolve()`, `Auto`.
 - `src/Engine.Play/Battle/RulesLoader.cs` — `GameRules` из `data/rules` (в рантайме `.dbf` не нужен).
-- `src/D2.Verification/Battle/CorpusBattleLoader.cs` — собирает `BattleState` **из журнала зонда** (образец боя);
-  `src/D2.Verification/Battle/SaveSnapshots.cs` — читает отряды и их цепочки модификаторов **из сохранения**.
+- `src/LastEdict.Verification/Battle/CorpusBattleLoader.cs` — собирает `BattleState` **из журнала зонда** (образец боя);
+  `src/LastEdict.Verification/Battle/SaveSnapshots.cs` — читает отряды и их цепочки модификаторов **из сохранения**.
 
 ### Правила дня и ИИ
 
@@ -99,7 +99,7 @@ HD-мод и масштабирование 16:9 (отдельная задач�
 
 ### Таблицы игры
 
-`tools/RulesImport` кладёт 27 таблиц в `data/rules/*.json`; `D2.Data.Dbf.GameTables.Read(dir, "Gunits.dbf")`
+`tools/RulesImport` кладёт 27 таблиц в `data/rules/*.json`; `LastEdict.Data.Dbf.GameTables.Read(dir, "Gunits.dbf")`
 сам решает, брать JSON порта или `.dbf` игры. Правило: **в рантайме только `data/rules`**, `.dbf` — в тестах и
 импортe. Если для пункта 6 понадобится новая таблица (например `GAI.dbf` уже есть, `Gbuild.dbf` есть),
 добавить её имя в список в `tools/RulesImport/Program.cs` и перезапустить импорт.
@@ -159,7 +159,7 @@ HD-мод и масштабирование 16:9 (отдельная задач�
 Сохранять: `MapState` + `MapLooks`-изменения (позиции отрядов, владельцы, казна, туман, день), выбор игрока,
 состояние сценарных событий. Проще всего — JSON рядом с данными порта (`user://saves`), с версией формата.
 
-Проверка: сохранить, загрузить, сравнить числа (день, казна, позиции отрядов, туман) — тестом в `D2.Data.Tests`.
+Проверка: сохранить, загрузить, сравнить числа (день, казна, позиции отрядов, туман) — тестом в `LastEdict.Data.Tests`.
 
 ### 4.6. Окна города и отряда
 

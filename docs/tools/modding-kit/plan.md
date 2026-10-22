@@ -18,7 +18,7 @@
 | Задача | Цель | Приёмка |
 |---|---|---|
 | K1.1 | `mod.json` v2, `ModGraph` (зависимости, `loadAfter`, конфликты, циклы) в `GameContent.Discover` | тест: на текущих модах порядок не изменился; цикл/нет зависимости — понятная ошибка, строка `mods:` с `skipped=` |
-| K1.2 | `D2.Authoring` + `tools/d2mod validate` с `MOD001–MOD030`, `MOD090` | `d2mod validate mods/port-synth` → `errors=0`; `tools/ui-check-mods/broken-action-result` → `MOD030` |
+| K1.2 | `LastEdict.Authoring` + `tools/d2mod validate` с `MOD001–MOD030`, `MOD090` | `d2mod validate mods/port-synth` → `errors=0`; `tools/ui-check-mods/broken-action-result` → `MOD030` |
 | K1.3 | `MOD040–043` (графика), `MOD050`, `MOD060–061` | тест на модах-заготовках с намеренными ошибками (`tools/ui-check-mods/` — новые каталоги) |
 | K1.4 | `d2mod diff`, `d2mod texts --missing` | печать числа изменённых строк/колонок |
 
@@ -51,7 +51,7 @@
 ## K6. Позже (по решению пользователя)
 
 Скриптовые точки расширения (Lua как у UnveN-тулсета или сборки .NET) — только по отдельному решению; иначе новая механика —
-код в `D2.Rules` с харнессом.
+код в `LastEdict.Rules` с харнессом.
 
 ## Риски
 

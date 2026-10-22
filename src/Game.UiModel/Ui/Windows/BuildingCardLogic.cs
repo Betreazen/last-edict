@@ -1,6 +1,6 @@
-using D2.Data.Menu;
+using LastEdict.Data.Menu;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>
 /// Энциклопедия постройки (<c>DLG_R_C_BUILDING</c>, <c>CEncLayoutBuilding</c> <c>0x57d86a</c>; правая кнопка по значку окна построек

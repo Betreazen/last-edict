@@ -1,9 +1,9 @@
 // Загрузчики правил ДО схемы содержимого (main 639961ee): правила читались прямо из строк таблиц оригинала. Эталон сверки
 // «старая модель = новая» (ContentRulesParityTests) — не править; удаляется вместе с ней, когда таблицы уйдут из проверок.
-using D2.Data.Dbf;
-using D2.Rules.Map;
+using LastEdict.Data.Dbf;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Tests.LegacyLoaders;
+namespace LastEdict.Data.Tests.LegacyLoaders;
 
 /// <summary>
 /// <c>Grace / GcityInf / Gbuild / Gunits / GVars</c> -> <see cref="EconomyRules"/>.

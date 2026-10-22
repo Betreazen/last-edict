@@ -1,7 +1,7 @@
-using D2.Rules.Map;
-using D2.Rules.Units;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Units;
 
-namespace D2.Rules.Magic;
+namespace LastEdict.Rules.Magic;
 
 /// <summary>Отказ надеть предмет — код, который возвращает <c>checkEquip</c>
 /// (Gog <c>0x005DF6B7</c>) и по которому обработчик UI (<c>0x0050416B</c>, тело

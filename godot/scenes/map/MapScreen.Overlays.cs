@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using D2.Data.Menu;
-using D2.Data.Play;
-using D2.Data.Ui;
-using D2.Data.Ui.Windows;
+using LastEdict.Data.Menu;
+using LastEdict.Data.Play;
+using LastEdict.Data.Ui;
+using LastEdict.Data.Ui.Windows;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Окна поверх карты, которые открывает сама партия, а не кнопка: попапы событий сценария (<c>DLG_EVENT_POPUP</c>)
 /// по одному в порядке срабатывания, а при конце партии — окно сообщения (<c>DLG_MESSAGE_BOX</c>) и эпилог
@@ -42,7 +42,7 @@ public partial class MapScreen
         if (!LeaderNameDue(out string viewer, out var hero) || _map.AiRunning || BeginTurnPending || Windows is not { } context) return;
         _named.Add(viewer);
         GD.Print($"first leader name human={viewer} default={hero.Name.Replace(' ', '_')}");
-        OpenWindow(LeaderNameLogic.Screen, new LeaderNameLogic(context, hero.LeaderType, hero.Name, name => session.Run<string?>(new D2.Data.Play.Commands.RenameLeaderCommand(hero.StackId, name))));
+        OpenWindow(LeaderNameLogic.Screen, new LeaderNameLogic(context, hero.LeaderType, hero.Name, name => session.Run<string?>(new LastEdict.Data.Play.Commands.RenameLeaderCommand(hero.StackId, name))));
     }
 
     /// <summary>Окно имени героя этому человеку ещё впереди (условия <see cref="AskLeaderName"/>) — попапы событий его ждут: у движка окно имени
@@ -72,10 +72,10 @@ public partial class MapScreen
 
     /// <summary>Окно начала хода зрителю этого дня ещё не поставлено, но будет (<see cref="AnnounceTurn"/>): человек, ход ИИ кончился, партия
     /// идёт, доход начала хода есть (после загрузки его нет — окна нет). Первый вызов после загрузки день помечает без окна.</summary>
-    private bool BeginTurnDue(out string viewer, out D2.Rules.Map.Bank income)
+    private bool BeginTurnDue(out string viewer, out LastEdict.Rules.Map.Bank income)
     {
         var session = _map.Session;
-        (viewer, income) = ("", D2.Rules.Map.Bank.Zero);
+        (viewer, income) = ("", LastEdict.Rules.Map.Bank.Zero);
         if (_leaving || _map.AiRunning || session.Over || _map.Viewer is not { } who
             || !session.State.Info.Humans.Contains(who, StringComparer.OrdinalIgnoreCase)) return false;
         var key = (who, session.Map.Turn);
@@ -173,7 +173,7 @@ public partial class MapScreen
         // события действия вора — после закрытия окна его итога (ThiefResultOpen).
         if (_map.Viewer is { } viewer && !_map.AiRunning && !UpgradesPending && !GivenPending && !BeginTurnPending && !LeaderNamePending
             && !ThiefResultOpen)
-            foreach (var m in session.Run<IReadOnlyList<EventMessage>>(new D2.Data.Play.Commands.TakeMessagesCommand(viewer)))
+            foreach (var m in session.Run<IReadOnlyList<EventMessage>>(new LastEdict.Data.Play.Commands.TakeMessagesCommand(viewer)))
             {
                 _overlayQueue.Enqueue(("DLG_EVENT_POPUP", new EventPopupLogic(m, Windows is { } w ? w.UnitName : null), "BTN_RIGHTSIDE"));
                 GD.Print($"event popup {m.EventId} for={m.PlayerId} day={m.Day} text={PopupBrief(m.Popup.Text)}");
@@ -223,7 +223,7 @@ public partial class MapScreen
     {
         if (_leaving || _battle is not null || _map.Viewer is not { } viewer || !_map.AiPopupWaits) return;
         PumpNotices(messagesOnly: true);   // раскрытый шпион, гибель иллюзии — тоже сразу (0x489f16, 0x489840)
-        foreach (var m in _map.Session.Run<IReadOnlyList<EventMessage>>(new D2.Data.Play.Commands.TakeMessagesCommand(viewer)))
+        foreach (var m in _map.Session.Run<IReadOnlyList<EventMessage>>(new LastEdict.Data.Play.Commands.TakeMessagesCommand(viewer)))
         {
             _overlayQueue.Enqueue(("DLG_EVENT_POPUP", new EventPopupLogic(m, Windows is { } w ? w.UnitName : null), "BTN_RIGHTSIDE"));
             GD.Print($"event popup {m.EventId} for={m.PlayerId} day={m.Day} ai=1 text={PopupBrief(m.Popup.Text)}");
@@ -326,7 +326,7 @@ public partial class MapScreen
     {
         var session = _map.Session;
         if (_battle is not null || _leaving || _defenderCalled || session.Book is null || !session.EventBattleWaiting
-            || session.Execute(new D2.Data.Play.Commands.NextEventBattleCommand()).Value is not D2.Rules.Battle.BattleState state) return;
+            || session.Execute(new LastEdict.Data.Play.Commands.NextEventBattleCommand()).Value is not LastEdict.Rules.Battle.BattleState state) return;
         // «Горячий стул»: защищается человек (триггерер события) — окно режима 2 и у боя эффекта (CTaskBattle тот же).
         if (_eventBattleCalled != state && CallDefender(state.DefenderGroup, () =>
             {
@@ -357,7 +357,7 @@ public partial class MapScreen
     }
 
     /// <summary>Бой эффекта, для которого окно режима 2 уже закрыто «ОК».</summary>
-    private D2.Rules.Battle.BattleState? _eventBattleCalled;
+    private LastEdict.Rules.Battle.BattleState? _eventBattleCalled;
 
     /// <summary>Открыто окно режима 2 и бой ждёт его «ОК». Один на оба пути (бой с карты и бой эффекта): окно модальное, второй вызов
     /// <see cref="CallDefender"/> до его закрытия невозможен.</summary>
@@ -483,7 +483,7 @@ public partial class MapScreen
         else ShowMap(false, keepVisible: true);
         shown.SetProcessUnhandledInput(true);
         WindowSound(screen, opened: true);   // звук окна — MapScreen.Sounds.cs (сессия Г)
-        if (logic is NoticeLogic { Sound: { } sound }) GameAudio.Of(this).PlayFx(D2.Data.Sound.WindowSounds.Archive, sound);   // руина — ENTRRUIN
+        if (logic is NoticeLogic { Sound: { } sound }) GameAudio.Of(this).PlayFx(LastEdict.Data.Sound.WindowSounds.Archive, sound);   // руина — ENTRRUIN
         GD.Print($"overlay {screen}");
     }
 

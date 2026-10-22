@@ -4,10 +4,10 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using D2.Data.Gfx;
+using LastEdict.Data.Gfx;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Общий кэш текстур картинок графики (файл <c>.webp</c> сборки или <c>.png</c>/<c>.webp</c> мода по уже разрешённому пути — слои модов и HD-замена решены до него) для
 /// объектов карты (<see cref="MapObjects"/>) и поля боя (<see cref="BattleView"/>): повторное открытие карты и каждый следующий бой

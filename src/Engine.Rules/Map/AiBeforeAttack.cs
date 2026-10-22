@@ -1,6 +1,6 @@
-using D2.Rules.Magic;
+using LastEdict.Rules.Magic;
 
-namespace D2.Rules.Map;
+namespace LastEdict.Rules.Map;
 
 /// <summary>Вид производного кандидата атаки (<c>docs/ai-spells.md</c> §5): заклинание перед атакой
 /// (<c>CAiCastSpellBeforeAttack{Stack,City}Action</c>, элемент плана с id заклинания), подмога
@@ -11,7 +11,7 @@ public enum AiPrepKind { Spell, Assist, Attack }
 /// <summary>
 /// Подготовка ИИ к атаке — планировщик <c>0x471ec7</c> и выбор заклинания <c>0x472142</c>, которые зовут построители
 /// атаки отряда (<c>0x453d15</c>) и крепости (<c>0x452baf</c>). Чистые правила; сборку из карты делает
-/// <c>D2.Data.Play.AiTactics</c>. Ранг 1 — листинг <c>Discipl2.exe</c> (GOG 3.01).
+/// <c>LastEdict.Data.Play.AiTactics</c>. Ранг 1 — листинг <c>Discipl2.exe</c> (GOG 3.01).
 /// </summary>
 public static class AiBeforeAttack
 {

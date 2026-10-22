@@ -131,7 +131,7 @@ python tools/d2probe/install.py --restore
 ## Godot
 
 ```bash
-dotnet build godot/D2.Godot.csproj
+dotnet build godot/LastEdict.Godot.csproj
 ```
 
 Сцены лежат в `godot/scenes/<раздел>/` и запускаются явным путём; главная сцена

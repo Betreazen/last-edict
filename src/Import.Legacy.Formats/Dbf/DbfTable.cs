@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text;
 using NDbfReader;
-namespace D2.Data.Dbf;
+namespace LastEdict.Data.Dbf;
 
 public sealed record DbfColumn(string Name, char Type, int Length, int Decimals);
 

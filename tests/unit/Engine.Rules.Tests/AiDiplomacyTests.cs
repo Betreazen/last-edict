@@ -1,7 +1,7 @@
-using D2.Rules.Map;
-using D2.Rules.Rng;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Rng;
 
-namespace D2.Rules.Tests;
+namespace LastEdict.Rules.Tests;
 
 /// <summary>
 /// Дипломатия ИИ на карте (<see cref="AiDiplomacy"/>) на числах разбора

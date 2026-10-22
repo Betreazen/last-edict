@@ -1,8 +1,8 @@
 using System.Text.Json.Serialization;
-using D2.Rules.Battle;
-using D2.Rules.Map;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Play.Commands;
+namespace LastEdict.Data.Play.Commands;
 
 /// <summary>
 /// Команда партии — всё, что меняет состояние (<see cref="GameState"/>) или поток случайных чисел, одной записью-данными: её можно
@@ -416,7 +416,7 @@ public sealed record StartBattleCommand(string Attacker, string Target, bool Due
 /// <summary>Конец боя на открытом экране боя: журнал ходов модели боя (<see cref="TurnRecord"/>) и, если бой вёл экран по шагам, его
 /// действия (<see cref="Play"/>). Экран играет бой на генераторе партии до команды; повтор журнала (<see cref="GameSession.Replaying"/>)
 /// играет его здесь по действиям — и берёт те же числа.</summary>
-public sealed record EndBattleCommand(IReadOnlyList<TurnRecord> Log, D2.Data.Battle.BattlePlay? Play = null) : GameCommand
+public sealed record EndBattleCommand(IReadOnlyList<TurnRecord> Log, LastEdict.Data.Battle.BattlePlay? Play = null) : GameCommand
 {
     internal override object? Run(GameSession s, List<string> report)
     {

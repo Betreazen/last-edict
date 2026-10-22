@@ -1,10 +1,10 @@
 using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
-using D2.Data.Gfx;
+using LastEdict.Data.Gfx;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Графика земли для <see cref="GroundComposer"/> из собранных PNG (<c>assets/gfx</c>, опись —
 /// <see cref="GameData.Content"/>): узоры <c>Ground</c>, маски и спрайты берега <c>GrBorder</c>, фон воды. Картинки

@@ -1,8 +1,8 @@
-using D2.Rules.Battle;
-using D2.Rules.Magic;
-using D2.Rules.Map;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>
 /// Подготовка отряда ИИ к оценке — слот <c>0x44</c> обёртки отряда (<c>docs/ai-items.md</c>): у бойца и нейтрала

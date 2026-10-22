@@ -1,7 +1,7 @@
-using D2.Data.Play;
-using D2.Rules.Magic;
+using LastEdict.Data.Play;
+using LastEdict.Rules.Magic;
 
-namespace D2.Data.Sound;
+namespace LastEdict.Data.Sound;
 
 /// <summary>
 /// Звуки окон карты (<c>Midgard</c>, <c>docs/ai-screen.md</c> §12). Движок, ранг 1: <c>OPENINTR</c>/<c>CLOSINTR</c> звучат при создании и
@@ -115,7 +115,7 @@ public static class WindowSounds
     /// <summary>Звук нажатия элемента (разбор 27.09, ранг 1): только смена лица лорда — <c>BTN_FACE</c> экрана выбора лорда
     /// (<c>CMenuLord</c>, <c>DLG_CHOOSE_LORD</c>, <c>0x4e6945</c>) — <c>CHNGFACE</c>. Поле <c>[+0x44]</c> — ролик смены лица: пока он
     /// идёт, нажатие не принимается и беззвучно (разбор 28.09, ранг 1) — звук просит логика окна (<c>ChooseLordLogic</c>,
-    /// <see cref="D2.Data.Ui.Windows.UiSound"/>). Прочие кнопки беззвучны.</summary>
+    /// <see cref="LastEdict.Data.Ui.Windows.UiSound"/>). Прочие кнопки беззвучны.</summary>
     public static string? OfClick(string screen, string element) =>
         screen.Equals("DLG_CHOOSE_LORD", StringComparison.OrdinalIgnoreCase) && element.Equals("BTN_FACE", StringComparison.OrdinalIgnoreCase)
             ? "CHNGFACE" : null;

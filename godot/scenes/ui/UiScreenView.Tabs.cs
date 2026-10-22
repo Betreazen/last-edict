@@ -1,7 +1,7 @@
-using D2.Data.Ui;
+using LastEdict.Data.Ui;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Режим <c>--tabs</c> — табуляция подписи числом (прогон 2 пользователя 11.10, снимок 33: «Уровень:1» слитно) через
 /// <see cref="Apply"/>, как у подписи экрана. Строка карточки воина <c>X005TA0423</c> с местом <c>\s110;</c>:

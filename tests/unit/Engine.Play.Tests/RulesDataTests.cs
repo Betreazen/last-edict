@@ -1,9 +1,9 @@
-using D2.Data.Battle;
-using D2.Data.Dbf;
+using LastEdict.Data.Battle;
+using LastEdict.Data.Dbf;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Таблицы игры в данных порта (<c>data/rules/*.json</c>, импорт <c>tools/RulesImport</c>): порт в рантайме
 /// читает их, а не <c>.dbf</c> копии игры. Проверяется, что перевод ничего не потерял — значения совпадают клетка в

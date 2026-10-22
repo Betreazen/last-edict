@@ -1,7 +1,7 @@
-using D2.Rules.Battle.Effects;
-using D2.Rules.Rng;
+using LastEdict.Rules.Battle.Effects;
+using LastEdict.Rules.Rng;
 
-namespace D2.Rules.Battle;
+namespace LastEdict.Rules.Battle;
 
 /// <summary>Итог одного удара. Applied — эффект наложен/урон нанесён (ложь при промахе, при
 /// лечении здорового и при иммунитете). Immune — удар остановлен иммунитетом цели
@@ -130,7 +130,7 @@ public static class Attacks
     /// <summary>Удар запасной атакой (<c>Gattacks.ALT_ATTACK</c>) — вторая ветвь
     /// <see cref="AttackClass.Doppelganger"/> и <see cref="AttackClass.TransformSelf"/>. Долг задачи 7,
     /// закрыт задачей 8: поля <c>AltAttackId</c> в <see cref="AttackType"/> тогда не было, потому что
-    /// <c>D2.Data.RulesLoader.Load</c> был отдан другой задаче волны.
+    /// <c>LastEdict.Data.RulesLoader.Load</c> был отдан другой задаче волны.
     /// <para>Рекурсия, а не отдельный путь, — потому что движок делает ровно это: у обоих классов
     /// слоты <c>canMiss</c>, <c>isImmune</c> и <c>onHit</c> в этой ветви вызывают одноимённые слоты
     /// объекта запасной атаки с теми же аргументами (<c>0x6614bf</c> и <c>0x662336</c>). Значит

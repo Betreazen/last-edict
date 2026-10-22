@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using D2.Data.Map;
-using D2.Rules.Magic;
-using D2.Rules.Map;
+using LastEdict.Data.Map;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Map;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>
 /// Смена тумана кольцами (<c>CMidAnim2ChangeFog</c>, <see cref="FogReveal"/>). Вид показывает свой туман зрителя (<see cref="_shownFog"/>,
@@ -256,7 +256,7 @@ public partial class MapView
         int opened = 0;
         for (int fx = x - radius; fx <= x + radius; fx++)
             for (int fy = y - radius; fy <= y + radius; fy++)
-                if (Map.Contains(fx, fy) && D2.Rules.Map.Fog.InSight(fx - x, fy - y, radius, D2.Rules.Map.Fog.DefaultShape) && fog[fx, fy])
+                if (Map.Contains(fx, fy) && LastEdict.Rules.Map.Fog.InSight(fx - x, fy - y, radius, LastEdict.Rules.Map.Fog.DefaultShape) && fog[fx, fy])
                 {
                     fog[fx, fy] = false;
                     opened++;

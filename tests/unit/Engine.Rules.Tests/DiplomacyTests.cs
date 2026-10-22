@@ -1,6 +1,6 @@
-using D2.Rules.Map;
+using LastEdict.Rules.Map;
 
-namespace D2.Rules.Tests;
+namespace LastEdict.Rules.Tests;
 
 /// <summary>
 /// Дипломатия (<see cref="Diplomacy"/>) на синтетике — без корпуса, без справочников и без игры.

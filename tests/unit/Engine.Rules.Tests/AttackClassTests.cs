@@ -1,7 +1,7 @@
-using D2.Data;
-using D2.Data.Battle;
-using D2.Rules.Battle;
-using D2.Rules.Rng;
+using LastEdict.Data;
+using LastEdict.Data.Battle;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Rng;
 using Xunit.Abstractions;
 
 /// <summary>
@@ -463,7 +463,7 @@ public class AttackClassTests(ITestOutputHelper output)
     /// <summary>Инициатива юнита так, как её считает TurnOrder (без броска BAT_INIT).</summary>
     private static int Initiative(BattleUnit unit, RulesConstants c)
     {
-        int ini = D2.Rules.Units.EffectiveStats.OfAttack(unit.Attack, unit.Chain).Attack.Initiative;
+        int ini = LastEdict.Rules.Units.EffectiveStats.OfAttack(unit.Attack, unit.Chain).Attack.Initiative;
         return ini - ini * c.LowerInitiativePercent(unit.LowerInitiativeLevel) / 100;
     }
 }

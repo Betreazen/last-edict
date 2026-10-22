@@ -2,16 +2,16 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
-using D2.Data.Battle;
-using D2.Data.Dbf;
-using D2.Data.Magic;
-using D2.Data.Map;
-using D2.Data.Play;
-using D2.Data.Tests.LegacyLoaders;
-using D2.Rules.Map;
+using LastEdict.Data.Battle;
+using LastEdict.Data.Dbf;
+using LastEdict.Data.Magic;
+using LastEdict.Data.Map;
+using LastEdict.Data.Play;
+using LastEdict.Data.Tests.LegacyLoaders;
+using LastEdict.Rules.Map;
 using Xunit.Abstractions;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>
 /// Сверка «старая модель = новая» (этап Э2, задача C, <c>docs/content-schema.md</c>): правила, собранные прежними загрузчиками прямо
@@ -38,7 +38,7 @@ public class ContentRulesParityTests(ITestOutputHelper output)
     {
         string? dir = DirOf(which);
         Skip.If(dir is null, $"нет таблиц «{which}»");
-        var content = D2.Data.Content.LegacyContent.Import(dir);
+        var content = LastEdict.Data.Content.LegacyContent.Import(dir);
         var checks = new (string Name, object Old, object New)[]
         {
             ("GameRules", LegacyRulesLoader.Load(dir), RulesLoader.Load(content)),
@@ -73,7 +73,7 @@ public class ContentRulesParityTests(ITestOutputHelper output)
     {
         string? dir = DirOf(which);
         Skip.If(dir is null, $"нет таблиц «{which}»");
-        var book = GameBook.Load(D2.Data.Content.LegacyContent.Import(dir));
+        var book = GameBook.Load(LastEdict.Data.Content.LegacyContent.Import(dir));
         T Rows<T>(string table, Func<IReadOnlyList<DbfRow>, T> f) => f(GameTables.Read(dir, table + ".dbf").Rows);
         const string empty = "g000000000";
         var gvars = Rows("GVars", r => r[0]);
@@ -142,7 +142,7 @@ public class ContentRulesParityTests(ITestOutputHelper output)
         foreach (var lord in Rows("Glord", r => r))
             if (raceTypes.TryGetValue(lord.GetString("RACE_ID"), out int type) && research.TryGetValue(lord.GetString("LORD_ID"), out var spells))
                 foreach (string spell in spells) spellRace.TryAdd(spell, type);
-        foreach (var item in book.Items.Values.Where(i => i.Category == D2.Rules.Magic.ItemCategory.Scroll))
+        foreach (var item in book.Items.Values.Where(i => i.Category == LastEdict.Rules.Magic.ItemCategory.Scroll))
         {
             int t = spellRace.TryGetValue(item.SpellId, out int found) ? found : 0;
             Assert.Equal(t switch { 0 => "SCROLLHU", 1 => "SCROLLUN", 2 => "SCROLLHE", 3 => "SCROLLDW", 5 => "SCROLLEL", _ => "" },

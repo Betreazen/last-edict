@@ -1,11 +1,11 @@
 using System.Collections.Generic;
-using D2.Data.Ui.Windows;
+using LastEdict.Data.Ui.Windows;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Обмен между отрядами (<c>BTN_EXCHANGE</c> панели команд, <c>CExchangeInterf</c> <c>0x492cee</c>): панель команд сменяется на
-/// <c>DLG_DROP_BAG</c> с <c>X005TA0157</c>, карта ждёт щелчка по своему отряду рядом (<see cref="D2.Data.Play.GameSession.ExchangeCheck"/>);
+/// <c>DLG_DROP_BAG</c> с <c>X005TA0157</c>, карта ждёт щелчка по своему отряду рядом (<see cref="LastEdict.Data.Play.GameSession.ExchangeCheck"/>);
 /// над годной клеткой — курсор <c>EXCHANGE</c>. Годная клетка — окно <c>DLG_EXCHANGE</c> (<see cref="ExchangeLogic"/>: слева выделенный,
 /// справа кликнутый); Esc или «Закрыть» — отмена. Под курсором — отметки <c>SELECT_YES/NO</c> на клетках блока 2×2
 /// (<see cref="SpellAimView.TargetMarks"/>; годность — базовая <c>CTaskStrat</c>: свой отряд, <see cref="SpellAimView.OwnStackAt"/>).</summary>

@@ -1,4 +1,4 @@
-namespace D2.Rules.Units;
+namespace LastEdict.Rules.Units;
 
 /// <summary>Одно действие, убившее юнитов одной стороны: сумма их <c>XP_KILLED</c> (с ростом), кто в этот момент делит
 /// опыт и сколько из них призваны в этом бою (<see cref="Experience.SummonStatusBit"/>) — они берут долю, но в делитель

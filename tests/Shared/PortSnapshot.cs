@@ -3,14 +3,14 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using D2.Data.Battle;
-using D2.Data.Play;
-using D2.Data.Play.Commands;
-using D2.Rules.Battle;
-using D2.Rules.Map;
-using D2.Rules.Rng;
+using LastEdict.Data.Battle;
+using LastEdict.Data.Play;
+using LastEdict.Data.Play.Commands;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Rng;
 
-namespace D2.Tests;
+namespace LastEdict.Tests;
 
 /// <summary>
 /// Снимки «порт против порта» (<c>docs/own-version-roadmap.md</c> §3.7, Э3): арбитр правил после отделения от оригинала. Партия без людей

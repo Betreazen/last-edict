@@ -1,8 +1,8 @@
-using D2.Data.Ui;
-using D2.Rules.Battle;
-using D2.Rules.Units;
+using LastEdict.Data.Ui;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Units;
 
-namespace D2.Data.Gfx;
+namespace LastEdict.Data.Gfx;
 
 /// <summary>Картинка боя: где лежит (архив и имя анимации), куда кладётся левым верхним углом в координатах
 /// экрана 800×600 и на каком слое (<c>z</c>). <see cref="Shadow"/> — тень юнита.</summary>
@@ -549,18 +549,18 @@ public sealed class BattleScene
 
     /// <summary>«Юнит» анимации применения боевого предмета по категории (<c>0x682eb0</c>): зелья (4–7) — <c>G000IG1111</c>, сфера —
     /// <c>G000IG2222</c>, талисман — <c>G000IG3333</c>; прочее — нет (не <c>GItem.UNIT_ID</c>, ранг 1).</summary>
-    public static string? ItemAnimation(D2.Rules.Magic.ItemCategory category) => category switch
+    public static string? ItemAnimation(LastEdict.Rules.Magic.ItemCategory category) => category switch
     {
-        D2.Rules.Magic.ItemCategory.PotionBoost or D2.Rules.Magic.ItemCategory.PotionHeal or D2.Rules.Magic.ItemCategory.PotionRevive
-            or D2.Rules.Magic.ItemCategory.PotionPermanent => "G000IG1111",
-        D2.Rules.Magic.ItemCategory.Orb => "G000IG2222",
-        D2.Rules.Magic.ItemCategory.Talisman => "G000IG3333",
+        LastEdict.Rules.Magic.ItemCategory.PotionBoost or LastEdict.Rules.Magic.ItemCategory.PotionHeal or LastEdict.Rules.Magic.ItemCategory.PotionRevive
+            or LastEdict.Rules.Magic.ItemCategory.PotionPermanent => "G000IG1111",
+        LastEdict.Rules.Magic.ItemCategory.Orb => "G000IG2222",
+        LastEdict.Rules.Magic.ItemCategory.Talisman => "G000IG3333",
         _ => null,
     };
 
     /// <summary>Анимация применения предмета (<c>BatItems.ff</c>, <c>{id}HMOVA1B00</c> — общая для сторон, <c>0x5c76dd</c>): на месте
     /// применившего, на слое его тела (<c>0x651fc6</c>), один проход; замаха носителя нет (<c>0x6365f2</c>). Нет картинки — null.</summary>
-    public BattleSprite? ItemEffect(D2.Rules.Magic.ItemCategory category, BattleUnit bearer) =>
+    public BattleSprite? ItemEffect(LastEdict.Rules.Magic.ItemCategory category, BattleUnit bearer) =>
         ItemAnimation(category) is { } id ? Anim(id, "HMOV", 1, bearer, "BatItems", above: 0) : null;
 
     /// <summary>Анимация смерти: <c>DEATH_{РАСА}_{S|L}{кадров}</c> из <c>Battle.ff</c> — число в имени это число

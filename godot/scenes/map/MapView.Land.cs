@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using D2.Data.Gfx;
-using D2.Data.Play;
-using D2.Rules.Map;
+using LastEdict.Data.Gfx;
+using LastEdict.Data.Play;
+using LastEdict.Rules.Map;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Растекание земли по клеткам (<c>CMidAnim2Terrain</c>, сообщение 27; разбор 28.09, ранг 1 по листингу): клетки идут группами —
 /// обход каждого источника (крепость, жезл) в порядке взятия. Раз в 5 тиков по 66 мс (первая работа — на 5-м тике) из каждой группы
@@ -17,7 +17,7 @@ namespace D2.Godot;
 /// (8 соседей) — квадрат 3×3 вокруг него перекрашивается с этой же пачкой; прочие клетки вне групп — с последней.</summary>
 public partial class MapView
 {
-    private const double LandTick = D2.Data.Map.AnimClock.SlowMs / 1000.0;   // CMidAnim2Terrain — медленная группа
+    private const double LandTick = LastEdict.Data.Map.AnimClock.SlowMs / 1000.0;   // CMidAnim2Terrain — медленная группа
     private const int LandEvery = 5;
 
     /// <summary>Подмена типа земли клеток на время растекания: пока клетка не пройдена — прежний, после — новый.</summary>

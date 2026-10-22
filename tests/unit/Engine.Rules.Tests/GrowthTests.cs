@@ -1,12 +1,12 @@
-using D2.Data;
-using D2.Data.Battle;
-using D2.Rules.Battle;
-using D2.Rules.Units;
+using LastEdict.Data;
+using LastEdict.Data.Battle;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Units;
 using Xunit.Abstractions;
 
 /// <summary>
 /// Задача 11 фазы Ф6: рост статов — <c>GDynUpgr</c> (уровневый рост юнита) и <c>GleaUpg</c>
-/// (способности лидера). Все числа — из живой ванили через <c>D2.Data</c>; синтетических таблиц
+/// (способности лидера). Все числа — из живой ванили через <c>LastEdict.Data</c>; синтетических таблиц
 /// здесь нет. Игра не запускается.
 /// <para>Формула роста прочитана в дизассемблере <c>game-pristine/Discipl2.exe</c> (GOG 3.01) —
 /// адреса перечислены у <see cref="UnitGrowth"/>. Тесты утверждают её на конкретных вани́льных

@@ -1,7 +1,7 @@
-using D2.Rules.Magic;
-using D2.Rules.Map;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Map;
 
-namespace D2.Rules.Tests;
+namespace LastEdict.Rules.Tests;
 
 /// <summary>
 /// Команды жезла (<see cref="Rods"/>) на синтетике — без корпуса, без справочников и без игры.

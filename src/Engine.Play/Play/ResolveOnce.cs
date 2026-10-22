@@ -1,4 +1,4 @@
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>Итог, который получают один раз из двух потоков (бой ИИ на экране, <c>MapView.AiBattle</c>): либо его отдаёт экран
 /// (<see cref="TrySet"/>), либо его считает первый пришедший к <see cref="Run"/> — второй ждёт и берёт тот же итог. Без этого при уходе

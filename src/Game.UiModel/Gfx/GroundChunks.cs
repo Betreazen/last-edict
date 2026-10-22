@@ -1,4 +1,4 @@
-namespace D2.Data.Gfx;
+namespace LastEdict.Data.Gfx;
 
 /// <summary>Земля карты кусками: мир делится на квадраты <see cref="ChunkSize"/>×<see cref="ChunkSize"/> мировых
 /// точек, каждый собирается <see cref="GroundComposer"/> по требованию и держится в кэше последних

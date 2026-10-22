@@ -1,6 +1,6 @@
-using D2.Rules.Units;
+using LastEdict.Rules.Units;
 
-namespace D2.Rules.Battle;
+namespace LastEdict.Rules.Battle;
 
 /// <summary>Иммунитеты и варды.
 ///

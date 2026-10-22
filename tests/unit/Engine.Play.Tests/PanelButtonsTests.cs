@@ -1,10 +1,10 @@
-using D2.Data.Battle;
-using D2.Data.Content;
-using D2.Data.Map;
-using D2.Data.Ui;
+using LastEdict.Data.Battle;
+using LastEdict.Data.Content;
+using LastEdict.Data.Map;
+using LastEdict.Data.Ui;
 using Xunit;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Погашенные кнопки панели боя и панели команд карты — как у движка (<c>CButtonInterf::setEnabled</c> <c>0x531cca</c>; Зс55, Зс56):
 /// правило по моменту боя (<see cref="BattlePanelButtons"/>), панель команд по выбранному отряду (<see cref="StrategicPanelLogic"/>);

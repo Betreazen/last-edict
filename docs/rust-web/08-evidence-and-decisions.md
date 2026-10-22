@@ -18,10 +18,10 @@
 
 | Свидетельство | Что установлено | Следствие для будущей версии |
 |---|---|---|
-| [D2.Godot.csproj](../../godot/D2.Godot.csproj) | Godot.NET.Sdk 4.7.2, net10.0, ссылки на Data/Rules | C# binaries не становятся Rust/Wasm автоматически |
+| [LastEdict.Godot.csproj](../../godot/LastEdict.Godot.csproj) | Godot.NET.Sdk 4.7.2, net10.0, ссылки на Data/Rules | C# binaries не становятся Rust/Wasm автоматически |
 | [project.godot](../../godot/project.godot) | UiFlow — main scene, 1280×720 viewport | UI-поток и размеры — источник эталона, не готовая web-архитектура |
 | [HANDOFF](../HANDOFF.md), [step6](../step6-game-loop.md) | Полный цикл ещё описан как работа впереди | Нельзя начинать миграцию до принятого G0 |
-| [D2.Rules.csproj](../../src/Engine.Rules/D2.Rules.csproj) | Правила не зависят от Godot SDK | Подходящая граница чистого Rust core |
+| [LastEdict.Rules.csproj](../../src/Engine.Rules/LastEdict.Rules.csproj) | Правила не зависят от Godot SDK | Подходящая граница чистого Rust core |
 | [GameData](../../godot/autoload/GameData.cs) | Корни data/assets вычисляются вне res:// | Web требует явного manifest/asset provider |
 | [MapSource](../../godot/scenes/map/MapSource.cs) | Карта читается из локального .sg | Будущий сценарий проходит offline-import |
 | [GameCatalog](../../src/Engine.Play/Game/GameCatalog.cs) | Есть метаданные сценария/раса и merge | Переиспользуются смысл и ID, добавляются версии и зависимости |

@@ -1,8 +1,8 @@
-using D2.Data.Content;
-using D2.Data.Game;
+using LastEdict.Data.Content;
+using LastEdict.Data.Game;
 using Xunit;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Каталог меню (<c>data/game</c>): расы, лорды, сценарии. Числа пересчитаны по копии игры GOG 3.01
 /// (<c>Globals/Grace.dbf</c>, <c>Glord.dbf</c>, <c>Exports/*.sg</c>).</summary>
@@ -121,11 +121,11 @@ public class GameCatalogTests
     public void MountainImages_FromTileTable()
     {
         Skip.IfNot(Directory.Exists(GamePaths.Globals), $"нет копии игры: {GamePaths.GameDir}");
-        var art = D2.Data.Map.MapArtData.Import(GamePaths.GameDir);
+        var art = LastEdict.Data.Map.MapArtData.Import(GamePaths.GameDir);
         foreach (string terrain in new[] { "HU", "DW", "HE", "UN", "NE", "EL" })
             Assert.Equal([11, 10, 9, 8], new[] { 1, 2, 3, 5 }.Select(size => art.MountainImageCount(terrain, size)));
-        string file = Path.Combine(AppContext.BaseDirectory, "data", "map", D2.Data.Map.MapArtData.MountainsFile);
-        Assert.Equal(D2.Data.Map.MapArtData.ToJson(art.Mountains), File.ReadAllText(file).ReplaceLineEndings("\n"));
+        string file = Path.Combine(AppContext.BaseDirectory, "data", "map", LastEdict.Data.Map.MapArtData.MountainsFile);
+        Assert.Equal(LastEdict.Data.Map.MapArtData.ToJson(art.Mountains), File.ReadAllText(file).ReplaceLineEndings("\n"));
     }
 
     /// <summary>Файлы в git — ровно результат импорта: пересборка из копии игры даёт тот же текст.</summary>

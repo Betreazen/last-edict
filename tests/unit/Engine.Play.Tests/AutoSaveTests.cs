@@ -1,9 +1,9 @@
-using D2.Data.Content;
-using D2.Data.Map;
-using D2.Data.Play;
-using D2.Data.Ui;
+using LastEdict.Data.Content;
+using LastEdict.Data.Map;
+using LastEdict.Data.Play;
+using LastEdict.Data.Ui;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Автосохранение по концу хода человека (<see cref="AutoSave"/>) — как у обёртки DisciplesGL-HD: архив «&lt;сценарий&gt; T####» в
 /// каталоге сохранений, не больше 15 архивов сценария, чужие файлы не трогаются; быстрое сохранение (<see cref="QuickSave"/>) — один файл

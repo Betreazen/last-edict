@@ -1,4 +1,4 @@
-namespace D2.Rules.Battle;
+namespace LastEdict.Rules.Battle;
 
 /// <summary>Решение хода, принятое не политикой ИИ, — человеком (в С2 — из журнала оригинала): <see cref="BattleSim.Run"/> исполняет
 /// его вместо <see cref="BattleAi.Choose"/> и бросков решения ИИ не тратит — движок в ход человека их не делает (журнал: нажатие

@@ -1,7 +1,7 @@
 using System.Buffers.Binary;
 using System.Text;
 
-namespace D2.Data.Import;
+namespace LastEdict.Data.Import;
 
 /// <summary>Имена героев по умолчанию (окно имени нового героя, <c>DLG_GETINFO_BOX</c>, 0x4b02f3): <c>Globals/Tleader.dbf</c> игры (cp1252) →
 /// <c>data/ui/leader-names.en.json</c>, та же таблица слоя русификации «Руссобит-М» (cp866) → <c>leader-names.ru.json</c> (перенос

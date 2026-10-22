@@ -1,6 +1,6 @@
-using D2.Rules.Map;
+using LastEdict.Rules.Map;
 
-namespace D2.Rules.Units;
+namespace LastEdict.Rules.Units;
 
 /// <summary>
 /// Вход поиска цели повышения не лидера (<c>0x5d7fe7</c>, псевдокод REA/Ghidra 17.10): цель вообще ищется, только если юнит «у своей

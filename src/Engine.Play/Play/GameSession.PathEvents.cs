@@ -1,6 +1,6 @@
-using D2.Rules.Map;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>Упреждающая проверка пути событиями сценария (<c>docs/map-path.md</c> §7, <c>docs/scenario-events.md</c> §1.2).</summary>
 public sealed partial class GameSession

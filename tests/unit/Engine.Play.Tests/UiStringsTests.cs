@@ -1,8 +1,8 @@
-using D2.Data.Ui;
+using LastEdict.Data.Ui;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Строки интерфейса: свой формат, выбор языка с откатом, наложение мода и сами файлы
 /// <c>data/ui/strings.&lt;язык&gt;.json</c>. Числа сверены пересчётом таблиц игры (GOG 3.01 + русификация

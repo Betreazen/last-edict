@@ -1,4 +1,4 @@
-namespace D2.Data.Gfx;
+namespace LastEdict.Data.Gfx;
 
 /// <summary>Туман войны на карте (<c>docs/map-render-stacks.md</c> §4): картинка скрытой клетки по её соседям,
 /// рамка за краем карты и правило, прячется ли картинка объекта. <c>hidden(x, y)</c> — клетка скрыта для игрока;

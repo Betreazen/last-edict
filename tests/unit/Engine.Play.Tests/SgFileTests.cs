@@ -1,6 +1,6 @@
 using System.Text.Json;
-using D2.Data;
-using D2.Data.Sg;
+using LastEdict.Data;
+using LastEdict.Data.Sg;
 using Kaitai;
 
 public class SgFileTests

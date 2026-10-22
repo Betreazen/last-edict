@@ -2,11 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using D2.Data.Diagnostics;
-using D2.Data.Play;
+using LastEdict.Data.Diagnostics;
+using LastEdict.Data.Play;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>
 /// Зонд порта: всё, что видно при игре, — в журнал <c>user://probe/port-&lt;время&gt;.jsonl</c> (<see cref="PortJournal"/>; разбор —

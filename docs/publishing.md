@@ -82,7 +82,7 @@ data/…: импортируйте их из копии Disciples II» (`tests/u
 
 Пресет `godot/export_presets.cfg` «Windows Desktop» (x86_64, .NET, без вшитого pck). Для экспорта нужны **mono-шаблоны** 4.7.2
 (`%APPDATA%\Godot\export_templates\4.7.2.stable.mono`; обычные `4.7.2.stable` C# не запускают) или свой каталог `-Templates` с
-`windows_{release,debug}_x86_64*.exe` из `Godot_v4.7.2-stable_mono_export_templates.tpz`. Экспорту .NET нужен `godot/D2.Godot.sln`
+`windows_{release,debug}_x86_64*.exe` из `Godot_v4.7.2-stable_mono_export_templates.tpz`. Экспорту .NET нужен `godot/LastEdict.Godot.sln`
 (Godot ищет решение по имени сборки). Рядом с exe — наш контент (§1), лицензии; скрипт проверяет, что файлов игры в сборке нет, и
 кладёт `dist/disciples-godot-win64.zip`. `-Check -DataDir <импорт>` — запуск exe без окна до главного меню (`--input "wait 1"`);
 с `-ImportFrom <папка игры>` и пустым `-DataDir` — первый запуск с импортом.

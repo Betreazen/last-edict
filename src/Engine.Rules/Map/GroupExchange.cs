@@ -1,4 +1,4 @@
-namespace D2.Rules.Map;
+namespace LastEdict.Rules.Map;
 
 /// <summary>
 /// Перенос юнита между группами (отряд героя, гарнизон, другой отряд) — ответ проверки <c>swap_check</c>

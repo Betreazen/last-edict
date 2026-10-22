@@ -1,12 +1,12 @@
-using D2.Data.Content;
-using D2.Data.Menu;
-using D2.Data.Play;
-using D2.Data.Ui;
-using D2.Data.Ui.Windows;
-using D2.Rules.Map;
-using D2.Rules.Units;
+using LastEdict.Data.Content;
+using LastEdict.Data.Menu;
+using LastEdict.Data.Play;
+using LastEdict.Data.Ui;
+using LastEdict.Data.Ui.Windows;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Units;
 
-namespace D2.Data.Map;
+namespace LastEdict.Data.Map;
 
 /// <summary>Карточка объекта карты по правой кнопке: окно и его логика.</summary>
 public sealed record MapCard(string Screen, string ObjectId, IScreenLogic Logic);
@@ -95,7 +95,7 @@ public static class MapCards
     {
         ArgumentNullException.ThrowIfNull(c);
         if (leader is null) return (false, false);
-        var marks = D2.Data.Gfx.BattleMarkSets.Of(c.Session.RequireBook());
+        var marks = LastEdict.Data.Gfx.BattleMarkSets.Of(c.Session.RequireBook());
         return (leader.Modifiers.Any(marks.SpellBoost.Contains), leader.Modifiers.Any(marks.SpellLower.Contains));
     }
 
@@ -280,7 +280,7 @@ public static class MapCards
         if (own.Length == 0 || !LeaderImpl(c, type) || c.Session.Book is not { } book) return UnitName(c, type);
         int category = book.TryGlobal(type, out var id, out _) && book.Rules.Units.TryGetValue(id, out var unit) ? unit.Category : -1;
         bool nameless = book.LeaderCategoryOf(type) == ThiefCategory
-                        || category is D2.Rules.Battle.UnitCategory.Noble or D2.Rules.Battle.UnitCategory.Summon;
+                        || category is LastEdict.Rules.Battle.UnitCategory.Noble or LastEdict.Rules.Battle.UnitCategory.Summon;
         return nameless ? UnitName(c, type) : own;
     }
 

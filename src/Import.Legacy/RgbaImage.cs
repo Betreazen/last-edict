@@ -1,4 +1,4 @@
-namespace D2.Data.Import;
+namespace LastEdict.Data.Import;
 
 /// <summary>Картинка импорта в памяти: RGBA по 8 бит, строка за строкой. Без движка — разбор, сборка кадров и хеши живут в обычном C#,
 /// кодек записи (<see cref="IImageEncoder"/>) подставляет тот, кто запускает импорт.</summary>

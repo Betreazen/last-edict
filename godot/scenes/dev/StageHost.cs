@@ -1,7 +1,7 @@
-using D2.Data.Ui;
+using LastEdict.Data.Ui;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Стенд показа: отдельная сцена (экран карты, экран боя) — в буфере показа (<see cref="ScreenStage"/>), как экраны в игре
 /// (<see cref="UiFlowView"/>). Для замеров кадра и снимков в каждом режиме вписывания без прохода по меню:

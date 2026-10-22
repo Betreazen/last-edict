@@ -1,7 +1,7 @@
-using D2.Data.Map;
-using D2.Data.Ui;
+using LastEdict.Data.Map;
+using LastEdict.Data.Ui;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Вид карты <c>DLG_ISO_VIEW</c> (<see cref="IsoViewLogic"/>): рамка края поля <c>ISO_OUTLINE</c> над картой — уголок справа
 /// внизу, которого у порта не было (сверка снимков 28.09, <c>docs/ai-screen.md</c> §11).</summary>

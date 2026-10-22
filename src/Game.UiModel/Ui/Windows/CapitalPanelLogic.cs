@@ -1,6 +1,6 @@
-using D2.Data.Menu;
+using LastEdict.Data.Menu;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>
 /// Панель столицы <c>DLG_CAPITAL</c> (<c>CCapitalInterf</c>) — на месте панели команд, пока на месте карты картинка
@@ -56,7 +56,7 @@ public sealed class CapitalPanelLogic(WindowContext context, string capitalId) :
     }
 }
 
-/// <summary>Лицо гостя панели столицы по состоянию лидера — как у панели команд (<see cref="D2.Data.Map.PanelFace"/>): <c>0x486a6f</c> —
+/// <summary>Лицо гостя панели столицы по состоянию лидера — как у панели команд (<see cref="LastEdict.Data.Map.PanelFace"/>): <c>0x486a6f</c> —
 /// жив (<c>0x5e98ad</c>) — доля здоровья <c>hp·100/max</c> (<c>0x486abc</c>), раненый — нижняя доля красным; павший — состояние 10
 /// (<c>0x486ac7</c>), маска <c>MASKDEADS</c> (у широкого <c>FACE</c> большого без своего <c>FACES</c> — <c>MASKDEADL</c>). Значков у
 /// гостя столицы движок не кладёт (картинка ставится сразу, флаги 9, <c>0x486ada</c>).</summary>
@@ -64,7 +64,7 @@ public static class CapitalGuestFace
 {
     private static readonly UiColor Wounded = new(255, 0, 0);
 
-    public static string Of(WindowContext context, D2.Rules.Map.MapUnit leader)
+    public static string Of(WindowContext context, LastEdict.Rules.Map.MapUnit leader)
     {
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(leader);

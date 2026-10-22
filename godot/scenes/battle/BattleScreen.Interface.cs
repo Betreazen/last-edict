@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using D2.Data.Battle;
-using D2.Data.Gfx;
-using D2.Rules.Battle;
+using LastEdict.Data.Battle;
+using LastEdict.Data.Gfx;
+using LastEdict.Rules.Battle;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Проверка интерфейса боя («--d1», замечания прогона 11.10, пункты 14, 16, 17, 24, 27, 30) — числами, без окна: подсказки подложек,
 /// строки подписи крупного портрета, предметы только у ходящего лидера, выбор цели портретом панели, место окна сообщения и его слой,
@@ -33,7 +33,7 @@ public partial class BattleScreen
         string caption = _field.BigTextLines.FirstOrDefault() ?? "-";
 
         // 24: предметы — только у ходящего лидера: у другого юнита (лидера с зельем) при ходе не-лидера слоты пусты.
-        var potion = D2.Data.Play.GameBook.Load(GameData.Rules).Items.Values.First(i => i.Category == D2.Rules.Magic.ItemCategory.PotionHeal);
+        var potion = LastEdict.Data.Play.GameBook.Load(GameData.Rules).Items.Values.First(i => i.Category == LastEdict.Rules.Magic.ItemCategory.PotionHeal);
         var moverType = mover.Type;
         var leader = _session.State.Units.Where(u => u.OnField && !ReferenceEquals(u, mover)).OrderBy(u => u.Attacker == mover.Attacker ? 0 : 1).FirstOrDefault();
         int foreign = -1;
@@ -113,7 +113,7 @@ public partial class BattleScreen
 
     /// <summary>Пункт 24 (ответ 11.10): лидер ИИ с зельем на своём ходу — значков предметов нет. Поле строится с ходящим юнитом чужой стороны
     /// (<see cref="BattleView.ActiveHuman"/> — по <see cref="BattleSession.IsPlayers"/>); число — значки плюс 100, если слот ловит мышь.</summary>
-    private int ForeignLeaderItems(D2.Rules.Magic.Item potion)
+    private int ForeignLeaderItems(LastEdict.Rules.Magic.Item potion)
     {
         if (_session.State.Units.FirstOrDefault(u => u.OnField && !_session.IsPlayers(u)) is not { } foe) return -1;
         var type = foe.Type;
@@ -134,7 +134,7 @@ public partial class BattleScreen
     /// строка — какие кнопки разрешены и не скрыты (1/0) и цели лечения.</summary>
     private static string HealerButtons()
     {
-        var rules = D2.Data.Battle.RulesLoader.Load(GameData.Rules);
+        var rules = LastEdict.Data.Battle.RulesLoader.Load(GameData.Rules);
         BattleUnit Unit(string id, bool attacker, int slot, int hp, int hpMax, AttackType attack) => new()
         {
             Id = id, Attacker = attacker, Slot = slot, Hp = hp, HpMax = hpMax, Attack = attack,
@@ -144,7 +144,7 @@ public partial class BattleScreen
         var healer = Unit("H", true, 1, 60, 60, new AttackType("g000aa0011", 10, AttackClass.Heal, 100, 2, 0, 20, false, 1));
         var enemy = Unit("E", false, 0, 10, 10, new AttackType("g000aa0020", 50, AttackClass.Damage, 100, 2, 1, 0, false, 1));
         var state = new BattleState { Units = [fighter, healer, enemy], AttackerGroup = "A", DefenderGroup = "D" };
-        var session = new D2.Data.Battle.BattleSession(state, new BattleSim(state, new D2.Rules.Rng.EngineRng(), rules.Constants), rules.Constants);
+        var session = new LastEdict.Data.Battle.BattleSession(state, new BattleSim(state, new LastEdict.Rules.Rng.EngineRng(), rules.Constants), rules.Constants);
         for (int guard = 0; guard < 100 && session.Winner is null; guard++)
         {
             if (!session.WaitsPlayer) session.AiStep();
@@ -185,5 +185,5 @@ public partial class BattleScreen
         return $"{waiter.Id}:ходов={after.Count}:последний={(after.Count > 0 && after[^1] == waiter.Id ? 1 : 0)}:повтор={again}";
     }
 
-    private static Vector2 Center(D2.Data.Ui.UiRect r) => new(r.X + (r.Width / 2f), r.Y + (r.Height / 2f));
+    private static Vector2 Center(LastEdict.Data.Ui.UiRect r) => new(r.X + (r.Width / 2f), r.Y + (r.Height / 2f));
 }

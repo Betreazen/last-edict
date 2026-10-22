@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Анимации интерфейса: картинка, чей кадр — имя анимации из описи (<c>_FIREFLY</c>, <c>_WATER</c>, <c>DLG_WAIT_HOURGLASS</c>;
 /// кадры — <c>анимация/NNN</c>), крутится по кругу, 66 мс на кадр — как все анимации общего аниматора движка (медленная группа,

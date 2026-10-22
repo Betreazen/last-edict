@@ -118,7 +118,7 @@ D2_CORPUS_DIR="C:/…/disciples-godot/corpus" dotnet run --project tools/UiFlowI
 dotnet run --project tools/UiFlowImport -- --journal 20260920-x/passive-001.jsonl --journal …
 ```
 
-Инструмент печатает отчёт о покрытии — числа ниже взяты из него. Алгоритм — `src/D2.Verification/Ui/UiFlowImport*.cs`.
+Инструмент печатает отчёт о покрытии — числа ниже взяты из него. Алгоритм — `src/LastEdict.Verification/Ui/UiFlowImport*.cs`.
 
 ## Правило пары щелчка и смены экрана
 

@@ -1,9 +1,9 @@
-using D2.Data.Content;
-using D2.Data.Play;
-using D2.Rules.Map;
-using D2.Data.Play.Commands;
+using LastEdict.Data.Content;
+using LastEdict.Data.Play;
+using LastEdict.Rules.Map;
+using LastEdict.Data.Play.Commands;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>Тексты действий вора (имя и описание по виду действия).</summary>
 public sealed record ThiefTexts(IReadOnlyDictionary<int, (string Name, string Desc)> Actions)
@@ -44,7 +44,7 @@ public static class ThiefWindows
     /// <summary>Лидер отряда — вор (<c>UNIT_CAT</c> знатный).</summary>
     public static bool IsThief(WindowContext c, string stackId) =>
         c is not null && c.Map.Stacks.TryGetValue(stackId, out var s) && c.Map.Units.TryGetValue(s.LeaderId, out var leader) && leader.Hp > 0
-        && c.Session.RequireBook().CategoryOf(leader.TypeId) == D2.Rules.Battle.UnitCategory.Noble;
+        && c.Session.RequireBook().CategoryOf(leader.TypeId) == LastEdict.Rules.Battle.UnitCategory.Noble;
 }
 
 /// <summary>

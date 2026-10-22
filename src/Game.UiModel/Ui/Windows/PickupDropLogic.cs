@@ -1,9 +1,9 @@
-using D2.Data.Menu;
-using D2.Rules.Magic;
-using D2.Rules.Map;
-using D2.Data.Play.Commands;
+using LastEdict.Data.Menu;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Map;
+using LastEdict.Data.Play.Commands;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>Выбрать клетку рядом с отрядом, чтобы бросить мешок (<c>CTaskPickupDrop</c>, строка <c>X005TA0156</c>).</summary>
 public sealed record UiDrop(string StackId) : UiRequest;

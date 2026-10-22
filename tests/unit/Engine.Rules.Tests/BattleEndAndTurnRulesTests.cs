@@ -1,7 +1,7 @@
-using D2.Data;
-using D2.Data.Battle;
-using D2.Rules.Battle;
-using D2.Rules.Rng;
+using LastEdict.Data;
+using LastEdict.Data.Battle;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Rng;
 
 /// <summary>Правила боя, найденные разбором пропусков С2 (16.10.2026): раунд лекарей после гибели стороны, внеочередной ход дара
 /// атаки, изгнание призванного в начале хода, место призыва ИИ, сила бегства через цепочку и решения человека в
@@ -151,7 +151,7 @@ public class BattleEndAndTurnRulesTests
         double bare = AiStrength.Unit(AiStrength.Effective(plain), ignoreCity: true, enemies: 1, C);
         double withBlade = AiStrength.Unit(AiStrength.Effective(armed), ignoreCity: true, enemies: 1, C);
 
-        int damage = D2.Rules.Units.EffectiveStats.OfAttack(plain.Attack, armed.Chain).Attack.QtyDamage;   // 25 → 27 (+10 %, целое)
+        int damage = LastEdict.Rules.Units.EffectiveStats.OfAttack(plain.Attack, armed.Chain).Attack.QtyDamage;   // 25 → 27 (+10 %, целое)
         Assert.True(damage > plain.Attack.QtyDamage);
         Assert.Equal(bare * damage / plain.Attack.QtyDamage, withBlade, 6);
         Assert.Same(plain, AiStrength.Effective(plain));   // без цепочки — тот же юнит

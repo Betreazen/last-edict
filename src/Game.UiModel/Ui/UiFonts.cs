@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace D2.Data.Ui;
+namespace LastEdict.Data.Ui;
 
 /// <summary>Одно начертание: файл шрифта и кегль в точках сетки экрана (<see cref="UiScreen.Design"/>). Кегль — в тех же единицах, что и
 /// прямоугольники элементов, поэтому при растяжении окна текст растёт вместе с разметкой.

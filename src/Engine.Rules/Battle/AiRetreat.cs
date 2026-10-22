@@ -1,6 +1,6 @@
-using D2.Rules.Units;
+using LastEdict.Rules.Units;
 
-namespace D2.Rules.Battle;
+namespace LastEdict.Rules.Battle;
 
 /// <summary>Бегство в политике ИИ — разбор §3 (ранг 1 по коду; ошибки Lua тулсета исправлены: флаг
 /// «решено» читается как «ещё не решено», при прикрытии и &lt; 2 живых — бегство, а не автобой).

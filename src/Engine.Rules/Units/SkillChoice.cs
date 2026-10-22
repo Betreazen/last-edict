@@ -1,4 +1,4 @@
-namespace D2.Rules.Units;
+namespace LastEdict.Rules.Units;
 
 /// <summary>Почему выбор навыка не состоялся. <see cref="None"/> — состоялся.</summary>
 public enum SkillRefusal
@@ -38,7 +38,7 @@ public sealed record SkillChosen(SkillRefusal Refusal, LeaderUpgrade? Upgrade, i
 /// <c>income</c> владельца на следующем ходу (<c>skill_window_next_owner_turn</c> 3/0). Человек снимает за ход
 /// всю очередь, ИИ — один выбор на героя за ход (<c>ai_one_pick_per_turn</c> 30/0).
 /// Правило «ИИ — один за ход» держит память дня стратегии: оценка списка 1 — по отряду
-/// (<c>D2.Data.Play.AiEconomy</c>, <c>docs/ai-economy.md</c> §6).</para>
+/// (<c>LastEdict.Data.Play.AiEconomy</c>, <c>docs/ai-economy.md</c> §6).</para>
 ///
 /// <para><b>Кто выбирает.</b> Человек — <see cref="ByPlayer"/> (проверяет, что названная строка в
 /// списке). Герой ИИ — <see cref="ByAi"/>: <b>наибольший <c>PRIORITY</c></b>.</para>
@@ -54,7 +54,7 @@ public static class SkillChoice
     /// <c>GleaUpg</c>, то есть список кончается позже потолка), но различить «потолок навыков» от
     /// «потолка уровня лидера» корпус не даёт.
     /// <para>ponytail: величина берётся параметром <c>limit</c>, а не читается здесь из таблицы —
-    /// <c>D2.Rules</c> файлов не читает; подаёт её <see cref="D2.Rules.Map.MapVariables"/>.</para>
+    /// <c>LastEdict.Rules</c> файлов не читает; подаёт её <see cref="LastEdict.Rules.Map.MapVariables"/>.</para>
     /// </summary>
     public const int DefaultLimit = 15;
 

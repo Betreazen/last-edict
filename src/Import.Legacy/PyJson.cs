@@ -2,7 +2,7 @@ using System.Collections;
 using System.Globalization;
 using System.Text;
 
-namespace D2.Data.Import;
+namespace LastEdict.Data.Import;
 
 /// <summary>JSON ровно как <c>json.dumps(..., ensure_ascii=False)</c> Python — описи графики, звука и роликов собирались сборщиками на
 /// Python, и импорт порта пишет те же байты (так их можно сверить с прежними). Объект — <see cref="PyObj"/> (порядок ключей как при

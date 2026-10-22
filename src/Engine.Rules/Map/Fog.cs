@@ -1,4 +1,4 @@
-namespace D2.Rules.Map;
+namespace LastEdict.Rules.Map;
 
 /// <summary>
 /// Форма пятна обзора вокруг «глаза» (отряда, города) при радиусе <c>r</c>:
@@ -130,7 +130,7 @@ public static class Fog
     /// Тип лидера неизвестен или его нет в таблице — <paramref name="fallback"/>.
     /// <para><b>Навык Keen-Sight (+3 обзора) — задача 11 Ф7:</b> это элемент
     /// <c>ScoutingRange</c> цепочки <c>MidUnit.MODIF_ID</c> (<c>NUMBER</c>, а не процент), и
-    /// прибавляет его <see cref="D2.Rules.Units.EffectiveStats.OfStack"/>.
+    /// прибавляет его <see cref="LastEdict.Rules.Units.EffectiveStats.OfStack"/>.
     /// <paramref name="modifiers"/> — справочник <c>Gmodif</c>; не подан (<c>null</c>) — радиус
     /// остаётся базовым, как до задачи 11.</para>
     /// <para><b>Потолок <c>stackScoutRange</c> {1, 8}</b> (<c>.rdata 0x6e88fc</c>) — ранг 1: в ai-q39

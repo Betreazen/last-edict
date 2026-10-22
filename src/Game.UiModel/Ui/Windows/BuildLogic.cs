@@ -1,10 +1,10 @@
 using System.Globalization;
-using D2.Data.Content;
-using D2.Data.Menu;
-using D2.Rules.Map;
-using D2.Data.Play.Commands;
+using LastEdict.Data.Content;
+using LastEdict.Data.Menu;
+using LastEdict.Rules.Map;
+using LastEdict.Data.Play.Commands;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>Имя и описание постройки (<c>Gbuild.NAME_TXT</c>/<c>DESC_TXT</c>).</summary>
 public sealed record BuildingText(string NameTxt, string DescTxt);
@@ -154,7 +154,7 @@ public sealed class BuildLogic : IWindowLogic
     /// <summary>Портрет воина постройки и подпись к нему; у большого воина — <see cref="BigFace"/>/<see cref="BigFaceInfo"/>.</summary>
     private const string Face = "IMG_FACE", FaceInfo = "TXT_UNIT_INFO", BigFace = "IMG_FACE_BIG", BigFaceInfo = "TXT_UNIT_INFO_BIG";
 
-    /// <summary>Ширина большой рамки <c>BORDERUNITLARGE</c> (<see cref="D2.Data.Map.MapCards.LargeBorder"/>, 164×99): движок ставит место
+    /// <summary>Ширина большой рамки <c>BORDERUNITLARGE</c> (<see cref="LastEdict.Data.Map.MapCards.LargeBorder"/>, 164×99): движок ставит место
     /// портрета по ширине составной картинки (<c>0x4abb69</c>), а у большого её задаёт рамка.</summary>
     private const int BigFaceWidth = 164;
 
@@ -347,7 +347,7 @@ public sealed class BuildLogic : IWindowLogic
         // Портрет в рамке, как у карточки отряда (0x4abaa1 → 0x5b0bdd лицо, getSizeSmall типа 0x4abaa8: малый — 0x5b680b BORDERUNITSMALL,
         // большой — 0x5b6870 BORDERUNITLARGE).
         _faceBig = book.Rules.Units.TryGetValue(unit, out var sized) && !sized.SizeSmall;
-        _faceFrame = UiFrameRef.Layered(_faceBig ? D2.Data.Map.MapCards.LargeBorder : D2.Data.Map.MapCards.SmallBorder, _c.Faces.Small(unit));
+        _faceFrame = UiFrameRef.Layered(_faceBig ? LastEdict.Data.Map.MapCards.LargeBorder : LastEdict.Data.Map.MapCards.SmallBorder, _c.Faces.Small(unit));
         ui.SetImage(_faceBig ? BigFace : Face, _faceFrame, UiImageAlign.Center);
         ui.SetText("TXT_UPGRADED", $"{_c.Text(special is null ? "X005TA0384" : "X005TA0677")} {_c.UnitName(unit)}");
         ui.SetText(_faceBig ? BigFaceInfo : FaceInfo, _c.Text("X005TA0382"));

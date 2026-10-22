@@ -1,15 +1,15 @@
 using System.Collections.Concurrent;
 using System.Reflection;
 using System.Text.Json;
-using D2.Data.Dbf;
-using D2.Rules.Battle;
-using D2.Rules.Battle.Effects;
-using D2.Rules.Map;
-using D2.Rules.Units;
+using LastEdict.Data.Dbf;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Battle.Effects;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Units;
 
-using D2.Data.Content.Schema;
+using LastEdict.Data.Content.Schema;
 
-namespace D2.Data.Content;
+namespace LastEdict.Data.Content;
 
 /// <summary>
 /// Импорт таблиц оригинала (<c>Globals/*.dbf</c> копии игры или их выгрузки <c>data/rules/*.json</c>) в содержимое. Столбцы и
@@ -111,7 +111,7 @@ public static class LegacyContent
 
         private static Dictionary<string, string> LoadKnown()
         {
-            using var stream = typeof(LegacyContent).Assembly.GetManifestResourceStream("D2.Data.Content.Legacy.legacy-ids.json")
+            using var stream = typeof(LegacyContent).Assembly.GetManifestResourceStream("LastEdict.Data.Content.Legacy.legacy-ids.json")
                                ?? throw new InvalidOperationException("нет ресурса legacy-ids.json");
             return JsonSerializer.Deserialize<Dictionary<string, string>>(stream) ?? [];
         }
@@ -315,7 +315,7 @@ public static class LegacyContent
         /// прежние загрузчики читали числом без проверки (мод оригинала с незнакомым значением грузился) — импорт сохраняет число как
         /// есть, а схема JSON пишет его числом.</summary>
         private static readonly HashSet<Type> StrictEnums =
-            [typeof(ImmunityLevel), typeof(ModifierElementType), typeof(D2.Rules.Magic.ItemCategory), typeof(D2.Rules.Magic.SpellCategory)];
+            [typeof(ImmunityLevel), typeof(ModifierElementType), typeof(LastEdict.Rules.Magic.ItemCategory), typeof(LastEdict.Rules.Magic.SpellCategory)];
 
         private static object EnumValue(Type type, int n, string where, string column) =>
             !StrictEnums.Contains(type) || Enum.IsDefined(type, n) ? Enum.ToObject(type, n)

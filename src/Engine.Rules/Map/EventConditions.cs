@@ -1,4 +1,4 @@
-namespace D2.Rules.Map;
+namespace LastEdict.Rules.Map;
 
 /// <summary>Карта глазами событий: игроки с расами, области, отряды по шаблону.</summary>
 internal sealed class EventWorld(MapState map, EventRules rules, ScenarioEventSet set)

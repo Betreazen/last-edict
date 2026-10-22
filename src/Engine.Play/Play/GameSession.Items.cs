@@ -1,8 +1,8 @@
-using D2.Rules.Magic;
-using D2.Rules.Map;
-using D2.Rules.Units;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Units;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>
 /// Предметы отряда на карте: выпить зелье, надеть, снять, забрать склад крепости. Общие для ИИ (подготовка отряда,
@@ -95,7 +95,7 @@ public sealed partial class GameSession
     }
 
     /// <summary>Новые экземпляры-талисманы получают запись зарядов <c>GVars.TALIS_CHRG</c> (<c>CMidTalismanCharges</c>): движок пишет её
-    /// при создании талисмана (<c>[0x6ea178]</c> = 5, <see cref="D2.Rules.Magic.Item"/>), а без записи <c>0x5eb9b3</c> даёт 0 — порт её не
+    /// при создании талисмана (<c>[0x6ea178]</c> = 5, <see cref="LastEdict.Rules.Magic.Item"/>), а без записи <c>0x5eb9b3</c> даёт 0 — порт её не
     /// создавал, и подарок ИИ (<see cref="GiftItems"/>) и вывоз героя оценивали новый талисман пустым (аудит 13.10).</summary>
     private void ChargeNewTalismans(IReadOnlyList<string> instances)
     {
@@ -120,8 +120,8 @@ public sealed partial class GameSession
         var book = RequireBook();
         if (!Map.Units.TryGetValue(stack.LeaderId, out var leader)) return new HashSet<int>();
         var chain = leader.Modifiers.Select(m => book.Rules.Modifiers?.GetValueOrDefault(m)).OfType<Modifier>();
-        return D2.Rules.Units.LeaderAbilities.Innate(leader.TypeId, book.InnateAbilities)
-                                        .Concat(D2.Rules.Units.LeaderAbilities.FromChain(chain)).ToHashSet();
+        return LastEdict.Rules.Units.LeaderAbilities.Innate(leader.TypeId, book.InnateAbilities)
+                                        .Concat(LastEdict.Rules.Units.LeaderAbilities.FromChain(chain)).ToHashSet();
     }
 
     /// <summary>Что у лидера отряда уже есть для отказа «предмет ничего не даст» (<c>0x5EC48F</c>) помимо способностей: земли с

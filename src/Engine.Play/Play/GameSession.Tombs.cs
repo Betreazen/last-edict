@@ -1,7 +1,7 @@
-using D2.Rules.Battle;
-using D2.Rules.Map;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>
 /// Могилы (<c>CMidTomb</c>; разбор — <c>docs/day-cycle.md</c> §13). Ставит их только гибель целого отряда в бою

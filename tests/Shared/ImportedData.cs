@@ -1,4 +1,4 @@
-namespace D2.Tests;
+namespace LastEdict.Tests;
 
 /// <summary>Данные, выведенные из файлов игры (<c>data/game</c>, <c>data/gfx</c>, <c>data/map</c>, <c>data/rules</c>,
 /// <c>data/scenarios</c>, <c>data/sound</c>, <c>data/video</c>, опись и разметка интерфейса <c>data/ui/{assets,screens,strings.*,capital,
@@ -9,8 +9,8 @@ namespace D2.Tests;
 /// не из статического конструктора или инициализатора поля (там исключение обернётся в <c>TypeInitializationException</c>).</para></summary>
 internal static class ImportedData
 {
-    /// <summary>Каталог данных рядом со сборкой тестов (<c>D2.Data.Tests.csproj</c> кладёт туда <c>data/**</c>
-    /// репозитория, <c>D2.Rules.Tests.csproj</c> — <c>data/content</c> и <c>data/rules</c>).
+    /// <summary>Каталог данных рядом со сборкой тестов (<c>LastEdict.Data.Tests.csproj</c> кладёт туда <c>data/**</c>
+    /// репозитория, <c>LastEdict.Rules.Tests.csproj</c> — <c>data/content</c> и <c>data/rules</c>).
     /// <para>Переменная <c>D2_DATA_DIR</c> (корень импорта, как у игры: в нём <c>data/</c> и <c>assets/</c>) главнее: так тесты берут импорт из
     /// копии игры, сделанный вне репозитория (<c>user://game</c>, Last Edict без данных в git); от него же <see cref="Content"/> и
     /// <see cref="Tables"/>.</para></summary>
@@ -18,7 +18,7 @@ internal static class ImportedData
         ? Path.Combine(Path.GetFullPath(root), "data") : Path.Combine(AppContext.BaseDirectory, "data");
 
     /// <summary>Опись интерфейса, разметка экранов и строки (английские есть в любом импорте, русские — только с русификацией) — без них
-    /// не собирается <see cref="D2.Data.Content.GameContent"/>.</summary>
+    /// не собирается <see cref="LastEdict.Data.Content.GameContent"/>.</summary>
     public static readonly string[] ContentFiles = ["ui/screens.json", "ui/assets.json", "ui/strings.en.json", "game", "gfx", "map"];
 
     /// <summary>Пропускает тест, если в <see cref="Dir"/> нет хоть одного из путей (файл или непустой каталог).</summary>
@@ -61,14 +61,14 @@ internal static class ImportedData
     /// <summary>Пропускает тест, если правил из импорта нет (<see cref="Content"/> и <see cref="Tables"/>).</summary>
     public static void RequireRules() => Require("content/base", "rules");
 
-    /// <summary>Каталог данных для <see cref="D2.Data.Content.GameContent.Load"/> — после проверки всего, что нужно содержимому игры.</summary>
+    /// <summary>Каталог данных для <see cref="LastEdict.Data.Content.GameContent.Load"/> — после проверки всего, что нужно содержимому игры.</summary>
     public static string ContentDir()
     {
         Require(ContentFiles);
         return Dir;
     }
 
-    /// <summary>Каталог <c>data/ui</c> для <see cref="D2.Data.Ui.UiStrings.Load"/> — после проверки, что строки игры импортированы (свои файлы
+    /// <summary>Каталог <c>data/ui</c> для <see cref="LastEdict.Data.Ui.UiStrings.Load"/> — после проверки, что строки игры импортированы (свои файлы
     /// интерфейса — <c>fonts.json</c>, <c>flow.json</c> — в нём лежат и без них).</summary>
     public static string StringsDir()
     {

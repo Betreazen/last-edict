@@ -1,12 +1,12 @@
-using D2.Data;
-using D2.Data.Battle;
-using D2.Rules.Battle;
-using D2.Rules.Magic;
-using D2.Rules.Map;
-using D2.Rules.Rng;
+using LastEdict.Data;
+using LastEdict.Data.Battle;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Rng;
 using Xunit.Abstractions;
 
-namespace D2.Rules.Tests;
+namespace LastEdict.Rules.Tests;
 
 /// <summary>
 /// Задача 10 Ф7 на живой ванили: расход сферы, зарядов талисмана и суточный посох. Предметы взяты
@@ -17,7 +17,7 @@ public class ChargesTests(ITestOutputHelper output)
     private static readonly Lazy<GameRules> Rules = new(() => RulesLoader.Load(ImportedData.Content));
 
     private static readonly Lazy<IReadOnlyDictionary<string, Item>> Items =
-        new(() => D2.Data.Magic.ItemLoader.Load(ImportedData.Content));
+        new(() => LastEdict.Data.Magic.ItemLoader.Load(ImportedData.Content));
 
     private const string StaffLife = "G000IG6001";   // «Staff of Healing», CASTING 100 маны жизни
     private const string StaffTwo = "G000IG6011";    // CASTING 150 смерти + 150 рун

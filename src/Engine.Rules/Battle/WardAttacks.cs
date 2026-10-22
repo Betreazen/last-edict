@@ -1,4 +1,4 @@
-namespace D2.Rules.Battle;
+namespace LastEdict.Rules.Battle;
 
 /// <summary>Четвёртый круг классов атак (задача 8 Ф6): <c>BestowWards</c> (24) и <c>Shatter</c> (25) —
 /// последние два из двадцати трёх. Отдельным файлом по тому же правилу, что <see cref="LifeAttacks"/>

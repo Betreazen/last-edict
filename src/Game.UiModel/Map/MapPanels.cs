@@ -1,9 +1,9 @@
 using System.Globalization;
-using D2.Data.Menu;
-using D2.Data.Ui;
-using D2.Rules.Map;
+using LastEdict.Data.Menu;
+using LastEdict.Data.Ui;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Map;
+namespace LastEdict.Data.Map;
 
 /// <summary>Что панели экрана карты показывают сейчас: выбранный отряд (имя лидера, его портрет и очки хода),
 /// номер дня и казна игрока.</summary>

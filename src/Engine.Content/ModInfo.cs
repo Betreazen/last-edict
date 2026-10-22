@@ -1,4 +1,4 @@
-namespace D2.Data.Content;
+namespace LastEdict.Data.Content;
 
 /// <summary>Мод-слой: каталог с <c>mod.json</c>. <see cref="Id"/> — устойчивый идентификатор (по нему мод
 /// поминают в отчётах и в списке включённых), <see cref="Dir"/> — полный путь каталога. <see cref="Dependencies"/> — моды, без которых

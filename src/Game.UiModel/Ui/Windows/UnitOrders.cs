@@ -1,7 +1,7 @@
-using D2.Data.Menu;
-using D2.Data.Play.Commands;
+using LastEdict.Data.Menu;
+using LastEdict.Data.Play.Commands;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>
 /// Приказы воину инструментом окна (щелчок по воину, после одного воина инструмент отжимается): отпуск (<c>TOG_DISMISS</c>,

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 r"""content_ids.py — устойчивые id содержимого по смыслу для сущностей оригинала: `legacyId → base:<вид>/<имя>`.
 
-Пишет `src/Engine.Content/Legacy/legacy-ids.json` (ресурс сборки D2.Content): по нему импорт таблиц игры (`LegacyContent`) даёт сущностям
+Пишет `src/Engine.Content/Legacy/legacy-ids.json` (ресурс сборки LastEdict.Content): по нему импорт таблиц игры (`LegacyContent`) даёт сущностям
 id вроде `base:unit/squire` вместо `g000uu0001`. Таблица лежит в репозитории, а не выводится при импорте: английские имена есть не в
 каждой копии игры (русская копия — только русские тексты), а id обязаны быть одинаковыми у всех — по ним моды ссылаются на базу.
 Запускается вручную, когда в базе появляются новые сущности оригинала; прежние id не меняются.
@@ -25,7 +25,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
 RULES = REPO / "data" / "rules"
-OUT = REPO / "src" / "D2.Content" / "Legacy" / "legacy-ids.json"
+OUT = REPO / "src" / "LastEdict.Content" / "Legacy" / "legacy-ids.json"
 EMPTY = {"", "g000000000"}
 RACE_SHORT = {0: "empire", 1: "undead", 2: "legions", 3: "clans", 4: "neutral", 5: "elves"}
 

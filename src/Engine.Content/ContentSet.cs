@@ -1,8 +1,8 @@
 using System.Collections.Frozen;
 
-using D2.Data.Content.Schema;
+using LastEdict.Data.Content.Schema;
 
-namespace D2.Data.Content;
+namespace LastEdict.Data.Content;
 
 /// <summary>Вид сущности содержимого: имя в id (<c>base:unit/…</c>), файл слоя (<c>units.json</c>) и запись.</summary>
 public sealed record ContentKind(string Name, string File, Type Type);

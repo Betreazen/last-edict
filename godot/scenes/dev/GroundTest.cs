@@ -2,10 +2,10 @@ using System;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using D2.Data.Gfx;
+using LastEdict.Data.Gfx;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Стенд земли: карта (<see cref="MapSource"/>) → земля всей карты <see cref="GroundComposer"/> из собранной
 /// графики → PNG и строка чисел.

@@ -1,4 +1,4 @@
-namespace D2.Rules.Map;
+namespace LastEdict.Rules.Map;
 
 /// <summary>
 /// Цели сценария глазами игрока — объекты, которые движок обводит кругом <c>SYM_OBJECTIVE</c> (картинка <c>OBJECTIVE{размер}</c>).

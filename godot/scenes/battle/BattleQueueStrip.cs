@@ -2,11 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using D2.Data.Battle;
-using D2.Rules.Battle;
+using LastEdict.Data.Battle;
+using LastEdict.Rules.Battle;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>
 /// Полоса очереди ходов над полем боя (своя для Last Edict, <c>docs/own-version-roadmap.md</c> §3.3): портреты <c>Faces</c> тех, кто ходит
@@ -120,7 +120,7 @@ public partial class BattleQueueStrip : Node2D
         }
         // Строки игры с разметкой выравнивания (\hC;\vC;) — для полосы только текст.
         string raw = entry.Mark switch { QueueMark.Skips => Text("X008TA0010"), QueueMark.Waits => Text("X008TA0020"), _ => "" };
-        string note = D2.Data.Ui.UiTextStyle.Parse(raw).Text;
+        string note = LastEdict.Data.Ui.UiTextStyle.Parse(raw).Text;
         if (note.Length == 0) return;
         var label = new Label { Text = note, HorizontalAlignment = HorizontalAlignment.Center, ClipText = true };
         if (Small() is { } font) label.LabelSettings = UiArt.Outlined(font, Colors.White, Colors.Black);
@@ -202,11 +202,11 @@ public partial class BattleQueueStrip : Node2D
         : FormattableString.Invariant($"{_cells.Min(c => c.Position.X) - FrameWidth},{_cells.Min(c => c.Position.Y) - FrameWidth},") +
           FormattableString.Invariant($"{_cells.Max(c => c.End.X) + FrameWidth},{Enumerable.Range(0, _cells.Count).Max(i => Framed(i).End.Y) + FrameWidth}");
 
-    private static D2.Data.Ui.UiFont? _small;
+    private static LastEdict.Data.Ui.UiFont? _small;
     private static bool _smallFailed;
 
     /// <summary>Шрифт надписей — <c>small</c> интерфейса; нет — шрифт темы, причина печатается один раз.</summary>
-    private static D2.Data.Ui.UiFont? Small()
+    private static LastEdict.Data.Ui.UiFont? Small()
     {
         if (_small is not null || _smallFailed) return _small;
         try

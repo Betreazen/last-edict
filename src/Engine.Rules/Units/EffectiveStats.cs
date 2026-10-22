@@ -1,7 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
-using D2.Rules.Battle;
+using LastEdict.Rules.Battle;
 
-namespace D2.Rules.Units;
+namespace LastEdict.Rules.Units;
 
 /// <summary>Эффективная атака и накопленный вампиризм (<see cref="ModifierElementType.AttackDrain"/>).
 /// У <see cref="AttackType"/> поля вампиризма нет — базу (<c>drainHealPercent</c> = 50) складывает
@@ -57,7 +57,7 @@ public sealed record EffectiveStats
     /// (<c>CUmAttackData</c>) пропускаются — их берёт <see cref="OfAttack"/>, ровно как в движке,
     /// где <c>CUmUnit</c> реализует только свои геттеры.
     /// <para><c>REGEN</c>, <c>MOVE</c>, <c>SCOUT</c>, <c>LEADERSHIP</c> из <c>Gunits</c> в
-    /// <see cref="UnitType"/> ещё не переехали (их читает <c>D2.Data.RulesLoader.LoadExtras</c>,
+    /// <see cref="UnitType"/> ещё не переехали (их читает <c>LastEdict.Data.RulesLoader.LoadExtras</c>,
     /// переселение — задача 11), поэтому приходят параметрами. База 0 означает «чистая прибавка
     /// цепочки».</para></summary>
     public static EffectiveStats Of(UnitType type, IReadOnlyList<Modifier> chain,
@@ -118,10 +118,10 @@ public sealed record EffectiveStats
     /// <summary>
     /// Статы <b>отряда</b> (<c>CUmStackData</c>), которые цепочка меняет без участия юнита: запас
     /// хода, радиус обзора и лидерство. <c>MOVE</c>, <c>SCOUT</c> и <c>LEADERSHIP</c> в
-    /// <see cref="UnitType"/> не живут (их читает <c>D2.Data.RulesLoader.LoadExtras</c>), поэтому
+    /// <see cref="UnitType"/> не живут (их читает <c>LastEdict.Data.RulesLoader.LoadExtras</c>), поэтому
     /// база приходит параметрами, а не из типа — и потому же эту часть можно спросить там, где
-    /// типа под рукой нет: <see cref="D2.Rules.Map.Movement.StartMovement"/> и
-    /// <see cref="D2.Rules.Map.Fog.Radius"/> держат базу словарём по типу.
+    /// типа под рукой нет: <see cref="LastEdict.Rules.Map.Movement.StartMovement"/> и
+    /// <see cref="LastEdict.Rules.Map.Fog.Radius"/> держат базу словарём по типу.
     ///
     /// <para><b>Ранг 1 — вид арифметики (таблица <c>GmodifL</c>):</b> запас хода задан в
     /// <c>PERCENT</c> (навыки Pathfinding +20 % и Advanced Pathfinding +25 %, П§20), обзор и

@@ -1,7 +1,7 @@
-using D2.Data.Play;
-using D2.Rules.Map;
+using LastEdict.Data.Play;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>
 /// Перенос в следующую главу (<c>DLG_CARRY_ITEM_LEADER</c>, <c>CCarryOverInterf</c> <c>0x4812ae</c>; разбор — <c>docs/day-cycle.md</c>

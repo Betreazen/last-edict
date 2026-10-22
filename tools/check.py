@@ -9,7 +9,7 @@ r"""check.py — проверка рабочей копии одним вызо�
   python tools/check.py --smoke       # тесты без корпуса — с ПУСТЫМ корпусом: пропуск или падение = класс без категории Corpus/Synth
 
 ui-render-check запускается, когда правка против main задела вид (сцены Godot, данные интерфейса и графики, код вида — решает
-`tools/affected_tests.py`); `--ui` — всегда, `--no-ui` — никогда. Перед ним собирается `godot/D2.Godot.csproj`. pytest
+`tools/affected_tests.py`); `--ui` — всегда, `--no-ui` — никогда. Перед ним собирается `godot/LastEdict.Godot.csproj`. pytest
 (`tests/test_*.py`) — когда тронуты питоновские инструменты, которые эти тесты импортируют.
 
 Корпус и графика: переменные `D2_CORPUS_DIR` и `D2_ASSETS_DIR`; не заданы, а в рабочей копии их нет (`../dg-wt-*`) — берутся
@@ -174,7 +174,7 @@ def main(argv: list[str]) -> int:
         areas = [] if args.full or args.ui else [a for a in p.get("ui_areas", []) if a != "all"]
         print("\nui-render-check: " + ("--ui" if args.ui else "; ".join(p["ui"][:3]))
               + (f" — области {','.join(areas)}" if areas else " — все шаги"))
-        if run("сборка Godot", ["dotnet", "build", "godot/D2.Godot.csproj"], env, results)[0]:
+        if run("сборка Godot", ["dotnet", "build", "godot/LastEdict.Godot.csproj"], env, results)[0]:
             run("ui-render-check", [sys.executable, "tools/ui-render-check.py", *(["--areas", ",".join(areas)] if areas else [])],
                 env, results, echo=True)
     else:

@@ -1,4 +1,4 @@
-namespace D2.Rules.Map;
+namespace LastEdict.Rules.Map;
 
 /// <summary>
 /// Итог взятия столицы. Одна запись на оба исхода: <see cref="Victory"/> — партия кончилась

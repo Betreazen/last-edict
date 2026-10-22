@@ -1,8 +1,8 @@
 using System.Text.Json.Serialization;
-using D2.Rules.Battle;
-using D2.Rules.Rng;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Rng;
 
-namespace D2.Data.Battle;
+namespace LastEdict.Data.Battle;
 
 /// <summary>
 /// Действие боя по шагам (<see cref="BattleSession"/>) одной записью-данными: экран зовёт методы сессии, сессия пишет каждый внешний

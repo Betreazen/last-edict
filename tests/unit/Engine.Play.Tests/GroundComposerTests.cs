@@ -1,8 +1,8 @@
-using D2.Data.Gfx;
-using D2.Rules.Map;
+using LastEdict.Data.Gfx;
+using LastEdict.Rules.Map;
 using Xunit;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Сборка земли по разбору движка (<c>docs/ground-render.md</c>) на синтетической графике: в узоре каждая
 /// точка кодирует свой тип, вариант и координаты в узоре — по готовой картинке видно, откуда она взята.</summary>

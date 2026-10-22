@@ -1,4 +1,4 @@
-namespace D2.Rules.Map;
+namespace LastEdict.Rules.Map;
 
 /// <summary>Точка пути: клетка, накопленная цена от начала (сколько очков хода нужно, чтобы стоять здесь) и номер
 /// дня (0 — этот ход).</summary>

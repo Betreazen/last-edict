@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using D2.Data.Battle;
-using D2.Data.Gfx;
-using D2.Rules.Battle;
+using LastEdict.Data.Battle;
+using LastEdict.Data.Gfx;
+using LastEdict.Rules.Battle;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Проверка «--synth A1|A1o|A2|A3|A4|A5|I2» на полигонах карты <c>port-synth-1-battle</c> (<c>--scenario port-synth-1-battle --stacks …</c>):
 /// ходы человека по памятке через те же методы, что щелчок мыши, и числа видимого — партии пользователя 15.10 (пометки 2–12) и 15.10 вечер
@@ -152,7 +152,7 @@ public partial class BattleScreen
     /// оригинала на тех же полигонах (<c>corpus/20261020-faces</c>, <c>AvFaceHarnessTests</c>): ход человека — призыв на первую клетку, превращение
     /// себя — по себе, прочее — по первому врагу в целях (нет — по первой цели), без целей — защита; ИИ ходит показом. Конец боя — как у хозяина
     /// боя с карты (<see cref="PlayEnd"/>, затем <see cref="ShowEnd"/>): откаты, изгнание и опыт. Опыт — накоплением по убитым (<see
-    /// cref="D2.Data.Play.BattleAftermath.Kills"/>, без надбавок): сверка берёт шаблон надписи, а не число.</summary>
+    /// cref="LastEdict.Data.Play.BattleAftermath.Kills"/>, без надбавок): сверка берёт шаблон надписи, а не число.</summary>
     private async Task SynthFaces()
     {
         _synthHp = _session.State.Units.ToDictionary(u => u.Id, u => u.Hp, StringComparer.OrdinalIgnoreCase);
@@ -217,15 +217,15 @@ public partial class BattleScreen
     private void SynthEnd()
     {
         var before = BeforeEnd();
-        var kills = D2.Data.Play.BattleAftermath.Kills(_session.State, _synthHp ?? [], _session.Log, GameData.Book);
-        foreach (var (id, xp) in D2.Rules.Units.Experience.Accumulate(kills))
+        var kills = LastEdict.Data.Play.BattleAftermath.Kills(_session.State, _synthHp ?? [], _session.Log, GameData.Book);
+        foreach (var (id, xp) in LastEdict.Rules.Units.Experience.Accumulate(kills))
             if (_session.State.Unit(id) is { Alive: true } unit) unit.Xp += xp;
         _session.Sim.AfterBattle();
         PlayEnd(before, _ => 0, ShowEnd);
     }
 
     /// <summary>B1, партия 17.10 (бой у города орков и карта 8): призыватель человека рядом с большим (<c>--squad G000UU6007:0,G000UU5016:2</c> —
-    /// Лиф и тролль). Обе клетки тролля — не цели призыва (<see cref="D2.Rules.Battle.BattleState.SummonCells"/>), метки — на всех целях и
+    /// Лиф и тролль). Обе клетки тролля — не цели призыва (<see cref="LastEdict.Rules.Battle.BattleState.SummonCells"/>), метки — на всех целях и
     /// при открытии боя, когда призыватель ходит первым; щелчок по месту в панели призывает (<c>0x64c393</c>); пара свободна — встаёт
     /// большой (Гигантский чёрный паук, <c>0x6635dc</c>) на чётную клетку; у тролля в панели один широкий портрет, и его вторая половина —
     /// тот же тролль.</summary>
@@ -237,13 +237,13 @@ public partial class BattleScreen
             GD.Print("battle synth B1 summon нет_хода");
             return;
         }
-        static Vector2 Mid(D2.Data.Ui.UiRect r) => new(r.X + (r.Width / 2f), r.Y + (r.Height / 2f));
+        static Vector2 Mid(LastEdict.Data.Ui.UiRect r) => new(r.X + (r.Width / 2f), r.Y + (r.Height / 2f));
         var cells = _session.SummonSlots();
         int fieldMarks = _field.EmptyMarks;
         int panelFrames = _field.PanelFrames.Count(f => f.StartsWith("EMPTYSEL", StringComparison.OrdinalIgnoreCase));
         int trollFaces = _field.PanelUnits.Count(id => id == troll.Id);
-        var half = UnitAt(Mid(_scene.PanelSlot(troll.Attacker, D2.Rules.Units.Formation.Pair(troll.Slot))));
-        int? onTroll = SummonCellAt(Mid(_scene.PanelSlot(troll.Attacker, D2.Rules.Units.Formation.Pair(troll.Slot))), cells);
+        var half = UnitAt(Mid(_scene.PanelSlot(troll.Attacker, LastEdict.Rules.Units.Formation.Pair(troll.Slot))));
+        int? onTroll = SummonCellAt(Mid(_scene.PanelSlot(troll.Attacker, LastEdict.Rules.Units.Formation.Pair(troll.Slot))), cells);
         int cell = cells.FirstOrDefault(c => cells.Contains(c ^ 1), -1);
         int? picked = cell < 0 ? null : SummonCellAt(Mid(_scene.PanelSlot(summoner.Attacker, cell)), cells);
         int before = _session.State.Units.Count(u => u.Summoned);
@@ -294,8 +294,8 @@ public partial class BattleScreen
         var squire = of("g000uu0001");
         // Вампир — первым: его ход раньше, чем упыри его парализуют.
         var vampire = of("g000uu0175");
-        GD.Print($"battle synth A2 vampire целей={(vampire is null ? 0 : D2.Rules.Battle.BattleTargets.Possible(_session.State, vampire, vampire.Attack, human: true).Count)} " +
-                 $"у_ИИ={(vampire is null ? 0 : D2.Rules.Battle.BattleTargets.Possible(_session.State, vampire, vampire.Attack).Count)}");
+        GD.Print($"battle synth A2 vampire целей={(vampire is null ? 0 : LastEdict.Rules.Battle.BattleTargets.Possible(_session.State, vampire, vampire.Attack, human: true).Count)} " +
+                 $"у_ИИ={(vampire is null ? 0 : LastEdict.Rules.Battle.BattleTargets.Possible(_session.State, vampire, vampire.Attack).Count)}");
         if (await until(c => c.Attack.Class == AttackClass.Summon) && _session.Current is { } summoner)
         {
             var cells = _session.SummonSlots();
@@ -431,8 +431,8 @@ public partial class BattleScreen
         int heal = -1, revive = -1;
         bool Ready(BattleUnit c)
         {
-            heal = c.BattleItems.FindIndex(i => i.Category == D2.Rules.Magic.ItemCategory.PotionHeal);
-            revive = c.BattleItems.FindIndex(i => i.Category == D2.Rules.Magic.ItemCategory.PotionRevive);
+            heal = c.BattleItems.FindIndex(i => i.Category == LastEdict.Rules.Magic.ItemCategory.PotionHeal);
+            revive = c.BattleItems.FindIndex(i => i.Category == LastEdict.Rules.Magic.ItemCategory.PotionRevive);
             return heal >= 0 && revive >= 0 && _session.ItemTargets(heal).Count > 0 && _session.ItemTargets(revive).Count > 0;
         }
         if (!await until(Ready) || _session.Current is not { } leader)

@@ -1,7 +1,7 @@
-using D2.Data.Ui;
+using LastEdict.Data.Ui;
 using Xunit;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Раскладка показа экрана 800×600 в окне (<see cref="ScreenFit"/>): в буфере экраны получают целый масштаб, буфер ложится в окно
 /// целиком и по центру.</summary>

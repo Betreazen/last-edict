@@ -1,8 +1,8 @@
-using D2.Data.Content;
-using D2.Data.Ui;
+using LastEdict.Data.Content;
+using LastEdict.Data.Ui;
 using Xunit;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Исполнение графа экранов: стек, фаза, выбор исхода и ручные дополнения графа. Цепочка меню проверяется
 /// на настоящих данных (<c>data/ui</c>), правила стека — на выдуманном графе.</summary>
@@ -89,8 +89,8 @@ public class UiNavigatorTests
 
         var screen = content.Screens.First(s => s.Id == "DLG_CREDITS");
         var ui = new UiScreenState(screen);
-        var logic = D2.Data.Menu.MenuLogic.For("DLG_CREDITS",
-            new D2.Data.Menu.MenuContext(content.Catalog, new Dictionary<string, string>(), new D2.Data.Menu.NewGameSetup(), "Игрок"));
+        var logic = LastEdict.Data.Menu.MenuLogic.For("DLG_CREDITS",
+            new LastEdict.Data.Menu.MenuContext(content.Catalog, new Dictionary<string, string>(), new LastEdict.Data.Menu.NewGameSetup(), "Игрок"));
         Assert.NotNull(logic);
         logic.Open(ui);
         Assert.All(screen.Elements, e => Assert.True(ui.IsHidden(e.Id), e.Id));

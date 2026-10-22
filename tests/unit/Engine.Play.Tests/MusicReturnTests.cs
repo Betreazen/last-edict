@@ -1,6 +1,6 @@
-using D2.Data.Sound;
+using LastEdict.Data.Sound;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Место основной музыки под временной (бой, столица; <c>GameAudio</c>): новая временная во время затухания прежней не
 /// подменяет запомненную основную дорожку боевой.</summary>

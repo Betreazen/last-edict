@@ -1,12 +1,12 @@
 using System.Text.RegularExpressions;
-using D2.Data.Content;
-using D2.Data.Game;
-using D2.Data.Play;
-using D2.Rules.Map;
+using LastEdict.Data.Content;
+using LastEdict.Data.Game;
+using LastEdict.Data.Play;
+using LastEdict.Rules.Map;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Языковой слой сценариев (<c>data/scenarios/lang/&lt;язык&gt;</c>, <see cref="ScenarioTexts"/>): с переводом — русский текст,
 /// без перевода — оригинал; файлы слоя в git согласованы со сценариями и с импортом Руссобит-М.</summary>

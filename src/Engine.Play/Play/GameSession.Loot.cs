@@ -1,7 +1,7 @@
-using D2.Data.Map;
-using D2.Rules.Map;
+using LastEdict.Data.Map;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>Вещи погибшего отряда и взятой столицы (разбор <c>Discipl2.exe</c> 28.09, <c>docs/ui-windows.md</c> §14; ранг 1, если не сказано
 /// иное): у движка предметы не пропадают — уходят победителю, иначе остаются мешком на карте или в складе крепости.</summary>

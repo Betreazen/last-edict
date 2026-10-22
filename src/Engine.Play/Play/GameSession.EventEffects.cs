@@ -1,10 +1,10 @@
-using D2.Data.Map;
-using D2.Rules.Battle;
-using D2.Rules.Magic;
-using D2.Rules.Map;
-using D2.Rules.Units;
+using LastEdict.Data.Map;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Units;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>Эффекты событий, меняющие карту (<c>docs/scenario-events.md</c> §3а): создание отряда по шаблону, литьё, ландмарки,
 /// туман, смена владельца, горы, перемещение, предметы, бой, земля, дипломатия. Ранги — там же.</summary>
@@ -21,7 +21,7 @@ public sealed partial class GameSession
             return true;
         if (!book.Rules.Units.TryGetValue(t.LeaderType, out var leaderType)) return false;
         if (!IsNeutral(t.Owner) && Map.Players.TryGetValue(t.Owner, out var owner) && Map.Fog.TryGetValue(owner.FogId, out var fog))
-            D2.Rules.Map.Fog.Reveal(fog, zone.X, zone.Y, book.ScoutByType.GetValueOrDefault(t.LeaderType), D2.Rules.Map.Fog.DefaultShape);
+            LastEdict.Rules.Map.Fog.Reveal(fog, zone.X, zone.Y, book.ScoutByType.GetValueOrDefault(t.LeaderType), LastEdict.Rules.Map.Fog.DefaultShape);
         if (SummonCell(zone.X, zone.Y) is not { } at) return true;
 
         var map = Map;
@@ -272,7 +272,7 @@ public sealed partial class GameSession
             // Чужие «защищать отряд» на этот отряд сброшены (CVisitorChangeStackOwner 0x60d6a5 → 0x60d3ea, GameSession.Capture.cs).
             var map = StackOwnerChanged(With(Map, stacks: stacks), stack.Id);
             if (!IsNeutral(owner) && map.Players.TryGetValue(owner, out var p) && map.Fog.TryGetValue(p.FogId, out var fog))
-                D2.Rules.Map.Fog.Reveal(fog, stack.X, stack.Y, ScoutRange(map, stacks[stack.Id]), D2.Rules.Map.Fog.DefaultShape);
+                LastEdict.Rules.Map.Fog.Reveal(fog, stack.X, stack.Y, ScoutRange(map, stacks[stack.Id]), LastEdict.Rules.Map.Fog.DefaultShape);
             State = State with
             {
                 Looks = Retold(Looks, map, [.. Looks.Stacks.Select(s => Same(s.Id, stack.Id)
@@ -372,7 +372,7 @@ public sealed partial class GameSession
         Relocate(stack.Id, end, PathFinder.Facing(new PathPoint(before.Item1, before.Item2, 0, 0), new PathPoint(end.X, end.Y, 0, 0)));
         var map = Map;
         if (map.Players.TryGetValue(stack.Owner, out var p) && !IsNeutral(stack.Owner) && map.Fog.TryGetValue(p.FogId, out var fog))
-            foreach (var point in points) D2.Rules.Map.Fog.Reveal(fog, point.Item1, point.Item2, ScoutRange(map, map.Stacks[stackId]), D2.Rules.Map.Fog.DefaultShape);
+            foreach (var point in points) LastEdict.Rules.Map.Fog.Reveal(fog, point.Item1, point.Item2, ScoutRange(map, map.Stacks[stackId]), LastEdict.Rules.Map.Fog.DefaultShape);
         return true;
     }
 
@@ -488,7 +488,7 @@ public sealed partial class GameSession
     private void AutoBattle(BattleState state)
     {
         var rules = Book!.Rules;
-        var battle = new D2.Data.Battle.BattleSession(state, new BattleSim(state, Rng, rules.Constants), rules.Constants) { Auto = true };
+        var battle = new LastEdict.Data.Battle.BattleSession(state, new BattleSim(state, Rng, rules.Constants), rules.Constants) { Auto = true };
         battle.PlayOut();
         FinishBattle(battle.Log);
     }

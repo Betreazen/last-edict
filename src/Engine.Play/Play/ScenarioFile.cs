@@ -1,8 +1,8 @@
 using System.Text.Json;
-using D2.Data.Map;
-using D2.Rules.Map;
+using LastEdict.Data.Map;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>Сценарий в данных порта: карта с объектами для отрисовки и события. Из него начинается партия
 /// (<c>NewGame.Start</c>); <c>.sg</c> игры читает только импорт (<c>tools/ScenarioImport</c>,
@@ -33,7 +33,7 @@ public static class ScenarioFile
         new(Path.GetFileNameWithoutExtension(sgPath), MapLooksLoader.Load(sgPath), EventLoader.Load(sgPath));
 
     /// <summary>Сценарий из уже разобранного <c>.sg</c> (глава саги из таблиц <c>Scens</c>) — только для импорта.</summary>
-    public static ScenarioData FromSg(string id, D2.Data.Sg.SgFile file) =>
+    public static ScenarioData FromSg(string id, LastEdict.Data.Sg.SgFile file) =>
         new(id, MapLooksLoader.Load(id, file), EventLoader.Load(id, file));
 
     public static string ToJson(ScenarioData scenario)
@@ -58,7 +58,7 @@ public static class ScenarioFile
         if (e.Version > Version) throw new InvalidDataException($"сценарий версии {e.Version}, сборка знает до {Version}");
         // Счётчики id в файл не пишутся (MapState.IdNext): по объектам карты, как у движка после чтения сценария (0x5ee996). Без них
         // новая партия отдавала номер павшего до первой выдачи класса снова (правило «наибольший из живых + 1»).
-        // Изученные заклинания — по возрастанию id, как после чтения движком (D2.Rules.Map.KnownSpellOrder, 0x5fe926).
+        // Изученные заклинания — по возрастанию id, как после чтения движком (LastEdict.Rules.Map.KnownSpellOrder, 0x5fe926).
         var map = GameSession.KnownSpellsSorted(e.Looks.Map);
         var looks = e.Looks with { Map = GameSession.With(map, idNext: GameSession.IdNextOf(map)) };
         return new ScenarioData(e.Id, looks, e.Events ?? ScenarioEventSet.Empty);

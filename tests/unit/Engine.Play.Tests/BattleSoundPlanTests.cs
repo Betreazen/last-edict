@@ -1,7 +1,7 @@
-using D2.Data.Sound;
-using D2.Rules.Battle;
+using LastEdict.Data.Sound;
+using LastEdict.Rules.Battle;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Звуки действия боя (<see cref="BattleSoundPlan"/>) по настоящей описи юнитов: мечник бьёт замахом на кадре 6, ударом на
 /// кадре 7; промах не звучит; «больно» — только при броске ≥ 70 и тише; гибель — <c>DEATH</c>; вторая атака — звуком класса.</summary>

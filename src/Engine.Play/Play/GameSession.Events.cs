@@ -1,7 +1,7 @@
-using D2.Rules.Battle;
-using D2.Rules.Map;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>События сценария в партии (<c>docs/scenario-events.md</c>): проверка в точках движка и применение эффектов.
 /// Выбор события и кандидатов — <see cref="ScenarioEvents.Next"/>; здесь — цикл «пока срабатывают» и изменения карты.</summary>

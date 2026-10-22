@@ -1,8 +1,8 @@
 using System.Globalization;
-using D2.Rules.Battle;
-using D2.Rules.Units;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Units;
 
-namespace D2.Data.Battle;
+namespace LastEdict.Data.Battle;
 
 /// <summary>Надпись на портрете цели в панели: юнит и разметка строки.</summary>
 public sealed record StrikeNote(string Target, string Markup);

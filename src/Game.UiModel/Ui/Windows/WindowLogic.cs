@@ -1,6 +1,6 @@
-using D2.Data.Menu;
+using LastEdict.Data.Menu;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>Просьба логики окна к хозяину (экран карты держит стек окон): открыть поверх окно, спросить «Да/Нет»,
 /// показать сообщение, закрыть себя.</summary>
@@ -24,7 +24,7 @@ public sealed record UiLeave : UiRequest;
 /// <summary>Выделить отряд на карте и показать его (вывод героя из города, <c>0x48e2c2</c>, <c>0x540c38</c>).</summary>
 public sealed record UiFocus(string StackId) : UiRequest;
 
-/// <summary>Звук интерфейса (архив <c>Midgard</c>, <see cref="D2.Data.Sound.WindowSounds"/>), когда его решает логика, а не нажатие само
+/// <summary>Звук интерфейса (архив <c>Midgard</c>, <see cref="LastEdict.Data.Sound.WindowSounds"/>), когда его решает логика, а не нажатие само
 /// по себе: смена лица лорда звучит, только если нажатие принято (<c>CHNGFACE</c>, <c>0x4e6945</c>).</summary>
 public sealed record UiSound(string Name) : UiRequest;
 

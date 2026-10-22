@@ -1,9 +1,9 @@
-using D2.Data.Play;
-using D2.Rules.Magic;
-using D2.Rules.Map;
-using D2.Rules.Units;
+using LastEdict.Data.Play;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Units;
 
-namespace D2.Data.Diagnostics;
+namespace LastEdict.Data.Diagnostics;
 
 /// <summary>Нарушение инварианта карты: код (вид нарушения), объект (отряд, юнит, укрепление, игрок…) и подробности словами.</summary>
 public sealed record Violation(string Code, string Object, string Detail);

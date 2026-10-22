@@ -1,7 +1,7 @@
-using D2.Data.Play;
-using D2.Rules.Map;
+using LastEdict.Data.Play;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Diagnostics;
+namespace LastEdict.Data.Diagnostics;
 
 /// <summary>
 /// Снимок мира на начало хода человека — поля строки <c>day</c> журнала зонда (<see cref="PortJournalWatcher"/>): по ним отчёт строит

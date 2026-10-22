@@ -1,11 +1,11 @@
 using System.Text.RegularExpressions;
-using D2.Data.Game;
-using D2.Data.Menu;
-using D2.Data.Ui;
-using D2.Data.Ui.Windows;
-using D2.Rules.Map;
+using LastEdict.Data.Game;
+using LastEdict.Data.Menu;
+using LastEdict.Data.Ui;
+using LastEdict.Data.Ui.Windows;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>Конец партии для игрока (<c>docs/scenario-events.md</c> §4): окно сообщения клиента (<c>0x489b64</c>), затем экран
 /// эпилога <c>DLG_END_WIN_LOSE_</c> (<see cref="EndScenarioLogic"/>).</summary>

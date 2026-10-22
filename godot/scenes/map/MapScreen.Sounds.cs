@@ -1,6 +1,6 @@
-using D2.Data.Sound;
+using LastEdict.Data.Sound;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Звуки окон карты (<see cref="WindowSounds"/>, <c>docs/ai-screen.md</c> §12): открытие и закрытие — по стеку окон.</summary>
 public partial class MapScreen

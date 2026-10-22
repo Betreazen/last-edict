@@ -1,9 +1,9 @@
 using System;
 using System.Linq;
-using D2.Data.Ui;
+using LastEdict.Data.Ui;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>
 /// Показ экранов игры в окне (прогон 3 пользователя 11.10, пункт 1): все экраны — меню, карта, бой — рисуются во внеэкранный буфер

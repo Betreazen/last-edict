@@ -1,8 +1,8 @@
-using D2.Data.Content;
-using D2.Data.Menu;
-using D2.Data.Play;
+using LastEdict.Data.Content;
+using LastEdict.Data.Menu;
+using LastEdict.Data.Play;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>«Горячий стул» (<c>docs/day-cycle.md</c> §5): люди ходят по очереди в одном дне (<c>NextPlayer 0x420929</c>),
 /// начало хода человека — в момент его хода, день растёт после ИИ.</summary>
@@ -33,7 +33,7 @@ public class HotseatTests
         var legionsBank = session.Map.Players["S073PL000b"].Bank;
         // Ни множителя, ни дохода до своего хода; SPELL_BANK файла влит при занятии места (CVisitorChangePlayerType, у каждого человека).
         var file = data.Looks.Map.Players["S073PL000b"];
-        Assert.Equal(D2.Rules.Map.Economy.Clamp(file.Bank + file.SpellBank), legionsBank);
+        Assert.Equal(LastEdict.Rules.Map.Economy.Clamp(file.Bank + file.SpellBank), legionsBank);
 
         // Очередь дня (0x42b8e8, 28.09): хозяин (Кланы), затем все по ключу расы — ИИ с ключом меньше, чем у Легионов, ходит между людьми.
         var order = GameSession.DayOrder(session.Map, state.Info.Humans, book);
@@ -72,8 +72,8 @@ public class HotseatTests
             Hotseat = [new HotseatSeat(3, "", 0, 0), new HotseatSeat(2, "", 0, 1)],
         };
         bool[] heretic = [false, false, false, true, false, false];   // HUMAN, DWARF, UNDEAD, HERETIC, NEUTRAL, ELF
-        var legions = new D2.Rules.Map.ScenarioEvent("S999EV0000", true, false, 100, -1, heretic,
-            [new D2.Rules.Map.FrequencyCondition(1)], [new D2.Rules.Map.PopupEffect("всем", ShowTo: "ALL")], "проверка", heretic);
+        var legions = new LastEdict.Rules.Map.ScenarioEvent("S999EV0000", true, false, 100, -1, heretic,
+            [new LastEdict.Rules.Map.FrequencyCondition(1)], [new LastEdict.Rules.Map.PopupEffect("всем", ShowTo: "ALL")], "проверка", heretic);
         var state = NewGame.Start(data with { Events = data.Events with { Events = [legions] } }, setup, content.Catalog, book, new Random(1));
         var session = new GameSession(state, content.MapArt, book);
         var sights = new SightRecorder();
@@ -107,7 +107,7 @@ public class HotseatTests
         };
         var state = NewGame.Start(ScenarioFile.Read(scenario), setup, content.Catalog, book, new Random(1));
         var map = state.Looks.Map;
-        var legions = map.Sites.Single(s => s.Kind == D2.Rules.Map.SiteKind.Capital && s.Owner.Equals("S073PL000b", StringComparison.OrdinalIgnoreCase));
+        var legions = map.Sites.Single(s => s.Kind == LastEdict.Rules.Map.SiteKind.Capital && s.Owner.Equals("S073PL000b", StringComparison.OrdinalIgnoreCase));
         var dwarf = map.Stacks.Values.First(s => s.Owner.Equals("S073PL000a", StringComparison.OrdinalIgnoreCase));
         // Столица Легионов без защитников, отряд Кланов у её входа.
         var sites = map.Sites.Select(s => s.Id == legions.Id ? s with { Guards = [], GuardSlots = [-1, -1, -1, -1, -1, -1], StackId = "" } : s).ToList();
@@ -121,7 +121,7 @@ public class HotseatTests
                                       content.MapArt, book);
         long legionsGold = session.Map.Players["S073PL000b"].Bank.Gold;
         var legionsBank = session.Map.Players["S073PL000b"].Bank;
-        var notices = new D2.Data.Ui.Windows.NoticeWatch(_ => true);
+        var notices = new LastEdict.Data.Ui.Windows.NoticeWatch(_ => true);
         session.Watch(notices);
 
         var visit = session.Enter(dwarf.Id, legions.Id);
@@ -148,9 +148,9 @@ public class HotseatTests
         string scenario = ScenarioFile.PathOf(Path.Combine(Data, "scenarios"), "Power to Corrupt");
         Skip.IfNot(File.Exists(scenario), "нет сценария порта");
         var content = SharedContent.Load(Data);
-        var strings = D2.Data.Ui.UiStrings.Load(Path.Combine(Data, "ui"), "ru");
+        var strings = LastEdict.Data.Ui.UiStrings.Load(Path.Combine(Data, "ui"), "ru");
         var player = ScenarioFile.Read(scenario).Looks.Map.Players["S073PL000a"] with { Name = "Гимли", Face = 2 };
-        var ui = new D2.Data.Ui.UiScreenState(content.Screens.Single(s => s.Id == "DLG_HOTSEAT_POPUP"));
+        var ui = new LastEdict.Data.Ui.UiScreenState(content.Screens.Single(s => s.Id == "DLG_HOTSEAT_POPUP"));
         new HotseatTurnLogic(player, content.Catalog, id => strings.GetValueOrDefault(id) ?? id).Open(ui);
         string text = ui.TextOf("TXT_TEXT")!;
         Assert.Contains("Гимли", text);
@@ -168,13 +168,13 @@ public class HotseatTests
         string scenario = ScenarioFile.PathOf(Path.Combine(Data, "scenarios"), "Power to Corrupt");
         Skip.IfNot(File.Exists(scenario), "нет сценария порта");
         var content = SharedContent.Load(Data);
-        var strings = D2.Data.Ui.UiStrings.Load(Path.Combine(Data, "ui"), "en");
+        var strings = LastEdict.Data.Ui.UiStrings.Load(Path.Combine(Data, "ui"), "en");
         var players = ScenarioFile.Read(scenario).Looks.Map.Players;
         var clans = players["S073PL000a"] with { Name = "Gimli", Face = 2 };
         var legions = players["S073PL000b"] with { Name = "Bethrezen", Face = 0 };
         string legionsFace = $"DLG_HOTSEAT_LOBBY_RACE_FACE{content.Catalog.Races.Single(r => r.Id.Equals(legions.RaceId, StringComparison.OrdinalIgnoreCase)).Code}1N";
         string Text(string id) => strings.GetValueOrDefault(id) ?? id;
-        var ui = new D2.Data.Ui.UiScreenState(content.Screens.Single(s => s.Id == "DLG_HOTSEAT_POPUP"));
+        var ui = new LastEdict.Data.Ui.UiScreenState(content.Screens.Single(s => s.Id == "DLG_HOTSEAT_POPUP"));
 
         new HotseatTurnLogic(legions, content.Catalog, Text, HotseatCall.Message, sender: clans).Open(ui);
         string message = ui.TextOf("TXT_TEXT")!;
@@ -210,7 +210,7 @@ public class HotseatTests
         var clansStack = map.Stacks.Values.First(s => s.Owner.Equals("S073PL000a", StringComparison.OrdinalIgnoreCase));
         var legionsStack = map.Stacks.Values.First(s => s.Owner.Equals("S073PL000b", StringComparison.OrdinalIgnoreCase));
         var aiStack = map.Stacks.Values.First(s => s.Owner.Equals("S073PL0009", StringComparison.OrdinalIgnoreCase));
-        var legionsCapital = map.Sites.Single(s => s.Kind == D2.Rules.Map.SiteKind.Capital && s.Owner.Equals("S073PL000b", StringComparison.OrdinalIgnoreCase));
+        var legionsCapital = map.Sites.Single(s => s.Kind == LastEdict.Rules.Map.SiteKind.Capital && s.Owner.Equals("S073PL000b", StringComparison.OrdinalIgnoreCase));
         string leaderName = session.Looks.Stacks.Single(s => s.Id == legionsStack.Id).LeaderName;
 
         var call = HotseatCalls.Defender(session, legionsStack.Id, id => id);
@@ -229,7 +229,7 @@ public class HotseatTests
 
         // Бой двух людей: команду ждёт юнит любой стороны; без флага — только сторона нападающего.
         var state = session.StartBattle(clansStack.Id, legionsStack.Id);
-        var both = new D2.Data.Battle.BattleSession(state, new D2.Rules.Battle.BattleSim(state, new D2.Rules.Rng.EngineRng(), book.Rules.Constants),
+        var both = new LastEdict.Data.Battle.BattleSession(state, new LastEdict.Rules.Battle.BattleSim(state, new LastEdict.Rules.Rng.EngineRng(), book.Rules.Constants),
                                                     book.Rules.Constants) { BothHuman = true };
         var sides = new HashSet<bool>();
         for (int i = 0; i < 40 && !both.Finished; i++)
@@ -239,7 +239,7 @@ public class HotseatTests
             both.Defend();
         }
         Assert.Equal([false, true], sides.Order());
-        var one = new D2.Data.Battle.BattleSession(state, new D2.Rules.Battle.BattleSim(state, new D2.Rules.Rng.EngineRng(), book.Rules.Constants),
+        var one = new LastEdict.Data.Battle.BattleSession(state, new LastEdict.Rules.Battle.BattleSim(state, new LastEdict.Rules.Rng.EngineRng(), book.Rules.Constants),
                                                    book.Rules.Constants);
         Assert.False(one.IsPlayers(state.Units.First(u => !u.Attacker)));
         Assert.True(both.IsPlayers(state.Units.First(u => !u.Attacker)));

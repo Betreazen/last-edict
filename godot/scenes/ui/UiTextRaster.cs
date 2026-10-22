@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Подпись на процессоре — в картинку сборки без окна (<c>--png --text</c>): снимка вьюпорта в headless нет
 /// (<c>docs/godot-notes.md</c>), а сверять текст со снимками оригинала надо числом. Вёрстка — та же, что у <see cref="Label"/>: строки

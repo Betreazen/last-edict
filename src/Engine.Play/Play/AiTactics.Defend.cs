@@ -1,7 +1,7 @@
-using D2.Rules.Battle;
-using D2.Rules.Map;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>Что делает действие «защитить отряд, защитить место, дойти до места» (<c>0x460d27</c>, <c>0x455bac</c>, <c>0x45b2c8</c>).</summary>
 public enum AiMoveAct

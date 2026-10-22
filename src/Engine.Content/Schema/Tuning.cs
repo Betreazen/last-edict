@@ -1,6 +1,6 @@
 using System.ComponentModel;
 
-namespace D2.Data.Content.Schema;
+namespace LastEdict.Data.Content.Schema;
 
 /// <summary>Настройка ИИ для одного отношения (<c>GAI.dbf</c>, строка на <see cref="AiAttitude"/>): бюджет дня, доли лидеров, веса
 /// тактики, читы сложности, пороги лечения, заклинания.</summary>

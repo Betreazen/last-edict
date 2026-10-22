@@ -1,9 +1,9 @@
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using D2.Rules.Map;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>Настройки JSON сохранения. Модель карты (<see cref="MapState"/>, <see cref="Map.MapLooks"/>) пишется как
 /// есть, без отдельного слоя DTO; то, чего стандартный сериализатор не умеет, покрывают конвертеры ниже:

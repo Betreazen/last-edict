@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace D2.Data.Ui;
+namespace LastEdict.Data.Ui;
 
 /// <summary>Ролик игры, переведённый из Bink в Ogg Theora (<c>.ogv</c>) — единственный видеоформат, который Godot
 /// читает сам. <see cref="Name"/> — имя ролика в игре, ВЕРХНИМ регистром и без расширения (<c>TRANS_MAIN2SINGLE</c>,

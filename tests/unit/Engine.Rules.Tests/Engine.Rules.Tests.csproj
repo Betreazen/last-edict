@@ -29,14 +29,14 @@
     <None Include="../../../data/content/**" Link="data/content/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../../test-durations.json" Link="test-durations.json" CopyToOutputDirectory="PreserveNewest" />
     <AssemblyAttribute Include="Xunit.TestCollectionOrdererAttribute">
-      <_Parameter1>D2.Tests.LongestFirst</_Parameter1>
+      <_Parameter1>LastEdict.Tests.LongestFirst</_Parameter1>
       <_Parameter2>$(AssemblyName)</_Parameter2>
     </AssemblyAttribute>
   </ItemGroup>
 
   <ItemGroup>
     <Using Include="Xunit" />
-    <Using Include="D2.Tests" />
+    <Using Include="LastEdict.Tests" />
   </ItemGroup>
 
   <ItemGroup>

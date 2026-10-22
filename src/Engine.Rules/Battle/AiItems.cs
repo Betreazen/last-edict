@@ -1,7 +1,7 @@
-using D2.Rules.Magic;
-using D2.Rules.Units;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Units;
 
-namespace D2.Rules.Battle;
+namespace LastEdict.Rules.Battle;
 
 /// <summary>Боевые предметы в политике ИИ. Когда — <c>0x5ce917</c> (лидер, <c>rel ≤ 0.7</c>, добить некого, цели
 /// предмета есть); какой и в кого — <c>FindEquipment</c> <c>0x5cfed3</c>. Разбор §3 (корпус: 5 применений из 5

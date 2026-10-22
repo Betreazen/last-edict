@@ -1,8 +1,8 @@
-namespace D2.Data.Diagnostics;
+namespace LastEdict.Data.Diagnostics;
 
 /// <summary>
 /// Строки звука, музыки, роликов и анимаций в журнале зонда порта — те же имена и поля, что у зонда оригинала (схема 7.3,
-/// <c>docs/corpus-schema.md</c>, «Звук, музыка, анимации»), чтобы харнесс <c>AvJournal</c> (<c>D2.Verification</c>) сравнивал журналы двух игр
+/// <c>docs/corpus-schema.md</c>, «Звук, музыка, анимации»), чтобы харнесс <c>AvJournal</c> (<c>LastEdict.Verification</c>) сравнивал журналы двух игр
 /// одним разбором. Единицы — движка: громкость звука в процентах 0…100 (<c>vol</c>) и итоговая громкость Miles 0…127 (<c>out</c>,
 /// <c>vol × FxVolume / 100</c>), панорама 0…127 (64 — центр), громкость музыки 0…127. Пишет только зонд порта (ставит
 /// <c>PortProbe</c>); без журнала объекта нет и затрат нет.
@@ -64,7 +64,7 @@ public sealed class AvTrace
 
     /// <summary><c>av_settings</c> — настройки показа, от которых зависят звук и анимации (только у порта: у оригинала они в
     /// <c>Disciple.ini</c> копии игры): скорость боя и его дополнительная анимация, шаг отряда, плавность хода и прокрутки. Сверка
-    /// (<c>AvJournal</c> (<c>D2.Verification</c>)) сравнивает только то, что сыграно при одних настройках.</summary>
+    /// (<c>AvJournal</c> (<c>LastEdict.Verification</c>)) сравнивает только то, что сыграно при одних настройках.</summary>
     public void Settings(int playerSpeed, int opponentSpeed, int battleSpeed, bool battleAnim, bool stackSmoothScroll, bool smoothScroll,
         bool animatedIso) =>
         _journal.Write("av_settings", new Dictionary<string, object?>

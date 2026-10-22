@@ -1,9 +1,9 @@
-using D2.Data.Menu;
-using D2.Data.Ui.Windows;
-using D2.Data.Ui;
-using D2.Rules.Map;
+using LastEdict.Data.Menu;
+using LastEdict.Data.Ui.Windows;
+using LastEdict.Data.Ui;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Map;
+namespace LastEdict.Data.Map;
 
 /// <summary>
 /// Переключатели палитры карты (<c>DLG_ISO_PAL</c> / <c>DLG_ISO_LAND</c>, разбор <c>Discipl2.exe</c> 11.10, ранг 1 по листингу):

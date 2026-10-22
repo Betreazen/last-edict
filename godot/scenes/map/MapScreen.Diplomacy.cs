@@ -1,9 +1,9 @@
 using System.Collections.Generic;
-using D2.Data.Ui;
-using D2.Data.Ui.Windows;
+using LastEdict.Data.Ui;
+using LastEdict.Data.Ui.Windows;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Окно дипломатии (<c>CDiplomacyInterf</c>, кнопка <c>BTN_DIPLOMACY</c> панели команд): на месте карты — поле
 /// <c>DLG_ISO_DIPLO</c> (<see cref="DiplomacyFieldLogic"/>), на месте панели команд — <c>DLG_DIPLOMACY</c>

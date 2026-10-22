@@ -4,7 +4,7 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace D2.Data.Dbf;
+namespace LastEdict.Data.Dbf;
 
 /// <summary>Таблица игры в данных порта на запись: имя, колонки и строки как есть. Значение — строка, число или
 /// логическое; <c>null</c> — пустая ячейка. Читается без этой записи — <see cref="GameTables.FromJson(string)"/>.</summary>
@@ -61,7 +61,7 @@ public static class GameTables
     private static readonly ConcurrentDictionary<string, Lazy<DbfTable>> Cache =
         new(OperatingSystem.IsLinux() ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>Забыть разобранные таблицы — для замера холодной загрузки (D2.Bench <c>load_rules_book_cold</c>).</summary>
+    /// <summary>Забыть разобранные таблицы — для замера холодной загрузки (LastEdict.Bench <c>load_rules_book_cold</c>).</summary>
     public static void ClearCache() => Cache.Clear();
 
     /// <summary>Есть ли таблица в каталоге (в любом из двух видов).</summary>

@@ -1,6 +1,6 @@
-using D2.Rules.Map;
+using LastEdict.Rules.Map;
 
-namespace D2.Rules.Tests;
+namespace LastEdict.Rules.Tests;
 
 /// <summary>Порядок изученных заклинаний после чтения (<see cref="KnownSpellOrder"/>, <c>0x5fe926</c> → <c>list::sort</c> <c>0x44b3df</c>):
 /// по числу <c>CMidgardID</c>, как в сохранении движка t01 карты 19 при неупорядоченном сценарии.</summary>

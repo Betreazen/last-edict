@@ -1,6 +1,6 @@
-using D2.Rules.Rng;
+using LastEdict.Rules.Rng;
 
-namespace D2.Rules.Map;
+namespace LastEdict.Rules.Map;
 
 /// <summary>
 /// Признаки цели, которые читает выбор действия вора ИИ (<c>0x45b98a</c>) сверх списка доступного

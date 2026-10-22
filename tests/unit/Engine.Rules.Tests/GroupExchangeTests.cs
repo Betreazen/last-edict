@@ -1,6 +1,6 @@
-using D2.Rules.Map;
+using LastEdict.Rules.Map;
 
-namespace D2.Rules.Tests;
+namespace LastEdict.Rules.Tests;
 
 /// <summary>Перенос юнитов между отрядом и гарнизоном/другим отрядом — прогон 20260917-synth
 /// (<c>disciples-modding/docs/synthetic-maps/analysis/M-run17-ui-diplomacy.md</c>, q20b), журнал <c>swap_check</c>.</summary>

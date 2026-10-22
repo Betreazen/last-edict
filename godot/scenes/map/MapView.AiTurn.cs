@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using D2.Data.Gfx;
-using D2.Data.Play;
-using D2.Rules.Battle;
+using LastEdict.Data.Gfx;
+using LastEdict.Data.Play;
+using LastEdict.Rules.Battle;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>
 /// Ход ИИ на экране (<c>docs/ai-screen.md</c>). «Конец хода» проводит <see cref="GameSession.EndTurn"/> в фоновом потоке,
@@ -63,7 +63,7 @@ public partial class MapView
     private sealed record AiWalk(StackMove Move, int Step, int Shown);
 
     /// <summary>Часы хода отряда ИИ — та же группа, что у своих (<see cref="StackSmooth"/>, <c>0x4f5e7c</c>).</summary>
-    private readonly D2.Data.Map.AnimTicker _aiWalkTicker = new(D2.Data.Map.AnimClock.StackWalk(D2.Data.Map.StackWalk.SmoothScroll));
+    private readonly LastEdict.Data.Map.AnimTicker _aiWalkTicker = new(LastEdict.Data.Map.AnimClock.StackWalk(LastEdict.Data.Map.StackWalk.SmoothScroll));
 
     private Thread? _aiThread;
     private readonly SemaphoreSlim _aiResume = new(0, 1);
@@ -141,8 +141,8 @@ public partial class MapView
         /// <summary>Доиграть бой без экрана (только C#, без узлов Godot).</summary>
         public Func<IReadOnlyList<TurnRecord>>? Resolve { get; set; }
 
-        /// <summary>Действия экрана боя (<see cref="D2.Data.Battle.BattlePlay"/>) — ответ ядру данными: по ним журнал команд повторит бой.</summary>
-        public Func<D2.Data.Battle.BattlePlay>? Played { get; set; }
+        /// <summary>Действия экрана боя (<see cref="LastEdict.Data.Battle.BattlePlay"/>) — ответ ядру данными: по ним журнал команд повторит бой.</summary>
+        public Func<LastEdict.Data.Battle.BattlePlay>? Played { get; set; }
 
         /// <summary>Бой сыгран: журнал уходит в ход ИИ, рабочий поток продолжает. null — экран бой не сыграл (занят): ядро сыграет
         /// автобой само (<see cref="ITurnObserver.Battle"/>). Журнал уже есть — повтор ничего не делает.</summary>
@@ -192,7 +192,7 @@ public partial class MapView
         if (PassesToHuman())
         {
             // «Горячий стул»: ход сразу переходит к следующему человеку, ИИ не ходит — показывать нечего.
-            Session.Execute(new D2.Data.Play.Commands.EndTurnCommand());
+            Session.Execute(new LastEdict.Data.Play.Commands.EndTurnCommand());
             AfterTurn();
             return;
         }
@@ -215,7 +215,7 @@ public partial class MapView
         try
         {
             // Командой: ответ человека на предложение, пока ход ИИ ждёт, — вложенная команда этого хода (docs/game-commands.md §2).
-            Session.Execute(new D2.Data.Play.Commands.EndTurnCommand());
+            Session.Execute(new LastEdict.Data.Play.Commands.EndTurnCommand());
         }
         catch (Exception e)
         {
@@ -460,8 +460,8 @@ public partial class MapView
         // Ход с нападением (StackMove.Attack) — ATTK на последнем шаге, прочие молчат, как у человека (MapView.Sounds.cs).
         StepSound(walk.Move.StackId, to.X, to.Y, first: walk.Step == 0,
                   walk.Move.Attack ? walk.Step + 2 == walk.Move.Cells.Count : null);
-        var facing = D2.Rules.Map.PathFinder.Facing(new D2.Rules.Map.PathPoint(from.X, from.Y, 0, 0),
-                                                    new D2.Rules.Map.PathPoint(to.X, to.Y, 0, 0));
+        var facing = LastEdict.Rules.Map.PathFinder.Facing(new LastEdict.Rules.Map.PathPoint(from.X, from.Y, 0, 0),
+                                                    new LastEdict.Rules.Map.PathPoint(to.X, to.Y, 0, 0));
         _objects.ShowMoving(Scene.StackSprites(look with { X = from.X, Y = from.Y }, facing, moving: true),
                             GameData.Content.Gfx, GameData.GfxRoot);
     }
@@ -469,7 +469,7 @@ public partial class MapView
     /// <summary>Начало хода отряда ИИ на виду и показано ключевых кадров — строка <c>map_anim CMidAnim2Unit</c> зонда.</summary>
     private (ulong StartMs, int Frames) _aiWalkAnim;
 
-    /// <summary>Шаг отряда ИИ между клетками ключевыми кадрами, как у человека (<see cref="StepWalk"/>, <see cref="D2.Data.Map.StackWalk"/>; скорость —
+    /// <summary>Шаг отряда ИИ между клетками ключевыми кадрами, как у человека (<see cref="StepWalk"/>, <see cref="LastEdict.Data.Map.StackWalk"/>; скорость —
     /// <c>OpponentSpeed</c>): ключевой кадр за тик часов хода (<see cref="_aiWalkTicker"/>), отряд встаёт в точку кадра, вид центрируется на ней
     /// (<c>0x4f6539</c>); шаг под туманом проходит сразу. Дошёл — картинка остаётся в последней клетке до следующей заявки, рабочий переставляет
     /// отряд.</summary>
@@ -500,7 +500,7 @@ public partial class MapView
             if (seen) CenterOn(to);   // по концу пути вид — на последней клетке (0x4f6671)
             PortProbe.Av?.MapAnim("end", "CMidAnim2Unit", to.X, to.Y, walk.Move.StackId,
                                   (long)(Time.GetTicksMsec() - _aiWalkAnim.StartMs), _aiWalkAnim.Frames,
-                                  group: _aiWalkTicker.Group == D2.Data.Map.AnimGroup.Fast ? 1 : 0);
+                                  group: _aiWalkTicker.Group == LastEdict.Data.Map.AnimGroup.Fast ? 1 : 0);
             _aiWalk = null;
             StepsDone();
             AiRelease();
@@ -679,8 +679,8 @@ public partial class MapView
                 // Действие человека в окне, захват, рост своей деревни — звук интерфейса (WindowSounds, docs/ai-screen.md §12); вор человека —
                 // анимацией у цели (MapView.Input.cs).
                 if (sight.Kind is not (TurnSightKind.Looted or TurnSightKind.LandSpread or TurnSightKind.NobleAction)
-                    && D2.Data.Sound.WindowSounds.OfSight(sight, view.Session.Book) is { } actionSound)
-                    GameAudio.Of(view).PlayFx(D2.Data.Sound.WindowSounds.Archive, actionSound);
+                    && LastEdict.Data.Sound.WindowSounds.OfSight(sight, view.Session.Book) is { } actionSound)
+                    GameAudio.Of(view).PlayFx(LastEdict.Data.Sound.WindowSounds.Archive, actionSound);
                 // Своя руина разграблена — входом или победой над её стражей: LOOTRUIN (CMidAnim2LootRuin); ENTRRUIN — окно «Вы победили!»
                 // (MapScreen.Notices.cs). Журнал зонда 7.3 (20261016g-port-synth, карта 8): после боя у руины движок играет оба (до окна
                 // предметов с TAKEBAG); у порта до 17.10 звучал только вход (VisitSound), после боя — тишина.
@@ -711,7 +711,7 @@ public partial class MapView
                     view.QueueEffect(() => view.ScrolledPlay(cell, onlyIfFar: true, () => view.PlayMountains(sight.Id, sight.X, sight.Y)));
                 return;
             }
-            if (sight.Kind == TurnSightKind.EventPopup || D2.Data.Ui.Windows.NoticeWatch.IsMessage(sight.Kind))
+            if (sight.Kind == TurnSightKind.EventPopup || LastEdict.Data.Ui.Windows.NoticeWatch.IsMessage(sight.Kind))
             {
                 // Попап человеку у ПК — сразу, ход ИИ ждёт «ОК» (клетки нет: −1, −1). Другому человеку «горячего стула» — не здесь.
                 if (OnWorker && view.AiPopupRequested is not null && sight.PlayerId.Equals(view.Viewer, StringComparison.OrdinalIgnoreCase))
@@ -730,7 +730,7 @@ public partial class MapView
             if (!OnWorker) return;
             // Захват (сообщение 30, 0x48b415): OCCUPY слышен всем и без показа ходов — сервер рассылает его, туман не проверяется (ранг 2).
             if (sight.Kind == TurnSightKind.Capture && sight.Occupy)   // деревня уже бывала у этой расы — без OCCUPY (0x434080)
-                Callable.From(() => GameAudio.Of(view).PlayFx(D2.Data.Sound.WindowSounds.Archive, "OCCUPY")).CallDeferred();
+                Callable.From(() => GameAudio.Of(view).PlayFx(LastEdict.Data.Sound.WindowSounds.Archive, "OCCUPY")).CallDeferred();
             // Анимации карты — при показе ходов ИИ или в ход человека (0x61a639), и если место видно (0x4f4a0c).
             bool shown = view.AiAnimate || view.Session.State.Info.Humans.Contains(sight.PlayerId, StringComparer.OrdinalIgnoreCase);
             switch (sight.Kind)
@@ -757,7 +757,7 @@ public partial class MapView
                         Ask(new AiSightRequest(NobleKind, sight.Id, sight.X, sight.Y));
                     return;
             }
-            if (!view.AiAnimate || D2.Data.Sound.WindowSounds.IsWindowAction(sight.Kind)) return;
+            if (!view.AiAnimate || LastEdict.Data.Sound.WindowSounds.IsWindowAction(sight.Kind)) return;
             if (sight.Kind == TurnSightKind.Spell)
             {
                 if (SpellPoint(sight) is { } point) Ask(new AiSightRequest(point.Shake ? ShakeKind : SpellKind, sight.Id, point.X, point.Y, sight));
@@ -788,17 +788,17 @@ public partial class MapView
             if (session.Book?.Spells.TryGetValue(sight.Id, out var spell) != true || spell is null) return null;
             if (spell.Area == WholeMap)
             {
-                var capital = map.Sites.FirstOrDefault(s => s.Kind == D2.Rules.Map.SiteKind.Capital
+                var capital = map.Sites.FirstOrDefault(s => s.Kind == LastEdict.Rules.Map.SiteKind.Capital
                                                             && s.Owner.Equals(sight.PlayerId, StringComparison.OrdinalIgnoreCase));
                 if (capital is null) return (sight.X, sight.Y, false);
                 var corner = Corner(map, capital);
                 bool own = string.Equals(sight.PlayerId, view.Viewer, StringComparison.OrdinalIgnoreCase);
                 if (own || !Hidden(session, corner)) return (corner.X, corner.Y, false);
-                var mine = map.Sites.FirstOrDefault(s => s.Kind == D2.Rules.Map.SiteKind.Capital
+                var mine = map.Sites.FirstOrDefault(s => s.Kind == LastEdict.Rules.Map.SiteKind.Capital
                                                          && s.Owner.Equals(view.Viewer, StringComparison.OrdinalIgnoreCase));
                 return mine is null ? null : (Corner(map, mine).X, Corner(map, mine).Y, true);
             }
-            bool fog = spell.Category is D2.Rules.Magic.SpellCategory.Fog or D2.Rules.Magic.SpellCategory.Unfog;
+            bool fog = spell.Category is LastEdict.Rules.Magic.SpellCategory.Fog or LastEdict.Rules.Magic.SpellCategory.Unfog;
             return fog || SpellMapAnim.SeenFrom.Any(d => !Hidden(session, (sight.X + d.Dx, sight.Y + d.Dy))) ? (sight.X, sight.Y, false) : null;
         }
 
@@ -807,8 +807,8 @@ public partial class MapView
             SpellMapAnim.SeenFrom.Any(d => !Hidden(session, (sight.X + d.Dx, sight.Y + d.Dy)));
 
         /// <summary>Дальний угол пятна укрепления — позиция + размер − 1 (<c>0x5e9563</c>).</summary>
-        private static (int X, int Y) Corner(D2.Rules.Map.MapState map, D2.Rules.Map.MapSite site) =>
-            D2.Rules.Map.PathFinder.EntranceOf(map, site.Id) ?? (site.X, site.Y);
+        private static (int X, int Y) Corner(LastEdict.Rules.Map.MapState map, LastEdict.Rules.Map.MapSite site) =>
+            LastEdict.Rules.Map.PathFinder.EntranceOf(map, site.Id) ?? (site.X, site.Y);
 
         private const int WholeMap = 999;
 

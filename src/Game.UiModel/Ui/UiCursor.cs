@@ -1,4 +1,4 @@
-namespace D2.Data.Ui;
+namespace LastEdict.Data.Ui;
 
 /// <summary>
 /// Курсор окна из разметки (<c>docs/ui-windows.md</c>, «Курсор окна»). Строка <c>DIALOG</c>: поле 6 — имя картинки, поля 7–8 — горячая

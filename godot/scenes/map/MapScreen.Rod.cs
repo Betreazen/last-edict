@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using D2.Data.Ui.Windows;
+using LastEdict.Data.Ui.Windows;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>«Поставить жезл» (<c>BTN_DROP_ROD</c>, <see cref="DropRodLogic"/>): отказ кнопки — окно сообщения; иначе панель команд сменяется на
 /// <c>DLG_DROP_BAG</c> с <c>X005TA0284</c>, курсор <c>DROPRODVAL</c>/<c>DROPRODINV</c> по клетке под мышью, отметки <c>SELECT_YES/NO</c> на
@@ -121,7 +121,7 @@ public partial class MapScreen
     {
         if (near)
         {
-            _map.Session.Run(new D2.Data.Play.Commands.ActInPlaceCommand(stackId, Attack: false));   // постановка с соседней клетки — команда хода с места (0x440cfc)
+            _map.Session.Run(new LastEdict.Data.Play.Commands.ActInPlaceCommand(stackId, Attack: false));   // постановка с соседней клетки — команда хода с места (0x440cfc)
             RodPlaced(stackId, cell.X, cell.Y);
             return;
         }
@@ -150,7 +150,7 @@ public partial class MapScreen
 
     private void RodPlaced(string stackId, int x, int y)
     {
-        string? refused = _map.Session.Run<string?>(new D2.Data.Play.Commands.PlaceRodCommand(stackId, x, y));
+        string? refused = _map.Session.Run<string?>(new LastEdict.Data.Play.Commands.PlaceRodCommand(stackId, x, y));
         GD.Print($"droprod placed {stackId} at={x},{y} {(refused is null ? "жезл" : "отказ=" + refused.Replace(' ', '_'))} " +
                  $"золото={_map.Map.Players[_map.Map.Stacks[stackId].Owner].Bank.Gold}");
         _map.RefreshGround();

@@ -1,6 +1,6 @@
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 public partial class AnimTest : AnimatedSprite2D
 {
@@ -75,7 +75,7 @@ public partial class AnimTest : AnimatedSprite2D
 			return 0;
 		}
 
-		foreach (string path in D2.Data.Gfx.GfxAssets.FramePaths(anim, GameData.GfxRoot))
+		foreach (string path in LastEdict.Data.Gfx.GfxAssets.FramePaths(anim, GameData.GfxRoot))
 		{
 			if (System.IO.File.Exists(path))
 			{

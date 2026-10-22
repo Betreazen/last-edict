@@ -1,14 +1,14 @@
 // Загрузчики правил ДО схемы содержимого (main 639961ee): правила читались прямо из строк таблиц оригинала. Эталон сверки
 // «старая модель = новая» (ContentRulesParityTests) — не править; удаляется вместе с ней, когда таблицы уйдут из проверок.
-using D2.Data.Battle;
-using D2.Data.Dbf;
-using D2.Rules.Magic;
-using D2.Rules.Map;
+using LastEdict.Data.Battle;
+using LastEdict.Data.Dbf;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Tests.LegacyLoaders;
+namespace LastEdict.Data.Tests.LegacyLoaders;
 
-/// <summary><c>GItem.DBF</c> -> <see cref="Item"/>. Запись живёт в <c>D2.Rules.Magic</c>, а не
-/// здесь: ссылка идёт <c>D2.Data → D2.Rules</c>, и второй копии быть не должно — так же поступили
+/// <summary><c>GItem.DBF</c> -> <see cref="Item"/>. Запись живёт в <c>LastEdict.Rules.Magic</c>, а не
+/// здесь: ссылка идёт <c>LastEdict.Data → LastEdict.Rules</c>, и второй копии быть не должно — так же поступили
 /// задачи 3 и 11 с <c>Modifier</c> и <c>DynUpgrade</c>.
 /// <para>Ссылочные поля приведены к пустой строке, когда в файле пусто или стоит
 /// <c>g000000000</c>: из 336 живых предметов <c>MOD_EQUIP</c> несёт 41, <c>MOD_POTION</c> — 20,

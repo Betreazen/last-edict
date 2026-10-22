@@ -1,7 +1,7 @@
-using D2.Rules.Battle;
-using D2.Rules.Map;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>
 /// Наблюдатель хода партии — точка расширения для показа хода ИИ (<c>docs/ai-screen.md</c>). Ядро зовёт его по ходу
@@ -60,8 +60,8 @@ public interface ITurnObserver
 }
 
 /// <summary>Решение боя снаружи ядра (<see cref="ITurnObserver.DecideBattle"/>): журнал ходов, сыгранный на генераторе партии, и, если
-/// бой сыгран по шагам (экран боя), — его действия (<see cref="D2.Data.Battle.BattlePlay"/>).</summary>
-public sealed record BattleDecision(IReadOnlyList<TurnRecord> Log, D2.Data.Battle.BattlePlay? Play = null);
+/// бой сыгран по шагам (экран боя), — его действия (<see cref="LastEdict.Data.Battle.BattlePlay"/>).</summary>
+public sealed record BattleDecision(IReadOnlyList<TurnRecord> Log, LastEdict.Data.Battle.BattlePlay? Play = null);
 
 /// <summary>Итог боя для наблюдателей: группы сторон и их хозяева (укрепление и руина — хозяин укрепления, у руины пусто), победитель
 /// (группа, что держит поле: отступивший нападающий проиграл), раундов, павших (не призванных) и полученного опыта по сторонам, день.</summary>

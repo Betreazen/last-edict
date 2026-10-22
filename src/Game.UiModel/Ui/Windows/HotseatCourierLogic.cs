@@ -1,7 +1,7 @@
-using D2.Data.Menu;
-using D2.Data.Play;
+using LastEdict.Data.Menu;
+using LastEdict.Data.Play;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>
 /// Гонец «горячего стула» (<c>DLG_HOTSEAT_POPUP</c> режима 1, <c>CHotseatPopupInterf</c> <c>0x4bdd72</c>): предложение человека другому

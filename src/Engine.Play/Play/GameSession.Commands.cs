@@ -1,8 +1,8 @@
-using D2.Data.Battle;
-using D2.Data.Play.Commands;
-using D2.Rules.Battle;
+using LastEdict.Data.Battle;
+using LastEdict.Data.Play.Commands;
+using LastEdict.Rules.Battle;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 public sealed partial class GameSession
 {

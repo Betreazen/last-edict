@@ -1,10 +1,10 @@
 using System.Globalization;
-using D2.Data.Leaders;
-using D2.Data.Ui;
-using D2.Data.Ui.Windows;
-using D2.Rules.Battle;
+using LastEdict.Data.Leaders;
+using LastEdict.Data.Ui;
+using LastEdict.Data.Ui.Windows;
+using LastEdict.Rules.Battle;
 
-namespace D2.Data.Menu;
+namespace LastEdict.Data.Menu;
 
 /// <summary>
 /// Навыки героя из файла строками окна просмотра (<c>0x4cb1ec</c>): по способности файла на строку, в порядке файла и без пропусков,
@@ -96,7 +96,7 @@ internal sealed class LeaderFileCardLogic(MenuContext context, ExportedLeader le
             UiTemplate.Fill(Text("X005TA0891"), ("ABIL", Text(r.Name))), new UiRect(36, 0, 125 - 36, 36)))]);
     }
 
-    private string AttackInfo(D2.Data.Play.GameBook? book)
+    private string AttackInfo(LastEdict.Data.Play.GameBook? book)
     {
         var a = leader.Attack;
         var attacks = book?.Rules.Attacks;

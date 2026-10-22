@@ -1,7 +1,7 @@
-using D2.Rules.Battle;
-using D2.Rules.Map;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>
 /// Посещение руин ИИ из карты (<c>VisitRuin</c>, <c>docs/ai-tactic-candidates.md</c> §8): кэш руин, сила против охраны и

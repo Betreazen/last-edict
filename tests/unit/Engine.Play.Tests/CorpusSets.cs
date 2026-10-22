@@ -1,4 +1,4 @@
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Группы каталогов корпуса для категорий тестов (<c>[Trait("Category", …)]</c>, <c>tools/affected_tests.py</c>).</summary>
 internal static class CorpusSets

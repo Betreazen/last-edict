@@ -1,6 +1,6 @@
-using D2.Data;
-using D2.Data.Content;
-using D2.Data.Dbf;
+using LastEdict.Data;
+using LastEdict.Data.Content;
+using LastEdict.Data.Dbf;
 
 // Таблицы игры -> data/rules/*.json (выгрузка таблиц оригинала для сверок) и содержимое правил data/content/base (мод base,
 // его читают правила порта) со схемами data/content/schema. Принцип проекта: старые форматы только на входе.

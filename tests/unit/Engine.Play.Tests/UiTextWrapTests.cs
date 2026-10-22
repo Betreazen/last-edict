@@ -1,6 +1,6 @@
-using D2.Data.Ui;
+using LastEdict.Data.Ui;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Перенос строк правилом движка (<see cref="UiTextWrap"/>, <c>0x529b94</c>/<c>0x52a1ba</c>): куски «слово + пробелы», строгое
 /// «сумма &lt; ширины», пробелы за словом считаются, слово длиннее места не рвётся.</summary>

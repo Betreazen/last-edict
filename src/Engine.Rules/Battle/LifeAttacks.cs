@@ -1,7 +1,7 @@
-using D2.Rules.Rng;
-using D2.Rules.Units;
+using LastEdict.Rules.Rng;
+using LastEdict.Rules.Units;
 
-namespace D2.Rules.Battle;
+namespace LastEdict.Rules.Battle;
 
 /// <summary>Второй круг классов атак (задача 6 Ф6): <c>Drain</c> (2), <c>DrainOverflow</c> (15),
 /// <c>Revive</c> (14), <c>Summon</c> (17), <c>DrainLevel</c> (18). Живут отдельным файлом, чтобы

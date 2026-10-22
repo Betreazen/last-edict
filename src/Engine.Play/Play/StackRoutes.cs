@@ -1,7 +1,7 @@
-using D2.Data.Map;
-using D2.Rules.Map;
+using LastEdict.Data.Map;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>
 /// Пути, которые интерфейс помнит за каждым отрядом (<c>docs/map-path.md</c> §4, «Путь через конец хода»). У движка это список клиента

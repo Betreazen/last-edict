@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using D2.Data.Gfx;
+using LastEdict.Data.Gfx;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Литьё заклинания на карте (<see cref="SpellMapAnim"/>, <c>docs/ai-screen.md</c> §6): картинки <c>IsoSpell</c> в центре клетки
 /// литья, под объектами (<c>GROUND</c>, <c>UNDER</c>) или над ними (<c>FRONT</c>, <c>OVER</c>, <c>TOP</c>), один проход по 66 мс на кадр;
@@ -14,7 +14,7 @@ namespace D2.Godot;
 /// <c>FxVolume</c> не перенесена).</summary>
 public partial class MapView
 {
-    private const double SpellFrameSeconds = D2.Data.Map.AnimClock.SlowMs / 1000.0;   // CMidAnim2Animation — медленная группа
+    private const double SpellFrameSeconds = LastEdict.Data.Map.AnimClock.SlowMs / 1000.0;   // CMidAnim2Animation — медленная группа
 
     private Node2D? _spellUnder, _spellOver;
     private readonly List<(Sprite2D Sprite, Texture2D[] Frames)> _spellParts = new();
@@ -85,7 +85,7 @@ public partial class MapView
     {
         if (!Map.Stacks.TryGetValue(stackId, out var stack)) return false;
         string type = Map.Units.TryGetValue(stack.LeaderId, out var leader) ? leader.TypeId : "";
-        bool summon = Session.Book?.CategoryOf(type) == D2.Rules.Battle.UnitCategory.Summon;
+        bool summon = Session.Book?.CategoryOf(type) == LastEdict.Rules.Battle.UnitCategory.Summon;
         if (GameData.Content.Gfx.Anim("IsoCmon", summon ? "G000UU9998DYIN8" : "G000UU9999DYIN8") is not { } anim) return false;
         var sounds = new List<(string, string, bool)> { ("Midgard", summon ? "AUNN7788" : "AUNN7778", false) };
         if (type.Length > 0) sounds.Add(("Midgard", $"{type}KILL", true));   // голос юнита — громкостью голосов (0x5b08f4)
@@ -109,7 +109,7 @@ public partial class MapView
     {
         _tombsShown.Add((x, y));
         ShowLayered(TombChannel, [.. _tombsShown.Select(t =>
-            CellSprite("IsoCmon", Map.Contains(t.X, t.Y) && Map.At(t.X, t.Y).Ground == D2.Rules.Map.Ground.Water ? "G000TB0000W" : "G000TB0000G",
+            CellSprite("IsoCmon", Map.Contains(t.X, t.Y) && Map.At(t.X, t.Y).Ground == LastEdict.Rules.Map.Ground.Water ? "G000TB0000W" : "G000TB0000G",
                        t.X, t.Y, TombCanvas, TombCanvas, GameData.Content.MapArt.Layer("TOMBS")))]);
     }
 
@@ -160,7 +160,7 @@ public partial class MapView
     }
 
     /// <summary>
-    /// Снос гор событием <c>L_REMOVE_MOUNTAIN</c> (<see cref="D2.Data.Play.TurnSightKind.MountainsRemoved"/>; <c>CMidAnim2Mountain</c>, создание
+    /// Снос гор событием <c>L_REMOVE_MOUNTAIN</c> (<see cref="LastEdict.Data.Play.TurnSightKind.MountainsRemoved"/>; <c>CMidAnim2Mountain</c>, создание
     /// <c>0x4f44a3</c>, ранг 1): <c>RMVMOUNTAIN7</c> (IsoCmon 800×600; у сообщения сноса размер всегда 7, <c>0x5b82f5</c> → 7) по центру клетки
     /// центра области, слой <c>MOUNTAIN_REMOVE</c> 594; на кадре всего/2 — звук <c>OCCUPY</c> (<c>0x7ae468[10]</c>), горы сносятся и карта
     /// перерисовывается (<c>0x40b2e1</c>). Камеру к центру (если он дальше 2 клеток) ведёт вызывающий — <see cref="ScrollThen"/>. Упрощение: слой — эффекты поверх
@@ -170,7 +170,7 @@ public partial class MapView
     {
         void Apply()
         {
-            GameAudio.Of(this).PlayFx(D2.Data.Sound.WindowSounds.Archive, "OCCUPY");
+            GameAudio.Of(this).PlayFx(LastEdict.Data.Sound.WindowSounds.Archive, "OCCUPY");
             RefreshGround();
             Reload();
         }

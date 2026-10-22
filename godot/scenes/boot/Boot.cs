@@ -4,10 +4,10 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using D2.Data.Import;
+using LastEdict.Data.Import;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Главная сцена проекта: проверяет, что данные игры импортированы, и уходит в меню (<c>UiFlow.tscn</c>). Публичная сборка порта не
 /// несёт ни графики, ни данных Disciples II — при первом запуске они импортируются из купленной копии игры (<c>docs/publishing.md</c>):
@@ -40,7 +40,7 @@ public partial class Boot : Control
         string[] args = OS.GetCmdlineUserArgs();
         _headless = DisplayServer.GetName() == "headless";
         // Окно, синхронизация и предел кадров из настроек — при запуске игры (без окна и в проверках — нет, DisplaySettings).
-        if (DisplaySettings.Allowed(args)) DisplaySettings.Apply(D2.Data.Map.MapSettings.Load(DisplaySettings.FilePath));
+        if (DisplaySettings.Allowed(args)) DisplaySettings.Apply(LastEdict.Data.Map.MapSettings.Load(DisplaySettings.FilePath));
         if (args.Contains("--import"))
         {
             GetTree().Quit(ImportCommand(args));
@@ -152,7 +152,7 @@ public partial class Boot : Control
 
     private int ImportCommand(string[] args)
     {
-        string game = Arg(args, "--game-dir") ?? D2.Data.GamePaths.GameDir;
+        string game = Arg(args, "--game-dir") ?? LastEdict.Data.GamePaths.GameDir;
         string outRoot = Arg(args, "--out") is { } o ? GameData.FromProject(o) : OS.HasFeature("editor") ? GameData.Root : GameData.GameRoot;
         string? l10n = Arg(args, "--l10n");
         var steps = (Arg(args, "--steps") ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);

@@ -1,4 +1,4 @@
-using D2.Rules.Map;
+using LastEdict.Rules.Map;
 
 /// <summary>
 /// Правило роста земли (<see cref="LandModel"/>, <see cref="LandWalk"/>) на синтетике — без журнала, без

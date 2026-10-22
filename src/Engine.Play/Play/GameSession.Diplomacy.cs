@@ -1,6 +1,6 @@
-using D2.Rules.Map;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>Проверка дипломатии ИИ по одной цели — входы и шансы в тех же величинах, что пишет зонд
 /// (<c>ai_offer_check</c>, <c>ai_break_check</c>, <c>ai_gift_check</c>). <see cref="Draws"/> — шагов R250 за оценку.</summary>

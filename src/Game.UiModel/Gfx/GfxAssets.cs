@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace D2.Data.Gfx;
+namespace LastEdict.Data.Gfx;
 
 /// <summary>Картинка графики мира и боя: имя в архиве игры, путь к файлу (от <c>assets/gfx</c>; база — WebP без потерь, у мода —
 /// и <c>.png</c>, и <c>.webp</c>), размер холста и хеш пикселей RGBA холста. Прозрачность уже вырезана при сборке (<c>tools/gfx-assets</c>),

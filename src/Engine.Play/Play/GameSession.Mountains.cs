@@ -1,7 +1,7 @@
-using D2.Data.Map;
-using D2.Rules.Map;
+using LastEdict.Data.Map;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>Перекладка гор после <c>L_REMOVE_MOUNTAIN</c> (<c>0x5f0206</c> → <c>0x5efb81</c>, ранг 1; <c>docs/scenario-events.md</c> §10).</summary>
 public sealed partial class GameSession

@@ -1,8 +1,8 @@
-using D2.Rules.Battle;
-using D2.Rules.Map;
-using D2.Rules.Units;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Units;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>
 /// Услуги площадок карты, общие для человека и ИИ: обучение у тренера (сервер <c>onSiteTrainUnit</c> <c>0x5d7c6b</c>), покупки у
@@ -114,12 +114,12 @@ public sealed partial class GameSession
 
     /// <summary>Цена предмета для отряда (<c>0x5dfd5f</c>): <see cref="Treasury.ItemBuyPrice"/> со скидкой лидера
     /// (<see cref="SiteTrade.Discounted"/>, <see cref="LowerCostPercent"/>).</summary>
-    public Bank ItemPrice(MapStack stack, D2.Rules.Magic.Item item) =>
+    public Bank ItemPrice(MapStack stack, LastEdict.Rules.Magic.Item item) =>
         SiteTrade.Discounted(Treasury.ItemBuyPrice(item), LowerCostPercent(stack));
 
     /// <summary>Цена заклинания для отряда (<c>0x5d7952</c>, <c>0x5dfee2</c>): <c>BUY_C</c> со скидкой лидера
     /// (<see cref="SiteTrade.Discounted"/>).</summary>
-    public Bank SpellPrice(MapStack stack, D2.Rules.Magic.Spell spell) =>
+    public Bank SpellPrice(MapStack stack, LastEdict.Rules.Magic.Spell spell) =>
         SiteTrade.Discounted(Treasury.SpellBuyPrice(spell), LowerCostPercent(stack));
 
     /// <summary>

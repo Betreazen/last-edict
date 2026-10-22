@@ -1,8 +1,8 @@
-using D2.Rules.Battle;
-using D2.Rules.Map;
-using D2.Rules.Units;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Units;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>Юниты в группах: обмен клеток между отрядом и гарнизоном (<c>0x5d5642</c>, им же воспользуется окно города
 /// человека) и расстановка группы (<c>0x5e7991</c>).</summary>

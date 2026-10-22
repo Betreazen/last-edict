@@ -1,6 +1,6 @@
-using D2.Rules.Rng;
+using LastEdict.Rules.Rng;
 
-namespace D2.Rules.Battle;
+namespace LastEdict.Rules.Battle;
 
 /// <summary>Очередь раунда: инициатива атаки + rng(BAT_INIT), по убыванию (battle-rules-survey.md
 /// §1, globalvariables.h:37-38). Ранг доверия:

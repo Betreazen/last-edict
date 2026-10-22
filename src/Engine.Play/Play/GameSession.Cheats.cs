@@ -1,7 +1,7 @@
-using D2.Rules.Battle;
-using D2.Rules.Map;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>Коды опыта из чата (<c>jump</c>, <c>stairwaytoheaven</c>) и уровень создания отряда, который они меняют.</summary>
 public sealed partial class GameSession

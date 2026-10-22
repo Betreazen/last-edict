@@ -1,9 +1,9 @@
-using D2.Data.Battle;
-using D2.Rules.Battle;
-using D2.Rules.Rng;
+using LastEdict.Data.Battle;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Rng;
 using Xunit;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Партия 15.10 на <c>port-synth-1-battle</c>: порядок показа (начало хода следующего юнита — после действия прежнего), «Ждать» и
 /// прочие действия хода по <c>updateBattleActions</c> (<c>0x623d93</c>), порядок атак по своим в показе.</summary>

@@ -1,6 +1,6 @@
-namespace D2.Data.Ui;
+namespace LastEdict.Data.Ui;
 
-/// <summary>Режим окна игры (настройка порта <c>display.windowMode</c> файла настроек, <see cref="D2.Data.Map.SettingsFile"/>): применяется
+/// <summary>Режим окна игры (настройка порта <c>display.windowMode</c> файла настроек, <see cref="LastEdict.Data.Map.SettingsFile"/>): применяется
 /// при запуске игры и переключается <c>Alt+Enter</c> (полный экран ↔ окно).</summary>
 public enum DisplayMode
 {

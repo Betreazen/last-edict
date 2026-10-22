@@ -1,10 +1,10 @@
 using System;
 using System.Linq;
-using D2.Data.Map;
-using D2.Data.Ui;
+using LastEdict.Data.Map;
+using LastEdict.Data.Ui;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Курсоры карты (<see cref="MapCursors"/>, <c>docs/ai-screen.md</c> §10): над клеткой — курсор задачи (выбор отряда, ход,
 /// бой, вход в город…), вне карты и в ход ИИ — <c>DEFAULT</c>. Режимы прицела и мешка ставят свои курсоры сами (сессия Б), в бою курсор

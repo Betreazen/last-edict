@@ -1,8 +1,8 @@
-using D2.Rules.Magic;
-using D2.Rules.Map;
-using D2.Rules.Rng;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Rng;
 
-namespace D2.Rules.Tests;
+namespace LastEdict.Rules.Tests;
 
 /// <summary>Правила выбора заклинаний ИИ на карте (<see cref="AiSpellRules"/>, <c>docs/ai-spells.md</c>) и оплата
 /// применения со вторым кошельком (<see cref="SpellCast.Pay(Bank, Bank, Spell, bool)"/>).</summary>

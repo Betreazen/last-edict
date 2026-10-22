@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace D2.Data.Sound;
+namespace LastEdict.Data.Sound;
 
 /// <summary>Звуки юнита (<c>SNDINFO.DAT</c> в <c>Battle.wdt</c>): замах и его кадр, кадр удара, эффект атакующего и его кадр, удар по цели,
 /// «больно» цели, шаг на карте. Имя с <c>.LST</c> — список вариантов (<see cref="UnitSounds.Pick"/>).</summary>

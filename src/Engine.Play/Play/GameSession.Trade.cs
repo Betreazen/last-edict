@@ -1,7 +1,7 @@
-using D2.Rules.Magic;
-using D2.Rules.Map;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 // «Подарок» ИИ и сделки (docs/ai-diplomacy.md §4–5): кандидаты выбора (AiGift), предложение сделки цели, ответ ИИ-цели или
 // ожидание ответа человека, принятие сделки (CEffectAcceptTrade 0x433805), подарок золотом (GiveGold 0x41eafb) и реакция

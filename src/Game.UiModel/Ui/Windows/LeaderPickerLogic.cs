@@ -1,7 +1,7 @@
-using D2.Data.Leaders;
-using D2.Data.Play;
+using LastEdict.Data.Leaders;
+using LastEdict.Data.Play;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>
 /// Вывоз героя после победы (<c>DLG_LEADER_PICKER</c>, <c>CLeaderPickerInterf</c> <c>0x4c9963</c>; разбор — <c>docs/day-cycle.md</c> §14).

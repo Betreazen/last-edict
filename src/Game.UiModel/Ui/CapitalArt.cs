@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace D2.Data.Ui;
+namespace LastEdict.Data.Ui;
 
 /// <summary>Слой картинки столицы: кадр или анимация архива <c>Capital</c> в точке (<see cref="X"/>, <see cref="Y"/>)
 /// экрана 640×600; <see cref="Building"/> — постройка, без которой слоя нет (пусто — слой есть всегда);

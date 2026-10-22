@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using D2.Data.Ui;
+using LastEdict.Data.Ui;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Строки интерфейса для зонда порта (схема 7.6, <c>docs/probe-av.md</c> §8): нажатие кнопки или переключателя (<c>ui_click</c>, до
 /// обработчика — как у зонда оригинала) и смена доступности (<c>ui_enable</c>). Доступность у порта считается на лету

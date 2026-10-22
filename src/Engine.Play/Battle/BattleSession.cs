@@ -1,6 +1,6 @@
-using D2.Rules.Battle;
+using LastEdict.Rules.Battle;
 
-namespace D2.Data.Battle;
+namespace LastEdict.Data.Battle;
 
 /// <summary>Действия боя — коды движка (<c>notifyBattleAction</c>, таблица переходов <c>0x63061f</c>,
 /// <c>docs/battle-screen.md</c>): 0 удар, 1 пропустить, 2 отступить, 3 ждать, 4 защищаться, 5 автобой,
@@ -447,8 +447,8 @@ public sealed class BattleSession
         var group = _state.Allies(unit).Where(u => !u.Retreated && !u.Hidden);
         return [.. item.Category switch
         {
-            D2.Rules.Magic.ItemCategory.PotionRevive => group.Where(u => !u.Alive && !u.Revived),
-            D2.Rules.Magic.ItemCategory.PotionHeal => group.Where(u => u.Alive && u.Hp < u.HpMax),
+            LastEdict.Rules.Magic.ItemCategory.PotionRevive => group.Where(u => !u.Alive && !u.Revived),
+            LastEdict.Rules.Magic.ItemCategory.PotionHeal => group.Where(u => u.Alive && u.Hp < u.HpMax),
             _ => group.Where(u => u.Alive && !u.Chain.Any(m => m.Id.Equals(item.PotionModifierId, StringComparison.OrdinalIgnoreCase))),
         }];
     }
@@ -470,7 +470,7 @@ public sealed class BattleSession
         if (Current is not { } unit) return null;
         bool fallenAlly = target.Attacker == unit.Attacker && target.Hp <= 0;
         if (item is { } i && i >= 0 && i < unit.BattleItems.Count)
-            return unit.BattleItems[i] is { IsPotion: true, Category: D2.Rules.Magic.ItemCategory.PotionRevive } && fallenAlly
+            return unit.BattleItems[i] is { IsPotion: true, Category: LastEdict.Rules.Magic.ItemCategory.PotionRevive } && fallenAlly
                 ? RevivedOnce : null;
         // Первая подходящая атака по порядку «первая, вторая» решает (0x63cf31: перебор до воскрешения или двойника).
         foreach (var attack in new[] { unit.Attack, unit.Attack2 })

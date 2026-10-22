@@ -1,9 +1,9 @@
-﻿using D2.Data;
-using D2.Data.Map;
-using D2.Rules.Battle;
-using D2.Rules.Map;
+﻿using LastEdict.Data;
+using LastEdict.Data.Map;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Map;
 
-namespace D2.Rules.Tests;
+namespace LastEdict.Rules.Tests;
 
 /// <summary>Тактика ИИ на карте (<see cref="AiTactic"/>, <see cref="AiTacticScore"/>) на синтетике: фильтр приказа,
 /// сетка влияния, формулы счёта, вставка и выбор, клетка жезла. Корпусная сверка клетки жезла —

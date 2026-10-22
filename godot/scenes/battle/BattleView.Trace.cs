@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
-using D2.Data.Gfx;
-using D2.Rules.Battle;
+using LastEdict.Data.Gfx;
+using LastEdict.Rules.Battle;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Строки зонда порта о портретах панели (схема 7.6, <c>docs/probe-av.md</c> §8) — те же, что пишет зонд оригинала
 /// (<c>tools/d2probe/mss32/src/probeflash.cpp</c>). Зовут их точки вида портретов (<see cref="Flash"/>, <see cref="FixFace"/>, конец —
@@ -15,7 +15,7 @@ public partial class BattleView
     private readonly Dictionary<string, (int State, ulong Shown)> _tracedFlashes = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary><c>bat_flash</c>: портрет юнита <paramref name="unit"/> сменил состояние <paramref name="state"/> (номер состояния движка,
-    /// <see cref="D2.Data.Diagnostics.PortraitFlash"/>). <paramref name="mode"/> — <c>flash</c> (на срок надписи, тиков — как у неё:
+    /// <see cref="LastEdict.Data.Diagnostics.PortraitFlash"/>). <paramref name="mode"/> — <c>flash</c> (на срок надписи, тиков — как у неё:
     /// <c>+0x44</c> группы, 15 при скорости 1) или <c>set</c> (стойко); <paramref name="hold"/> — остаётся после конца вспышки;
     /// <paramref name="src"/> — откуда (<c>target</c>, <c>actor</c>, <c>heal</c>, <c>xp</c>, <c>xp_up</c>), как у движка;
     /// <paramref name="scene"/> null — поставленное до конца боя (видно в любой группе).</summary>

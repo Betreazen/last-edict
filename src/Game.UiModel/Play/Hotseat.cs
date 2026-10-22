@@ -1,9 +1,9 @@
-using D2.Data.Game;
-using D2.Data.Menu;
-using D2.Data.Ui;
-using D2.Rules.Map;
+using LastEdict.Data.Game;
+using LastEdict.Data.Menu;
+using LastEdict.Data.Ui;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>Зачем окно <c>DLG_HOTSEAT_POPUP</c> зовёт человека к ПК (<c>CHotseatPopupInterf</c> <c>0x4bdd72</c>, режим — пятый аргумент;
 /// <c>docs/day-cycle.md</c> §18).</summary>
@@ -52,7 +52,7 @@ public sealed class HotseatTurnLogic(MapPlayer player, GameCatalog catalog, Func
     {
     }
 
-    private D2.Data.Game.RaceInfo? RaceOf(MapPlayer p) => catalog.Races.FirstOrDefault(r => r.Id.Equals(p.RaceId, StringComparison.OrdinalIgnoreCase));
+    private LastEdict.Data.Game.RaceInfo? RaceOf(MapPlayer p) => catalog.Races.FirstOrDefault(r => r.Id.Equals(p.RaceId, StringComparison.OrdinalIgnoreCase));
 }
 
 /// <summary>Кого «горячий стул» зовёт к бою (<c>CTaskBattle</c> ctor <c>0x4d76c6</c>, ранг 1).</summary>

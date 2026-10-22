@@ -1,10 +1,10 @@
-using D2.Data;
-using D2.Data.Magic;
-using D2.Data.Map;
-using D2.Rules.Magic;
-using D2.Rules.Map;
+using LastEdict.Data;
+using LastEdict.Data.Magic;
+using LastEdict.Data.Map;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Map;
 
-namespace D2.Rules.Tests;
+namespace LastEdict.Rules.Tests;
 
 /// <summary>
 /// Казна: одна операция изменения и цены механик (<see cref="Treasury"/>). Числа — из живых прогонов

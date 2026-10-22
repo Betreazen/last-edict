@@ -1,6 +1,6 @@
-﻿using D2.Rules.Battle;
+﻿using LastEdict.Rules.Battle;
 
-namespace D2.Rules.Map;
+namespace LastEdict.Rules.Map;
 
 /// <summary>Веса тактики ИИ — столбцы <c>I_*</c> строки <c>GAI.dbf</c> (строка — <c>CATEGORY</c>, отношение ИИ).
 /// Геттеры движка — <c>0x58f716…0x58f79b</c> (<c>GAI +0x5c…+0xa0</c>), <c>I_H_MERCS</c> (<c>+0x88</c>) читает общий

@@ -1,4 +1,4 @@
-using D2.Data.Ui;
+using LastEdict.Data.Ui;
 
 // Перевод строк игры (Globals/Tglobal.dbf, Interf/TApp.DBF, cp866) в данные порта
 // data/ui/strings.<язык>.json.
@@ -7,7 +7,7 @@ using D2.Data.Ui;
 //   dotnet run --project tools/UiStringsImport -- --lang ru
 //   dotnet run --project tools/UiStringsImport -- --lang ru --from <корень> --from <слой> --out <файл>
 //
-// Чтение dbf и слои живут в D2.Data.Ui.UiStringsImport — здесь только разбор параметров и запись файла.
+// Чтение dbf и слои живут в LastEdict.Data.Ui.UiStringsImport — здесь только разбор параметров и запись файла.
 // Перевод повторяем: те же исходники дают тот же байт в байт JSON, это проверяет
 // UiStringsTests.Strings_Json_IsUpToDate.
 

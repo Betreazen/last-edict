@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using D2.Data.Gfx;
-using D2.Data.Play;
-using D2.Rules.Battle;
-using D2.Rules.Map;
+using LastEdict.Data.Gfx;
+using LastEdict.Data.Play;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Map;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Проверки «всё ли видно» экрана боя без окна (прогон 3 пользователя 11.10, пункты 4, 5, 7): бой с карты сценария порта
 /// (<c>--scenario</c> + <c>--stacks</c>), видимый кадр каждого юнита на поле и портрет в панели — числами по точкам файлов картинок;
@@ -28,7 +28,7 @@ public partial class BattleScreen
         var book = GameData.Book;
         var state = MapBattle.Build(map, ids[0], ids[1], book, difficulty: 1, attackerMove: 0);
         // rand() процесса для выбора призываемого из нескольких кандидатов (как бой с карты в игре — GameSession.Crt); зерно постоянное.
-        state.ProcessRand ??= new D2.Rules.Rng.CrtRand(1);
+        state.ProcessRand ??= new LastEdict.Rules.Rng.CrtRand(1);
         if (MapSource.Arg(args, "--squad") is not { } squad) return state;
         state.Units.RemoveAll(u => u.Attacker);
         int n = 0;
@@ -78,7 +78,7 @@ public partial class BattleScreen
         var screen = GameData.Content.Screens.First(s => s.Id == Screen);
         var sides = _session.State.Units.Select(u => u.Attacker).Distinct().Select(_scene.PanelLeft).OfType<bool>().Distinct();
         return [.. sides.Select(left => screen.Elements.FirstOrDefault(e => e.Id == $"IMG_{(left ? 'L' : 'R')}UNITGROUPBG")?.Rect)
-                        .OfType<D2.Data.Ui.UiRect>().Select(r => new Rect2I(r.X, r.Y, r.Width, r.Height))];
+                        .OfType<LastEdict.Data.Ui.UiRect>().Select(r => new Rect2I(r.X, r.Y, r.Width, r.Height))];
     }
 
     /// <summary>Непрозрачных точек тела юнита в покое (первый кадр, без тени) и сколько из них под прямоугольниками <paramref name="panels"/>.</summary>

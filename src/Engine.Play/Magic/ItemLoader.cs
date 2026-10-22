@@ -1,11 +1,11 @@
-using D2.Data.Content;
-using D2.Data.Content.Schema;
-using D2.Rules.Magic;
+using LastEdict.Data.Content;
+using LastEdict.Data.Content.Schema;
+using LastEdict.Rules.Magic;
 
-namespace D2.Data.Magic;
+namespace LastEdict.Data.Magic;
 
-/// <summary>Предметы содержимого (<see cref="ItemDef"/>) → <see cref="Item"/> правил (запись живёт в <c>D2.Rules.Magic</c>, второй копии
-/// нет). Ссылки «не задано» — пустая строка; пустая цена — <see cref="D2.Rules.Map.Bank.Zero"/> (у 315 предметов оригинала из 336
+/// <summary>Предметы содержимого (<see cref="ItemDef"/>) → <see cref="Item"/> правил (запись живёт в <c>LastEdict.Rules.Magic</c>, второй копии
+/// нет). Ссылки «не задано» — пустая строка; пустая цена — <see cref="LastEdict.Rules.Map.Bank.Zero"/> (у 315 предметов оригинала из 336
 /// применение ничего не стоит). Категория — перечень <see cref="ItemCategory"/>: значение вне него не проходит импорт и схему.</summary>
 public static class ItemLoader
 {

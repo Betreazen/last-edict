@@ -1,8 +1,8 @@
-using D2.Rules.Battle;
-using D2.Rules.Rng;
-using D2.Rules.Units;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Rng;
+using LastEdict.Rules.Units;
 
-namespace D2.Rules.Tests;
+namespace LastEdict.Rules.Tests;
 
 /// <summary>Журнал показа атак по своим (<see cref="BattleSim.AllyLog"/>): записи хода (<see cref="BattleSim.Log"/>, его сверяют харнессы)
 /// такие атаки не дают, надпись экрану боя — по этому журналу (<c>0x62c462</c> → <c>0x63b391</c>).</summary>

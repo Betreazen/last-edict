@@ -1,8 +1,8 @@
-using D2.Data.Sound;
-using D2.Data.Ui;
-using D2.Data.Ui.Windows;
+using LastEdict.Data.Sound;
+using LastEdict.Data.Ui;
+using LastEdict.Data.Ui.Windows;
 
-namespace D2.Data.Menu;
+namespace LastEdict.Data.Menu;
 
 /// <summary>Выбор лорда (<c>DLG_CHOOSE_LORD</c>): фон расы, живой портрет (ролик <c>FACE_XX_N</c>, щелчок по нему
 /// перебирает четыре лица), описание выбранного типа лорда, название сложности и имя. Вверху — «Выберите лорда»

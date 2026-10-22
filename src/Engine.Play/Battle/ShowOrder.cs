@@ -1,6 +1,6 @@
-using D2.Rules.Battle;
+using LastEdict.Rules.Battle;
 
-namespace D2.Data.Battle;
+namespace LastEdict.Data.Battle;
 
 /// <summary>Порядок показа записей одного шага боя: записи хода модели (<see cref="TurnRecord"/>) и атаки по своим без записи
 /// (<see cref="AllyNote"/> — обереги, снятие эффектов, усиление, дар атаки, превращение себя, двойник).</summary>

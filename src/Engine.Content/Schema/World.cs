@@ -1,7 +1,7 @@
 using System.ComponentModel;
-using D2.Rules.Map;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Content.Schema;
+namespace LastEdict.Data.Content.Schema;
 
 /// <summary>Постройка столицы (<c>Gbuild.dbf</c>).</summary>
 [LegacyTable("Gbuild", "BUILD_ID")]

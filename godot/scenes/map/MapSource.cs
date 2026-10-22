@@ -1,11 +1,11 @@
 using System;
 using System.IO;
-using D2.Data.Gfx;
-using D2.Data.Map;
-using D2.Rules.Map;
+using LastEdict.Data.Gfx;
+using LastEdict.Data.Map;
+using LastEdict.Rules.Map;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Откуда сцены карты берут карту: <c>--scenario "Имя"</c> — сценарий порта <c>data/scenarios/Имя.json</c>
 /// (по умолчанию Tutorial; импорт <c>tools/ScenarioImport</c>), либо <c>--sg путь</c> — сохранение или сценарий игры для

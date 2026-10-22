@@ -1,9 +1,9 @@
-using D2.Rules.Units;
+using LastEdict.Rules.Units;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>Навык лидера за уровень — общее для окна выбора человека и списка 1 ИИ (<c>docs/ai-economy.md</c> §6).
-/// Повышение уровня копит отложенные выборы в <see cref="D2.Rules.Map.MapStack.UpgradeCount"/>; выбор снимает один и
+/// Повышение уровня копит отложенные выборы в <see cref="LastEdict.Rules.Map.MapStack.UpgradeCount"/>; выбор снимает один и
 /// кладёт <c>MODIF_ID</c> строки <c>GleaUpg</c> в цепочку модификаторов лидера (<see cref="SkillChoice"/>).</summary>
 public sealed partial class GameSession
 {
@@ -18,12 +18,12 @@ public sealed partial class GameSession
             || !map.Units.TryGetValue(stack.LeaderId, out var leader) || !map.Players.TryGetValue(stack.Owner, out var player))
             return [];
         return LeaderUpgrades.Available(book.LeaderUpgrades, player.LordId, leader.Level, Taken(book, leader),
-                                        D2.Rules.Units.LeaderAbilities.Innate(leader.TypeId, book.InnateAbilities), book.Rules.Modifiers);
+                                        LastEdict.Rules.Units.LeaderAbilities.Innate(leader.TypeId, book.InnateAbilities), book.Rules.Modifiers);
     }
 
     /// <summary>Выбор навыка <paramref name="modifId"/> лидером отряда (<c>visitorLeaderUpgrade</c> <c>0x5e84c2</c>,
     /// <c>apply = 1</c>): навык из <see cref="SkillOffer"/>, у лидера меньше <c>GVars.LDRMAXABIL</c> навыков; очередь
-    /// <see cref="D2.Rules.Map.MapStack.UpgradeCount"/> уменьшается на один. Броска нет (журнал: <c>rng_before</c> =
+    /// <see cref="LastEdict.Rules.Map.MapStack.UpgradeCount"/> уменьшается на один. Броска нет (журнал: <c>rng_before</c> =
     /// <c>rng_after</c>).</summary>
     public SkillRefusal ChooseSkill(string stackId, string modifId)
     {
@@ -34,7 +34,7 @@ public sealed partial class GameSession
             return SkillRefusal.NotAvailable;
         var chosen = SkillChoice.ByPlayer(book.LeaderUpgrades, player.LordId, leader.Level, stack.UpgradeCount,
                                           Taken(book, leader), modifId, book.Vars.LeaderMaxAbilities,
-                                          D2.Rules.Units.LeaderAbilities.Innate(leader.TypeId, book.InnateAbilities), book.Rules.Modifiers);
+                                          LastEdict.Rules.Units.LeaderAbilities.Innate(leader.TypeId, book.InnateAbilities), book.Rules.Modifiers);
         if (chosen.Refusal != SkillRefusal.None) return chosen.Refusal;
         string modif = chosen.Upgrade!.ModifId.ToUpperInvariant();
         var units = map.Units.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase);
@@ -60,6 +60,6 @@ public sealed partial class GameSession
     }
 
     /// <summary>Уже взятые навыки: часть цепочки лидера, которая есть в <c>GleaUpg</c> (надетые предметы — не навыки).</summary>
-    private static IReadOnlyList<string> Taken(GameBook book, D2.Rules.Map.MapUnit leader) =>
+    private static IReadOnlyList<string> Taken(GameBook book, LastEdict.Rules.Map.MapUnit leader) =>
         [.. leader.Modifiers.Where(id => book.Rules.LeaderUpgradeModifiers?.Contains(id) ?? false)];
 }

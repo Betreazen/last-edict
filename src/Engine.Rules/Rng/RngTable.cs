@@ -1,7 +1,7 @@
 // Сгенерировано из ../disciples-modding/tools/re/rng.py; реверс — docs/re-rng.md там же.
 // Таблица .data:0x7b4978 движка Disciples 2 GOG 3.01: 250 16-битных слов, константа
 // в образе — движок её не сеет, reseed меняет только индекс (0x5484bd).
-namespace D2.Rules.Rng;
+namespace LastEdict.Rules.Rng;
 
 internal static class RngTable
 {

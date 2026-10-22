@@ -1,9 +1,9 @@
-using D2.Data.Content;
-using D2.Data.Play;
-using D2.Rules.Units;
-using D2.Data.Play.Commands;
+using LastEdict.Data.Content;
+using LastEdict.Data.Play;
+using LastEdict.Rules.Units;
+using LastEdict.Data.Play.Commands;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>Имя и описание навыка лидера (<c>GleaUpg.NAME_TXT</c>, <c>DESC_TXT</c>) по <c>MODIF_ID</c>: у одного модификатора у всех
 /// лордов одни и те же строки (27 модификаторов, расхождений 0), поэтому ключ — только модификатор.</summary>
@@ -40,7 +40,7 @@ public static class UpgradeLeaderQueue
         {
             if (stack.UpgradeCount <= 0 || !stack.Owner.Equals(playerId, StringComparison.OrdinalIgnoreCase)
                 || !map.Units.TryGetValue(stack.LeaderId, out var leader)
-                || book.CategoryOf(leader.TypeId) == D2.Rules.Battle.UnitCategory.Noble
+                || book.CategoryOf(leader.TypeId) == LastEdict.Rules.Battle.UnitCategory.Noble
                 || !book.RaceOf(leader.TypeId).Equals(player.RaceId, StringComparison.OrdinalIgnoreCase)) continue;
             for (int i = 0; i < stack.UpgradeCount; i++) queue.Add(stack.Id);
         }

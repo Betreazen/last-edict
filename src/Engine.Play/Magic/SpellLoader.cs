@@ -1,12 +1,12 @@
-using D2.Data.Battle;
-using D2.Data.Content;
-using D2.Data.Content.Schema;
-using D2.Rules.Magic;
+using LastEdict.Data.Battle;
+using LastEdict.Data.Content;
+using LastEdict.Data.Content.Schema;
+using LastEdict.Rules.Magic;
 
-namespace D2.Data.Magic;
+namespace LastEdict.Data.Magic;
 
-/// <summary>Заклинания содержимого (<see cref="SpellDef"/>) → <see cref="Spell"/> правил. Запись живёт в <c>D2.Rules.Magic</c>: ссылка
-/// идёт <c>D2.Data → D2.Rules</c>, кольца нет.
+/// <summary>Заклинания содержимого (<see cref="SpellDef"/>) → <see cref="Spell"/> правил. Запись живёт в <c>LastEdict.Rules.Magic</c>: ссылка
+/// идёт <c>LastEdict.Data → LastEdict.Rules</c>, кольца нет.
 /// <para>Ссылки «не задано» — пустая строка: у 74 из 120 заклинаний оригинала нет модификатора, и это не висячая ссылка, а её
 /// отсутствие. <see cref="Spell.RestoreMovePercent"/> — <b>проценты очков хода</b> (ранг 1 по текстам самой игры). Обереги — до
 /// четырёх модификаторов (в оригинале пусты у всех 120).</para>

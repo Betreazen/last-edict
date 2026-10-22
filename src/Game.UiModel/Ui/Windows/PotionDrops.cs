@@ -1,7 +1,7 @@
-using D2.Rules.Magic;
-using D2.Data.Play.Commands;
+using LastEdict.Rules.Magic;
+using LastEdict.Data.Play.Commands;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>
 /// Зелье, брошенное на воина в окне с группами (<c>CDDStackGroup</c>, бросок <c>0x4ff396</c>): окна отряда, армии, обмена и торговца —

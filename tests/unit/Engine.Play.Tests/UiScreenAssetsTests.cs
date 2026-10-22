@@ -1,8 +1,8 @@
-using D2.Data.Ui;
+using LastEdict.Data.Ui;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Стык двух наборов данных порта: экраны (<c>data/ui/screens.json</c>) ссылаются на кадры, а кадры
 /// перечислены в описи графики (<c>data/ui/assets.json</c>). Без этой сверки любая опечатка в имени кадра

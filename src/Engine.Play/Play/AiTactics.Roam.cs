@@ -1,7 +1,7 @@
-using D2.Rules.Map;
-using D2.Rules.Battle;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Battle;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>
 /// Построители, которых в журналах корпуса нет (0 кандидатов), — перенос по листингу (ранг 1 по коду, сверить нечем; 28.09,

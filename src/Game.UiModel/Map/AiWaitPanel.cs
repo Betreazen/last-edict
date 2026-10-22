@@ -1,10 +1,10 @@
-using D2.Data.Menu;
-using D2.Data.Play;
-using D2.Data.Ui;
-using D2.Data.Ui.Windows;
-using D2.Rules.Map;
+using LastEdict.Data.Menu;
+using LastEdict.Data.Play;
+using LastEdict.Data.Ui;
+using LastEdict.Data.Ui.Windows;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Map;
+namespace LastEdict.Data.Map;
 
 /// <summary>Что показывает окно ожидания: крупный портрет лорда того, чей ход (null — пусто).</summary>
 public sealed record AiWaitState(string? LordFace)

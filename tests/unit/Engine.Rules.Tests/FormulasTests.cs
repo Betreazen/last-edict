@@ -1,5 +1,5 @@
-using D2.Rules.Battle;
-using D2.Rules.Rng;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Rng;
 
 public class FormulasTests
 {
@@ -148,8 +148,8 @@ public class FormulasTests
         Assert.False(Formulas.HasCriticalHit(Attack(), plain));
         Assert.False(Formulas.HasCriticalHit(club with { Class = AttackClass.Drain }, plain));
 
-        var upgrade = new D2.Rules.Units.Modifier("g000um4103",
-            [new D2.Rules.Units.ModifierElement(D2.Rules.Units.ModifierElementType.LeaderAbility, Ability: 17)]);
+        var upgrade = new LastEdict.Rules.Units.Modifier("g000um4103",
+            [new LastEdict.Rules.Units.ModifierElement(LastEdict.Rules.Units.ModifierElementType.LeaderAbility, Ability: 17)]);
         var leader = new BattleUnit
         {
             Id = "S143UN0002", Type = plain.Type, Attack = Attack(), Attacker = true, Slot = 0,

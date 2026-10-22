@@ -1,4 +1,4 @@
-namespace D2.Data.Gfx;
+namespace LastEdict.Data.Gfx;
 
 /// <summary>Граница, которая ложится на клетку: узор соседа старшего типа через маску. <see cref="Main"/> — маска
 /// рёбер (1..15), <see cref="Corners"/> — угловая (17..31), 0 — нет.</summary>

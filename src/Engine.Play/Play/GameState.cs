@@ -1,7 +1,7 @@
 using System.Text.Json;
-using D2.Data.Map;
+using LastEdict.Data.Map;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>О партии, чего нет в карте: какой сценарий, кто за людей, выбор игрока в меню.</summary>
 /// <param name="ScenarioId">Id сценария в каталоге (<c>ScenarioInfo.Id</c>); пусто — карта открыта из файла.</param>
@@ -31,9 +31,9 @@ public sealed record GameState(GameInfo Info, MapLooks Looks)
     /// <summary>Память стратегии ИИ по игрокам (<see cref="AiMemory"/>); пишется в сохранение.</summary>
     public IReadOnlyDictionary<string, AiMemory> Ai { get; init; } = new Dictionary<string, AiMemory>();
 
-    /// <summary>Память тактики ИИ (<see cref="D2.Rules.Map.AiTacticMemo"/>: статусы действий по дням) — от неё зависят
+    /// <summary>Память тактики ИИ (<see cref="LastEdict.Rules.Map.AiTacticMemo"/>: статусы действий по дням) — от неё зависят
     /// «вчера продвинулся» ×1,25 и пропуск «сегодня не пошёл».</summary>
-    public IReadOnlyList<D2.Rules.Map.AiTacticRecord> Tactic { get; init; } = [];
+    public IReadOnlyList<LastEdict.Rules.Map.AiTacticRecord> Tactic { get; init; } = [];
 
     /// <summary>Потоки случайных чисел партии на момент снимка; пусто — партия только началась, потоки с начала.
     /// Заполняет <see cref="GameSession.Snapshot"/>.</summary>
@@ -45,10 +45,10 @@ public sealed record GameState(GameInfo Info, MapLooks Looks)
 
     /// <summary>События сценария (определения и области) — из сценария порта; в сохранении целиком, чтобы партия не зависела
     /// от файла сценария.</summary>
-    public D2.Rules.Map.ScenarioEventSet Events { get; init; } = D2.Rules.Map.ScenarioEventSet.Empty;
+    public LastEdict.Rules.Map.ScenarioEventSet Events { get; init; } = LastEdict.Rules.Map.ScenarioEventSet.Empty;
 
-    /// <summary>Состояние событий: выключенные, переменные, квест-лог, цель (<see cref="D2.Rules.Map.EventProgress"/>).</summary>
-    public D2.Rules.Map.EventProgress EventProgress { get; init; } = D2.Rules.Map.EventProgress.Empty;
+    /// <summary>Состояние событий: выключенные, переменные, квест-лог, цель (<see cref="LastEdict.Rules.Map.EventProgress"/>).</summary>
+    public LastEdict.Rules.Map.EventProgress EventProgress { get; init; } = LastEdict.Rules.Map.EventProgress.Empty;
 
     /// <summary>Попапы событий, ждущие показа людям (<see cref="GameSession.TakeMessages"/> снимает их при показе).</summary>
     public IReadOnlyList<EventMessage> Messages { get; init; } = [];
@@ -59,7 +59,7 @@ public sealed record GameState(GameInfo Info, MapLooks Looks)
 
     /// <summary>Доход последнего начала хода людей (<see cref="GameSession.TurnIncome"/>) — окну начала хода (<c>CCmdTurnInfoMsg</c>,
     /// <c>CEffectPlayerTurn</c> <c>0x43ab41</c>). В сохранение не пишется: после загрузки окна начала хода нет (сообщение «Повтор миссии»).</summary>
-    public IReadOnlyDictionary<string, D2.Rules.Map.Bank> TurnIncome { get; init; } = new Dictionary<string, D2.Rules.Map.Bank>();
+    public IReadOnlyDictionary<string, LastEdict.Rules.Map.Bank> TurnIncome { get; init; } = new Dictionary<string, LastEdict.Rules.Map.Bank>();
 
     /// <summary>Итоги хода людей, накопленные к записи и ещё не показанные (<see cref="PendingSummary"/>; ключ — человек). У движка они
     /// лежат в <c>.sg</c> (<c>CTurnSummary</c>) и приходят человеку в начале его следующего хода — и после загрузки: в «горячем стуле» у
@@ -84,22 +84,22 @@ public sealed record TurnSummaryEntry(int Kind, string Text, string ObjectId);
 /// отряда-триггерера (<c>CEffectPopup</c> +0x64): имя (<paramref name="LeaderName"/>) и глобальный тип (<paramref name="LeaderType"/>)
 /// для портрета; без флага или без отряда — пусто. Имя — <c>CMidUnit::getName</c> (<c>0x5e97dc</c>, ранг 1): у героя (категория «лидер»)
 /// — собственное, даже пустое (<paramref name="OwnName"/>); у вора, жезлоносца, призванного и воина во главе отряда — имя типа.</summary>
-public sealed record EventMessage(string PlayerId, int Day, string EventId, D2.Rules.Map.PopupEffect Popup, string LeaderName = "",
+public sealed record EventMessage(string PlayerId, int Day, string EventId, LastEdict.Rules.Map.PopupEffect Popup, string LeaderName = "",
                                   string LeaderType = "", bool OwnName = false);
 
 /// <summary>Предложение ИИ человеку: от кого, кому и в какой день. <paramref name="Trade"/> пусто — союз
 /// (<c>ProposeAlliance 0x41ec75</c>, ответ — <see cref="GameSession.AnswerAllianceOffer"/>); иначе сделка-«подарок»
 /// (<c>ProposeTrade 0x41eb74</c>, ответ — <see cref="GameSession.AnswerTradeOffer"/>). <paramref name="Exchange"/> — обмен картами
 /// от человека человеку (<c>0x40740b</c>, ответ — <see cref="GameSession.AnswerExchangeOffer"/>).</summary>
-public sealed record AllianceOffer(string From, string To, int Day, D2.Rules.Map.AiTradeOffer? Trade = null, bool Exchange = false)
+public sealed record AllianceOffer(string From, string To, int Day, LastEdict.Rules.Map.AiTradeOffer? Trade = null, bool Exchange = false)
 {
     /// <summary>Предложение союза: не сделка и не обмен картами.</summary>
     public bool IsAlliance => Trade is null && !Exchange;
 }
 
-/// <summary>Состояние двух генераторов партии: R250 движка (<see cref="D2.Rules.Rng.EngineRng"/>: индекс и таблица из
+/// <summary>Состояние двух генераторов партии: R250 движка (<see cref="LastEdict.Rules.Rng.EngineRng"/>: индекс и таблица из
 /// 250 слов — таблица меняется с каждым шагом, одного индекса мало) и CRT <c>rand()</c>
-/// (<see cref="D2.Rules.Rng.CrtRand"/>, одно слово состояния).</summary>
+/// (<see cref="LastEdict.Rules.Rng.CrtRand"/>, одно слово состояния).</summary>
 public sealed record RandomStreams(int Index, IReadOnlyList<ushort> Table, uint Crt);
 
 /// <summary>Пересев генератора боя, как у движка при «Random» (ключ <c>Disciple.ini</c>, по умолчанию включён — во всех прогонах корпуса есть
@@ -117,8 +117,8 @@ public static class RandomReseed
     public static GameState Reseeded(this GameState state, uint seed, bool keepCrt = false)
     {
         ArgumentNullException.ThrowIfNull(state);
-        var table = state.Random?.Table ?? new D2.Rules.Rng.EngineRng().TableSnapshot();
-        int index = (int)(seed % (uint)D2.Rules.Rng.EngineRng.Size);
+        var table = state.Random?.Table ?? new LastEdict.Rules.Rng.EngineRng().TableSnapshot();
+        int index = (int)(seed % (uint)LastEdict.Rules.Rng.EngineRng.Size);
         uint crt = keepCrt && state.Random is { } kept ? kept.Crt : 1;
         return state with { Random = new RandomStreams(index, table, crt) };
     }
@@ -152,10 +152,10 @@ public static class GameSave
     private sealed record Envelope(string Format, int Version, string Title, int Day, DateTime SavedAt, GameInfo Info,
                                    MapLooks Looks, IReadOnlyDictionary<string, AiMemory>? Ai = null,
                                    RandomStreams? Random = null,
-                                   IReadOnlyList<D2.Rules.Map.AiTacticRecord>? Tactic = null,
+                                   IReadOnlyList<LastEdict.Rules.Map.AiTacticRecord>? Tactic = null,
                                    IReadOnlyList<AllianceOffer>? Offers = null,
-                                   D2.Rules.Map.ScenarioEventSet? Events = null,
-                                   D2.Rules.Map.EventProgress? EventProgress = null,
+                                   LastEdict.Rules.Map.ScenarioEventSet? Events = null,
+                                   LastEdict.Rules.Map.EventProgress? EventProgress = null,
                                    IReadOnlyList<EventMessage>? Messages = null,
                                    string? ActiveHuman = null,
                                    IReadOnlyDictionary<string, PendingSummary>? Summaries = null);
@@ -180,22 +180,22 @@ public static class GameSave
         }
         if (e is null || e.Format != Format) throw new InvalidDataException("не сохранение порта");
         if (e.Version > Version) throw new InvalidDataException($"сохранение версии {e.Version}, сборка знает до {Version}");
-        if (e.Random is { } r && r.Table.Count != D2.Rules.Rng.EngineRng.Size)
-            throw new InvalidDataException($"таблица генератора — {r.Table.Count} слов, нужно {D2.Rules.Rng.EngineRng.Size}");
+        if (e.Random is { } r && r.Table.Count != LastEdict.Rules.Rng.EngineRng.Size)
+            throw new InvalidDataException($"таблица генератора — {r.Table.Count} слов, нужно {LastEdict.Rules.Rng.EngineRng.Size}");
         // Счётчики id после загрузки — наибольший номер + 1 (0x5ee996): номера удалённых до записи объектов снова свободны, как у движка.
         var map = GameSession.KnownSpellsSorted(Healed(e.Looks.Map));   // как после чтения движком (KnownSpellOrder, 0x5fe926)
         var looks = GameSession.Retold(e.Looks, GameSession.With(map, idNext: GameSession.IdNextOf(map)), e.Looks.Stacks) with
         {
             // Облик подобранного мешка сборки до fix/mapfix оставляли на карте (GameSession.Enter) — при чтении он снимается.
-            Bags = [.. e.Looks.Bags.Where(b => !map.Sites.Any(s => s.Kind == D2.Rules.Map.SiteKind.Bag && s.Gone
+            Bags = [.. e.Looks.Bags.Where(b => !map.Sites.Any(s => s.Kind == LastEdict.Rules.Map.SiteKind.Bag && s.Gone
                                                                     && s.Id.Equals(b.Id, StringComparison.OrdinalIgnoreCase)))],
         };
         return new GameState(e.Info, looks)
         {
             Ai = e.Ai ?? new Dictionary<string, AiMemory>(), Random = e.Random, Tactic = e.Tactic ?? [],
             Offers = e.Offers ?? [],
-            Events = e.Events ?? D2.Rules.Map.ScenarioEventSet.Empty,
-            EventProgress = e.EventProgress ?? D2.Rules.Map.EventProgress.Empty,
+            Events = e.Events ?? LastEdict.Rules.Map.ScenarioEventSet.Empty,
+            EventProgress = e.EventProgress ?? LastEdict.Rules.Map.EventProgress.Empty,
             Messages = e.Messages ?? [],
             ActiveHuman = e.ActiveHuman ?? "",
             Summaries = e.Summaries is { } summaries
@@ -211,9 +211,9 @@ public static class GameSave
     /// подключении). У движка правило держится всегда — признак пишет каждый, кто убивает или воскрешает лидера; на сохранениях
     /// оригинала из корпуса нарушений нет.
     /// </summary>
-    private static D2.Rules.Map.MapState Healed(D2.Rules.Map.MapState map)
+    private static LastEdict.Rules.Map.MapState Healed(LastEdict.Rules.Map.MapState map)
     {
-        bool Stale(D2.Rules.Map.MapStack s) => map.Units.TryGetValue(s.LeaderId, out var leader) && (leader.Hp > 0) != s.LeaderAlive;
+        bool Stale(LastEdict.Rules.Map.MapStack s) => map.Units.TryGetValue(s.LeaderId, out var leader) && (leader.Hp > 0) != s.LeaderAlive;
         if (!map.Stacks.Values.Any(Stale)) return map;
         var stacks = map.Stacks.ToDictionary(p => p.Key, p => Stale(p.Value) ? p.Value with { LeaderAlive = !p.Value.LeaderAlive } : p.Value,
                                              StringComparer.OrdinalIgnoreCase);

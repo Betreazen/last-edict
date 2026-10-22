@@ -1,8 +1,8 @@
-using D2.Data.Menu;
-using D2.Rules.Magic;
-using D2.Rules.Map;
+using LastEdict.Data.Menu;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>Цена словами (<c>0x61c910</c>): золото <c>X005TA0055</c>, Руны <c>0056</c>, Смерть <c>0057</c>, Жизнь <c>0058</c>, Преисподняя
 /// <c>0059</c>, Лес <c>X160TA0001</c>; части — через «, » (<c>0x6e12f4</c>), нулевые пропускаются, всё нулевое — «0».</summary>

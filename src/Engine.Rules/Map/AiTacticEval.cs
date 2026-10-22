@@ -1,6 +1,6 @@
-﻿using D2.Rules.Battle;
+﻿using LastEdict.Rules.Battle;
 
-namespace D2.Rules.Map;
+namespace LastEdict.Rules.Map;
 
 /// <summary>Кандидат охраны (<c>CAiGuard</c> <c>0x457317</c>) — другой отряд карты.</summary>
 /// <param name="SameLeaderCategory">Одинаковый вид расы юнита-лидера по <c>0x5edb1a</c> (раса из <c>IUsSoldier</c>,

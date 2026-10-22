@@ -1,7 +1,7 @@
-using D2.Rules.Magic;
-using D2.Rules.Map;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>
 /// Кукла героя <c>DLG_PAPERDOLL</c> (<c>CPaperdollChildInterf</c> <c>0x4cbcea</c>), встроенная в чужое окно в точке элемента-рамки

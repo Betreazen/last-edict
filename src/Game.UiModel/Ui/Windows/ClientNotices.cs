@@ -1,9 +1,9 @@
-using D2.Data.Game;
-using D2.Data.Menu;
-using D2.Data.Play;
-using D2.Rules.Map;
+using LastEdict.Data.Game;
+using LastEdict.Data.Menu;
+using LastEdict.Data.Play;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>
 /// Команды сервера клиенту, у которых в порте нет своего окна в ядре (<c>docs/audit-20261013.md</c>, «Осталось» п. 4): сборщик подписан на
@@ -38,7 +38,7 @@ public sealed class NoticeWatch(Func<string, bool> human) : ITurnObserver
     {
     }
 
-    public IReadOnlyList<D2.Rules.Battle.TurnRecord>? Battle(D2.Rules.Battle.BattleState state) => null;
+    public IReadOnlyList<LastEdict.Rules.Battle.TurnRecord>? Battle(LastEdict.Rules.Battle.BattleState state) => null;
 
     public void Happened(TurnSight sight)
     {

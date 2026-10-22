@@ -1,7 +1,7 @@
-using D2.Rules.Magic;
-using D2.Rules.Map;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 // Эффекты заклинаний карты кроме удара, лечения и призыва (docs/ai-spells.md §3): модификатор (усиление, ослабление), запас
 // хода, невидимость, туман и его развеивание, смена земли, снос жезла — и срок модификаторов заклинаний и зелий карты

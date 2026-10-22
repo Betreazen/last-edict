@@ -2,7 +2,7 @@ using System.Buffers.Binary;
 using System.Globalization;
 using System.Text;
 
-namespace D2.Data.Import;
+namespace LastEdict.Data.Import;
 
 /// <summary>Растровые шрифты игры (<c>Interf/*.mft</c>, семь однобитных растров фиксированного кегля) → BMFont <c>assets/fonts/&lt;имя&gt;.fnt</c> +
 /// PNG-атлас <c>&lt;имя&gt;.png</c> (перенос <c>tools/ui-assets/import_fonts.py</c>; <c>.fnt</c> — те же байты, атлас — те же точки). Коды MFT

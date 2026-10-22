@@ -1,9 +1,9 @@
-using D2.Data.Content;
-using D2.Data.Content.Schema;
-using D2.Data.Dbf;
-using D2.Rules.Magic;
+using LastEdict.Data.Content;
+using LastEdict.Data.Content.Schema;
+using LastEdict.Data.Dbf;
+using LastEdict.Rules.Magic;
 
-namespace D2.Data.Magic;
+namespace LastEdict.Data.Magic;
 
 /// <summary>Три справочника гейта экипировки: категории предметов (<c>LmagItm.dbf</c>), имена
 /// способностей лидера (<c>LleadA.dbf</c>) и врождённые способности по типу юнита

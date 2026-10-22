@@ -1,10 +1,10 @@
 using System;
 using System.Linq;
-using D2.Data.Map;
-using D2.Data.Play;
+using LastEdict.Data.Map;
+using LastEdict.Data.Play;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Быстрое сохранение (<see cref="QuickSave"/>): Q (и Ctrl+Q — у движка код клавиши без учёта Ctrl) на карте в свой ход человека —
 /// партия в слот «QuickSave» каталога сохранений, один файл. Только когда карта принимает ввод: нет окон поверх, попапов, боя, столицы и

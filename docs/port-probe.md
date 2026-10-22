@@ -1,6 +1,6 @@
 # Зонд порта — журнал запуска и отчёт по нему
 
-Зонд порта (`godot/autoload/PortProbe.cs`, ядро журнала — `src/D2.Verification/Diagnostics/PortJournal.cs`) пишет всё, что видно при игре,
+Зонд порта (`godot/autoload/PortProbe.cs`, ядро журнала — `src/LastEdict.Verification/Diagnostics/PortJournal.cs`) пишет всё, что видно при игре,
 в журнал `%APPDATA%\Godot\app_userdata\Disciples\probe\port-<дата-время>.jsonl`. Включается сам при каждом запуске игры с окном; без окна
 (проверки `--headless`) — только при `D2_PORT_PROBE=1`; `D2_PORT_PROBE=0` выключает; `D2_PORT_PROBE_DIR` — другой каталог.
 
@@ -15,12 +15,12 @@
 | `key`, `click` | клавиши и кнопки мыши (точка, окно сверху) |
 | `session`, `turn`, `move`, `battle`, `sight`, `offer` | партия: сценарий и день; чей ход (день, казна); шаг отряда; бой; события карты (захват, наём, заклинание, гибель, рост…); предложение ИИ человеку |
 | `day` | **снимок мира** в начале хода человека (в «горячем стуле» — каждого) и при подписке на партию; рядом — **сохранение дня** (схема ниже) |
-| `invariant` | нарушение инварианта карты (`src/D2.Verification/Diagnostics/MapInvariants.cs`): в начале хода любого игрока и после каждого боя |
+| `invariant` | нарушение инварианта карты (`src/LastEdict.Verification/Diagnostics/MapInvariants.cs`): в начале хода любого игрока и после каждого боя |
 | `battle_end` | итог боя: стороны, победитель, раундов, павшие и опыт по сторонам, классы атак сторон, применённые предметы, бежавшие |
 | `event` | сработавшее событие сценария: id, игрок, триггерер, день, эффекты |
 | `ai_pick`, `ai_step`, `ai_turn` | трасса ИИ: выбор тактики отряда, исполненный шаг стратегии, конец хода ИИ (длительность) |
 | `slow_frame`, `heartbeat` | кадр дольше 250 мс по часам (до 15.10 мерился по `delta`, которую Godot урезает до ~133 мс, — строка не появлялась никогда); раз в 30 с — кадры в секунду, память, число объектов и узлов |
-| `snd`, `snd_end`, `music`, `vol_set`, `video`, `map_anim`, `bat_anim`, `bat_fx`, `bat_text`, `cursor`, `frames` | **схема 7.3** — звук, музыка, громкости, ролики, анимации карты и боя, надписи боя, курсор, кадры за 10 с: те же имена и поля, что у зонда оригинала (`src/D2.Verification/Diagnostics/AvTrace.cs`), сверка — `dotnet run --project tools/AvCompare -- <оригинал> <порт>`; `docs/probe-av.md` |
+| `snd`, `snd_end`, `music`, `vol_set`, `video`, `map_anim`, `bat_anim`, `bat_fx`, `bat_text`, `cursor`, `frames` | **схема 7.3** — звук, музыка, громкости, ролики, анимации карты и боя, надписи боя, курсор, кадры за 10 с: те же имена и поля, что у зонда оригинала (`src/LastEdict.Verification/Diagnostics/AvTrace.cs`), сверка — `dotnet run --project tools/AvCompare -- <оригинал> <порт>`; `docs/probe-av.md` |
 | `bat_flash`, `bat_flash_end`, `bat_text` (с местом), `bat_text_end`, `map_sel`, `map_path` | **схема 7.6** — вспышки и надписи портретов боя (место, строки показано и по правилу переноса движка), эллипс выбранного отряда и флажки пути на смену видимого: те же поля, что у зонда оригинала (`AvTrace`); вспышки пишет вид портретов (`BattleView.TraceFlash`); сверка — `AvCompare`, `AvFaceHarnessTests`; `docs/probe-av.md` §8 |
 | `mark` | **F9 — пометка**: снимок экрана (`…-markN.png`) и сохранение партии (`…-markN.d2save`) рядом с журналом; на экране — «Пометка N записана» |
 | `end` | штатный выход; нет строки — процесс упал или убит |
@@ -49,7 +49,7 @@
 
 Общие поля любой строки — `seq`, `t` (мс от старта), `th` (поток), `ev`. Ход ИИ идёт на рабочем потоке — строки ИИ и боёв ИИ с другим `th`.
 
-**`day`** — снимок мира (`src/D2.Verification/Diagnostics/DaySnapshot.cs`), ~1–2 КБ:
+**`day`** — снимок мира (`src/LastEdict.Verification/Diagnostics/DaySnapshot.cs`), ~1–2 КБ:
 
 | поле | что |
 |---|---|

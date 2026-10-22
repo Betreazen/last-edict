@@ -1,9 +1,9 @@
-using D2.Data.Sg;
-using D2.Rules.Map;
+using LastEdict.Data.Sg;
+using LastEdict.Rules.Map;
 using Kaitai;
 using KSg = Kaitai.Sg;
 
-namespace D2.Data.Map;
+namespace LastEdict.Data.Map;
 
 /// <summary>
 /// Сценарий или сохранение (формат один и тот же) -> <see cref="MapState"/>. Читает только то, что

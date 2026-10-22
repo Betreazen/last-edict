@@ -1,9 +1,9 @@
 using System.Buffers.Binary;
-using D2.Data.Ui;
+using LastEdict.Data.Ui;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Манифест интерфейсной графики: <c>data/ui/assets.json</c> лежит в git, сами картинки (WebP без потерь) — нет.
 /// Числа сверены распаковкой архивов GOG 3.01 (<c>tools/ui-assets/build_ui_assets.py</c>).</summary>

@@ -1,9 +1,9 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using D2.Data.Map;
-using D2.Data.Ui;
+using LastEdict.Data.Map;
+using LastEdict.Data.Ui;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Файл настроек разделами с версией схемы (<see cref="SettingsFile"/>): перенос плоского файла схемы 1, круг «записал → прочитал»,
 /// неизвестные ключи и битый файл, зажим значений, запись только своих полей (<see cref="MapSettings.Update"/>,

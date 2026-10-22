@@ -1,7 +1,7 @@
-using D2.Rules.Battle;
-using D2.Rules.Map;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>Отряды игрока по ролям лидера и приказу ИИ (<c>0x44a405</c>): бойцы (обычный / защита города / помощь),
 /// жезлоносцы, воры (обычный / помощь / кража).</summary>

@@ -1,6 +1,6 @@
-using D2.Rules.Magic;
+using LastEdict.Rules.Magic;
 
-namespace D2.Rules.Units;
+namespace LastEdict.Rules.Units;
 
 /// <summary>Способности лидера, разложенные по трём источникам (план Ф7 §1.5, levels §3.4).
 /// <para>Разложение нужно не для красоты: гейт экипировки спрашивают <b>до</b> того, как предмет

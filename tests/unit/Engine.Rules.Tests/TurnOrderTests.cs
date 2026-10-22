@@ -1,5 +1,5 @@
-using D2.Rules.Battle;
-using D2.Rules.Rng;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Rng;
 
 /// <summary>Очередь раунда и прогон боя на записанных бросках. Тесты BattleSim.Run лежат здесь же:
 /// они проверяют именно расход бросков очереди по раундам (замер шага 1 Task 5), а не формулы.</summary>

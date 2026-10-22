@@ -1,8 +1,8 @@
 using System.ComponentModel;
-using D2.Rules.Battle;
-using D2.Rules.Units;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Units;
 
-namespace D2.Data.Content.Schema;
+namespace LastEdict.Data.Content.Schema;
 
 /// <summary>Атака (<c>Gattacks.dbf</c>). Юниты, в которых превращает или которых призывает атака (<c>Gtransf</c>), — в ней же.</summary>
 [LegacyTable("Gattacks", "ATT_ID")]

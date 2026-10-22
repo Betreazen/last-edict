@@ -1,4 +1,4 @@
-namespace D2.Data.Map;
+namespace LastEdict.Data.Map;
 
 /// <summary>
 /// Отрезок между двумя точками экрана по точкам, как у движка (<c>0x51f452</c> → <c>0x51f4fe</c>): точек <c>max(|dx|, |dy|) + 1</c>, обе

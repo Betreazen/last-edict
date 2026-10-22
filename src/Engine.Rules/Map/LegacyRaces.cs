@@ -1,4 +1,4 @@
-namespace D2.Rules.Map;
+namespace LastEdict.Rules.Map;
 
 /// <summary>
 /// Числа рас движка по роду расы — колонке <c>Grace.RACE_TYPE</c> (0 Империя, 1 Орды, 2 Легионы, 3 Кланы, 4 нейтралы, 5 Эльфы, ранг 1).

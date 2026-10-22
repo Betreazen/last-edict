@@ -1,9 +1,9 @@
-using D2.Data;
-using D2.Data.Map;
-using D2.Rules.Map;
-using D2.Rules.Rng;
+using LastEdict.Data;
+using LastEdict.Data.Map;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Rng;
 
-namespace D2.Rules.Tests;
+namespace LastEdict.Rules.Tests;
 
 /// <summary>Разбор синтетических карт 16.09 (группа C, <c>docs/synthetic-maps/analysis/C-thieves.md</c>),
 /// план Ф7 §11.3 пп. 11–12: фильтр доступности <c>0x5D32B8</c>, цена отмены и пустого списка, формулы

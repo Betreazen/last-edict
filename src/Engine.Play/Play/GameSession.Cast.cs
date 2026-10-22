@@ -1,10 +1,10 @@
-using D2.Data.Map;
-using D2.Rules.Battle;
-using D2.Rules.Magic;
-using D2.Rules.Map;
-using D2.Rules.Units;
+using LastEdict.Data.Map;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Units;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>
 /// Заклинание на карте (<c>docs/ai-spells.md</c> §3): проверка <c>0x5dbd75</c> и литьё — команда сервера <c>0x443600</c>
@@ -274,7 +274,7 @@ public sealed partial class GameSession
         }
         map = With(map, units: units);
         // Погибшие от заклинания (CSpellResultAttack 0x41c1e7): убийцы нет — вещи мешком или в склад крепости (GameSession.Loot.cs).
-        var bags = new List<D2.Data.Map.BagLook>();
+        var bags = new List<LastEdict.Data.Map.BagLook>();
         foreach (string id in hit)
         {
             if (!map.Stacks.TryGetValue(id, out var dead) || dead.UnitIds.Any(u => map.Units.TryGetValue(u, out var mu) && mu.Hp > 0)) continue;

@@ -1,6 +1,6 @@
-using D2.Rules.Rng;
+using LastEdict.Rules.Rng;
 
-namespace D2.Rules.Battle;
+namespace LastEdict.Rules.Battle;
 
 /// <summary>Действие, которое выбирает ИИ. Ждать (Wait) ИИ не выбирает никогда (разбор §2).</summary>
 public enum AiAction { Attack, Defend, Retreat, UseItem }

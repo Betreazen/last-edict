@@ -1,4 +1,4 @@
-namespace D2.Data.Map;
+namespace LastEdict.Data.Map;
 
 /// <summary>
 /// Шаг идущего отряда по ключевым кадрам, как у задачи движения движка (<c>docs/map-render-stacks.md</c> §6, разбор 11.10):

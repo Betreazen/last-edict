@@ -1,4 +1,4 @@
-namespace D2.Data.Battle;
+namespace LastEdict.Data.Battle;
 
 /// <summary>Что видит панель боя в миг перерисовки (<see cref="BattlePanelButtons"/>).</summary>
 /// <param name="AwaitsHuman">Ход юнита человека начался и ждёт команды: показ прошлого действия кончился, автобоя у стороны нет, бой не кончен.</param>

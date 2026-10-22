@@ -1,8 +1,8 @@
 using System.Linq;
-using D2.Data.Ui;
+using LastEdict.Data.Ui;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Режим <c>--lines</c> — проверка шага строки числом: у каждого начертания <c>data/ui/fonts.json</c> подпись в одну и в три строки
 /// с оформлением экранов (<see cref="UiArt.Settings"/>), шаг — половина разницы их высот. Строка на начертание:

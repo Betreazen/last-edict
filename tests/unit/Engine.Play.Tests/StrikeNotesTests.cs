@@ -1,9 +1,9 @@
-using D2.Data.Battle;
-using D2.Data.Gfx;
-using D2.Rules.Battle;
-using D2.Rules.Units;
+using LastEdict.Data.Battle;
+using LastEdict.Data.Gfx;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Units;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Надписи удара на портретах (<see cref="StrikeNotes"/>, <c>0x63b391</c>): защита раньше промаха, промах только первой атаки,
 /// строка класса, урон и крит по потерянному здоровью, лечение — по полученному.</summary>

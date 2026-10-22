@@ -1,11 +1,11 @@
-using D2.Data;
-using D2.Data.Ui;
+using LastEdict.Data;
+using LastEdict.Data.Ui;
 
 // Перевод старой разметки (.dlg) в набор экранов порта data/ui/screens.json.
 //
 //   dotnet run --project tools/UiImport [-- --game <папка игры>] [--out <файл>]
 //
-// Разбор полей и правила (привязка, Legacy, устойчивый Id) живут в D2.Data.Ui.DlgImport — здесь только
+// Разбор полей и правила (привязка, Legacy, устойчивый Id) живут в LastEdict.Data.Ui.DlgImport — здесь только
 // разбор параметров и запись файла. Перевод повторяем: те же исходники дают тот же байт в байт JSON,
 // это проверяет UiScreensTests.Screens_Json_IsUpToDate.
 

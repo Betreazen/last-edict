@@ -1,6 +1,6 @@
-using D2.Rules.Map;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>Навыки героя строками окна отряда и карточки воина: способность лидера (<c>LLeadA</c>) → значок <c>Icons.ff</c> и строка
 /// (<c>0x5b25e0</c>, <c>0x61dd44</c>). Критический удар (17) значка и строки не имеет — не показывается.</summary>

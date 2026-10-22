@@ -1,7 +1,7 @@
 using System.Buffers.Binary;
 using System.Text;
 
-namespace D2.Data.Sg;
+namespace LastEdict.Data.Sg;
 
 /// <summary>
 /// Своя кампания игры (<c>Campaign\*.csg</c>) — только импорт. Контейнер MQDB (как <c>.ff</c>): заголовок 28 байт <c>MQDB</c>, записи

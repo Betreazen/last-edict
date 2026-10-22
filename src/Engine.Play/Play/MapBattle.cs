@@ -1,9 +1,9 @@
-using D2.Rules.Battle;
-using D2.Rules.Magic;
-using D2.Rules.Map;
-using D2.Rules.Units;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Units;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>Бой с карты: из групп партии — <see cref="BattleState"/> для <c>BattleSim</c>, после боя — исход обратно в
 /// карту. Сборка — по образцу <c>CorpusBattleLoader</c> (там тот же бой собирается из журнала зонда), только юниты и

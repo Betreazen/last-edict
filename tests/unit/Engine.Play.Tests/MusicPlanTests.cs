@@ -1,6 +1,6 @@
-using D2.Data.Sound;
+using LastEdict.Data.Sound;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Выбор музыки (<see cref="MusicPlan"/>, <see cref="MusicRotation"/>; разбор <c>CMidMusic</c>): все дорожки плана есть в описи
 /// <c>Music</c>; карта чередует списки и не повторяет дорожку; столица — 1→2→3 по кругу; бой — по кругу со случайной.</summary>

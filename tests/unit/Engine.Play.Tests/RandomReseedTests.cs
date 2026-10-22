@@ -1,7 +1,7 @@
-using D2.Data.Map;
-using D2.Data.Play;
+using LastEdict.Data.Map;
+using LastEdict.Data.Play;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Пересев генератора боя из интерфейса (<see cref="RandomReseed"/>, «Random» движка, <c>0x429dc8</c>): меняется только индекс
 /// (<c>seed % 250</c>), таблица — прежняя; у новой партии таблица — исходная. CRT — поток игры: у загрузки новый (<c>srand(1)</c>,
@@ -11,11 +11,11 @@ public class RandomReseedTests
     [Fact]
     public void Reseed_ChangesOnlyIndex()
     {
-        var map = new D2.Rules.Map.MapState
+        var map = new LastEdict.Rules.Map.MapState
         {
-            Size = 1, Tiles = new D2.Rules.Map.Tile[1, 1], Stacks = new Dictionary<string, D2.Rules.Map.MapStack>(),
-            Units = new Dictionary<string, D2.Rules.Map.MapUnit>(), Players = new Dictionary<string, D2.Rules.Map.MapPlayer>(),
-            Objects = new Dictionary<string, D2.Rules.Map.MapObject>(), Plan = new Dictionary<(int, int), IReadOnlyList<string>>(),
+            Size = 1, Tiles = new LastEdict.Rules.Map.Tile[1, 1], Stacks = new Dictionary<string, LastEdict.Rules.Map.MapStack>(),
+            Units = new Dictionary<string, LastEdict.Rules.Map.MapUnit>(), Players = new Dictionary<string, LastEdict.Rules.Map.MapPlayer>(),
+            Objects = new Dictionary<string, LastEdict.Rules.Map.MapObject>(), Plan = new Dictionary<(int, int), IReadOnlyList<string>>(),
             Fog = new Dictionary<string, bool[,]>(), Turn = 1,
         };
         var looks = new MapLooks { Map = map, TreeImage = new byte[1, 1], TreeGroup = new byte[1, 1] };
@@ -23,7 +23,7 @@ public class RandomReseedTests
 
         var a = fresh.Reseeded(1003);
         Assert.Equal(1003 % 250, a.Random!.Index);
-        Assert.Equal(new D2.Rules.Rng.EngineRng().TableSnapshot(), a.Random.Table);
+        Assert.Equal(new LastEdict.Rules.Rng.EngineRng().TableSnapshot(), a.Random.Table);
         Assert.Equal(1u, a.Random.Crt);
 
         var saved = a with { Random = a.Random with { Table = [.. a.Random.Table.Select(v => (ushort)(v ^ 1))], Crt = 77 } };

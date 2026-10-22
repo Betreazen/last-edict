@@ -1,7 +1,7 @@
-using D2.Rules.Battle;
-using D2.Rules.Magic;
-using D2.Rules.Map;
-using D2.Rules.Rng;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Rng;
 using static BattleAiTests;
 
 /// <summary>Боевые предметы в политике ИИ — <c>0x5ce917</c> (когда) и <c>0x5cfed3</c> (какой и в кого): разбор §3,

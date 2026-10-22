@@ -1,6 +1,6 @@
-using D2.Rules.Magic;
+using LastEdict.Rules.Magic;
 
-namespace D2.Rules.Map;
+namespace LastEdict.Rules.Map;
 
 /// <summary>Итог торговой операции у сайта: новое состояние того, что она меняет, и казна.
 /// <see cref="Refused"/> непусто — операции не было, состояние и казна прежние.</summary>
@@ -130,7 +130,7 @@ public static class SiteTrade
     /// <summary>Свободные клетки для найма: <c>max(0, min(лидерство, 6) − занятые)</c> (<c>0x498291</c>,
     /// <c>0x5f4485</c>). Ранг 1 на формулу; потолок 6 — ранг 2: вместимость отряда берётся из кеша <c>0x6144ce</c>
     /// (<c>+0x2c</c> или <c>[+0x30]→vf 0x24</c>, недочитано), а по данным KC002f лидерство 7 (4 + 3 навыка) при 6
-    /// занятых дало отказ. Лидерство — с навыками (<see cref="D2.Rules.Units.EffectiveStats.OfStack"/>).</summary>
+    /// занятых дало отказ. Лидерство — с навыками (<see cref="LastEdict.Rules.Units.EffectiveStats.OfStack"/>).</summary>
     /// <param name="occupied">Занятые клетки (большой юнит — две).</param>
     public static int FreeCells(int leadership, int occupied) => Math.Max(0, Math.Min(leadership, MaxCells) - occupied);
 

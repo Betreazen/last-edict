@@ -1,7 +1,7 @@
 ﻿using System.Collections.Immutable;
-using D2.Rules.Battle;
+using LastEdict.Rules.Battle;
 
-namespace D2.Rules.Map;
+namespace LastEdict.Rules.Map;
 
 /// <summary>Тип тактического действия отряда ИИ — слот 1 действия (<c>IAiTacticAction</c>), значение прошито в
 /// каждом построителе списка (<c>CAi*::build</c>). Ранг 1 по таблице виртуальных функций (разбор зонда 6.5,

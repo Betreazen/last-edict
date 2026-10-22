@@ -1,9 +1,9 @@
-using D2.Data.Gfx;
-using D2.Data.Map;
-using D2.Rules.Map;
+using LastEdict.Data.Gfx;
+using LastEdict.Data.Map;
+using LastEdict.Rules.Map;
 using Xunit;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Мини-карта (<see cref="MiniMap"/>, <c>docs/map-screen.md</c> §1): геометрия растра и то, что клетки
 /// закрашиваются узором, а скрытые — туманом.</summary>

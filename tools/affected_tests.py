@@ -342,7 +342,7 @@ def plan(base: str | None, files: list[str] | None = None) -> dict:
                 view_files += sorted(users)
     for project in c["projects"]:
         classes |= {n for f, names in index.by_file.items() if f.startswith(project) for n in names}
-    # Данные (data/<каталог>/…): классы D2.Rules.Tests, которые читают тот же каталог данных репозитория.
+    # Данные (data/<каталог>/…): классы LastEdict.Rules.Tests, которые читают тот же каталог данных репозитория.
     for sub in {f.split("/")[1] for f in c["data"] if f.count("/") >= 2}:
         for p in cs_files(RULES_TESTS):
             t = read(p)

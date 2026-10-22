@@ -1,8 +1,8 @@
-using D2.Data.Gfx;
-using D2.Data.Ui.Windows;
-using D2.Rules.Map;
+using LastEdict.Data.Gfx;
+using LastEdict.Data.Ui.Windows;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Map;
+namespace LastEdict.Data.Map;
 
 /// <summary>Значок поверх портрета панели: кадр <c>Battle.ff</c> и место от левого верхнего угла портрета; <see cref="Centered"/> —
 /// по середине ширины портрета (<c>X</c> тогда не смотрится).</summary>

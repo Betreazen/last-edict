@@ -1,4 +1,4 @@
-namespace D2.Data.Ui;
+namespace LastEdict.Data.Ui;
 
 /// <summary>
 /// Ячейки группы юнитов в окнах (армия города, отряд): разметка даёт только первую ячейку группы
@@ -15,7 +15,7 @@ public static class UnitGroupLayout
     public const int CellHeight = 85;
     public const int GapX = 10;
     public const int GapY = 21;
-    public const int Positions = D2.Rules.Map.UnitCells.CellCount;
+    public const int Positions = LastEdict.Rules.Map.UnitCells.CellCount;
 
     /// <summary>Ячейка позиции <paramref name="position"/> (0…5) группы с первой ячейкой разметки <paramref name="first"/>.</summary>
     public static UiRect Cell(UiRect first, bool leftSide, int position)

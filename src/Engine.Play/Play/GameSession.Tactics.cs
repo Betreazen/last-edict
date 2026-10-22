@@ -1,9 +1,9 @@
-using D2.Rules.Battle;
-using D2.Rules.Magic;
-using D2.Rules.Map;
-using D2.Rules.Rng;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Rng;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>
 /// Тактика ИИ в ходе игрока (срез 5, <c>docs/ai-turn-plan.md</c>): назначение помощников (<c>0x45603b</c>), очередь
@@ -487,7 +487,7 @@ public sealed partial class GameSession
     /// </summary>
     private int VisitShop(AiTacticOption a, AiTacticTurn? turn)
     {
-        D2.Rules.Rng.IRng rng = turn?.Rng ?? (D2.Rules.Rng.IRng)Rng;
+        LastEdict.Rules.Rng.IRng rng = turn?.Rng ?? (LastEdict.Rules.Rng.IRng)Rng;
         if (a.Type == AiActionType.VisitMerchant) AiTactics.BuyAtMerchant(this, turn, rng, a.Stack, a.Target);
         else AiTactics.BuyAtMage(this, turn, rng, a.Stack, a.Target);
         return StatusDone;
@@ -548,7 +548,7 @@ public sealed partial class GameSession
             // Оборван событием — посещения нет (0x43fc13: объект за концом не зовётся), а с ним и колбэка решения ИИ.
             arrived = !cut && today.Count == path.Points.Count - 1 && Near((end.X, end.Y), (a.X, a.Y), 1);
         }
-        D2.Rules.Rng.IRng rng = turn?.Rng ?? (D2.Rules.Rng.IRng)Rng;
+        LastEdict.Rules.Rng.IRng rng = turn?.Rng ?? (LastEdict.Rules.Rng.IRng)Rng;
         // Найм идёт в колбэке посещения уже после того, как фаза 4 прочла статус (как у знатного): в память ложится 2, а не 1 найма —
         // 4 из 4 наймов в корпусе (2026101[6bcd]-port-synth, S143KC001a у S143SI0004: ai_tactic_result 2 раньше site_buy_unit).
         if (arrived) AiTactics.HireAtMercs(this, turn, rng, a.Stack, a.Target);
@@ -667,7 +667,7 @@ public sealed partial class GameSession
             return true;
         }
         var rules = Book!.Rules;
-        var battle = new D2.Data.Battle.BattleSession(state, new BattleSim(state, Rng, rules.Constants), rules.Constants) { Auto = true };
+        var battle = new LastEdict.Data.Battle.BattleSession(state, new BattleSim(state, Rng, rules.Constants), rules.Constants) { Auto = true };
         battle.PlayOut();
         FinishBattle(battle.Log);
         return true;

@@ -1,9 +1,9 @@
-using D2.Rules.Map;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>
-/// Порождённые реализации юнитов (<c>G000UG…</c>, <see cref="D2.Rules.Units.UnitGenerator"/>), уже созданные в этом запуске игры. От них
+/// Порождённые реализации юнитов (<c>G000UG…</c>, <see cref="LastEdict.Rules.Units.UnitGenerator"/>), уже созданные в этом запуске игры. От них
 /// зависит опыт лидера у порога (И230): прибавка <c>changeUnitXpCheckUpgrade 0x5d7412</c> ищет цель повышения лидера <c>0x5d89c6</c> без
 /// создания (<c>push 0</c>, <c>0x5d747d</c>) — поиск <c>0x5d7ef8</c> идёт по коллекции реализаций глобальных данных; нашлась — прибавка целиком
 /// (опыт садится на <c>XP_NEXT</c>, следом <c>0x5d8b17</c> повышает), нет — на 1 меньше (<c>0x5d749e</c>). Создаёт реализацию повышение

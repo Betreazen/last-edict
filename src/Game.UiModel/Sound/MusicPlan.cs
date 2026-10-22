@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace D2.Data.Sound;
+namespace LastEdict.Data.Sound;
 
 /// <summary>Затухания и нарастания переходов музыки, мс (<c>CMusicFader</c>). Журнал зонда 7.3 (<c>corpus/20261016e-av</c>, <c>-g</c>): основная
 /// (карта, бриф) и временная (бой, столица) начинаются сразу полной громкостью — 64 и 25 стартов без строки <c>fade in</c>; нарастание

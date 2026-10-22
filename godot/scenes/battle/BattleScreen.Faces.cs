@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using D2.Data.Gfx;
+using LastEdict.Data.Gfx;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Проверка вспышек портретов (<c>--check --flash</c>, <c>docs/battle-screen.md</c> §9): числами, без окна.</summary>
 public partial class BattleScreen

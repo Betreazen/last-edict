@@ -1,7 +1,7 @@
 using System.Buffers.Binary;
 using Microsoft.Win32.SafeHandles;
 
-namespace D2.Data.Import;
+namespace LastEdict.Data.Import;
 
 /// <summary>Архив графики и звуков игры (<c>.ff</c>, <c>.wdt</c>, <c>.wdb</c> — контейнер MQDB) — только импорт (<c>docs/principles.md</c> §3).
 /// Перенос разбора <c>tools/ui-assets/ff_extract.py</c> (его происхождение — Karnah/Disciples.Net, MIT, <c>tools/ui-assets/NOTICE</c>) один

@@ -1,10 +1,10 @@
 // Загрузчики правил ДО схемы содержимого (main 639961ee): правила читались прямо из строк таблиц оригинала. Эталон сверки
 // «старая модель = новая» (ContentRulesParityTests) — не править; удаляется вместе с ней, когда таблицы уйдут из проверок.
-using D2.Data.Battle;
-using D2.Data.Dbf;
-using D2.Rules.Magic;
+using LastEdict.Data.Battle;
+using LastEdict.Data.Dbf;
+using LastEdict.Rules.Magic;
 
-namespace D2.Data.Tests.LegacyLoaders;
+namespace LastEdict.Data.Tests.LegacyLoaders;
 
 /// <summary>Три справочника гейта экипировки: категории предметов (<c>LmagItm.dbf</c>), имена
 /// способностей лидера (<c>LleadA.dbf</c>) и врождённые способности по типу юнита

@@ -1,6 +1,6 @@
-using D2.Rules.Battle;
+using LastEdict.Rules.Battle;
 
-namespace D2.Rules.Map;
+namespace LastEdict.Rules.Map;
 
 /// <summary>Отряд-кандидат в защитники (<c>0x46defb</c>): действующий приказ и его цель; <paramref name="TargetOwn"/>
 /// — цель-крепость принадлежит игроку (<c>+0x84</c>).</summary>

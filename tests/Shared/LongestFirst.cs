@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Xunit.Abstractions;
 
-namespace D2.Tests;
+namespace LastEdict.Tests;
 
 /// <summary>
 /// Порядок запуска классов тестов (у xUnit класс — своя коллекция, классы идут параллельно, тесты класса — подряд): долгие по прошлым
@@ -22,7 +22,7 @@ public sealed class LongestFirst : ITestCollectionOrderer
         : testCollections.OrderByDescending(c => Seconds.Value.TryGetValue(ClassOf(c), out double s) ? s : double.MaxValue)
                        .ThenBy(c => c.DisplayName, StringComparer.Ordinal);
 
-    /// <summary>Короткое имя класса коллекции «по классу» (<c>Test collection for D2.Rules.Tests.FortHarnessTests</c>).</summary>
+    /// <summary>Короткое имя класса коллекции «по классу» (<c>Test collection for LastEdict.Rules.Tests.FortHarnessTests</c>).</summary>
     private static string ClassOf(ITestCollection collection)
     {
         string name = collection.DisplayName.StartsWith(Prefix, StringComparison.Ordinal) ? collection.DisplayName[Prefix.Length..]

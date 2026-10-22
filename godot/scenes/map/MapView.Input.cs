@@ -2,13 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using D2.Data.Gfx;
-using D2.Data.Map;
-using D2.Data.Play;
-using D2.Rules.Map;
+using LastEdict.Data.Gfx;
+using LastEdict.Data.Map;
+using LastEdict.Data.Play;
+using LastEdict.Rules.Map;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Мышь на карте: щелчок по своему отряду выбирает его, щелчок по клетке показывает путь, повторный
 /// щелчок по той же клетке отправляет отряд (<c>docs/map-path.md</c> §4). Путь считает <see cref="PathFinder"/>,
@@ -293,7 +293,7 @@ public partial class MapView
         if (today.Count == 0)
         {
             // Команда хода с места (зонд: строка move); вставшая у старта перед невидимым — со списанием конца списка (PlayerMove.Charge).
-            Session.Run(new D2.Data.Play.Commands.ActInPlaceCommand(stack.Id, _attackTarget is { } aimed && Attacks(aimed), move.Charge ?? 0));
+            Session.Run(new LastEdict.Data.Play.Commands.ActInPlaceCommand(stack.Id, _attackTarget is { } aimed && Attacks(aimed), move.Charge ?? 0));
             _routes.Walked(stack.Id, path, 0, shownTarget);
             Attack(stack.Id);
             if (!Session.InBattle) RestoreShownPath();
@@ -452,7 +452,7 @@ public partial class MapView
     /// туман сцены обновляются сразу, а не по концу пути.</summary>
     private void RevealStep(string stackId, (int X, int Y) to)
     {
-        bool opened = Viewer is not null && Session.Run<bool>(new D2.Data.Play.Commands.RevealFromCommand(stackId, to.X, to.Y));
+        bool opened = Viewer is not null && Session.Run<bool>(new LastEdict.Data.Play.Commands.RevealFromCommand(stackId, to.X, to.Y));
         WalkFog = (WalkFog.Revealed + (opened ? 1 : 0), WalkFog.Steps + 1);
         if (!opened) return;
         RefreshGround();
@@ -476,14 +476,14 @@ public partial class MapView
         PortProbe.Av?.MapAnim("end", "CMidAnim2Unit", end.X, end.Y, walk.Stack.Id, (long)(Time.GetTicksMsec() - _walkAnim.StartMs),
                               WalkFrames.Frames - _walkAnim.Frames, group: _walkTicker.Group == AnimGroup.Fast ? 1 : 0);
         var messagesBefore = Session.State.Messages;
-        Session.Run(new D2.Data.Play.Commands.MoveStackCommand(walk.Stack.Id, end.X, end.Y, Facing(before, end), walk.Charge ?? Spent(walk.Path, today.Count),
-                                                       [.. walk.Fired.Select(D2.Data.Play.Commands.FiringRef.Of)], today));
+        Session.Run(new LastEdict.Data.Play.Commands.MoveStackCommand(walk.Stack.Id, end.X, end.Y, Facing(before, end), walk.Charge ?? Spent(walk.Path, today.Count),
+                                                       [.. walk.Fired.Select(LastEdict.Data.Play.Commands.FiringRef.Of)], today));
         GameLog.Verbose($"walked {walk.Stack.Id} в=({end.X},{end.Y}) событий={walk.Fired.Count} туман_по_шагам={WalkFog.Revealed}/{WalkFog.Steps} " +
                  $"кадров={WalkFrames.Frames} вид_на_отряде={WalkFrames.Followed} " +
                  $"кадр_мс={(WalkTicks.Count == 0 ? 0 : WalkTicks.Ms / WalkTicks.Count).ToString("0.#", CultureInfo.InvariantCulture)} " +
                  $"кадр_мин_мс={(WalkTicks.Count == 0 ? 0 : WalkTicks.MinMs).ToString("0.#", CultureInfo.InvariantCulture)} " +
                  $"группа={_walkTicker.PeriodMs}");
-        Session.Run(new D2.Data.Play.Commands.LeftFortCommand(walk.Stack.Id));   // ушёл из укрепления — больше не его гость
+        Session.Run(new LastEdict.Data.Play.Commands.LeftFortCommand(walk.Stack.Id));   // ушёл из укрепления — больше не его гость
         SelectionAfterWalk(messagesBefore);
         // Отряд пришёл и открыл обзор — сразу; туман событий на пути (L_UNFOG) — кольцами (MapView.Fog.cs).
         HintEventFog(walk.Fired);
@@ -510,7 +510,7 @@ public partial class MapView
         if (!Map.Stacks.ContainsKey(stackId) || Session.EventBattleWaiting) return;   // событие шага начало бой
         if (Map.Rods.ContainsKey(target))
         {
-            string? refused = Session.Run<string?>(new D2.Data.Play.Commands.BreakRodCommand(stackId, target));
+            string? refused = Session.Run<string?>(new LastEdict.Data.Play.Commands.BreakRodCommand(stackId, target));
             GameLog.Verbose($"rodbreak {stackId} {target} {refused?.Replace(' ', '_') ?? "снесён"}");
             Reload();
             Marks();
@@ -531,7 +531,7 @@ public partial class MapView
             // Посещение — CEffectVisit (список посетивших, проверка событий L_VISIT_SITE) до окна площадки: у движка попап события идёт
             // раньше окна лавки (прогон 13.10, ai-r3: site_visit 2912814, попап 2912882, DLG_MERCHANT 2912904). Прежде окно открывалось без
             // посещения, и событие у человека не срабатывало.
-            var visit = Session.Run<VisitReport>(new D2.Data.Play.Commands.EnterCommand(stackId, shop.Id));
+            var visit = Session.Run<VisitReport>(new LastEdict.Data.Play.Commands.EnterCommand(stackId, shop.Id));
             if (visit.Refused is { } why)
             {
                 GameLog.Verbose($"visit {shop.Id} {why}");
@@ -543,7 +543,7 @@ public partial class MapView
         }
         if (site && (Owned(SiteOwner(target)) || MapBattle.DefenderOf(Map, target) is null))
         {
-            var report = Session.Run<VisitReport>(new D2.Data.Play.Commands.EnterCommand(stackId, target));
+            var report = Session.Run<VisitReport>(new LastEdict.Data.Play.Commands.EnterCommand(stackId, target));
             GameLog.Verbose($"visit {target} {(report.Refused ?? (report.Captured ? "захват" : report.Entered ? "вход" : "добыча"))}");
             if (report.Refused == GameSession.RiotRefusal) FortOpened?.Invoke(target);   // окно «Пока город бунтует…»
             // Мешок звучит своим окном (OPENINTR окна предметов, docs/ai-screen.md §12), а не руиной.

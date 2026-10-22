@@ -1,7 +1,7 @@
-using D2.Data.Ui;
+using LastEdict.Data.Ui;
 using Xunit;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Курсор окна по разметке (<see cref="UiCursor"/>, <c>0x50ca59</c>/<c>0x50cd54</c>): имя как есть и горячая точка из полей 7–8.</summary>
 public class UiCursorTests

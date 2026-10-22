@@ -1,6 +1,6 @@
-using D2.Data.Ui;
+using LastEdict.Data.Ui;
 
-namespace D2.Data.Menu;
+namespace LastEdict.Data.Menu;
 
 /// <summary>Выбор сценария (<c>DLG_CHOOSE_SKIRMISH</c>): список сценариев каталога, при открытии выбрана первая
 /// строка (со слов пользователя); у выбранного — описание, размер карты и значки его рас. Значок расы — <c>GOD&lt;код&gt;</c>

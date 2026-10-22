@@ -1,10 +1,10 @@
 using System.Text.Encodings.Web;
 using System.Text.Json;
-using D2.Data.Game;
-using D2.Data.Map;
-using D2.Rules.Map;
+using LastEdict.Data.Game;
+using LastEdict.Data.Map;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>Перевод сценария — языковой слой поверх файла порта (<c>data/scenarios/lang/&lt;язык&gt;/&lt;сценарий&gt;.json</c>), а не
 /// правка самого сценария: английский файл остаётся как импортирован, перевод лежит рядом и накладывается при чтении.

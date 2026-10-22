@@ -1,6 +1,6 @@
-using D2.Data.Gfx;
+using LastEdict.Data.Gfx;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Картинки литья заклинания на карте (<see cref="SpellMapAnim"/>): выбор по префиксу id, слой по знакам 10–11, ключевой
 /// кадр по знакам 12–14, длина — наибольшее число кадров.</summary>

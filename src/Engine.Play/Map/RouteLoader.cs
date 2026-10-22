@@ -1,14 +1,14 @@
 using System.Text.Json;
-using D2.Rules.Map;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Map;
+namespace LastEdict.Data.Map;
 
 /// <summary>
 /// Читает <c>route.json</c> — маршрут, который построил <c>tools/scenario_c4.py route</c> и сыграл
 /// <c>tools/corpus_c4_run.py</c>.
 ///
 /// <para>План задачи 9 называл это <c>MapRoute.Load</c>, но статический метод записи из
-/// <c>D2.Rules</c> не может лежать в <c>D2.Data</c>, а чтение файлов в <c>D2.Rules</c> запрещено
+/// <c>LastEdict.Rules</c> не может лежать в <c>LastEdict.Data</c>, а чтение файлов в <c>LastEdict.Rules</c> запрещено
 /// (Global Constraints). Поэтому загрузчик — отдельный класс здесь, рядом с
 /// <see cref="MapLoader"/>.</para>
 ///

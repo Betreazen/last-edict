@@ -1,12 +1,12 @@
-using D2.Data;
-using D2.Data.Play;
+using LastEdict.Data;
+using LastEdict.Data.Play;
 
 // Сценарии игры в данные порта: Exports/*.sg и главы саг Scens/*.dbf -> data/scenarios/<имя>.json (формат d2-port-scenario: карта с
 // объектами отрисовки и события). Старт партии читает уже их; .sg — только здесь (docs/principles.md §3).
 //
 //   dotnet run --project tools/ScenarioImport [-- --game <папка игры>] [--out <каталог>]
 //
-// Разбор живёт в D2.Data (ScenarioFile.FromSg) — здесь только параметры и запись. Перевод повторяем: те же исходники
+// Разбор живёт в LastEdict.Data (ScenarioFile.FromSg) — здесь только параметры и запись. Перевод повторяем: те же исходники
 // дают тот же JSON, это проверяет ScenarioFileTests.Imported_IsUpToDate.
 
 string game = Arg("--game") ?? GamePaths.GameDir;
@@ -14,24 +14,24 @@ string game = Arg("--game") ?? GamePaths.GameDir;
 // Отладка саг: байты .sg глав из Scens\*.dbf — в каталог (для сверки внешними разборщиками).
 if (Arg("--dump-sagas") is { } dump)
 {
-    var tables = D2.Data.Sg.ScensTables.Load(Path.Combine(game, "Scens"));
+    var tables = LastEdict.Data.Sg.ScensTables.Load(Path.Combine(game, "Scens"));
     Directory.CreateDirectory(dump);
-    foreach (string scen in tables.Scenarios) File.WriteAllBytes(Path.Combine(dump, scen + ".sg"), D2.Data.Sg.SagaSg.Build(tables, scen));
-    Console.WriteLine($"саг {tables.Scenarios.Count}; поля без источника: {string.Join(", ", D2.Data.Sg.SagaSg.Defaulted.Order())}");
+    foreach (string scen in tables.Scenarios) File.WriteAllBytes(Path.Combine(dump, scen + ".sg"), LastEdict.Data.Sg.SagaSg.Build(tables, scen));
+    Console.WriteLine($"саг {tables.Scenarios.Count}; поля без источника: {string.Join(", ", LastEdict.Data.Sg.SagaSg.Defaulted.Order())}");
     return 0;
 }
-// Готовый перевод сценариев из локализованной копии игры -> data/scenarios/lang/<язык>/<сценарий>.json (D2.Data.Play.ScenarioTexts):
+// Готовый перевод сценариев из локализованной копии игры -> data/scenarios/lang/<язык>/<сценарий>.json (LastEdict.Data.Play.ScenarioTexts):
 //   dotnet run --project tools/ScenarioImport -- --texts ru [--from <корень слоя>] [--source <откуда текст>]
 // Без --from — слой Руссобит-М disciples-vanilla/l10n/russobit (Exports/*.sg квестов, Scens/Sinfo и Tscen глав саг). Пропуски слоя,
 // уже дописанные в файл перевода, сохраняются; сценарии, которых в слое нет, не трогаются.
 if (Arg("--texts") is { } language)
 {
     string scenarios = Path.Combine(RepoRoot(), "data", "scenarios");
-    string layer = Arg("--from") ?? D2.Data.Game.ScenarioTextsImport.DefaultRoot;
+    string layer = Arg("--from") ?? LastEdict.Data.Game.ScenarioTextsImport.DefaultRoot;
     string source = Arg("--source") ?? "Руссобит-М";
-    var catalog = D2.Data.Game.GameCatalog.Load(Path.Combine(RepoRoot(), "data", "game"));
+    var catalog = LastEdict.Data.Game.GameCatalog.Load(Path.Combine(RepoRoot(), "data", "game"));
     int written = 0, texts = 0;
-    foreach (var r in D2.Data.Game.ScenarioTextsImport.Read(scenarios, catalog, game, layer, language, source,
+    foreach (var r in LastEdict.Data.Game.ScenarioTextsImport.Read(scenarios, catalog, game, layer, language, source,
                                                              id => ScenarioTexts.Load([scenarios], language, id)))
     {
         if (r.File is null)
@@ -62,8 +62,8 @@ if (Arg("--sg-dir") is { } sgDir)
         Console.Error.WriteLine($"{mod}: нет mod.json — не мод");
         return 1;
     }
-    var races = D2.Data.Game.GameCatalog.Load(Path.Combine(RepoRoot(), "data", "game")).Races;
-    var cards = D2.Data.Game.GameImport.Scenarios(sgDir, races);
+    var races = LastEdict.Data.Game.GameCatalog.Load(Path.Combine(RepoRoot(), "data", "game")).Races;
+    var cards = LastEdict.Data.Game.GameImport.Scenarios(sgDir, races);
     string modScenarios = Path.Combine(mod, "data", "scenarios"), modGame = Path.Combine(mod, "data", "game");
     foreach (var card in cards)
     {
@@ -74,11 +74,11 @@ if (Arg("--sg-dir") is { } sgDir)
     }
     string catalogPath = Path.Combine(modGame, "scenarios.json");
     var kept = File.Exists(catalogPath)
-        ? D2.Data.Game.GameCatalog.FromJson<D2.Data.Game.ScenarioInfo>(File.ReadAllText(catalogPath))
+        ? LastEdict.Data.Game.GameCatalog.FromJson<LastEdict.Data.Game.ScenarioInfo>(File.ReadAllText(catalogPath))
             .Where(c => !cards.Any(n => n.Id.Equals(c.Id, StringComparison.OrdinalIgnoreCase))).ToList()
         : [];
     Directory.CreateDirectory(modGame);
-    File.WriteAllText(catalogPath, D2.Data.Game.GameCatalog.ToJson([.. kept, .. cards]));
+    File.WriteAllText(catalogPath, LastEdict.Data.Game.GameCatalog.ToJson([.. kept, .. cards]));
     Console.WriteLine($"сценариев {cards.Count} -> {modScenarios}, карточки -> {catalogPath}");
     return 0;
 }
@@ -99,15 +99,15 @@ foreach (string sg in Directory.GetFiles(exports, "*.sg").Order(StringComparer.O
     count++;
     events += scenario.Events.Events.Count;
 }
-// Главы саг — из таблиц Scens (D2.Data.Sg.SagaSg), id главы — SCEN_ID (S107SC0000).
+// Главы саг — из таблиц Scens (LastEdict.Data.Sg.SagaSg), id главы — SCEN_ID (S107SC0000).
 string scens = Path.Combine(game, "Scens");
 int chapters = 0;
 if (Directory.Exists(scens))
 {
-    var sagas = D2.Data.Sg.ScensTables.Load(scens);
+    var sagas = LastEdict.Data.Sg.ScensTables.Load(scens);
     foreach (string scen in sagas.Scenarios)
     {
-        var chapter = ScenarioFile.FromSg(scen, D2.Data.Sg.SgFile.Load(D2.Data.Sg.SagaSg.Build(sagas, scen)));
+        var chapter = ScenarioFile.FromSg(scen, LastEdict.Data.Sg.SgFile.Load(LastEdict.Data.Sg.SagaSg.Build(sagas, scen)));
         ScenarioFile.Write(ScenarioFile.PathOf(outDir, chapter.Id), chapter);
         chapters++;
         events += chapter.Events.Events.Count;

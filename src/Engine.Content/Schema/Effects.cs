@@ -1,7 +1,7 @@
 using System.ComponentModel;
-using D2.Rules.Battle.Effects;
+using LastEdict.Rules.Battle.Effects;
 
-namespace D2.Data.Content.Schema;
+namespace LastEdict.Data.Content.Schema;
 
 /// <summary>Эффект атаки — что делает удар (урон, лечение, паралич, призыв…): поведение из реестра эффектов (код, <see cref="AttackEffects"/>)
 /// и его данные — числа ИИ, строки и звуки показа. Двадцать три эффекта оригинала (<c>LattC.dbf</c>) выпускает импорт с числами движка;

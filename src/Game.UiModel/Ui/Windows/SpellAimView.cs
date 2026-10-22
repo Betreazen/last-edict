@@ -1,8 +1,8 @@
-using D2.Data.Play;
-using D2.Rules.Magic;
-using D2.Rules.Map;
+using LastEdict.Data.Play;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>Картинка прицела на клетке карты: кадр <c>IsoCmon</c> в точке клетки.</summary>
 public sealed record AimMark(int X, int Y, string Frame);

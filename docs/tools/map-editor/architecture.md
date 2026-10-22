@@ -16,7 +16,7 @@
 | вид карты в Godot | `MapView` (`Viewer == null` — уже «вид редактора»: рисуются `LOCATION*`, туман не режет) | `godot/scenes/map/MapView*.cs`; пример без партии — `godot/scenes/dev/GroundTest.cs` |
 | мини-карта, туман | `MiniMap`, `MapFog` | `src/Engine.Play/Map`, `godot/scenes/map/MiniMapView.cs` |
 | проходимость, вход, путь | `Movement.Passable/BlockedByObject/IsDeepWater`, `Sites.Entrance`, `PathFinder.Find` | `src/Engine.Rules/Map` |
-| инварианты карты | `MapInvariants.Check(MapState, GameBook?) → Violation(Code, Object, Detail)` (unit_missing, slots, hp, leader, owner, off_map, plan, inside, capacity, item, relation…) | `src/D2.Verification/Diagnostics` |
+| инварианты карты | `MapInvariants.Check(MapState, GameBook?) → Violation(Code, Object, Detail)` (unit_missing, slots, hp, leader, owner, off_map, plan, inside, capacity, item, relation…) | `src/LastEdict.Verification/Diagnostics` |
 | события | `ScenarioEventModel` (виды через `JsonDerivedType`), `EventConditions`, `ScenarioEvents` | `src/Engine.Rules/Map` |
 | карточки по правой кнопке | `MapCards` | `src/Game.UiModel/Map/MapCards.cs` |
 | бой двух отрядов («шансы») | `BattleSim` | `src/Engine.Rules/Battle` |
@@ -26,7 +26,7 @@
 
 ## 2. Что добавить
 
-### Ядро `src/D2.Authoring` (без Godot)
+### Ядро `src/LastEdict.Authoring` (без Godot)
 
 | Класс | Назначение |
 |---|---|

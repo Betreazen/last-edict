@@ -1,7 +1,7 @@
-using D2.Rules.Magic;
-using D2.Rules.Units;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Units;
 
-namespace D2.Rules.Battle;
+namespace LastEdict.Rules.Battle;
 
 /// <summary>Классы атак, значения — Globals/LattC.dbf (id не сплошные).</summary>
 public enum AttackClass
@@ -25,7 +25,7 @@ public sealed record AttackType(string Id, int Initiative, AttackClass Class, in
 
     /// <summary>Gattacks.SOURCE — источник атаки, LattS.dbf: 0 Weapon, 1 Mind, 2 Life, 3 Death,
     /// 4 Fire, 5 Water, 6 Earth, 7 Air. По нему проверяется иммунитет из Gimmu (Immunity.Check).
-    /// Заполняет D2.Data.RulesLoader.Load (задача 3); SourceUnset (−1) остаётся у атак, собранных
+    /// Заполняет LastEdict.Data.RulesLoader.Load (задача 3); SourceUnset (−1) остаётся у атак, собранных
     /// в тестах вручную, и это видно, а не выглядит как Weapon.
     /// В параметре стоит литерал: на собственную константу первичный конструктор ссылаться не может.</summary>
     public const int SourceUnset = -1;
@@ -176,7 +176,7 @@ public sealed record RulesConstants(int BatInit, int BatDamage, int MaxDamage = 
     /// <summary>BATBOOSTD1..4 и BATLOWERD1..2 из GVars.dbf — ранг 1, таблица самой игры (в ванили
     /// 25/50/75/100 и 50/33; BATLOWERI1 = 50). null означает «константы собраны в тесте вручную» и
     /// подставляет вани́льные числа, ровно как это уже делают MaxDamage и MaxArmor, которых в
-    /// таблицах нет вовсе. Заполняет D2.Data.RulesLoader.Load.</summary>
+    /// таблицах нет вовсе. Заполняет LastEdict.Data.RulesLoader.Load.</summary>
     private static readonly int[] VanillaBoostDamage = [25, 50, 75, 100];
     private static readonly int[] VanillaLowerDamage = [50, 33];
 
@@ -609,7 +609,7 @@ public sealed class BattleState
     /// превратить, когда кандидатов после фильтра по размеру больше одного (<see cref="LifeAttacks.Pick"/>). Ставит бой с карты (поток CRT
     /// партии, <c>GameSession.Crt</c>). null — бой без карты (журнал С2, тест): поток процесса неизвестен, неоднозначный выбор падает с
     /// текстом, а не угадывает — иначе сверка испортилась бы молча.</summary>
-    public D2.Rules.Rng.CrtRand? ProcessRand { get; set; }
+    public LastEdict.Rules.Rng.CrtRand? ProcessRand { get; set; }
 
     /// <summary>Применённые за бой предметы — носитель и номер в его <see cref="BattleUnit.BattleItems"/> на момент применения
     /// (<c>BattleMsgData.usedItemIds</c> <c>+0xf20</c>, пополняет <c>0x6230ab</c>). В отличие от

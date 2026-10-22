@@ -1,7 +1,7 @@
-using D2.Rules.Battle;
-using D2.Rules.Map;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>Смена хозяина деревни и отряда — то, что движок делает визиторами рядом со сменой (аудит 13.10, «Осталось» п. 6):
 /// прежние хозяева деревни (<c>CVisitorChangePreviousOwner</c>) и сброс приказов «охранять город» / «защищать отряд», направленных на

@@ -1,7 +1,7 @@
-using D2.Rules.Map;
-using D2.Data.Play.Commands;
+using LastEdict.Rules.Map;
+using LastEdict.Data.Play.Commands;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>Команда хода отряда человека по сегодняшней части пути после упреждающей проверки событиями (<c>docs/map-path.md</c> §7):
 /// <see cref="Today"/> — клетки, которые отряд пройдёт; <see cref="Fired"/> — события, найденные проверкой (их применит

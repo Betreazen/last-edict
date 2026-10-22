@@ -1,4 +1,4 @@
-namespace D2.Rules.Map;
+namespace LastEdict.Rules.Map;
 
 /// <summary>
 /// Действие вора — <c>Laction.dbf</c> (<c>LNobleActionCat</c>). Ранг 1: таблица плюс порядок

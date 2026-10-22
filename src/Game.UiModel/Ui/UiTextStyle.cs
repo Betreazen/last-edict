@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.Json.Serialization;
 
-namespace D2.Data.Ui;
+namespace LastEdict.Data.Ui;
 
 /// <summary>Выравнивание по горизонтали. В старой разметке — <c>\hL;</c>, <c>\hC;</c>, <c>\hR;</c>.</summary>
 [JsonConverter(typeof(JsonStringEnumConverter))]
@@ -13,7 +13,7 @@ public enum UiHAlign { Left, Center, Right }
 public enum UiVAlign { Top, Center, Bottom }
 
 /// <summary>Цвет текста как три байта. Своя запись, а не <c>System.Drawing.Color</c> и не godot-овский
-/// <c>Color</c>: <c>D2.Data</c> не знает ни о движке, ни о рисовании.</summary>
+/// <c>Color</c>: <c>LastEdict.Data</c> не знает ни о движке, ни о рисовании.</summary>
 public readonly record struct UiColor(byte R, byte G, byte B)
 {
     /// <summary>Обратно в запись старого движка: <c>000;000;000</c> — три числа по три цифры.</summary>

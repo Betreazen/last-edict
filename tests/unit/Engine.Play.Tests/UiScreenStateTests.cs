@@ -1,7 +1,7 @@
-using D2.Data.Ui;
+using LastEdict.Data.Ui;
 using Xunit;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Живые элементы экрана без движка: состояния кнопки, переключатели и группы, счётчики, списки,
 /// горячие клавиши. Экраны собраны здесь же — поведение проверяется на чистых числах; модель состояний взята из

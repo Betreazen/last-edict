@@ -1,9 +1,9 @@
 using System.Globalization;
-using D2.Data.Play;
-using D2.Rules.Battle;
-using D2.Rules.Map;
+using LastEdict.Data.Play;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Diagnostics;
+namespace LastEdict.Data.Diagnostics;
 
 /// <summary>
 /// Подписчик хода партии для зонда порта (<see cref="GameSession.Watch"/>): чей ход (<c>turn</c>, с днём и казной), шаг отряда

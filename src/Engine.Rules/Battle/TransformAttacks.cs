@@ -1,4 +1,4 @@
-namespace D2.Rules.Battle;
+namespace LastEdict.Rules.Battle;
 
 /// <summary>Третий круг классов атак (задача 7 Ф6): <c>GiveAttack</c> (19), <c>Doppelganger</c> (20),
 /// <c>TransformSelf</c> (21), <c>TransformOther</c> (22) — плюс откат превращений и призыва после

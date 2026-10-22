@@ -2,7 +2,7 @@ using System.Buffers.Binary;
 using System.Globalization;
 using System.Text;
 
-namespace D2.Data.Leaders;
+namespace LastEdict.Data.Leaders;
 
 /// <summary>
 /// Файл героя игры <c>.ldr</c> (<c>Exports\имя.ldr</c>) — только импорт в формат порта (<see cref="LeaderStore.Import"/>). Разбор —

@@ -1,4 +1,4 @@
-namespace D2.Data.Import;
+namespace LastEdict.Data.Import;
 
 /// <summary>Графика интерфейса: архивы <c>Interf/*.ff</c> → <c>assets/ui/&lt;Архив&gt;/frames|anims/…webp</c> и опись <c>data/ui/assets.json</c>
 /// (перенос <c>tools/ui-assets/build_ui_assets.py</c>; опись — те же байты). Интерфейс не обрезается: рантайм берёт его картинки целыми.

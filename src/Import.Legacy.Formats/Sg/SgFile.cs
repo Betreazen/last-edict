@@ -2,7 +2,7 @@ using System.Linq;
 using System.Text;
 using Kaitai;
 
-namespace D2.Data.Sg;
+namespace LastEdict.Data.Sg;
 
 /// <summary>
 /// Thin wrapper over the Kaitai-generated <see cref="Kaitai.Sg"/> parser for Disciples 2
@@ -47,7 +47,7 @@ public sealed class SgFile
     /// <para>Разобранное дерево (<see cref="Raw"/>) кеш держит слабой ссылкой: пока его кто-то держит или сборщик мусора не дошёл до его
     /// поколения, повторное открытие — тот же экземпляр (обёртка живёт, пока живо дерево: вызывающие часто отпускают её сразу, оставляя
     /// себе <see cref="Raw"/>); после — разбор заново (~5 мс на сохранение). Разбор занимает в памяти ~12× файла: на корпусе 20.10
-    /// (1265 сохранений) сильный кеш держал до конца прогона 4,6 ГБ в процессе D2.Data.Tests и 4,4 ГБ в D2.Rules.Tests; сильный кеш
+    /// (1265 сохранений) сильный кеш держал до конца прогона 4,6 ГБ в процессе LastEdict.Data.Tests и 4,4 ГБ в LastEdict.Rules.Tests; сильный кеш
     /// последних 384 файлов поверх слабого — дольше и тяжелее слабого (живые деревья удорожают сборку старшего поколения) —
     /// <c>docs/perf-log.md</c>, «Скорость проверок, 20.10».</para>
     public static SgFile Open(string path)

@@ -1,4 +1,4 @@
-namespace D2.Rules.Battle.Effects;
+namespace LastEdict.Rules.Battle.Effects;
 
 // Двадцать три класса атак оригинала (LattC.dbf) — встроенные эффекты. Признаки — ровно прежние списки по классам (Formulas.ClassHasPower,
 // Immunity.Checked, Attacks.TargetsAllies, Attacks.RejectsRetreating, Attacks.HasDamage, AiTargets.IsDamaging/IsDirect), числа ИИ —

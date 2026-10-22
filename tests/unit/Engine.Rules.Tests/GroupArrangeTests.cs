@@ -1,6 +1,6 @@
-using D2.Rules.Map;
+using LastEdict.Rules.Map;
 
-namespace D2.Rules.Tests;
+namespace LastEdict.Rules.Tests;
 
 /// <summary>Перестановка группы ИИ (<see cref="GroupArrange"/>, <c>0x5d57de</c>/<c>0x5d5d73</c>): примеры — из сохранений и
 /// журналов корпуса, сверка целиком — <c>AiStackItemsHarnessTests</c>.</summary>

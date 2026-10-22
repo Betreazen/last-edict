@@ -1,4 +1,4 @@
-namespace D2.Data.Gfx;
+namespace LastEdict.Data.Gfx;
 
 /// <summary>Одна картинка литья: анимация из <c>IsoSpell</c>, слой карты и ключевой кадр.</summary>
 /// <param name="Front">Поверх объектов карты (слои <c>FRONT</c>, <c>OVER</c>, <c>TOP</c>); иначе под ними (<c>GROUND</c>, <c>UNDER</c>).</param>

@@ -1,12 +1,12 @@
-using D2.Data.Battle;
-using D2.Data.Content;
-using D2.Data.Map;
-using D2.Data.Play;
-using D2.Rules.Battle;
-using D2.Rules.Map;
+using LastEdict.Data.Battle;
+using LastEdict.Data.Content;
+using LastEdict.Data.Map;
+using LastEdict.Data.Play;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Map;
 using Xunit.Abstractions;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Наблюдатель хода (<see cref="ITurnObserver"/>, <c>docs/ai-screen.md</c>) — точка расширения для показа хода ИИ:
 /// с ним день идёт так же, как без него; ходы отрядов приходят до перестановки и непрерывны; бой, сыгранный наблюдателем

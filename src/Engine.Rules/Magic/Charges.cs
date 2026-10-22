@@ -1,6 +1,6 @@
-using D2.Rules.Map;
+using LastEdict.Rules.Map;
 
-namespace D2.Rules.Magic;
+namespace LastEdict.Rules.Magic;
 
 /// <summary>Почему посох не применяется (задача 10 Ф7) — коды <c>0x5dbbe8</c> (ранг 1 по
 /// дизассемблеру, отчёт B синтетических карт, ai-q34). Живых отказов зонд не видит: интерфейс зовёт

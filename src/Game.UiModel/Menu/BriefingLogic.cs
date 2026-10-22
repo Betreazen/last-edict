@@ -1,7 +1,7 @@
-using D2.Data.Ui;
-using D2.Data.Ui.Windows;
+using LastEdict.Data.Ui;
+using LastEdict.Data.Ui.Windows;
 
-namespace D2.Data.Menu;
+namespace LastEdict.Data.Menu;
 
 /// <summary>Брифинг сценария из меню (<c>DLG_SCENARIO_BRIEFING</c>, <c>CBriefingInterf</c>): та же логика, что у «Задания» из партии
 /// (<see cref="GameBriefingLogic"/>: общий <c>CBriefingBase</c> — текст <c>0x480659</c>, прокрутка по точке, мышь и клавиши), цель — из

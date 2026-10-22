@@ -1,6 +1,6 @@
-using D2.Data.Gfx;
+using LastEdict.Data.Gfx;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Сверка карты со снимком (<see cref="MapComposite"/>): смешение кадра по формулам DirectDraw и поиск сдвига снимка.</summary>
 public class MapCompositeTests

@@ -1,4 +1,4 @@
-namespace D2.Data.Map;
+namespace LastEdict.Data.Map;
 
 /// <summary>
 /// Плавная прокрутка вида к клетке события (<c>CMidAnimSmoothScroll</c>, разбор 16.10). Задачу ставит перед анимацией команды

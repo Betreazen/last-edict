@@ -1,9 +1,9 @@
 using System.Linq;
-using D2.Data.Map;
-using D2.Data.Ui;
+using LastEdict.Data.Map;
+using LastEdict.Data.Ui;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Палитра карты (<see cref="MapPalette"/>): полоса ресурсов по <c>TOG_RESPOPUP</c> (в начале партии — видна), смена мини-карты и
 /// владений <c>DLG_ISO_LAND</c> по <c>BTN_RES_PAL</c>, знамёна отрядов по <c>TOG_BANNERS</c> (сохраняется в настройках порта) или пока зажат Shift. Кнопки панели,

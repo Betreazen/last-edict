@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using D2.Data.Ui.Windows;
+using LastEdict.Data.Ui.Windows;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Окна полученных предметов и заклинаний (<see cref="GiveItemLogic"/>, <c>DLG_ITEM</c>; сессия Б): сборщик
 /// <see cref="GivenWatch"/> подписан на партию, окна открываются поверх карты по одному, когда других окон нет, — раньше попапов событий
@@ -14,7 +14,7 @@ namespace D2.Godot;
 public partial class MapScreen
 {
     private GivenWatch? _givenWatch;
-    private D2.Data.Play.GameSession? _givenSession;
+    private LastEdict.Data.Play.GameSession? _givenSession;
     private readonly Queue<GiveItemLogic> _givenQueue = new();
 
     /// <summary>Сборщик подписан на нынешнюю партию (новая партия после загрузки — новый сборщик).</summary>
@@ -51,7 +51,7 @@ public partial class MapScreen
         GD.Print($"giveitem window human={viewer} {logic.Summary}");
         OpenWindow(logic.Screen, logic);
         // TAKEBAG — за первым окном сообщения, и у пустого мешка (сессия Г, WindowSounds.OfGiven).
-        if (D2.Data.Sound.WindowSounds.OfGiven(logic.First) is { } sound) GameAudio.Of(this).PlayFx(D2.Data.Sound.WindowSounds.Archive, sound);
+        if (LastEdict.Data.Sound.WindowSounds.OfGiven(logic.First) is { } sound) GameAudio.Of(this).PlayFx(LastEdict.Data.Sound.WindowSounds.Archive, sound);
     }
 
     /// <summary>Шаг проверки <c>given</c>: сборщику — сообщение зрителю, как от ядра, и показ.</summary>
@@ -60,7 +60,7 @@ public partial class MapScreen
         WatchGiven();
         if (_map.Viewer is not { } viewer || _givenWatch is null) return -1;
         var map = _map.Map;
-        var kind = what == "spell" ? D2.Data.Play.TurnSightKind.SpellsGiven : D2.Data.Play.TurnSightKind.ItemsGiven;
+        var kind = what == "spell" ? LastEdict.Data.Play.TurnSightKind.SpellsGiven : LastEdict.Data.Play.TurnSightKind.ItemsGiven;
         IReadOnlyList<string> ids = what switch
         {
             "empty" => [],
@@ -68,7 +68,7 @@ public partial class MapScreen
             _ => map.Stacks.Values.Where(s => s.Owner.Equals(viewer, StringComparison.OrdinalIgnoreCase) && s.Items.Count > 0)
                                   .Select(s => s.Items).FirstOrDefault() ?? [],
         };
-        _givenWatch.Happened(new D2.Data.Play.TurnSight(kind, viewer, 0, 0, "CHECK") { Ids = ids, Library = what == "spell" });
+        _givenWatch.Happened(new LastEdict.Data.Play.TurnSight(kind, viewer, 0, 0, "CHECK") { Ids = ids, Library = what == "spell" });
         PumpOverlays();
         return ids.Count;
     }

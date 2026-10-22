@@ -2,13 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using D2.Data.Gfx;
-using D2.Data.Menu;
-using D2.Data.Ui;
-using D2.Data.Ui.Windows;
+using LastEdict.Data.Gfx;
+using LastEdict.Data.Menu;
+using LastEdict.Data.Ui;
+using LastEdict.Data.Ui.Windows;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Заклинания человека на карте: книга (<c>DLG_STRATEGIC.BTN_CAST_SPELL</c>), исследование в столице и прицел
 /// (<c>CTaskCastSpell</c>): панель команд меняется на <c>DLG_STRAT_SPELL</c>, карта перестаёт принимать щелчки как ход, под
@@ -158,9 +158,9 @@ public partial class MapScreen
     {
         if (_aimSpell is not { } spell || _map.Viewer is not { } viewer) return;
         string? refused = _aimItem is { } used
-            ? _map.Session.ItemCastRefusal(used.Stack, used.Item, cell.X, cell.Y) ?? _map.Session.Run<string?>(new D2.Data.Play.Commands.CastItemCommand(used.Stack, used.Item, cell.X, cell.Y))
+            ? _map.Session.ItemCastRefusal(used.Stack, used.Item, cell.X, cell.Y) ?? _map.Session.Run<string?>(new LastEdict.Data.Play.Commands.CastItemCommand(used.Stack, used.Item, cell.X, cell.Y))
             : _map.Session.SpellRefusal(viewer, spell, cell.X, cell.Y, useSpellBank: false)
-              ?? _map.Session.Run<string?>(new D2.Data.Play.Commands.CastSpellCommand(viewer, spell, cell.X, cell.Y, UseSpellBank: false));
+              ?? _map.Session.Run<string?>(new LastEdict.Data.Play.Commands.CastSpellCommand(viewer, spell, cell.X, cell.Y, UseSpellBank: false));
         GD.Print($"aim target {cell.X},{cell.Y} {(refused ?? "брошено").Replace(' ', '_')}");
         if (refused is null)
         {

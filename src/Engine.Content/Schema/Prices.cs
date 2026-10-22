@@ -1,6 +1,6 @@
-using D2.Rules.Map;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Content.Schema;
+namespace LastEdict.Data.Content.Schema;
 
 /// <summary>Цена в содержимом — словарь «валюта → количество» (<c>{"gold": 50, "life": 25}</c>), нулевые валюты не пишутся. Валюты —
 /// строковые id: шесть оригинала (<see cref="Currencies"/>) и любые валюты мода — новый ключ, а не новое поле; в правилах они уходят в

@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using D2.Data.Gfx;
-using D2.Data.Play;
-using D2.Data.Sound;
-using D2.Rules.Map;
+using LastEdict.Data.Gfx;
+using LastEdict.Data.Play;
+using LastEdict.Data.Sound;
+using LastEdict.Rules.Map;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>
 /// Звуки отрядов на карте (<c>docs/ai-screen.md</c> §12, ранг 1 — <c>CMidAnim2Unit</c> <c>0x4f6e78</c>, <c>CTaskSelectUnit</c>
@@ -124,7 +124,7 @@ public partial class MapView
     /// <summary>Лидер отряда — вор (категория юнита «знатный», <c>0x41b399</c>).</summary>
     private bool IsNoble(string stackId) =>
         Map.Stacks.TryGetValue(stackId, out var stack) && Map.Units.TryGetValue(stack.LeaderId, out var leader) && leader.Hp > 0
-        && Session.Book?.CategoryOf(leader.TypeId) == D2.Rules.Battle.UnitCategory.Noble;
+        && Session.Book?.CategoryOf(leader.TypeId) == LastEdict.Rules.Battle.UnitCategory.Noble;
 
     private static Vector2 CellCentre(int x, int y)
     {
@@ -135,7 +135,7 @@ public partial class MapView
     /// <summary>Сообщения боя, которые модель дописала концом боя (<see cref="GameSession.FinishBattle"/>: уход призванных, откат
     /// превращений, рост по опыту) начиная с <paramref name="heard"/>, — звуком по очереди (<see cref="BattleNoteSounds"/>; у движка —
     /// шаги 13–16 просмотра боя). Раса роста — владельца отряда юнита после боя.</summary>
-    public void PlayBattleNotes(D2.Rules.Battle.BattleState state, int heard)
+    public void PlayBattleNotes(LastEdict.Rules.Battle.BattleState state, int heard)
     {
         ArgumentNullException.ThrowIfNull(state);
         var audio = GameAudio.Of(this);

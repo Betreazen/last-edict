@@ -1,6 +1,6 @@
-using D2.Data.Map;
+using LastEdict.Data.Map;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Плавная прокрутка вида (<see cref="SmoothScrollPath"/>, <c>CMidAnimSmoothScroll</c>).</summary>
 public class SmoothScrollPathTests

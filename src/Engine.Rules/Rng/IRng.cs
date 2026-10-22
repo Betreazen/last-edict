@@ -1,4 +1,4 @@
-namespace D2.Rules.Rng;
+namespace LastEdict.Rules.Rng;
 
 /// <summary>Источник бросков. В бою — EngineRng; в тестах С2 подставляется записанная
 /// последовательность (ScriptedRng), и тогда бой обязан повторить игровой шаг в шаг (ТЗ §6 Ф4).</summary>

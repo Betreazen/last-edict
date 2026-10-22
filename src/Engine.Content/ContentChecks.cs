@@ -1,9 +1,9 @@
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Reflection;
-using D2.Data.Content.Schema;
+using LastEdict.Data.Content.Schema;
 
-namespace D2.Data.Content;
+namespace LastEdict.Data.Content;
 
 /// <summary>
 /// Целостность набора содержимого — то, чего не видит схема JSON одной сущности:
@@ -56,7 +56,7 @@ internal static class ContentChecks
         var g = set.Globals;
         Length(g, "battle.boostDamagePercent", g.Battle.BoostDamagePercent, 4, Where);
         Length(g, "battle.lowerDamagePercent", g.Battle.LowerDamagePercent, 2, Where);
-        Length(g, "thieves.morale", g.Thieves.Morale, D2.Rules.Map.Thieves.CapitalMoraleIndex, Where);
+        Length(g, "thieves.morale", g.Thieves.Morale, LastEdict.Rules.Map.Thieves.CapitalMoraleIndex, Where);
         Length(g, "land.cities", g.Land.Cities, 5, Where);
         Length(g, "difficulty.startBankPercent", g.Difficulty.StartBankPercent, 4, Where);
         Length(g, "difficulty.incomePercent", g.Difficulty.IncomePercent, 4, Where);

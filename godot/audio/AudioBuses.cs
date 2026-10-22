@@ -1,6 +1,6 @@
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>
 /// Шины звука порта (<c>AudioServer</c>, заводятся кодом при первом звуке — так одинаково в окне, без окна и в экспорте, файла раскладки

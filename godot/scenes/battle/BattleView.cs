@@ -2,14 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using D2.Data.Battle;
-using D2.Data.Diagnostics;
-using D2.Data.Gfx;
-using D2.Data.Ui;
-using D2.Rules.Battle;
+using LastEdict.Data.Battle;
+using LastEdict.Data.Diagnostics;
+using LastEdict.Data.Gfx;
+using LastEdict.Data.Ui;
+using LastEdict.Rules.Battle;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Поле боя: фон, юниты на своих местах и рамка ходящего. Всё по разбору движка
 /// (<c>docs/battle-render.md</c>): места — из разметки <c>DLG_BATTLE_A</c>, кадр кладётся по якорю
@@ -18,7 +18,7 @@ namespace D2.Godot;
 /// <para>Чего пока нет: эффекты <c>Battle.ff</c> (яд, мороз, воскрешение, призыв, превращение…) и предметов <c>BatItems.ff</c>.</para></summary>
 public partial class BattleView : Node2D
 {
-    private const double FrameMs = D2.Data.Map.AnimClock.SlowMs;   // CBatUnitAnim — медленная группа
+    private const double FrameMs = LastEdict.Data.Map.AnimClock.SlowMs;   // CBatUnitAnim — медленная группа
 
     private readonly Dictionary<(string, string), Texture2D[]> _textures = new();
     private readonly List<(Sprite2D Sprite, Texture2D[] Frames, int Frame)> _animated = new();

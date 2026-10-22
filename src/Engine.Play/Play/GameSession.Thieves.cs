@@ -1,8 +1,8 @@
-using D2.Rules.Magic;
-using D2.Rules.Map;
-using D2.Rules.Rng;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Rng;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>Итог действия вора: бросок, успех, списанные очки хода, гибель вора, величина (отравление — процент, кража
 /// золота — сумма) и что взято (экземпляр предмета, заклинание). <see cref="Refused"/> непусто — действия не было.</summary>
@@ -272,7 +272,7 @@ public sealed partial class GameSession
     /// <summary>Осмотр руины (<c>CEffectVisitRuin</c>, применение <c>0x43f5fa</c> → <c>CVisitorRuinAddVisiter</c> <c>0x613164</c>; REA 13.10): игрок вора
     /// — в список посетивших руину, без повторов, как у площадок (<c>0x5d7664</c>). Этот список и решает доступность осмотра (<c>0x5fda67</c>:
     /// игрок в наборе <c>+0x84</c>, <c>0x5d35a6</c>) и карточку руины по правой кнопке: охрана вместо «еще не исследованы» (<c>0x5796c0</c>,
-    /// <see cref="D2.Data.Map.MapCards"/>).</summary>
+    /// <see cref="LastEdict.Data.Map.MapCards"/>).</summary>
     private void SpyRuin(string playerId, string ruinId)
     {
         var map = WithRuinVisitor(Map, ruinId, playerId);
@@ -350,8 +350,8 @@ public sealed partial class GameSession
         var target = Map.Stacks[targetId];
         string item = pick ?? target.Items.FirstOrDefault() ?? "";
         if (!target.Items.Contains(item, StringComparer.OrdinalIgnoreCase)) return "";
-        for (int slot = 0; slot < D2.Rules.Magic.Equipment.SlotCount; slot++)
-            if (Same(D2.Rules.Magic.Equipment.Slots(Map.Stacks[targetId])[slot], item)) UnequipItem(targetId, slot);
+        for (int slot = 0; slot < LastEdict.Rules.Magic.Equipment.SlotCount; slot++)
+            if (Same(LastEdict.Rules.Magic.Equipment.Slots(Map.Stacks[targetId])[slot], item)) UnequipItem(targetId, slot);
         var map = Map;
         var stacks = map.Stacks.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase);
         stacks[targetId] = stacks[targetId] with { Items = [.. stacks[targetId].Items.Where(i => !Same(i, item))] };
@@ -561,7 +561,7 @@ public sealed partial class GameSession
     }
 
     /// <summary>MSVCRT <c>rand() % n</c> поверх потока CRT партии (<c>Next(0)</c> = 0 без броска).</summary>
-    private sealed class CrtRng(D2.Rules.Rng.CrtRand crt) : IRng
+    private sealed class CrtRng(LastEdict.Rules.Rng.CrtRand crt) : IRng
     {
         public int Next(int maxValue) => maxValue == 0 ? 0 : crt.Next() % maxValue;
     }

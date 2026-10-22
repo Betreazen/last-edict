@@ -1,6 +1,6 @@
-using D2.Rules.Map;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Map;
+namespace LastEdict.Data.Map;
 
 /// <summary>Крепость: столица (<c>CCapital</c>, след 5×5) или город (<c>CMidVillage</c>, 4×4). <see cref="Level"/> —
 /// уровень города (у столицы 0), <see cref="Riot"/> — идёт бунт, <see cref="Garrison"/> — id отряда в крепости (для

@@ -1,10 +1,10 @@
 using System;
 using System.Linq;
-using D2.Data.Map;
-using D2.Data.Play;
+using LastEdict.Data.Map;
+using LastEdict.Data.Play;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Ход ИИ на экране карты (<c>docs/ai-screen.md</c>): на время хода панель команд <c>DLG_STRATEGIC</c> подменяется
 /// окном ожидания <c>DLG_STRAT_WAIT</c> (<see cref="AiWaitLogic"/>), ввод карты и панелей выключен; бой ИИ с человеком —
@@ -41,7 +41,7 @@ public partial class MapScreen
 
     /// <summary>Конец боя модели записан: уход призванных, откат превращений и рост — на ещё открытом экране (решение пользователя 28.09),
     /// потом экран снимается и ход ИИ продолжается.</summary>
-    private void EndAiBattle(D2.Rules.Battle.BattleState state, int heard, Action resume)
+    private void EndAiBattle(LastEdict.Rules.Battle.BattleState state, int heard, Action resume)
     {
         if (_aiBattleEnding is not { } ending)
         {
@@ -262,7 +262,7 @@ public partial class MapScreen
         }
     }
 
-    private void StartAiBattleScreen(MapView.AiBattle request, GameSession session, D2.Rules.Battle.BattleState state)
+    private void StartAiBattleScreen(MapView.AiBattle request, GameSession session, LastEdict.Rules.Battle.BattleState state)
     {
         _aiBattle = request;
         ShowMap(false);
@@ -295,7 +295,7 @@ public partial class MapScreen
 
     /// <summary>Бой без экрана (экран занят) — автобой ядра: журнала нет (null), и <see cref="GameSession"/> играет бой сам
     /// (<see cref="ITurnObserver.Battle"/>). Пустой журнал здесь значил бы «бой сыгран без ходов».</summary>
-    private static System.Collections.Generic.IReadOnlyList<D2.Rules.Battle.TurnRecord>? AutoLog(MapView.AiBattle request) =>
+    private static System.Collections.Generic.IReadOnlyList<LastEdict.Rules.Battle.TurnRecord>? AutoLog(MapView.AiBattle request) =>
         request.Resolve?.Invoke();
 
     private void CloseAiBattle()

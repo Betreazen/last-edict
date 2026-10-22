@@ -6,7 +6,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
-namespace D2.Data.Import;
+namespace LastEdict.Data.Import;
 
 /// <summary>Ролики игры (Bink <c>.BIK</c>) → Ogg Theora через внешний ffmpeg (перенос <c>tools/video-import/build_videos.py</c>; опись — те же
 /// байты): 52 записи <c>Interf/MenuAnim.ff</c> → <c>assets/video/MenuAnim/&lt;ИМЯ&gt;.ogv</c>, <c>Briefing/*.bik</c> → <c>Briefing/&lt;ИМЯ&gt;.ogv</c>,

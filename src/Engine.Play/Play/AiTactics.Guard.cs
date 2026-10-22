@@ -1,7 +1,7 @@
-using D2.Rules.Battle;
-using D2.Rules.Map;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>
 /// Охрана ИИ из карты (<c>Guard</c>, <c>docs/ai-tactic-candidates.md</c> §9): страж бросается на чужой отряд рядом.

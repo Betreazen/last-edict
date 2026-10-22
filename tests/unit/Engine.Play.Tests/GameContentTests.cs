@@ -1,9 +1,9 @@
-using D2.Data.Content;
-using D2.Data.Ui;
+using LastEdict.Data.Content;
+using LastEdict.Data.Ui;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Слой модов от начала до конца: настоящие данные порта (<c>data/ui</c>) плюс настоящий пример мода
 /// из <c>mods/_examples</c> — те же файлы, что читает игра с <c>--mods mods/_examples</c>, а не выдуманные в тесте. Проверяется и то, ради чего слой

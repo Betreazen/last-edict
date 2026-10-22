@@ -1,4 +1,4 @@
-namespace D2.Tests;
+namespace LastEdict.Tests;
 
 /// <summary>Корень репозитория для тестов — ближайший вверх от сборки каталог с <c>global.json</c> (не счётом «..» от <c>bin</c>: глубина
 /// каталога тестов в эталоне и в Last Edict разная).</summary>

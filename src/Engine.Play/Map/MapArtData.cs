@@ -1,9 +1,9 @@
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using D2.Data.Dbf;
+using LastEdict.Data.Dbf;
 
-namespace D2.Data.Map;
+namespace LastEdict.Data.Map;
 
 /// <summary>Слой изо-движка (<c>ImgData/IIsoLay.dbf</c>): имя и номер. Номер — второй ключ порядка отрисовки карты
 /// (<c>docs/map-render.md</c> §4).</summary>

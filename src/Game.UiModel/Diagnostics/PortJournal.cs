@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 
-namespace D2.Data.Diagnostics;
+namespace LastEdict.Data.Diagnostics;
 
 /// <summary>
 /// Журнал зонда порта: строки JSON (<c>.jsonl</c>) — что видел и делал игрок и что сломалось. Потокобезопасен: ошибки и сообщения

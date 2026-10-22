@@ -1,6 +1,6 @@
-using D2.Data;
-using D2.Data.Map;
-using D2.Rules.Map;
+using LastEdict.Data;
+using LastEdict.Data.Map;
+using LastEdict.Rules.Map;
 
 /// <summary>Блокирующий ландмарк — <c>GLmark.MOUNTAIN</c> (ai-q25, ранг 1, 4/0). Проверка на базе карты q25:
 /// <c>Exports/Arrival of the Pilgrims.sg</c>, где Плато <c>S143MM0009</c> — отказ, Лавовая яма

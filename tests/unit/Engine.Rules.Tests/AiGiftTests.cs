@@ -1,7 +1,7 @@
-using D2.Rules.Map;
-using D2.Rules.Rng;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Rng;
 
-namespace D2.Rules.Tests;
+namespace LastEdict.Rules.Tests;
 
 /// <summary>Выбор «подарка» ИИ (<see cref="AiGift"/>, <c>0x448c51</c>/<c>0x448e84</c>/<c>0x448fc6</c>) на заданных бросках.</summary>
 public class AiGiftTests

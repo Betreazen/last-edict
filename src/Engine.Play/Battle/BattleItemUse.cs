@@ -1,7 +1,7 @@
-using D2.Rules.Battle;
-using D2.Rules.Magic;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Magic;
 
-namespace D2.Data.Battle;
+namespace LastEdict.Data.Battle;
 
 /// <summary>
 /// Применение боевого предмета или зелья в бою (действие 6) — для показа: шаг 12 просмотра движка (<c>showAttackEffect</c> → <c>0x6365f2</c>).

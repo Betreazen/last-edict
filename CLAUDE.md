@@ -36,7 +36,7 @@
 - **Снимки** (`tests/Shared/PortSnapshot.cs`): `test-pack-*` — свои карты, 20 дней ИИ и бои; `imported-*` — четыре сценария импорта,
   15 дней и бои (те же строки, что у эталона на `vanilla-reference`). После осознанной правки правил: `D2_SNAPSHOTS_ACCEPT=1 dotnet test
   --filter Category=Snapshot`, посмотреть `git diff tests/snapshots`.
-- `dotnet build godot/D2.Godot.csproj` перед запуском сцен; `python tools/ui-render-check.py` — экраны без окна, числами (нужен импорт;
+- `dotnet build godot/LastEdict.Godot.csproj` перед запуском сцен; `python tools/ui-render-check.py` — экраны без окна, числами (нужен импорт;
   шаги на сохранениях корпуса эталона здесь пропускаются — свой набор шагов на test-pack и импорте — задача Э5).
 - Всё, что меняет партию, — командой (`docs/game-commands.md`): окна и сцены зовут `Session.Run<T>(команда)`.
 - **Сборки:** `Engine.Rules` (правила) ← `Import.Legacy.Formats` (`.sg`/Kaitai, `.dbf`) ← `Engine.Content` (схема содержимого, слои модов)

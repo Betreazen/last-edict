@@ -1,8 +1,8 @@
-using D2.Data.Map;
-using D2.Data.Sound;
-using D2.Rules.Map;
+using LastEdict.Data.Map;
+using LastEdict.Data.Sound;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Фон мест (<see cref="AudioRegions"/>): какие объекты звучат и как — ближайшие N не дальше 768 точек, громкость и панорама
 /// по формулам движка.</summary>

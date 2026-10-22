@@ -1,8 +1,8 @@
-using D2.Data.Ui;
+using LastEdict.Data.Ui;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Экраны порта: импорт старой разметки (<c>Interf/Interf.dlg</c>) и собственный формат экранов.
 /// Числа сверены пересчётом самого файла (GOG 3.01).</summary>

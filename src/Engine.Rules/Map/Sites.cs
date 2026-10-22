@@ -1,4 +1,4 @@
-namespace D2.Rules.Map;
+namespace LastEdict.Rules.Map;
 
 /// <summary>
 /// Вид объекта карты — по классу записи <c>.sg</c>, а не по двум буквам id: класс <c>SI</c>
@@ -31,7 +31,7 @@ public enum SiteKind
 /// Объект карты в том объёме, в каком его нужно знать посещению. Это НЕ замена
 /// <see cref="MapObject"/> (там только координата и тип жилы): руине нужны добыча, предмет и
 /// отметка о разграблении, мешку — предметы, городу — владелец и гарнизон. Всё — прямая
-/// проекция полей <c>.sg</c>, ранг 1; собирает <c>D2.Data.Map.SiteLoader</c>.
+/// проекция полей <c>.sg</c>, ранг 1; собирает <c>LastEdict.Data.Map.SiteLoader</c>.
 /// </summary>
 public sealed record MapSite
 {

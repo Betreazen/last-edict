@@ -1,6 +1,6 @@
-using D2.Rules.Map;
+using LastEdict.Rules.Map;
 
-namespace D2.Rules.Magic;
+namespace LastEdict.Rules.Magic;
 
 /// <summary>Категория предмета — <c>GItem.ITEM_CAT</c>.
 ///
@@ -66,7 +66,7 @@ public enum ItemCategory
 /// <summary>Предмет — строка <c>GItem.DBF</c> глазами правил.
 ///
 /// <para><b>Предмет кладёт эффект той же цепочкой, что заклинание и вард</b> — модификатором поверх
-/// базового юнита (<c>D2.Rules.Units.EffectiveStats</c>, задача 2). Своего механизма у предмета
+/// базового юнита (<c>LastEdict.Rules.Units.EffectiveStats</c>, задача 2). Своего механизма у предмета
 /// нет: <see cref="EquipModifierId"/> и <see cref="PotionModifierId"/> ведут в тот же
 /// <c>Gmodif</c>/<c>GmodifL</c>, что <c>Gspells.MODIF_ID</c> и <c>Gattacks.WARD1..4</c>.</para>
 ///

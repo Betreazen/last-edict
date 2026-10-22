@@ -1,4 +1,4 @@
-namespace D2.Rules.Map;
+namespace LastEdict.Rules.Map;
 
 /// <summary>Коды отказа <c>checkCantReviveUnit</c> (Gog <c>0x5DE06E</c>). Ранг 1 (cities §3.1).</summary>
 public enum ReviveCheck

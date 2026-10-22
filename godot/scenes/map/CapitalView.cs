@@ -2,11 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using D2.Data.Gfx;
-using D2.Data.Ui;
+using LastEdict.Data.Gfx;
+using LastEdict.Data.Ui;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>
 /// Картинка столицы на месте карты (640×600, <c>CCityDisplay</c>/<c>CCity2DImage</c>): слои <see cref="CapitalArt"/> снизу вверх — кадры и

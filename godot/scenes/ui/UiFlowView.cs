@@ -2,13 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using D2.Data.Menu;
-using D2.Data.Play;
-using D2.Data.Ui;
-using D2.Data.Ui.Windows;
+using LastEdict.Data.Menu;
+using LastEdict.Data.Play;
+using LastEdict.Data.Ui;
+using LastEdict.Data.Ui.Windows;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Игра по графу экранов: стек открытых экранов ведёт <see cref="UiNavigator"/> (обычный C#), а здесь
 /// каждому экрану стека соответствует свой <see cref="UiScreenView"/>. Ввод получает только верхний экран; экраны
@@ -71,7 +71,7 @@ public partial class UiFlowView : Node
         args.Contains("--check") || args.Contains("--input") ? null : ProjectSettings.GlobalizePath("user://settings.json");
 
     /// <summary>Изменение в окне настроек меню: громкости — в звук сразу, всё — в файл.</summary>
-    private Action<D2.Data.Map.MapSettings> SettingsChanged(string[] args) => settings =>
+    private Action<LastEdict.Data.Map.MapSettings> SettingsChanged(string[] args) => settings =>
     {
         GameAudio.Of(this).Apply(settings, preview: true);   // шаг ползунка — проба звука или голоса, как у окна движка
         if (SettingsPath(args) is not { } path) return;
@@ -79,7 +79,7 @@ public partial class UiFlowView : Node
         {
             // В файл — только поля окна: знамёна (переключатель палитры карты), режим окна (Alt+Enter) и прочее меняют другие хозяева
             // файла, и в нём — их последние значения, а не прочитанные при старте меню.
-            D2.Data.Map.MapSettings.Update(path, onDisk => D2.Data.Map.MapOptionsLogic.Adopt(settings, onDisk));
+            LastEdict.Data.Map.MapSettings.Update(path, onDisk => LastEdict.Data.Map.MapOptionsLogic.Adopt(settings, onDisk));
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
@@ -105,7 +105,7 @@ public partial class UiFlowView : Node
             return ScreenScaling.Sharp;
         }
         if (args.Contains("--check") || args.Contains("--input")) return ScreenScaling.Nearest;
-        return SettingsPath(args) is { } path ? D2.Data.Map.MapSettings.Load(path).ScreenScaling : ScreenScaling.Sharp;
+        return SettingsPath(args) is { } path ? LastEdict.Data.Map.MapSettings.Load(path).ScreenScaling : ScreenScaling.Sharp;
     }
 
     public override void _Ready()
@@ -126,13 +126,13 @@ public partial class UiFlowView : Node
                                     SystemName()) { SavesDir = SavesDir(args), Screens = content.Screens, LeadersDir = LeadersDir(args),
                                         Book = GameData.Book, ItemTexts = StackTexts.Load(GameData.Rules),
                                         Rules = RulesTexts.Load(GameData.Rules), SettingsChanged = SettingsChanged(args) };
-            if (SettingsPath(args) is { } settings) _menu.Settings = D2.Data.Map.MapSettings.Load(settings);
+            if (SettingsPath(args) is { } settings) _menu.Settings = LastEdict.Data.Map.MapSettings.Load(settings);
             // Герои игры (Exports\*.ldr) — в каталог героев порта один раз; дальше меню читает только его (docs/day-cycle.md §12).
-            int imported = D2.Data.Leaders.LeaderStore.Import(Arg(args, "--ldr") ?? D2.Data.GamePaths.Exports, _menu.LeadersDir);
+            int imported = LastEdict.Data.Leaders.LeaderStore.Import(Arg(args, "--ldr") ?? LastEdict.Data.GamePaths.Exports, _menu.LeadersDir);
             if (imported > 0) GD.Print($"leaders imported={imported}");
             // Свои кампании игры (Campaign\*.csg) — в каталог кампаний порта один раз, в каталог меню — вместе с сагами (§15).
             string campaigns = CampaignsDir(args);
-            int camps = CampaignStore.Import(Arg(args, "--csg") ?? Path.Combine(D2.Data.GamePaths.GameDir, "Campaign"), campaigns,
+            int camps = CampaignStore.Import(Arg(args, "--csg") ?? Path.Combine(LastEdict.Data.GamePaths.GameDir, "Campaign"), campaigns,
                                              content.Catalog.Races);
             if (camps > 0) GD.Print($"campaigns imported={camps}");
             _menu = _menu with { Catalog = _menu.Catalog with { Campaigns = [.. _menu.Catalog.Campaigns, .. CampaignStore.List(campaigns)] } };
@@ -413,7 +413,7 @@ public partial class UiFlowView : Node
         _game = null;
         // Настройки, изменённые в партии (окно DLG_OPTIONS карты пишет файл само), — в меню: иначе окно настроек меню открылось бы с
         // прочитанными при запуске и при первом же изменении записало бы их поверх (пометка 5 прогона 14.10).
-        if (_menu is not null && SettingsPath(OS.GetCmdlineUserArgs()) is { } path) _menu.Settings = D2.Data.Map.MapSettings.Load(path);
+        if (_menu is not null && SettingsPath(OS.GetCmdlineUserArgs()) is { } path) _menu.Settings = LastEdict.Data.Map.MapSettings.Load(path);
         game.LoadRequested -= LoadFromGame;
         game.QuitRequested -= QuitGame;
         game.NextChapterRequested -= NextChapter;
@@ -518,7 +518,7 @@ public partial class UiFlowView : Node
                 case UiTell tell: PushWindow(MessageBoxLogic.Screen, MessageBoxLogic.For(tell)); break;
                 case UiOpen open: PushWindow(open.Screen, open.Logic); break;
                 // Звук, который решает логика (смена лица лорда — CHNGFACE, только принятое нажатие; сессия Г).
-                case UiSound sound: GameAudio.Of(this).PlayFx(D2.Data.Sound.WindowSounds.Archive, sound.Name); break;
+                case UiSound sound: GameAudio.Of(this).PlayFx(LastEdict.Data.Sound.WindowSounds.Archive, sound.Name); break;
                 // Экран уходит по переходу без элемента (ролики вступления → главное меню через TRANS_INTRO2MAIN), музыка меню — с ним.
                 case UiLeave when _views.Count > 0 && ReferenceEquals(_views[^1], view):
                     if (_nav.Activate(null) is { } leave) Follow(leave);

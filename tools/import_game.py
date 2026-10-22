@@ -53,11 +53,11 @@ def main() -> int:
     ap.add_argument("--no-l10n", action="store_true", help="без слоя русификации (только английские строки)")
     ap.add_argument("--out", type=Path, default=REPO, help="корень выхода: data/ и assets/ (по умолчанию — репозиторий)")
     ap.add_argument("--steps", default="", help="шаги через запятую (пусто — все)")
-    ap.add_argument("--no-build", action="store_true", help="не собирать godot/D2.Godot.csproj перед импортом")
+    ap.add_argument("--no-build", action="store_true", help="не собирать godot/LastEdict.Godot.csproj перед импортом")
     args = ap.parse_args()
 
     if not args.no_build:
-        subprocess.run(["dotnet", "build", str(REPO / "godot" / "D2.Godot.csproj"), "-v", "q", "-nologo"], check=True)
+        subprocess.run(["dotnet", "build", str(REPO / "godot" / "LastEdict.Godot.csproj"), "-v", "q", "-nologo"], check=True)
     cmd = [godot(), "--headless", "--path", str(REPO / "godot"), "--", "--import", "--game-dir", str(args.game.resolve()),
            "--out", str(args.out.resolve())]
     if args.l10n and not args.no_l10n:

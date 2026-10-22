@@ -1,6 +1,6 @@
-using D2.Data.Menu;
+using LastEdict.Data.Menu;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>
 /// Окно имени нового героя (<c>DLG_GETINFO_BOX</c>) после выбора в окне найма (ответ пользователя 25.09, в графе —
@@ -29,7 +29,7 @@ public sealed class LeaderNameLogic(WindowContext context, string leaderType, st
         ArgumentNullException.ThrowIfNull(ui);
         ui.SetText("TXT_EXPLANATION", context.Text("X005TA0086"));
         // Портрет в малой рамке карточки (0x4aff40: 0x5b1e6a — картинка панелей, FACES/FACE по базе, — затем 0x5b680b BORDERUNITSMALL).
-        ui.SetImage("IMG_FACE", UiFrameRef.Layered(D2.Data.Map.MapCards.SmallBorder, context.Faces.Panel(leaderType)), UiImageAlign.Center);
+        ui.SetImage("IMG_FACE", UiFrameRef.Layered(LastEdict.Data.Map.MapCards.SmallBorder, context.Faces.Panel(leaderType)), UiImageAlign.Center);
         ui.SetText(Edit, defaultName);
         ui.SetFocus(Edit);
     }

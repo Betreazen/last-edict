@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace D2.Data.Ui;
+namespace LastEdict.Data.Ui;
 
 /// <summary>Начальные значения экранов (<c>data/ui/defaults.json</c>): какой участник группы переключателей
 /// отмечен, когда экран открывается. Разметка старой игры этого не хранит — значение ставил код экрана, — поэтому

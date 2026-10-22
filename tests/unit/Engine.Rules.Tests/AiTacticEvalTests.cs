@@ -1,9 +1,9 @@
-﻿using D2.Rules.Battle;
-using D2.Rules.Magic;
-using D2.Rules.Map;
-using T = D2.Rules.Map.AiActionType;
+﻿using LastEdict.Rules.Battle;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Map;
+using T = LastEdict.Rules.Map.AiActionType;
 
-namespace D2.Rules.Tests;
+namespace LastEdict.Rules.Tests;
 
 /// <summary>Построители списков действий, оценщики и приказы тактики ИИ на карте (<see cref="AiTacticLists"/>,
 /// <see cref="AiTacticEval"/>, <see cref="AiTacticOrders"/>) на синтетике — формулы из листингов GOG 3.01.</summary>

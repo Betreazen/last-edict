@@ -1,5 +1,5 @@
-using D2.Rules.Units;
-namespace D2.Rules.Map;
+using LastEdict.Rules.Units;
+namespace LastEdict.Rules.Map;
 
 /// <summary>Ряд, куда перестановка ИИ ставит юнита (<c>0x5d59b3</c>): большой — колонка переднего ряда, малый с ближней
 /// атакой класса «урон» (<c>0x5d59e4</c>: досягаемость <c>0x8380b8</c>, класс <c>0x837428</c>) — передний ряд, прочие —

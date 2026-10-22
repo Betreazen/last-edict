@@ -17,7 +17,7 @@
 
 ## Отличия от эталона
 
-- Нет: корпуса журналов зонда, зонда `tools/d2probe`, сборки сверок `D2.Verification`, харнессов категорий `Corpus`/`Synth` и тестов на их
+- Нет: корпуса журналов зонда, зонда `tools/d2probe`, сборки сверок `LastEdict.Verification`, харнессов категорий `Corpus`/`Synth` и тестов на их
   помощниках (243 файла тестов), синтетических карт, сцены повтора боя из журнала оригинала, бенча на корпусе (`godot/bench`,
   `tools/bench`), снимков экрана с графикой игры.
 - Раскладка: `src/Engine.Rules`, `src/Engine.Content`, `src/Engine.Play`, `src/Import.Legacy.Formats`, `src/Import.Legacy`,

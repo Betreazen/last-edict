@@ -1,7 +1,7 @@
-using D2.Rules.Magic;
-using D2.Rules.Rng;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Rng;
 
-namespace D2.Rules.Map;
+namespace LastEdict.Rules.Map;
 
 /// <summary>Категория заклинаний с диапазоном уровней — запись списка, по которому ИИ ищет заклинание
 /// (<c>0x46e92c</c>, шаг записи <c>0x14</c>: категория, <c>+0xc</c> наименьший уровень, <c>+0x10</c> наибольший).</summary>
@@ -9,7 +9,7 @@ public readonly record struct AiSpellWish(SpellCategory Category, int MinLevel, 
 
 /// <summary>
 /// Правила выбора заклинаний ИИ на карте (оперативный слой <c>CAiOperational</c>, <c>docs/ai-spells.md</c>). Чистые
-/// функции над уже собранными входами; сборку из карты и литьё делает <c>D2.Data.Play.AiSpells</c>. Ранг 1 — листинг
+/// функции над уже собранными входами; сборку из карты и литьё делает <c>LastEdict.Data.Play.AiSpells</c>. Ранг 1 — листинг
 /// <c>Discipl2.exe</c> (GOG 3.01), если не сказано иное.
 /// </summary>
 public static class AiSpellRules

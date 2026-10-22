@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using System.Text.Json.Serialization;
 
-namespace D2.Data.Content.Schema;
+namespace LastEdict.Data.Content.Schema;
 
 /// <summary>Сущность содержимого (юнит, атака, постройка…): устойчивый id с пространством имён мода (<c>base:unit/squire</c>,
 /// <c>mymod:unit/halberdier</c>) и, у сущностей оригинала, его id (<c>g000uu0001</c>) — по нему их находят сохранения, карты

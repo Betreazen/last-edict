@@ -1,8 +1,8 @@
-using D2.Rules.Battle;
-using D2.Rules.Map;
-using D2.Rules.Units;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Units;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>Опыт за бой и повышения после него — по правилам, сверенным харнессом опыта с журналами
 /// (<see cref="Experience"/>, <see cref="UnitUpgrade"/>): опыт копится за каждое действие, убившее врагов,
@@ -156,7 +156,7 @@ public static class BattleAftermath
             }
             if (pending != stack.UpgradeCount) stacks[stack.Id] = stack with { UpgradeCount = pending };
         }
-        return D2.Data.Play.GameSession.With(map, stacks: stacks, units: units);
+        return LastEdict.Data.Play.GameSession.With(map, stacks: stacks, units: units);
     }
 
     /// <summary>

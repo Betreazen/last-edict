@@ -1,8 +1,8 @@
 using System.Text.Json;
-using D2.Data.Game;
-using D2.Data.Sg;
+using LastEdict.Data.Game;
+using LastEdict.Data.Sg;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>
 /// Свои кампании игрока (<c>user://campaigns</c>) в формате порта: каталог кампании — <c>campaign.json</c> (<c>d2-port-campaign</c>:

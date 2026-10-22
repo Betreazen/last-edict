@@ -1,7 +1,7 @@
 using System.Text.Json;
-using D2.Rules.Map;
+using LastEdict.Rules.Map;
 
-namespace D2.Rules.Tests;
+namespace LastEdict.Rules.Tests;
 
 /// <summary>Валюты казны по id (этап Э2, задача E): шесть оригинала — поля <see cref="Bank"/>, валюта мода — <see cref="Bank.Extra"/> с той же
 /// арифметикой, равенством, проверкой цены и записью в сохранение; у казны оригинала словаря нет вовсе.</summary>

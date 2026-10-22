@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using D2.Data.Gfx;
-using D2.Data.Sound;
-using D2.Rules.Battle;
+using LastEdict.Data.Gfx;
+using LastEdict.Data.Sound;
+using LastEdict.Rules.Battle;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Звуки действий боя (<c>docs/ai-screen.md</c> §12): план действия — <see cref="BattleSoundPlan"/>; действия идут очередью, у
 /// каждого свой отрезок времени (ходы ИИ модель решает разом, а звучать им — по одному).</summary>

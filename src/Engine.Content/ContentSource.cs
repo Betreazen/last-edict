@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 
-namespace D2.Data.Content;
+namespace LastEdict.Data.Content;
 
 /// <summary>
 /// Содержимое правил по каталогу — то, что загрузчики правил (<c>RulesLoader</c>, <c>EconomyLoader</c>, <c>GameBook</c>…) получают

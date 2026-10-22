@@ -1,7 +1,7 @@
-using D2.Rules.Battle;
-using D2.Rules.Map;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>
 /// Атака крепости ИИ из карты (срез 6, <c>docs/ai-attack.md</c> §6): кэш крепостей-целей, сила против крепости и

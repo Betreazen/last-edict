@@ -1,4 +1,4 @@
-using D2.Rules.Map;
+using LastEdict.Rules.Map;
 using Xunit;
 
 /// <summary>

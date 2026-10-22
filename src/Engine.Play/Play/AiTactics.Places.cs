@@ -1,7 +1,7 @@
-using D2.Rules.Map;
-using D2.Rules.Rng;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Rng;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>
 /// «Места» ИИ из карты — площадки торговца, мага, наёмников и тренера (<c>docs/ai-tactic-candidates.md</c> §10): кэш мест,
@@ -182,7 +182,7 @@ public static partial class AiTactics
         ArgumentNullException.ThrowIfNull(stack);
         int items = stack.Items.Count;
         if (session.State.Info.SuggestedLevel >= AiStackUnits.HighSuggestedLevel)
-            items -= stack.Items.Count(i => session.ItemOf(i) is { Category: D2.Rules.Magic.ItemCategory.Special });
+            items -= stack.Items.Count(i => session.ItemOf(i) is { Category: LastEdict.Rules.Magic.ItemCategory.Special });
         return stack.UnitIds.Count - items;
     }
 

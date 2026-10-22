@@ -1,7 +1,7 @@
-using D2.Data.Ui;
-using D2.Data.Ui.Windows;
+using LastEdict.Data.Ui;
+using LastEdict.Data.Ui.Windows;
 
-namespace D2.Data.Menu;
+namespace LastEdict.Data.Menu;
 
 /// <summary>
 /// Лобби «горячего стула» (<c>DLG_HOTSEAT_LOBBY</c>, <c>CMenuHotseatLobby</c> <c>0x4dc67c</c>; разбор — <c>docs/day-cycle.md</c> §8).

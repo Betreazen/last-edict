@@ -1,6 +1,6 @@
-using D2.Rules.Units;
+using LastEdict.Rules.Units;
 
-namespace D2.Rules.Battle;
+namespace LastEdict.Rules.Battle;
 
 /// <summary>Цели редких классов политики ИИ — в корпусе почти не встречаются (разбор §2), поэтому
 /// перенесены по Lua тулсета: <b>ранг 2</b>, <c>reference/D2ModdingToolset/Scripts/battleAi.lua</c>

@@ -1,6 +1,6 @@
-using D2.Rules.Magic;
+using LastEdict.Rules.Magic;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>
 /// Свиток или посох, брошенный на воина в окне с группой (<c>CDDStackGroup</c>, ответ пользователя 17.10: «в инвентаре отряда перетянуть
@@ -65,7 +65,7 @@ public static class WandScrollDrops
         return WandScrollLogic.Begin(c, requests, StackOf(c, unitId)!.Id, itemId);
     }
 
-    /// <summary>Отряд, чей лидер — этот юнит (<c>IUsStackLeader</c>: в порте лидер — <see cref="D2.Rules.Map.MapStack.LeaderId"/>).</summary>
-    private static D2.Rules.Map.MapStack? StackOf(WindowContext c, string unitId) =>
+    /// <summary>Отряд, чей лидер — этот юнит (<c>IUsStackLeader</c>: в порте лидер — <see cref="LastEdict.Rules.Map.MapStack.LeaderId"/>).</summary>
+    private static LastEdict.Rules.Map.MapStack? StackOf(WindowContext c, string unitId) =>
         c.Map.Stacks.Values.FirstOrDefault(s => s.LeaderId.Equals(unitId, StringComparison.OrdinalIgnoreCase));
 }

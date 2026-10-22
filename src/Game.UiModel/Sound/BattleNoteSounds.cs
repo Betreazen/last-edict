@@ -1,6 +1,6 @@
-using D2.Rules.Battle;
+using LastEdict.Rules.Battle;
 
-namespace D2.Data.Sound;
+namespace LastEdict.Data.Sound;
 
 /// <summary>
 /// Звуки сообщений боя без удара (<see cref="BattleState.Notes"/>; разбор 27.09, <c>CBattleViewerInterf</c> <c>0x630a7b</c>, таблица
@@ -19,7 +19,7 @@ public static class BattleNoteSounds
     {
         BattleNoteKind.Untransformed => "UNTRANSF",
         BattleNoteKind.Unsummoned or BattleNoteKind.UnsummonedInBattle => "UNSUMMON",
-        BattleNoteKind.LevelUp => "UPGRADE" + D2.Rules.Map.LegacyRaces.Code(raceType),
+        BattleNoteKind.LevelUp => "UPGRADE" + LastEdict.Rules.Map.LegacyRaces.Code(raceType),
         BattleNoteKind.Unparalyzed => "UPARALYZE",
         BattleNoteKind.Unpetrified => "UPETRIFY",
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),

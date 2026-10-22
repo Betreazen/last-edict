@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace D2.Data.Ui;
+namespace LastEdict.Data.Ui;
 
 /// <summary>
 /// Имена героев по умолчанию на языке интерфейса (<c>data/ui/leader-names.{язык}.json</c>, импорт

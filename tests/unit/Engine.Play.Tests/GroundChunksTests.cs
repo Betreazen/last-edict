@@ -1,7 +1,7 @@
-using D2.Data.Gfx;
+using LastEdict.Data.Gfx;
 using Xunit;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Земля кусками (<see cref="GroundChunks"/>): кусок совпадает с той же областью, собранной целиком, куски
 /// привязаны к миру, кэш не пересобирает и вытесняет самый давний.</summary>

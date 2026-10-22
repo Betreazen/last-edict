@@ -1,4 +1,4 @@
-namespace D2.Data.Map;
+namespace LastEdict.Data.Map;
 
 /// <summary>
 /// Анимация смены тумана (<c>CMidAnim2ChangeFog</c>, разбор 16.10). Команду <c>CCmdChangeFogMsg</c> шлёт эффект <c>CEffectFog</c>

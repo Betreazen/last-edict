@@ -1,15 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using D2.Data.Map;
-using D2.Data.Menu;
-using D2.Data.Play;
-using D2.Data.Ui;
-using D2.Data.Ui.Windows;
-using D2.Rules.Map;
+using LastEdict.Data.Map;
+using LastEdict.Data.Menu;
+using LastEdict.Data.Play;
+using LastEdict.Data.Ui;
+using LastEdict.Data.Ui.Windows;
+using LastEdict.Rules.Map;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Окна поверх карты. Стек — навигатор графа экранов с корнем <c>DLG_ISO_PAL</c>: настройки, запись и загрузка
 /// открываются переходами графа, окна игры (армия города, найм, вопросы) — ещё и по решению игры (вход в свой город,
@@ -48,11 +48,11 @@ public partial class MapScreen
 
     /// <summary>Карточка юнита в бою с карты — та же, что на карте (<see cref="UnitCardLogic.InBattle"/>): опыт «N / до уровня», иммунитеты
     /// и стойкости. Без зрителя-игрока или для юнита не с карты — null, экран боя строит простую карточку.</summary>
-    private Func<D2.Rules.Battle.BattleUnit, IScreenLogic?> BattleCard() => unit =>
+    private Func<LastEdict.Rules.Battle.BattleUnit, IScreenLogic?> BattleCard() => unit =>
         Windows is { } context ? UnitCardLogic.InBattle(context, unit.Id, unit.Type.Id, unit.Type.Level, unit.Hp, unit.Xp) : null;
 
     /// <summary>Значки повышения и высокого уровня у портретов панели боя — по юниту карты, как в окнах отряда.</summary>
-    private Func<D2.Rules.Battle.BattleUnit, (bool Upgrade, int HighLevel)> BattleLevelMarks() => unit =>
+    private Func<LastEdict.Rules.Battle.BattleUnit, (bool Upgrade, int HighLevel)> BattleLevelMarks() => unit =>
         Windows is { } context ? UnitCellsView.BattleLevelMarks(context, unit.Id) : (false, 0);
 
     private void OnWindowEvents(UiScreenView from, IReadOnlyList<UiEvent> events)
@@ -250,7 +250,7 @@ public partial class MapScreen
     {
         var info = _map.Session.State.Info;
         var scenario = GameData.Catalog.Scenarios.FirstOrDefault(s => s.Id.Equals(info.ScenarioId, StringComparison.OrdinalIgnoreCase))
-                       ?? new D2.Data.Game.ScenarioInfo { Id = info.ScenarioId.Length > 0 ? info.ScenarioId : info.ScenarioName, File = "", Name = info.ScenarioName };
+                       ?? new LastEdict.Data.Game.ScenarioInfo { Id = info.ScenarioId.Length > 0 ? info.ScenarioId : info.ScenarioName, File = "", Name = info.ScenarioName };
         OpenWindow(GameBriefingLogic.Screen, new GameBriefingLogic(Text, scenario, _map.Session.State.EventProgress.Objective));
     }
 
@@ -301,14 +301,14 @@ public partial class MapScreen
 
     private StackTexts? _stackTexts;
 
-    /// <summary>«Меню героя» после боя (<see cref="BattleScreen.Paperdoll"/>): запрос серверу (<see cref="D2.Data.Play.GameSession.RequestPaperdoll"/>
+    /// <summary>«Меню героя» после боя (<see cref="BattleScreen.Paperdoll"/>): запрос серверу (<see cref="LastEdict.Data.Play.GameSession.RequestPaperdoll"/>
     /// — проверка событий с отрядом-триггерером) и ответ <c>CCmdStackActionMsg</c>(отряд, 0) (<c>0x48ee26</c>): отряд вне укрепления —
     /// окно отряда (<c>CMidTaskOpenInterf&lt;CManageStkInterf&gt;</c>, <c>0x4925cf</c>), внутри — окно укрепления (<c>CCityStackInterf</c>,
     /// <c>0x486c8e</c>, и у столицы). Отряд не пережил итог боя или события — окна нет.</summary>
     private void OpenPaperdoll(string stackId)
     {
         var session = _map.Session;
-        bool asked = session.Run<bool>(new D2.Data.Play.Commands.RequestPaperdollCommand(stackId));
+        bool asked = session.Run<bool>(new LastEdict.Data.Play.Commands.RequestPaperdollCommand(stackId));
         var stack = asked ? session.Map.Stacks.GetValueOrDefault(stackId) : null;
         string screen = stack is null ? "-" : stack.Inside.Length > 0 ? CityStackLogic.Screen : ManageStackLogic.Screen;
         GD.Print($"paperdoll stack={stackId} {(asked ? "запрос" : "нет_отряда")} окно={screen}");
@@ -374,14 +374,14 @@ public partial class MapScreen
     }
 
     /// <summary>Сделки ИИ «предмет или заклинание за золото» (<see cref="GameState.Offers"/> с <c>Trade</c>, сессия А) — окном
-    /// <c>DLG_OFFER</c> (<see cref="TradeOfferLogic"/>); ответ — <see cref="D2.Data.Play.GameSession.AnswerTradeOffer"/>. Согласие, которое
+    /// <c>DLG_OFFER</c> (<see cref="TradeOfferLogic"/>); ответ — <see cref="LastEdict.Data.Play.GameSession.AnswerTradeOffer"/>. Согласие, которое
     /// не проходит (предмета больше нет), — сообщением и отказом.</summary>
     private void ShowTradeOffers(WindowContext context)
     {
         string viewer = _map.Viewer ?? "";
         var shown = _logics.OfType<TradeOfferLogic>().Select(l => l.Offer.From).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var trades = _map.Session.State.Offers
-            .Where(o => o.Trade is { Kind: not D2.Rules.Map.AiGiftKind.Gold } && o.To.Equals(viewer, StringComparison.OrdinalIgnoreCase)
+            .Where(o => o.Trade is { Kind: not LastEdict.Rules.Map.AiGiftKind.Gold } && o.To.Equals(viewer, StringComparison.OrdinalIgnoreCase)
                         && !shown.Contains(o.From)).ToList();
         foreach (var o in trades)
         {
@@ -389,16 +389,16 @@ public partial class MapScreen
             string from = o.From;
             OpenWindow(TradeOfferLogic.Screen, new TradeOfferLogic(context, offer, _raceNames ??= RaceNames.Load(GameData.Rules), TradeThingName(offer.IsItem), yes =>
             {
-                string? refused = (string?)_map.Session.Execute(new D2.Data.Play.Commands.AnswerTradeCommand(from, viewer, yes)).Value;
+                string? refused = (string?)_map.Session.Execute(new LastEdict.Data.Play.Commands.AnswerTradeCommand(from, viewer, yes)).Value;
                 if (refused is not null && yes)
                 {
-                    _map.Session.Execute(new D2.Data.Play.Commands.AnswerTradeCommand(from, viewer, false));
+                    _map.Session.Execute(new LastEdict.Data.Play.Commands.AnswerTradeCommand(from, viewer, false));
                     GD.Print($"trade refused {from} {refused.Replace(' ', '_')}");
                 }
                 // Ответ на сделку (сообщение 16, TRADITEM…) движок шлёт предложившему (0x48b53b): ИИ беззвучен, человек «горячего стула» слышит
                 // его сразу после ответа (без фильтра игрока, разбор 28.09, docs/ai-screen.md §11).
                 if (_map.Session.State.Info.Humans.Contains(from, StringComparer.OrdinalIgnoreCase))
-                    context.Announce(yes && refused is null ? D2.Data.Play.TurnSightKind.Traded : D2.Data.Play.TurnSightKind.TradeRefused, offer.ThingId);
+                    context.Announce(yes && refused is null ? LastEdict.Data.Play.TurnSightKind.Traded : LastEdict.Data.Play.TurnSightKind.TradeRefused, offer.ThingId);
                 _map.Reload();
                 SyncPanels();
             }));
@@ -411,15 +411,15 @@ public partial class MapScreen
         item ? (_stackTexts ??= StackTexts.Load(GameData.Rules)).Items.TryGetValue(id, out var txt) ? Text(txt) : id
              : SpellTexts.TryGetValue(id, out var spell) ? Text(spell.NameTxt) : id;
 
-    /// <summary>Сборщики итогов хода людей (<see cref="TurnSummaryWatch"/>): подписаны на ход партии (<see cref="D2.Data.Play.GameSession.Watch"/>)
+    /// <summary>Сборщики итогов хода людей (<see cref="TurnSummaryWatch"/>): подписаны на ход партии (<see cref="LastEdict.Data.Play.GameSession.Watch"/>)
     /// от конца хода игрока до начала его следующего.</summary>
     private readonly Dictionary<string, TurnSummaryWatch> _summaryWatches = new(StringComparer.OrdinalIgnoreCase);
 
-    private D2.Data.Play.GameSession? _summarySession;
+    private LastEdict.Data.Play.GameSession? _summarySession;
 
     /// <summary>Итоги хода в сохранении (v9, <c>docs/day-cycle.md</c> §20): новой партии (и загруженной) — поставщик записей для снимка
-    /// (<see cref="D2.Data.Play.GameSession.SummariesForSave"/>: каждый сборщик — его день и записи на этот миг) и сборщики, продолженные с
-    /// итогами из сохранения (<see cref="D2.Data.Play.GameSession.TakeSummaries"/>). У движка итоги лежат в <c>.sg</c> (<c>CTurnSummary</c>).</summary>
+    /// (<see cref="LastEdict.Data.Play.GameSession.SummariesForSave"/>: каждый сборщик — его день и записи на этот миг) и сборщики, продолженные с
+    /// итогами из сохранения (<see cref="LastEdict.Data.Play.GameSession.TakeSummaries"/>). У движка итоги лежат в <c>.sg</c> (<c>CTurnSummary</c>).</summary>
     private void WatchSummaries()
     {
         var session = _map.Session;
@@ -429,7 +429,7 @@ public partial class MapScreen
         _summaryWatches.Clear();
         _summarySession = session;
         session.SummariesForSave = () => _summaryWatches.ToDictionary(
-            p => p.Key, p => new D2.Data.Play.PendingSummary(p.Value.Day, p.Value.Finish(session.Looks)), StringComparer.OrdinalIgnoreCase);
+            p => p.Key, p => new LastEdict.Data.Play.PendingSummary(p.Value.Day, p.Value.Finish(session.Looks)), StringComparer.OrdinalIgnoreCase);
         foreach (var (human, pending) in session.TakeSummaries())
         {
             var watch = new TurnSummaryWatch(context, human, session.Looks, SpellTexts, _raceNames ??= RaceNames.Load(GameData.Rules), pending);
@@ -487,7 +487,7 @@ public partial class MapScreen
     }
 
     /// <summary>Итоги хода (<see cref="TurnSummaryLogic"/>): что сборщик игрока записал с конца его хода; записей нет — окна нет.
-    /// Одиночная игра без флажка «Всегда показывать результаты хода» — окна нет (<see cref="D2.Data.Map.MapSettings.TurnSummaryShown"/>).</summary>
+    /// Одиночная игра без флажка «Всегда показывать результаты хода» — окна нет (<see cref="LastEdict.Data.Map.MapSettings.TurnSummaryShown"/>).</summary>
     private void ShowTurnSummary(WindowContext context)
     {
         // Сборщик — от прошлого дня этого игрока: сразу после конца хода (ИИ ещё ходит) день прежний — ждём.
@@ -545,7 +545,7 @@ public partial class MapScreen
         if (top is { AdditiveOverlays: > 0 }) missing += $" сложением={top.AdditiveOverlays}";
         if (top is not null && top.State.Screen.Elements.Any(e => e.Id == "TXT_LEMPTY"))
         {
-            string hint = new([.. D2.Data.Ui.UiTextStyle.Parse(top.State.TextOf("TXT_LEMPTY") ?? "").Text.Where(char.IsLetter).Take(16)]);
+            string hint = new([.. LastEdict.Data.Ui.UiTextStyle.Parse(top.State.TextOf("TXT_LEMPTY") ?? "").Text.Where(char.IsLetter).Take(16)]);
             missing += $" подсказка_найма={(hint.Length > 0 ? hint : "-")}";
         }
         if (top is { DragImageKey.Length: > 0 }) missing += $" тащимое={top.DragImageKey} курсор={Cursor.Current ?? "-"}:{Cursor.Frames}";

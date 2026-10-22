@@ -1,11 +1,11 @@
-using D2.Data.Ui.Windows;
+using LastEdict.Data.Ui.Windows;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>«Бросить предмет» (<c>CTaskPickupDrop</c> <c>0x4cefa3</c>): окно отряда закрылось, панель команд сменилась на
 /// <c>DLG_DROP_BAG</c> (<see cref="DropBagPanelLogic"/>), карта ждёт щелчка по клетке рядом с отрядом; над годной клеткой
-/// (<see cref="D2.Data.Play.GameSession.DropCheck"/>) — курсор <c>TAKEBAG</c> (центр — горячая точка, <c>0x5b27ee</c>); годная клетка —
+/// (<see cref="LastEdict.Data.Play.GameSession.DropCheck"/>) — курсор <c>TAKEBAG</c> (центр — горячая точка, <c>0x5b27ee</c>); годная клетка —
 /// мешок (новый или лежащий) и его окно <c>DLG_PICKUP_DROP</c>; Esc или «Закрыть» — отмена.</summary>
 public partial class MapScreen
 {
@@ -52,10 +52,10 @@ public partial class MapScreen
     private void DropAt((int X, int Y) cell)
     {
         if (_dropStack is not { } stack || Windows is not { } context) return;
-        var (refused, bag) = _map.Session.Run<(string?, string)>(new D2.Data.Play.Commands.DropBagCommand(stack, cell.X, cell.Y));
+        var (refused, bag) = _map.Session.Run<(string?, string)>(new LastEdict.Data.Play.Commands.DropBagCommand(stack, cell.X, cell.Y));
         GD.Print($"pickup at {cell.X},{cell.Y} {(refused ?? bag).Replace(' ', '_')}");
         if (refused is not null) return;
-        _map.Session.Run(new D2.Data.Play.Commands.ActInPlaceCommand(stack, Attack: false));   // бросок мешка на соседнюю клетку — команда хода с места (0x4415c8)
+        _map.Session.Run(new LastEdict.Data.Play.Commands.ActInPlaceCommand(stack, Attack: false));   // бросок мешка на соседнюю клетку — команда хода с места (0x4415c8)
         StopDrop();
         _map.Reload();
         OpenWindow(PickupDropLogic.Screen, new PickupDropLogic(context, stack, bag, _stackTexts ??= StackTexts.Load(GameData.Rules), GameData.Content.Screens));

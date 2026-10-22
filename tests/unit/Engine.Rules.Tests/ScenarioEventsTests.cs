@@ -1,7 +1,7 @@
-using D2.Rules.Map;
-using D2.Rules.Rng;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Rng;
 
-namespace D2.Rules.Tests;
+namespace LastEdict.Rules.Tests;
 
 /// <summary>Движок событий сценария (<see cref="ScenarioEvents"/>, <c>docs/scenario-events.md</c>) на маленькой карте: два
 /// игрока — Империя (<c>PL0001</c>) и Легионы (<c>PL0002</c>), нейтрал (<c>PL0000</c>).</summary>

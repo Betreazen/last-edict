@@ -1,12 +1,12 @@
-using D2.Data;
-using D2.Data.Dbf;
-using D2.Data.Map;
-using D2.Data.Sg;
-using D2.Rules.Map;
+using LastEdict.Data;
+using LastEdict.Data.Dbf;
+using LastEdict.Data.Map;
+using LastEdict.Data.Sg;
+using LastEdict.Rules.Map;
 using Xunit.Abstractions;
 using KSg = Kaitai.Sg;
 
-namespace D2.Rules.Tests;
+namespace LastEdict.Rules.Tests;
 
 public class FogTests
 {

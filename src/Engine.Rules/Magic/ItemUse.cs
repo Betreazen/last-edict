@@ -1,7 +1,7 @@
-using D2.Rules.Map;
-using D2.Rules.Units;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Units;
 
-namespace D2.Rules.Magic;
+namespace LastEdict.Rules.Magic;
 
 /// <summary>Что предмет делает. Разложено по <b>заполненным колонкам</b>, а не по категории — ровно
 /// как у заклинания (<see cref="SpellCast.Effects"/>): категория выбирает конструктор, а

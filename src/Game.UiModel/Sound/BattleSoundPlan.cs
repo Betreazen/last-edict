@@ -1,7 +1,7 @@
-using D2.Rules.Battle;
-using D2.Rules.Battle.Effects;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Battle.Effects;
 
-namespace D2.Data.Sound;
+namespace LastEdict.Data.Sound;
 
 /// <summary>Звук в плане: через <see cref="At"/> секунд от начала действия — звук <see cref="Name"/> архива <see cref="Archive"/> с долей
 /// громкости <see cref="Volume"/>.</summary>

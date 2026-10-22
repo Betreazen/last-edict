@@ -1,4 +1,4 @@
-namespace D2.Data.Ui;
+namespace LastEdict.Data.Ui;
 
 /// <summary>Логика экрана, которой нужно время (автопрокрутка текста): сцена зовёт <see cref="Tick"/> с прошедшими миллисекундами — в
 /// игре по кадрам, в проверке шагом <c>wait N</c>.</summary>

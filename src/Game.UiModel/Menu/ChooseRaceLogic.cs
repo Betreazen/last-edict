@@ -1,6 +1,6 @@
-using D2.Data.Ui;
+using LastEdict.Data.Ui;
 
-namespace D2.Data.Menu;
+namespace LastEdict.Data.Menu;
 
 /// <summary>Выбор расы (<c>DLG_CHOOSE_RACE</c>): фон — бог расы, подпись — имя расы. Стрелки ходят по кругу рас
 /// сценария (без сценария — всех играбельных) в порядке «Следующей расы»: Империя → Нежить → Эльфы → Кланы →
@@ -13,7 +13,7 @@ internal sealed class ChooseRaceLogic(MenuContext context) : IScreenLogic
 {
     private const string NextText = "X100TA0129";
     private const string PreviousText = "X100TA0128";
-    private const int Empire = D2.Rules.Map.LegacyRaces.Human, Elves = D2.Rules.Map.LegacyRaces.Elf;
+    private const int Empire = LastEdict.Rules.Map.LegacyRaces.Human, Elves = LastEdict.Rules.Map.LegacyRaces.Elf;
 
     /// <summary>Полный круг рас по «Следующей расе» (типы <c>LRaceCategory</c>).</summary>
     private static readonly int[] Ring = [0, 1, 5, 3, 2];

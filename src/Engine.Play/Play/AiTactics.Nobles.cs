@@ -1,8 +1,8 @@
-using D2.Rules.Battle;
-using D2.Rules.Map;
-using D2.Rules.Rng;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Rng;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>
 /// Знатный (вор) ИИ из карты — <c>NobleStack</c>, <c>NobleCity</c>, <c>NobleMerchant</c> (<c>docs/ai-tactic-candidates.md</c> §12):

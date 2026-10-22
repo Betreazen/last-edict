@@ -1,8 +1,8 @@
-using D2.Data;
-using D2.Data.Battle;
-using D2.Rules.Battle;
-using D2.Rules.Magic;
-using D2.Rules.Rng;
+using LastEdict.Data;
+using LastEdict.Data.Battle;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Rng;
 using Xunit.Abstractions;
 
 /// <summary>
@@ -20,7 +20,7 @@ public class BattleItemsAfterBattleTests(ITestOutputHelper output)
     private static readonly Lazy<GameRules> Rules = new(() => RulesLoader.Load(ImportedData.Content));
 
     private static readonly Lazy<IReadOnlyDictionary<string, Item>> Items =
-        new(() => D2.Data.Magic.ItemLoader.Load(ImportedData.Content));
+        new(() => LastEdict.Data.Magic.ItemLoader.Load(ImportedData.Content));
 
     private const string Orb = "G000IG9001";        // «Squire Orb», категория 11
     private const string Talisman = "G000IG9101";   // «Squire Talisman», категория 12

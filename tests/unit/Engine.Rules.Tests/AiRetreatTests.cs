@@ -1,6 +1,6 @@
-using D2.Rules.Battle;
-using D2.Rules.Rng;
-using D2.Rules.Units;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Rng;
+using LastEdict.Rules.Units;
 using static BattleAiTests;
 
 /// <summary>Сила отряда (<c>0x5ceb4b</c> → <c>0x5dd06c</c>) и бегство ИИ (<c>0x5d2a4d</c>, <c>0x5d2779</c>,

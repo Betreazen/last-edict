@@ -7,7 +7,7 @@
 ```text
 src/Engine.Rules            правила (есть) — редактор только читает: проходимость, Land, EventConditions, Sites…
 src/Engine.Play             данные и загрузчики (есть): GameContent, ScenarioFile, GameTables, GfxAssets, MapLooks…
-src/D2.Authoring        НОВОЕ ядро инструментов, без Godot:
+src/LastEdict.Authoring        НОВОЕ ядро инструментов, без Godot:
    Project/             проект = каталог мода (ModProject): mod.json, слои ниже него, пути
    Documents/           документы: ScenarioDocument, TableDocument, ModManifestDocument
    Commands/            команды правки (IEditCommand) и история (EditHistory)
@@ -15,8 +15,8 @@ src/D2.Authoring        НОВОЕ ядро инструментов, без God
    Ids/                 выдача id по схеме .sg (IdAllocator)
    Looks/               пересчёт вида MapLooks из MapState (LooksBuilder)
    Packaging/           сборка архива мода, манифест файлов, хэши
-src/D2.Authoring.Tests  тесты ядра (xunit, как D2.Data.Tests)
-tools/d2mod             НОВОЕ CLI (dotnet, тонкая обёртка над D2.Authoring)
+src/LastEdict.Authoring.Tests  тесты ядра (xunit, как LastEdict.Data.Tests)
+tools/d2mod             НОВОЕ CLI (dotnet, тонкая обёртка над LastEdict.Authoring)
 godot/scenes/studio     НОВОЕ окно «Мастерской» (Control-интерфейс Godot), рабочие пространства Map/ и Mod/
 ```
 
@@ -27,8 +27,8 @@ godot/scenes/studio     НОВОЕ окно «Мастерской» (Control-и
 
 | Вариант | За | Против |
 |---|---|---|
-| **Отдельная главная сцена в `godot/` (рекомендация)** | `MapView`, `GroundArt`, `MapObjects`, `GfxTextures`, `GameData` переиспользуются без копий; одна сборка `D2.Godot` | главная сцена игры — `UiFlow.tscn`; «Мастерская» запускается явным путём `res://scenes/studio/Studio.tscn` или своим пресетом экспорта |
-| Отдельный проект `studio/` с `ProjectReference` на `D2.Godot` | чистое разделение | сцены Godot (`.tscn`) между проектами не делятся — `MapView.tscn` пришлось бы копировать |
+| **Отдельная главная сцена в `godot/` (рекомендация)** | `MapView`, `GroundArt`, `MapObjects`, `GfxTextures`, `GameData` переиспользуются без копий; одна сборка `LastEdict.Godot` | главная сцена игры — `UiFlow.tscn`; «Мастерская» запускается явным путём `res://scenes/studio/Studio.tscn` или своим пресетом экспорта |
+| Отдельный проект `studio/` с `ProjectReference` на `LastEdict.Godot` | чистое разделение | сцены Godot (`.tscn`) между проектами не делятся — `MapView.tscn` пришлось бы копировать |
 | Встроить в игру (как OpenRA) | одно окно | игра и редактор смешивают ввод и состояние; противоречит правилу «сцена только рисует» |
 
 Запуск игры с картой — **отдельный процесс** `godot --path godot res://scenes/map/MapScreen.tscn -- --scenario <Id>
@@ -62,7 +62,7 @@ godot/scenes/studio     НОВОЕ окно «Мастерской» (Control-и
 
 | Что | Как |
 |---|---|
-| ядро | `dotnet test src/D2.Authoring.Tests` — круговые проверки, команды, проверка карт, сборка модов |
+| ядро | `dotnet test src/LastEdict.Authoring.Tests` — круговые проверки, команды, проверка карт, сборка модов |
 | CLI | `tests/test_d2mod.py` (pytest, как `tests/test_tools_guards.py`): код возврата и строка итога |
 | окно без глаз | `Studio.tscn -- --check --open <мод> --scenario <Id> --script <команды.json>` печатает `studio: doc=<Id> tiles=… objects=… errors=… undo=…` и выходит `Quit(код)`; строка — в `tools/ui-render-check.py` |
 | запуск игры | `MapScreen.tscn -- --check --scenario <Id> --mods <корень>` (уже есть `--check`) |

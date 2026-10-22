@@ -1,7 +1,7 @@
-namespace D2.Data.Content.Schema;
+namespace LastEdict.Data.Content.Schema;
 
 // Перечни содержимого. Значения — числа таблиц-перечней оригинала (Globals/L*.dbf), имена — их TEXT по смыслу; в JSON — строкой
-// (camelCase: «boostDamage»). Перечни правил, которые уже есть в D2.Rules (AttackClass, ItemCategory, SpellCategory,
+// (camelCase: «boostDamage»). Перечни правил, которые уже есть в LastEdict.Rules (AttackClass, ItemCategory, SpellCategory,
 // ModifierElementType, ImmunityLevel, LordCategory), содержимое берёт оттуда — второй копии нет. Имена, совпавшие бы с константами
 // правил (UnitCategory, UnitBranch, AttackReach), — свои: UnitRole, BranchKind, ReachKind.
 

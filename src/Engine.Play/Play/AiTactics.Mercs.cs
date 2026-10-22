@@ -1,8 +1,8 @@
-using D2.Rules.Map;
-using D2.Rules.Rng;
-using D2.Rules.Units;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Rng;
+using LastEdict.Rules.Units;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>
 /// Наёмники ИИ (<c>HireMercs</c>, тип 0xb; <c>docs/ai-tactic-candidates.md</c> §13): построитель, проверка «есть кого нанять»

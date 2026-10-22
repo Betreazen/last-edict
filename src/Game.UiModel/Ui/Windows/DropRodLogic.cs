@@ -1,6 +1,6 @@
-using D2.Rules.Map;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>
 /// «Поставить жезл» человеком (<c>BTN_DROP_ROD</c> панели команд, <c>0x48effd</c>; задача <c>CTaskDropRod</c>, конструктор <c>0x4cd876</c>,
@@ -87,7 +87,7 @@ public static class DropRodLogic
     }
 
     /// <summary>Нужно ли идти (<c>0x440e97</c>): клетка дальше одной по Чебышёву от отряда — сначала ход по пути, постановка — если дошёл.</summary>
-    public static bool NeedsWalk(D2.Rules.Map.MapStack stack, int x, int y)
+    public static bool NeedsWalk(LastEdict.Rules.Map.MapStack stack, int x, int y)
     {
         ArgumentNullException.ThrowIfNull(stack);
         return Math.Max(Math.Abs(stack.X - x), Math.Abs(stack.Y - y)) > 1;

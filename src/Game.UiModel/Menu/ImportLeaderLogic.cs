@@ -1,8 +1,8 @@
-using D2.Data.Leaders;
-using D2.Data.Ui;
-using D2.Data.Ui.Windows;
+using LastEdict.Data.Leaders;
+using LastEdict.Data.Ui;
+using LastEdict.Data.Ui.Windows;
 
-namespace D2.Data.Menu;
+namespace LastEdict.Data.Menu;
 
 /// <summary>Просьба выбрать героя для импорта: раса ячейки (герой другой расы не берётся), рекомендованный уровень сценария (только
 /// показ), текущий выбор (файл) и ответ — выбранный герой или null («Нет»).</summary>
@@ -163,7 +163,7 @@ internal sealed class ViewLeaderLogic(MenuContext context, ExportedLeader leader
                                   && x >= r.X && x < r.Right && y >= r.Y && y < r.Bottom;
         if (Inside("IMG_LEADER_FACE") || Inside("IMG_SLOTLEADER"))
         {
-            _requests.Add(new UiOpen(D2.Data.Ui.Windows.UnitCardLogic.Screen, new LeaderFileCardLogic(context, leader)));
+            _requests.Add(new UiOpen(LastEdict.Data.Ui.Windows.UnitCardLogic.Screen, new LeaderFileCardLogic(context, leader)));
             return;
         }
         if (Inside(Abilities) && ui.Screen.Elements.First(e => e.Id == Abilities).Rect is var list)

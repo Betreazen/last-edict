@@ -1,9 +1,9 @@
-using D2.Data;
-using D2.Data.Battle;
-using D2.Data.Magic;
-using D2.Data.Map;
-using D2.Data.Tests.LegacyLoaders;
-using D2.Rules.Units;
+using LastEdict.Data;
+using LastEdict.Data.Battle;
+using LastEdict.Data.Magic;
+using LastEdict.Data.Map;
+using LastEdict.Data.Tests.LegacyLoaders;
+using LastEdict.Rules.Units;
 using Xunit.Abstractions;
 
 /// <summary>
@@ -18,7 +18,7 @@ public class F6DataTests(ITestOutputHelper output)
     private static string Globals => GamePaths.Globals;
 
     /// <summary>Число записей в заголовке <c>.dbf</c> (смещение 4, 4 байта) — вместе с удалёнными.
-    /// Живые считает <see cref="D2.Data.Dbf.DbfTable"/>, который записи <c>0x2A</c> пропускает.</summary>
+    /// Живые считает <see cref="LastEdict.Data.Dbf.DbfTable"/>, который записи <c>0x2A</c> пропускает.</summary>
     private static int HeaderCount(string file)
     {
         using var s = File.OpenRead(RulesLoaderFile(file));
@@ -50,7 +50,7 @@ public class F6DataTests(ITestOutputHelper output)
         foreach (var (file, header, live) in expected)
         {
             var actualHeader = HeaderCount(file);
-            var actualLive = D2.Data.Dbf.DbfTable.Read(RulesLoaderFile(file)).Rows.Count;
+            var actualLive = LastEdict.Data.Dbf.DbfTable.Read(RulesLoaderFile(file)).Rows.Count;
             output.WriteLine($"{file,-14} заголовок {actualHeader,4} (ждали {header,4})  живых {actualLive,4} (ждали {live,4})");
             Assert.True(header == actualHeader && live == actualLive,
                 $"{file}: заголовок {actualHeader} (ждали {header}), живых {actualLive} (ждали {live})");
@@ -127,7 +127,7 @@ public class F6DataTests(ITestOutputHelper output)
     /// <summary>
     /// Step 4. Каждое значение <c>GmodifL.TYPE</c> — известный <c>ModifierElementType</c>
     /// (<c>Globals/LmodifE.dbf</c>). Сам отказ на неизвестном значении переехал в загрузчик:
-    /// задача 3 свела записи в <c>D2.Rules.Units</c>, и <c>ModifierLoader.ReadElement</c> разбирает
+    /// задача 3 свела записи в <c>LastEdict.Rules.Units</c>, и <c>ModifierLoader.ReadElement</c> разбирает
     /// <c>TYPE</c> на месте, бросая <c>InvalidDataException</c>. Здесь остаётся утверждение о
     /// распределении, ради которого тест и заводился.
     /// </summary>

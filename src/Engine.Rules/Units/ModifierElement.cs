@@ -1,4 +1,4 @@
-namespace D2.Rules.Units;
+namespace LastEdict.Rules.Units;
 
 /// <summary>Типы элементов модификатора — строка <c>GmodifL.TYPE</c>.
 /// <para>Ранг 1: перечисление есть в самой игре — <c>Globals/LmodifE.dbf</c> отдаёт ровно эти
@@ -56,9 +56,9 @@ public enum ModifierElementType
 /// данных: по всей таблице 771 поле «не задано» против двух «задано нулём» (<c>g000um0079</c>
 /// хранит <c>IMMUNITY = 0</c>, <c>g000um2109</c> — <c>MOVE = 0</c>). Поэтому нужное полю значение
 /// берётся через проверку, а не через <c>?? 0</c>.</para>
-/// <para>Определение одно на решение: <c>D2.Data.Battle.ModifierLoader</c> строит сразу эту
-/// запись, разбирая <c>TYPE</c> на месте. Ссылка идёт только <c>D2.Data → D2.Rules</c>, поэтому
-/// дом у записи здесь (задача 3 свела сюда копию из <c>D2.Data.Battle</c>).</para>
+/// <para>Определение одно на решение: <c>LastEdict.Data.Battle.ModifierLoader</c> строит сразу эту
+/// запись, разбирая <c>TYPE</c> на месте. Ссылка идёт только <c>LastEdict.Data → LastEdict.Rules</c>, поэтому
+/// дом у записи здесь (задача 3 свела сюда копию из <c>LastEdict.Data.Battle</c>).</para>
 /// </summary>
 public sealed record ModifierElement(ModifierElementType Type, int? Percent = null, int? Number = null,
                                      int? Ability = null, int? Immunity = null, int? ImmuneCat = null,
@@ -91,5 +91,5 @@ public enum ImmunityLevel
 /// три строки.</para>
 /// <para>То же у <c>GmodifL</c> <c>TYPE 12</c>: <c>IMMUNITY</c> — источник, <c>IMMUNECAT</c> —
 /// уровень; все шесть вани́льных вардов дают <c>Once</c> к своему источнику.</para>
-/// <para>Проверка и расход <c>Once</c> — <c>D2.Rules.Battle.Immunity</c>.</para></summary>
+/// <para>Проверка и расход <c>Once</c> — <c>LastEdict.Rules.Battle.Immunity</c>.</para></summary>
 public readonly record struct ImmunityGrant(int Category, ImmunityLevel Level);

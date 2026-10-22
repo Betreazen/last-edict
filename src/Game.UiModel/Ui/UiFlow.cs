@@ -2,7 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 
-namespace D2.Data.Ui;
+namespace LastEdict.Data.Ui;
 
 /// <summary>Что делает переход с экрана. Свой перечень, а не события зонда: порту нужен смысл, а не вызовы
 /// менеджера интерфейса.</summary>

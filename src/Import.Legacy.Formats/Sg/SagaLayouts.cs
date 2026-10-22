@@ -1,6 +1,6 @@
-using D2.Data.Dbf;
+using LastEdict.Data.Dbf;
 
-namespace D2.Data.Sg;
+namespace LastEdict.Data.Sg;
 
 /// <summary>Шаг раскладки тела объекта потока <c>.sg</c>.</summary>
 internal abstract record Op;

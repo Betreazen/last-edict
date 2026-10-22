@@ -1,10 +1,10 @@
-namespace D2.Rules.Map;
+namespace LastEdict.Rules.Map;
 
 /// <summary>
 /// Записанный маршрут прогона: путь по клеткам и разрез его на ходы. Читается из
 /// <c>route.json</c>, который строит <c>tools/scenario_c4.py route</c> и играет
-/// <c>tools/corpus_c4_run.py</c>; чтение файла — <c>D2.Data.Map.RouteLoader</c>
-/// (<c>D2.Rules</c> файлов не читает).
+/// <c>tools/corpus_c4_run.py</c>; чтение файла — <c>LastEdict.Data.Map.RouteLoader</c>
+/// (<c>LastEdict.Rules</c> файлов не читает).
 ///
 /// <para><b>Отличие от интерфейса задачи 9 плана:</b> добавлено поле <see cref="Path"/>. Без него
 /// модель знала бы только конечную клетку хода и должна была бы заново искать путь Дейкстрой —

@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using D2.Data.Gfx;
+using LastEdict.Data.Gfx;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>
 /// Облака над картой (<c>CMapClouds</c>, конструктор <c>0x5bd6d3</c>, ранг 1 по листингу): <c>K = ⌊(N/48)²·10⌋</c> облаков на карте N×N
@@ -18,7 +18,7 @@ namespace D2.Godot;
 public partial class MapView
 {
     private const string CloudChannel = "clouds";
-    private const double CloudTickMs = D2.Data.Map.AnimClock.SlowMs;
+    private const double CloudTickMs = LastEdict.Data.Map.AnimClock.SlowMs;
 
     private sealed class Cloud
     {

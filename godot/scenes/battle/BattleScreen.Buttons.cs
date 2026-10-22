@@ -1,12 +1,12 @@
 using System.Collections.Generic;
-using D2.Data.Battle;
-using D2.Rules.Battle;
+using LastEdict.Data.Battle;
+using LastEdict.Rules.Battle;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Доступность «Защищаться», «Ждать», «Отступить» и <c>TOG_RIGHTUNITS</c> (<see cref="BattlePanelButtons"/>, Зс55): у движка они гаснут
 /// на показ действия и на ходы ИИ и зажигаются к ходу человека; погашенные — кадр «погашена» разметки, щелчок и клавиша не проходят
-/// (<see cref="D2.Data.Ui.UiScreenState.SetEnabled"/>).</summary>
+/// (<see cref="LastEdict.Data.Ui.UiScreenState.SetEnabled"/>).</summary>
 public partial class BattleScreen
 {
     /// <summary>От чего зависела доступность при прошлой сверке: пока ключ тот же, набор команд хода (<see cref="BattleSession.Allowed"/> —

@@ -1,13 +1,13 @@
-namespace D2.Rules.Map;
+namespace LastEdict.Rules.Map;
 
 /// <summary>Переменные <c>GVars.dbf</c> для роста юнитов на карте. Ранг 1 — значения таблицы.</summary>
 /// <param name="WarlordRegen"><c>REGEN_LWAR</c> = 15: прибавка регенерации отрядам лорда-Воителя.</param>
 /// <param name="WeaponMaster"><c>WEAPN_MSTR</c> = 25: прибавка опыта «Инструктора», %.</param>
 /// <param name="TalismanCharges"><c>GVars.TALIS_CHRG</c> — сколько зарядов у нового талисмана
 /// (в ванили 5). Ранг 1: тот же литерал движок берёт из <c>[0x6ea178]</c> при создании талисмана
-/// (<see cref="D2.Rules.Magic.Charges.TalismanAfterBattle"/>, задача 10).</param>
+/// (<see cref="LastEdict.Rules.Magic.Charges.TalismanAfterBattle"/>, задача 10).</param>
 /// <param name="LeaderMaxAbilities"><c>GVars.LDRMAXABIL</c> = 15 — сколько уровневых навыков может
-/// носить лидер (<see cref="D2.Rules.Units.SkillChoice.DefaultLimit"/>, задача 11). Ранг 1 на
+/// носить лидер (<see cref="LastEdict.Rules.Units.SkillChoice.DefaultLimit"/>, задача 11). Ранг 1 на
 /// число, ранг 3 на смысл: потребителя в экзешнике не искали, и в корпусе в потолок никто не
 /// упёрся.</param>
 /// <param name="GainSpell"><c>GVars.GAIN_SPELL</c> = 50 — шанс в процентах, что захватчик столицы узнаёт заклинания погибшего игрока

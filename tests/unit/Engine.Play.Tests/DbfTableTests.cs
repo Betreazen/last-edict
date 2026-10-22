@@ -1,4 +1,4 @@
-using D2.Data; using D2.Data.Dbf;
+using LastEdict.Data; using LastEdict.Data.Dbf;
 public class DbfTableTests
 {
     static string T(string name) => Path.Combine(GamePaths.Globals, name);

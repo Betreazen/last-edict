@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using System.IO;
-using D2.Data.Sound;
+using LastEdict.Data.Sound;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Звуки игры в рантайме (<c>docs/ai-screen.md</c> §9): опись <c>data/sound</c> (<see cref="SoundAssets"/>), файлы —
 /// <c>assets/sound</c> (<c>tools/sound-assets</c>): MP3 — <see cref="AudioStreamMP3"/>, PCM — <see cref="AudioStreamWav"/>. Поток

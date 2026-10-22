@@ -1,7 +1,7 @@
-using D2.Rules.Battle.Effects;
-using D2.Rules.Units;
+using LastEdict.Rules.Battle.Effects;
+using LastEdict.Rules.Units;
 
-namespace D2.Rules.Battle;
+namespace LastEdict.Rules.Battle;
 
 /// <summary>Сила отряда для бегства ИИ: <c>0x5ceb4b</c> → <c>0x5dda98</c> → <c>0x5dcec7</c> → <c>0x5dd06c</c>
 /// (разбор §3, модель <c>re-ai/coeff.py</c>). Константы <c>.rdata</c>: 60, 90, 0.5.
@@ -92,7 +92,7 @@ public static class AiStrength
     /// = 10…30 по её уровню (<c>0x5878ee</c>: уровень вне 1..5 — 0). Ранг 1 — листинг: загрузчик кладёт
     /// <c>PROT_</c> по смещению <c>+0xf0</c>, <c>PROT_CAP</c> — <c>+0x104</c> (<c>0x5870e3</c>, <c>0x587041</c>).
     /// Ноль, когда группа не в крепости или взведён флаг «без города» (<c>0x5dcfe5</c>). Модификаторы
-    /// <c>GcityInf.PROTECTION</c>/<c>Grace.PROTECTION</c> (<see cref="D2.Rules.Map.Fortifications.Protection"/>)
+    /// <c>GcityInf.PROTECTION</c>/<c>Grace.PROTECTION</c> (<see cref="LastEdict.Rules.Map.Fortifications.Protection"/>)
     /// сюда НЕ идут: это разные величины — бой берёт модификатор, ИИ на карте берёт <c>PROT_*</c>. В бою же модификатор защиты висит
     /// на юнитах защитников (<c>CBattleResultStack</c>/<c>CBattleResultVillage</c> слот 1 <c>0x41b3d9</c>/<c>0x41bb6b</c>: <c>dynamic_cast</c>
     /// к <c>CFortification</c>, список <c>[vft+0x28]</c>, каждому юниту группы <c>0x5f5117</c> → <c>addModifier 0x5e9902</c>; снимает слот 2

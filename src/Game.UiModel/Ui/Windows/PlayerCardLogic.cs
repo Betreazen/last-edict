@@ -1,7 +1,7 @@
-using D2.Data.Menu;
-using D2.Rules.Map;
+using LastEdict.Data.Menu;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>
 /// Карточка игрока (<c>DLG_R_C_PLAYER</c>, <c>CEncLayoutPlayer</c> <c>0x5778eb</c>, заполнение <c>0x577a0c</c>; параметр — <c>CEncParamIDPlayer</c>

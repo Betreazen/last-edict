@@ -1,6 +1,6 @@
-using D2.Data.Map;
+using LastEdict.Data.Map;
 
-namespace D2.Data.Sound;
+namespace LastEdict.Data.Sound;
 
 /// <summary>Источник фонового звука места: звук <see cref="Name"/> архива <c>AudioRgn</c> у объекта клетки (<see cref="X"/>, <see cref="Y"/>)
 /// размером <see cref="W"/>×<see cref="H"/>.</summary>

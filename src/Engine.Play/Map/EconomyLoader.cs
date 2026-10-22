@@ -1,8 +1,8 @@
-using D2.Data.Content;
-using D2.Data.Content.Schema;
-using D2.Rules.Map;
+using LastEdict.Data.Content;
+using LastEdict.Data.Content.Schema;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Map;
+namespace LastEdict.Data.Map;
 
 /// <summary>
 /// Содержимое (расы, уровни городов, постройки, юниты, глобальные величины, настройки ИИ, вор, ориентиры) → правила экономики,

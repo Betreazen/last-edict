@@ -1,9 +1,9 @@
-using D2.Data.Content;
-using D2.Data.Play;
-using D2.Data.Ui;
-using D2.Rules.Map;
+using LastEdict.Data.Content;
+using LastEdict.Data.Play;
+using LastEdict.Data.Ui;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Конец партии (<see cref="GameEnd"/>): окно сообщения, эпилог, попап события — по разбору движка
 /// (<c>docs/scenario-events.md</c> §3–4).</summary>
@@ -95,7 +95,7 @@ public class GameEndTests
         var ui = new UiScreenState(content.Screens.Single(s => s.Id == "DLG_END_WIN_LOSE_"));
         var logic = new EndScenarioLogic(true, scenario, id => id);
         logic.Open(ui);
-        Assert.Equal(new D2.Data.Ui.Windows.UiTune("WINU01", EndScenarioLogic.MusicFadeMs), logic.TakeRequest());
+        Assert.Equal(new LastEdict.Data.Ui.Windows.UiTune("WINU01", EndScenarioLogic.MusicFadeMs), logic.TakeRequest());
         Assert.Null(logic.TakeRequest());
         Assert.False(ui.IsEnabled("BTN_REPLAY"));
         logic.Handle(new UiClicked("BTN_REPLAY"), ui);
@@ -103,7 +103,7 @@ public class GameEndTests
         logic.TuneEnded(ui);
         Assert.True(ui.IsEnabled("BTN_REPLAY"));
         logic.Handle(new UiClicked("BTN_REPLAY"), ui);
-        Assert.Equal(new D2.Data.Ui.Windows.UiTune("WINU01", 0), logic.TakeRequest());
+        Assert.Equal(new LastEdict.Data.Ui.Windows.UiTune("WINU01", 0), logic.TakeRequest());
         Assert.False(ui.IsEnabled("BTN_REPLAY"));
 
         var bare = new UiScreenState(content.Screens.Single(s => s.Id == "DLG_END_WIN_LOSE_"));

@@ -1,6 +1,6 @@
 using System.Text.Json.Nodes;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Правила с модовой правкой для тестов: копия <c>data/rules</c> во временный каталог, в таблицы дописываются колонки и
 /// строки (как это делает мод), каталог удаляется вместе с объектом.</summary>

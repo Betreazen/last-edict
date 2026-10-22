@@ -1,6 +1,6 @@
-using D2.Rules.Map;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>Имя героя человека в первый ход (окно <c>CChangeFirstLeaderNameInterf</c>, <c>DLG_GETINFO_BOX</c>; разбор —
 /// <c>docs/day-cycle.md</c> §17).</summary>

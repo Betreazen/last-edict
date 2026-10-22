@@ -1,6 +1,6 @@
-using D2.Data.Play;
+using LastEdict.Data.Play;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Бой ИИ, который ведёт экран, при уходе вида доигрывается автобоем ровно один раз (<c>MapView.AiBattle</c>): главный поток
 /// (<c>CancelAi</c>) и рабочий (крючок <c>Battle</c> после отмены) могут прийти одновременно — второй ждёт итог первого.</summary>

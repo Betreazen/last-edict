@@ -1,7 +1,7 @@
-using D2.Data.Menu;
-using D2.Rules.Map;
+using LastEdict.Data.Menu;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>Предложение ИИ продать человеку предмет или заклинание (<c>CCmdProposeTradeMsg</c>: кто, кому, вещь, цена); у предмета
 /// <see cref="ThingId"/> — тип (<c>GItem</c>), у заклинания — его id.</summary>
@@ -9,12 +9,12 @@ public sealed record TradeOffer(string From, string To, string ThingId, bool IsI
 {
     /// <summary>Из сделки партии (<see cref="Play.AllianceOffer.Trade"/>, модель сессии А): экземпляр предмета — в его тип; «золото в
     /// подарок» и не сделка — null.</summary>
-    public static TradeOffer? Of(Play.AllianceOffer offer, D2.Rules.Map.MapState map)
+    public static TradeOffer? Of(Play.AllianceOffer offer, LastEdict.Rules.Map.MapState map)
     {
         ArgumentNullException.ThrowIfNull(offer);
         ArgumentNullException.ThrowIfNull(map);
-        if (offer.Trade is not { Kind: not D2.Rules.Map.AiGiftKind.Gold } trade) return null;
-        bool item = trade.Kind == D2.Rules.Map.AiGiftKind.Item;
+        if (offer.Trade is not { Kind: not LastEdict.Rules.Map.AiGiftKind.Gold } trade) return null;
+        bool item = trade.Kind == LastEdict.Rules.Map.AiGiftKind.Item;
         string thing = item && map.ItemTypes.TryGetValue(trade.Object, out var type) ? type : trade.Object;
         return new TradeOffer(offer.From, offer.To, thing, item, trade.Gold);
     }

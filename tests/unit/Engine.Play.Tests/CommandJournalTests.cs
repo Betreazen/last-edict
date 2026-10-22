@@ -1,13 +1,13 @@
 using System.Text.Json;
-using D2.Data.Battle;
-using D2.Data.Content;
-using D2.Data.Map;
-using D2.Data.Play;
-using D2.Data.Play.Commands;
-using D2.Rules.Battle;
-using D2.Rules.Map;
+using LastEdict.Data.Battle;
+using LastEdict.Data.Content;
+using LastEdict.Data.Map;
+using LastEdict.Data.Play;
+using LastEdict.Data.Play.Commands;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Команды партии (этап Э2, задача A, <c>docs/game-commands.md</c>): каждая команда переживает запись в JSON; партия, сыгранная
 /// командами, повторяется по журналу с тем же хешем состояния после каждой команды — ходы ИИ и бои автобоем детерминированы, журнал —
@@ -22,12 +22,12 @@ public class CommandJournalTests
         ImportedData.Require("scenarios", "rules/Gunits.json", "map", "game");
         string path = ScenarioFile.PathOf(ImportedData.PathOf("scenarios"), "Power to Corrupt");
         var content = SharedContent.Load(Data);
-        var setup = new D2.Data.Menu.NewGameSetup
+        var setup = new LastEdict.Data.Menu.NewGameSetup
         {
             Scenario = content.Catalog.Scenarios.Single(s => s.Id == "Power to Corrupt"), Race = 3, LordCategory = 1, Difficulty = 1,
         };
         var book = GameBook.Load(Path.Combine(Data, "rules"));
-        var state = D2.Data.Play.NewGame.Start(ScenarioFile.Read(path), setup, content.Catalog, book, new Random(1));
+        var state = LastEdict.Data.Play.NewGame.Start(ScenarioFile.Read(path), setup, content.Catalog, book, new Random(1));
         return new GameSession(state, content.MapArt, book);
     }
 

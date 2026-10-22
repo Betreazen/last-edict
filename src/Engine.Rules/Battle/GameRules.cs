@@ -1,9 +1,9 @@
-using D2.Rules.Units;
+using LastEdict.Rules.Units;
 
-namespace D2.Rules.Battle;
+namespace LastEdict.Rules.Battle;
 
-/// <summary>Справочники правил, уже прочитанные из .dbf. D2.Rules файлов не читает —
-/// собирает эту запись загрузчик из D2.Data (ТЗ §4).</summary>
+/// <summary>Справочники правил, уже прочитанные из .dbf. LastEdict.Rules файлов не читает —
+/// собирает эту запись загрузчик из LastEdict.Data (ТЗ §4).</summary>
 public sealed record GameRules(
     IReadOnlyDictionary<string, UnitType> Units,
     IReadOnlyDictionary<string, AttackType> Attacks,
@@ -14,7 +14,7 @@ public sealed record GameRules(
     // Модификаторы, которые выдаются при повышении уровня (GleaUpg.MODIF_ID) — и только они.
     // Нужны там, где надо отличить «цепочка выросла вместе с уровнем» от «надели предмет»:
     // уровень журнал пишет сам, а момент надевания вещи внутри хода не знает никто
-    // (см. D2.Data.Battle.SaveSnapshots.TryChain).
+    // (см. LastEdict.Data.Battle.SaveSnapshots.TryChain).
     IReadOnlySet<string>? LeaderUpgradeModifiers = null)
 {
     public AttackType? AttackOf(UnitType unit) => Attacks.TryGetValue(unit.AttackId, out var a) ? a : null;

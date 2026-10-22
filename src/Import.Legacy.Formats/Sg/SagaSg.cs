@@ -1,7 +1,7 @@
 using System.Text;
-using D2.Data.Dbf;
+using LastEdict.Data.Dbf;
 
-namespace D2.Data.Sg;
+namespace LastEdict.Data.Sg;
 
 /// <summary>
 /// Таблицы сценариев саг игры (<c>Scens\*.dbf</c>; разбор — <c>docs/day-cycle.md</c> §15). Движок пишет объект одним и тем же методом

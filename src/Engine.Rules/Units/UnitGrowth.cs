@@ -1,19 +1,19 @@
-using D2.Rules.Battle;
-using D2.Rules.Map;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Map;
 
-namespace D2.Rules.Units;
+namespace LastEdict.Rules.Units;
 
 /// <summary>Строка <c>GDynUpgr.DBF</c> — прибавка за один уровень. Пустая колонка <c>.dbf</c> здесь
 /// значит нулевую прибавку (в отличие от <see cref="ModifierElement"/>, где «не задано» несёт смысл:
 /// там за этим стоит <c>ModifierValue.initialized</c>, а тут — обычное целое поле
 /// <c>CDynUpgrade</c>).
-/// <para>Дом записи — <c>D2.Rules</c>, строит её <c>D2.Data.Battle.RulesLoader</c>: ссылка идёт
-/// только <c>D2.Data → D2.Rules</c>. Ровно так задача 3 свела в одно место
+/// <para>Дом записи — <c>LastEdict.Rules</c>, строит её <c>LastEdict.Data.Battle.RulesLoader</c>: ссылка идёт
+/// только <c>LastEdict.Data → LastEdict.Rules</c>. Ровно так задача 3 свела в одно место
 /// <see cref="Modifier"/>.</para>
 /// <para><c>EnrollCost</c> и три остальных банка (<c>REVIVE_C</c>, <c>HEAL_C</c>,
 /// <c>TRAINING_C</c>) движок тоже умножает на число шагов (GOG <c>0x598d55</c>, <c>0x598dd3</c>,
 /// <c>0x598e4e</c>, <c>0x598ec9</c> — те же множители, что у чисел). Здесь растят только боевые
-/// статы: цена найма прокачанного юнита — экономика, её считает <c>D2.Rules.Map</c>. Поле оставлено,
+/// статы: цена найма прокачанного юнита — экономика, её считает <c>LastEdict.Rules.Map</c>. Поле оставлено,
 /// потому что оно и так читается из таблицы.</para></summary>
 public sealed record DynUpgrade(string Id, Bank EnrollCost, int HitPoints, int Armor, int Regen,
                                 int XpKilled, int XpNext, int Move, int Negotiate, int Damage,
@@ -25,7 +25,7 @@ public readonly record struct GrowthSteps(int First, int Second);
 
 /// <summary>Юнит, выращенный до уровня <see cref="Level"/>. <see cref="Type"/> — тот же
 /// <see cref="UnitType"/> с выросшими HP, бронёй и порогами опыта; регенерация и запас хода в
-/// <see cref="UnitType"/> не живут (их читает <c>D2.Data.RulesLoader.LoadExtras</c>) и потому едут
+/// <see cref="UnitType"/> не живут (их читает <c>LastEdict.Data.RulesLoader.LoadExtras</c>) и потому едут
 /// рядом — в том же виде, в каком их ждёт <see cref="EffectiveStats.Of"/>.</summary>
 public sealed record GrownUnit(UnitType Type, int Level, int Regeneration, int MoveAllowance);
 
@@ -84,7 +84,7 @@ public static class UnitGrowth
     /// проверка на <c>emptyId</c> в <c>0x598acb</c>.
     /// <para><paramref name="regeneration"/> и <paramref name="moveAllowance"/> — база из
     /// <c>Gunits.REGEN</c>/<c>MOVE</c>: в <see cref="UnitType"/> этих колонок нет, их читает
-    /// <c>D2.Data.RulesLoader.LoadExtras</c>. Тот же приём, что у
+    /// <c>LastEdict.Data.RulesLoader.LoadExtras</c>. Тот же приём, что у
     /// <see cref="EffectiveStats.Of"/>.</para></summary>
     public static GrownUnit Of(UnitType type, int dynUpgLevel, int level,
                                DynUpgrade? first, DynUpgrade? second,

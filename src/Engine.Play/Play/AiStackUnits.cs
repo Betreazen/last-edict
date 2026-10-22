@@ -1,8 +1,8 @@
-using D2.Rules.Battle;
-using D2.Rules.Map;
-using D2.Rules.Units;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Units;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>
 /// Подготовка отряда ИИ, часть «юниты» (<c>docs/ai-items.md</c> §6): в крепости — юниты гарнизона в отряд (<c>0x451f5a</c> →

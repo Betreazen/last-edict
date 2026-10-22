@@ -1,24 +1,24 @@
-﻿using D2.Data;
-using D2.Rules.Battle;
-using D2.Rules.Rng;
-using D2.Rules.Units;
+﻿using LastEdict.Data;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Rng;
+using LastEdict.Rules.Units;
 using Xunit.Abstractions;
 
 /// <summary>
 /// Задача 2 фазы Ф6: цепочка модификаторов и эффективные статы. Числа берутся из живой ванили —
-/// <c>Gmodif.dbf</c> / <c>GmodifL.dbf</c> через <c>D2.Data.Battle.ModifierLoader</c>, синтетических
+/// <c>Gmodif.dbf</c> / <c>GmodifL.dbf</c> через <c>LastEdict.Data.Battle.ModifierLoader</c>, синтетических
 /// модификаторов здесь нет. Игра не запускается.
 /// </summary>
 public class EffectiveStatsTests(ITestOutputHelper output)
 {
     // ---- вход: настоящие модификаторы ванили -------------------------------------------------
 
-    private static readonly Lazy<D2.Data.Battle.ModifierTables> Tables =
-        new(() => D2.Data.Battle.ModifierLoader.Load(ImportedData.Content));
+    private static readonly Lazy<LastEdict.Data.Battle.ModifierTables> Tables =
+        new(() => LastEdict.Data.Battle.ModifierLoader.Load(ImportedData.Content));
 
     /// <summary>Цепочка из вани́льных модификаторов по их id, в порядке наложения. Пересборки
     /// записей здесь больше нет: задача 3 свела <c>Modifier</c>/<c>ModifierElement</c> в одно
-    /// определение (<c>D2.Rules.Units</c>), и загрузчик отдаёт сразу его, с разобранным
+    /// определение (<c>LastEdict.Rules.Units</c>), и загрузчик отдаёт сразу его, с разобранным
     /// <c>Type</c>.</summary>
     private static IReadOnlyList<Modifier> Chain(params string[] ids) =>
         ids.Select(id => Tables.Value.Modifiers[id]).ToList();
@@ -38,7 +38,7 @@ public class EffectiveStatsTests(ITestOutputHelper output)
     public void EmptyChain_ReturnsBaseVerbatim()
     {
         ImportedData.RequireRules();
-        var rules = D2.Data.Battle.RulesLoader.Load(ImportedData.Content);
+        var rules = LastEdict.Data.Battle.RulesLoader.Load(ImportedData.Content);
         int checked_ = 0;
         foreach (var type in rules.Units.Values)
         {

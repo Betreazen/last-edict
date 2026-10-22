@@ -1,10 +1,10 @@
-using D2.Data.Content;
-using D2.Data.Menu;
-using D2.Data.Play;
-using D2.Data.Play.Commands;
-using D2.Rules.Map;
+using LastEdict.Data.Content;
+using LastEdict.Data.Menu;
+using LastEdict.Data.Play;
+using LastEdict.Data.Play.Commands;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>Портрет лорда игрока (<c>Lords.ff</c>): крупный <c>LORD{раса}L0{лицо}</c> (160×220) — <c>sprintf("LORD%s%s%02d", раса, "L"/"S", лицо + 1)</c>
 /// (<c>0x5c5563</c>, строки <c>0x7b0314</c>…<c>0x7b0334</c>). Буквы рас — по <c>Grace.RACE_TYPE</c>: 0 HU, 1 UN, 2 HE, 3 DW, 5 EL; нейтралы (4) —

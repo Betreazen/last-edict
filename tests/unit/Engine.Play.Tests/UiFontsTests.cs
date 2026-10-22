@@ -1,8 +1,8 @@
-using D2.Data.Ui;
+using LastEdict.Data.Ui;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Набор шрифтов порта: <c>data/ui/fonts.json</c>. Проверяется, что он покрывает все ключи, которые
 /// встречаются в разметке экранов, и что файлы начертаний на месте: растровые шрифты игры (BMFont из <c>Interf/*.mft</c>,

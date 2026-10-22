@@ -1,4 +1,4 @@
-namespace D2.Rules.Map;
+namespace LastEdict.Rules.Map;
 
 /// <summary>
 /// Итог команды жезла. <see cref="Refused"/> непусто — команды не было, и <see cref="Purse"/> с
@@ -84,7 +84,7 @@ public static class Rods
     /// <param name="leaderAbilities">Способности лидера отряда — все три источника задачи 9:
     /// <c>GLabi</c> его типа, навыки уровня и <c>MOD_EQUIP</c> надетого
     /// (<see cref="Units.LeaderAbilities.Split"/>; <c>GLabi</c> читает
-    /// <c>D2.Data.Magic.EquipLoader.LoadInnateAbilities</c>). Приходит списком, а не собирается
+    /// <c>LastEdict.Data.Magic.EquipLoader.LoadInnateAbilities</c>). Приходит списком, а не собирается
     /// здесь: правило жезла спрашивает «есть ли способность», а откуда она — дело
     /// <c>LeaderAbilities</c>.</param>
     /// <param name="allyTerrain">Террейн клетки (<c>Lterrain.ID</c>) принадлежит расе СОЮЗНИКА.

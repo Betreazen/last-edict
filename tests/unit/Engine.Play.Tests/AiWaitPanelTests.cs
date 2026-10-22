@@ -1,9 +1,9 @@
-using D2.Data.Content;
-using D2.Data.Map;
-using D2.Data.Play;
-using D2.Data.Ui;
+using LastEdict.Data.Content;
+using LastEdict.Data.Map;
+using LastEdict.Data.Play;
+using LastEdict.Data.Ui;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Окно ожидания хода ИИ <c>DLG_STRAT_WAIT</c> (<see cref="AiWaitLogic"/>): внизу — лорд того, чей ход (у нейтралов —
 /// «разбойник» <c>LORDNEL01</c>); <c>IMG_LEADER</c> и <c>TXT_LEADER_NAME</c> пусты, как у движка (разбор 18.10, Ин39: смена панели

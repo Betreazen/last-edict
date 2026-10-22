@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 
-namespace D2.Data.Import;
+namespace LastEdict.Data.Import;
 
 /// <summary>Графика карты и боя: архивы <c>Imgs/*.ff</c> → <c>assets/gfx/&lt;Архив&gt;/{plain,frames,anims}/…webp</c> и описи
 /// <c>data/gfx/&lt;Архив&gt;.json</c> (перенос <c>tools/gfx-assets/build_gfx_assets.py</c>; описи — те же байты). Листы-атласы на диск не пишутся;

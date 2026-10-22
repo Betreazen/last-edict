@@ -1,9 +1,9 @@
 using System.Text.Json;
-using D2.Data.Menu;
-using D2.Data.Ui;
-using D2.Data.Ui.Windows;
+using LastEdict.Data.Menu;
+using LastEdict.Data.Ui;
+using LastEdict.Data.Ui.Windows;
 
-namespace D2.Data.Map;
+namespace LastEdict.Data.Map;
 
 /// <summary>
 /// Настройки показа карты (свой JSON порта, не <c>Disciple.ini</c>): скорость движения своих отрядов и отрядов противника
@@ -13,18 +13,18 @@ namespace D2.Data.Map;
 /// ключ ini <c>ShowTurnSummary</c>, по умолчанию выключен: чтение <c>0x619509</c> с умолчанием 0): итоги хода показываются в партии
 /// нескольких людей или при включённом флажке (<see cref="TurnSummaryShown"/>). <paramref name="FlippedBattle"/> — «Поменяться сторонами»
 /// (<c>TOG_FLIPBATTLE</c>, ключ ini <c>FlippedBattle</c>, по умолчанию 0: чтение <c>0x6194e5</c>): раскладка экрана боя
-/// (<c>D2.Data.Gfx.BattleLayout</c>). <paramref name="BattleSpeed"/> — «Скорость битвы» (<c>SPIN_BATTLE_SPEED</c>, ini <c>BattleSpeed</c> 1…4 с зажимом,
+/// (<c>LastEdict.Data.Gfx.BattleLayout</c>). <paramref name="BattleSpeed"/> — «Скорость битвы» (<c>SPIN_BATTLE_SPEED</c>, ini <c>BattleSpeed</c> 1…4 с зажимом,
 /// <c>0x619e2b</c>; в поставляемом ini — 2): 1–3 — только длительность надписей на портретах (<see cref="NoteTicks"/>), 4 «Сразу» — бой без
 /// показа действий (<c>0x62e26a</c>). <paramref name="BattleAnim"/> — «Дополнительная анимация в бою» (<c>TOG_BATTLEANIM</c>, ini
 /// <c>BattleAnim</c>, по умолчанию 1, <c>0x619d50</c>): покой <c>IDLE</c> или <c>STIL</c>, анимированные курсоры, рамки и метки.
 /// <paramref name="Banners"/> — знамёна над отрядами (<c>TOG_BANNERS</c> палитры карты, <see cref="MapPalette.Banners"/>): у движка байт
 /// настроек живёт до конца процесса, у порта сохраняется между запусками (ответ пользователя 11.10); по умолчанию выключены.
-/// <paramref name="Scaling"/> — как экран 800×600 вписывается в окно (<see cref="D2.Data.Ui.ScreenScaling"/>: <c>sharp</c> — чёткий
+/// <paramref name="Scaling"/> — как экран 800×600 вписывается в окно (<see cref="LastEdict.Data.Ui.ScreenScaling"/>: <c>sharp</c> — чёткий
 /// билинейный, по умолчанию; <c>integer</c> — целый масштаб с рамкой; <c>nearest</c> — дробный ближайшим соседом, как до 11.10). Настройка
 /// порта, у движка её нет; окна для неё нет — только файл и ключ <c>--scale</c> (прогон 3 пользователя 11.10, пункт 1).
 /// <para>Остальные флажки окна (пометка 5 прогона 14.10: «не сохраняются настройки» — окно их не читало и не писало), умолчания — как в
 /// поставляемом <c>Disciple.ini</c>, ключа нет — как в коде чтения ini (<c>0x619160</c>…, <c>0x619d50</c>): <paramref name="AutoSave"/> —
-/// «Автосохранение» (<c>AutoSave</c>, 1; запись по концу хода человека — <see cref="D2.Data.Play.AutoSave"/>); <paramref name="ConfirmEndOfTurn"/> —
+/// «Автосохранение» (<c>AutoSave</c>, 1; запись по концу хода человека — <see cref="LastEdict.Data.Play.AutoSave"/>); <paramref name="ConfirmEndOfTurn"/> —
 /// <c>ConfirmEOT</c> (1); <paramref name="SmoothScroll"/> — «Прокрутка между действиями» (<c>SmoothScroll</c>, 1);
 /// <paramref name="StackSmoothScroll"/> — шаг кадра идущего отряда пополам (<c>StackSmoothScroll</c>, 1; <see cref="StackWalk"/>);
 /// <paramref name="LowEndVideoCard"/> (<c>LowEndVideoCard</c>, 0); <paramref name="HighAlpha"/> (<c>HighAlpha</c>, 1);
@@ -37,7 +37,7 @@ namespace D2.Data.Map;
 /// (<c>--check</c>) экран боя её не показывает без ключа <c>--queue-strip</c>.</para>
 /// <para>Настройки порта сверх окна движка (своя версия, техника будущего окна настроек; окна для них пока нет — только файл):
 /// <paramref name="MasterVolume"/> и <paramref name="AmbientVolume"/> — общая громкость и громкость фонов мест, 0…100 % (по умолчанию 100 —
-/// звучание как прежде; шины звука — <c>GameAudio</c>); <paramref name="WindowMode"/> — режим окна (<see cref="D2.Data.Ui.DisplayMode"/>:
+/// звучание как прежде; шины звука — <c>GameAudio</c>); <paramref name="WindowMode"/> — режим окна (<see cref="LastEdict.Data.Ui.DisplayMode"/>:
 /// <c>windowed</c>, <c>borderless</c>, <c>fullscreen</c>), <paramref name="VSync"/> — вертикальная синхронизация, <paramref name="MaxFps"/> —
 /// предел кадров в секунду (0 — без предела, иначе <see cref="MinFps"/>…<see cref="MaxFpsLimit"/>); применяются при запуске игры (сцена
 /// <c>Boot</c>), не в проверках. В памяти настройки — одна плоская запись; в файле — разделы с версией схемы (<see cref="SettingsFile"/>).</para>
@@ -56,13 +56,13 @@ public sealed record MapSettings(int PlayerSpeed = 1, int OpponentSpeed = 1, boo
                                  int MasterVolume = 100, int AmbientVolume = 100, string WindowMode = "windowed", bool VSync = true,
                                  int MaxFps = 0)
 {
-    /// <summary>Режим вписывания экрана в окно; неизвестное имя в файле — чёткий (<see cref="D2.Data.Ui.ScreenScaling.Sharp"/>).</summary>
+    /// <summary>Режим вписывания экрана в окно; неизвестное имя в файле — чёткий (<see cref="LastEdict.Data.Ui.ScreenScaling.Sharp"/>).</summary>
     [System.Text.Json.Serialization.JsonIgnore]
-    public D2.Data.Ui.ScreenScaling ScreenScaling => D2.Data.Ui.ScreenFit.Parse(Scaling) ?? D2.Data.Ui.ScreenScaling.Sharp;
+    public LastEdict.Data.Ui.ScreenScaling ScreenScaling => LastEdict.Data.Ui.ScreenFit.Parse(Scaling) ?? LastEdict.Data.Ui.ScreenScaling.Sharp;
 
-    /// <summary>Режим окна; неизвестное имя в файле — окно (<see cref="D2.Data.Ui.DisplayMode.Windowed"/>).</summary>
+    /// <summary>Режим окна; неизвестное имя в файле — окно (<see cref="LastEdict.Data.Ui.DisplayMode.Windowed"/>).</summary>
     [System.Text.Json.Serialization.JsonIgnore]
-    public D2.Data.Ui.DisplayMode Display => D2.Data.Ui.DisplayModes.Parse(WindowMode) ?? D2.Data.Ui.DisplayMode.Windowed;
+    public LastEdict.Data.Ui.DisplayMode Display => LastEdict.Data.Ui.DisplayModes.Parse(WindowMode) ?? LastEdict.Data.Ui.DisplayMode.Windowed;
 
     /// <summary>Потолок общей громкости и громкости фонов мест (проценты); предел кадров: 0 — без предела, иначе от 30 до 360.</summary>
     public const int MaxBusVolume = 100, MinFps = 30, MaxFpsLimit = 360;
@@ -122,7 +122,7 @@ public sealed record MapSettings(int PlayerSpeed = 1, int OpponentSpeed = 1, boo
         Scaling = ScreenScaling.ToString().ToLowerInvariant(),
         MasterVolume = Math.Clamp(MasterVolume, 0, MaxBusVolume),
         AmbientVolume = Math.Clamp(AmbientVolume, 0, MaxBusVolume),
-        WindowMode = D2.Data.Ui.DisplayModes.Name(Display),
+        WindowMode = LastEdict.Data.Ui.DisplayModes.Name(Display),
         MaxFps = MaxFps <= 0 ? 0 : Math.Clamp(MaxFps, MinFps, MaxFpsLimit),
     };
 

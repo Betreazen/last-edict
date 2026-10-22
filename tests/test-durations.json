@@ -1,5 +1,5 @@
 {
- "D2.Data.Tests": {
+ "LastEdict.Data.Tests": {
   "AiAttackStrengthHarnessTests_Cov": 2.9,
   "AiAttackStrengthHarnessTests_Human": 9.4,
   "AiAttackStrengthHarnessTests_Legions": 14.5,
@@ -280,10 +280,10 @@
   "VillageOwnerChangeTests": 0.1,
   "WandScrollTests": 0.4
  },
- "D2.GodotRef.Tests": {
+ "LastEdict.GodotRef.Tests": {
   "GodotRefTests": 0.1
  },
- "D2.Rules.Tests": {
+ "LastEdict.Rules.Tests": {
   "AiDiplomacyTests": 0.0,
   "AiGiftTests": 0.0,
   "AiItemsTests": 0.0,

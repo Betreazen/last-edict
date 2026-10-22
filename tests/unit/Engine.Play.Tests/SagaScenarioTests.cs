@@ -1,9 +1,9 @@
-using D2.Data.Map;
-using D2.Data.Play;
-using D2.Data.Sg;
-using D2.Rules.Map;
+using LastEdict.Data.Map;
+using LastEdict.Data.Play;
+using LastEdict.Data.Sg;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Главы саг из таблиц <c>Scens\*.dbf</c> (<c>docs/day-cycle.md</c> §15): собранный поток <c>.sg</c> разбирается тем же
 /// разбором, что и файлы <c>Exports</c>, все объекты на месте, земля под столицами — раса владельца (проверка кодировки плиток).</summary>

@@ -1,10 +1,10 @@
-using D2.Data.Leaders;
-using D2.Rules.Battle;
-using D2.Rules.Magic;
-using D2.Rules.Map;
-using D2.Rules.Units;
+using LastEdict.Data.Leaders;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Units;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>Вывоз героя после победы (<c>CCmdExportLeaderMsg</c>; разбор — <c>docs/day-cycle.md</c> §14, заполнение записи
 /// <c>0x408307</c>, ранг 1, если не сказано иное).</summary>
@@ -60,7 +60,7 @@ public sealed partial class GameSession
     /// <c>IUsStackLeader</c>, кроме <c>IUsNoble</c> и <c>IUsSummon</c> (<c>0x40a41f</c>, <c>0x41b399</c>, <c>0x431d8c</c>), то есть у
     /// категории «лидер», — имя юнита из сохранения как есть, даже пустое; у прочих (воин, вор, призванный) — null: движок берёт имя типа
     /// (реализация типа, слот +4). Тип — текущий (<paramref name="typeId"/>: у превращённого в бою — облик). Имя порт хранит у отряда
-    /// (<see cref="D2.Data.Map.StackLook.LeaderName"/>), поэтому собственное есть только у лидера отряда; герой не во главе отряда — null.</summary>
+    /// (<see cref="LastEdict.Data.Map.StackLook.LeaderName"/>), поэтому собственное есть только у лидера отряда; герой не во главе отряда — null.</summary>
     public string? OwnName(string unitId, string typeId)
     {
         ArgumentNullException.ThrowIfNull(unitId);

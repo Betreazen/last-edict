@@ -1,8 +1,8 @@
 using System;
-using D2.Data.Import;
+using LastEdict.Data.Import;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Кодек импорта на движке: WebP без потерь (<c>Image.SaveWebpToBuffer(lossy: false)</c> — lossless и exact: точки, в том числе RGB под
 /// нулевой альфой, после разбора те же бит в бит; проверено прогоном 21.10.2026). Картинки — свои на каждый вызов, так что зовётся из потоков

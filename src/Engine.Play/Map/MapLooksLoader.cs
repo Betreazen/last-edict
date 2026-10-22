@@ -1,9 +1,9 @@
-using D2.Data.Sg;
-using D2.Rules.Map;
+using LastEdict.Data.Sg;
+using LastEdict.Rules.Map;
 using Kaitai;
 using KSg = Kaitai.Sg;
 
-namespace D2.Data.Map;
+namespace LastEdict.Data.Map;
 
 /// <summary><c>.sg</c> → <see cref="MapLooks"/>: объекты карты для отрисовки. Правила карты — в
 /// <see cref="MapLoader"/>, отсюда он и зовётся.</summary>

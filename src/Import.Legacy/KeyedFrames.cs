@@ -1,6 +1,6 @@
 using System.Security.Cryptography;
 
-namespace D2.Data.Import;
+namespace LastEdict.Data.Import;
 
 /// <summary>Запись кадра графики с вырезанным ключом — перенос <c>tools/ui-assets/keyed_webp.py</c>, общий для интерфейса и графики мира.
 /// Пурпур игры (всё, что в RGB565 движка равно 0xF81F) становится прозрачной чёрной точкой; хеш описи — первые 16 знаков sha256 от точек

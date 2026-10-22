@@ -2,7 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 
-namespace D2.Data.Ui;
+namespace LastEdict.Data.Ui;
 
 /// <summary>Вид элемента экрана. Свой перечень, а не коды `.dlg`: старые имена (<c>TLBOX</c>, <c>SPIN</c>)
 /// ничего не говорят, а <c>RADIO</c> в игре вообще не элемент, а группа переключателей.</summary>

@@ -1,10 +1,10 @@
-using D2.Data.Content;
-using D2.Data.Menu;
-using D2.Data.Play;
-using D2.Data.Ui;
-using D2.Data.Ui.Windows;
+using LastEdict.Data.Content;
+using LastEdict.Data.Menu;
+using LastEdict.Data.Play;
+using LastEdict.Data.Ui;
+using LastEdict.Data.Ui.Windows;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Лобби «горячего стула» (<c>docs/day-cycle.md</c> §8, разбор <c>CMenuHotseatLobby</c> <c>0x4dc67c</c>): ячейки по
 /// центру, по умолчанию компьютер, лицо и лорд по кругу, «Далее» — два человека с именами; казна лобби в новой партии.</summary>
@@ -99,13 +99,13 @@ public class HotseatLobbyTests
         string dir = Path.Combine(Path.GetTempPath(), "d2-lobby-leaders-" + Guid.NewGuid().ToString("N"));
         try
         {
-            var hero = new D2.Data.Leaders.ExportedLeader
+            var hero = new LastEdict.Data.Leaders.ExportedLeader
             {
                 Name = "Мерло", Race = 0, UnitType = "G000UU0021", Level = 2,
-                Attack = new D2.Data.Leaders.LeaderAttack("G000AA0021", 1, "Молния", 80, 0, 30, 7, 40, 1),
+                Attack = new LastEdict.Data.Leaders.LeaderAttack("G000AA0021", 1, "Молния", 80, 0, 30, 7, 40, 1),
             };
-            D2.Data.Leaders.LeaderFile.Write(Path.Combine(dir, "Merlot.json"), hero);
-            D2.Data.Leaders.LeaderFile.Write(Path.Combine(dir, "Zgnom.json"), hero with { Name = "Гном", Race = 3 });
+            LastEdict.Data.Leaders.LeaderFile.Write(Path.Combine(dir, "Merlot.json"), hero);
+            LastEdict.Data.Leaders.LeaderFile.Write(Path.Combine(dir, "Zgnom.json"), hero with { Name = "Гном", Race = 3 });
             var setup = new NewGameSetup { Scenario = Content.Catalog.Scenarios.Single(s => s.Id == "'A Return To Simpler Times'") };
             var context = new MenuContext(Content.Catalog, new Dictionary<string, string>(), setup, "Игрок")
             {
@@ -214,7 +214,7 @@ public class HotseatLobbyTests
         Assert.Equal(0, book.LordCategory(players["S073PL000a"].LordId));
         Assert.Equal(("Бетрезен", 2), (players["S073PL000b"].Name, book.LordCategory(players["S073PL000b"].LordId)));
         // Казна лобби прибавляется к казне сценария (Currency::Add 0x586642), и нейтралу тоже.
-        Assert.Equal(data.Looks.Map.Players["S073PL0009"].Bank + new D2.Rules.Map.Bank(300, 100, 100, 100, 100, 100),
+        Assert.Equal(data.Looks.Map.Players["S073PL0009"].Bank + new LastEdict.Rules.Map.Bank(300, 100, 100, 100, 100, 100),
                      players["S073PL0009"].Bank);
         Assert.True(data.Looks.Map.Players["S073PL0009"].Bank.Gold > 0);
 

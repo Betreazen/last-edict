@@ -2,11 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using D2.Data.Menu;
-using D2.Data.Ui;
+using LastEdict.Data.Menu;
+using LastEdict.Data.Ui;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Содержимое экрана, которое задаёт логика (<see cref="IScreenLogic"/>) через <see cref="UiScreenState"/>:
 /// фон, кадры картинок, тексты подписей и поля ввода, строки текстовых списков с подсветкой выбранной, прокрутка

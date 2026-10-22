@@ -1,7 +1,7 @@
-using D2.Data.Ui;
-using D2.Rules.Battle;
+using LastEdict.Data.Ui;
+using LastEdict.Rules.Battle;
 
-namespace D2.Data.Gfx;
+namespace LastEdict.Data.Gfx;
 
 /// <summary>
 /// Состояние портрета в панели боя — индекс картинки <c>CFaceImgImpl</c> (<c>IFaceImg</c> vftable <c>+0x24</c>/<c>+0x28</c>, поле <c>+0x40</c>;

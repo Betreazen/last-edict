@@ -1,7 +1,7 @@
-using D2.Data.Gfx;
-using D2.Rules.Battle;
+using LastEdict.Data.Gfx;
+using LastEdict.Rules.Battle;
 
-namespace D2.Data.Battle;
+namespace LastEdict.Data.Battle;
 
 /// <summary>Вспышки удара на портретах целей панели боя (вид к надписям <see cref="StrikeNotes"/>): цвета портретов — модель интерфейса
 /// (<see cref="BattleFaces"/>), надписи и их снимок до удара — ядро.</summary>

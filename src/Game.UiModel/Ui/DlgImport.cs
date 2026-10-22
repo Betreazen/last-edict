@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace D2.Data.Ui;
+namespace LastEdict.Data.Ui;
 
 /// <summary>Перевод разметки старого движка (<c>Interf/Interf.dlg</c>, <c>Interf/CustomLobby.dlg</c>) в экраны
 /// порта (<see cref="UiScreen"/>). Формат исходника: текст cp1251, строки

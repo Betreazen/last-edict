@@ -1,11 +1,11 @@
 using System.Text.Json;
-using D2.Data.Game;
-using D2.Data.Gfx;
-using D2.Data.Map;
-using D2.Data.Play;
-using D2.Data.Ui;
+using LastEdict.Data.Game;
+using LastEdict.Data.Gfx;
+using LastEdict.Data.Map;
+using LastEdict.Data.Play;
+using LastEdict.Data.Ui;
 
-namespace D2.Data.Content;
+namespace LastEdict.Data.Content;
 
 /// <summary>Содержимое игры: базовый набор данных из <c>data/</c> плюс наложенные поверх моды.
 ///

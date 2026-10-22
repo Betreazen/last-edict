@@ -1,9 +1,9 @@
-using D2.Data.Content;
-using D2.Data.Menu;
-using D2.Data.Ui;
+using LastEdict.Data.Content;
+using LastEdict.Data.Menu;
+using LastEdict.Data.Ui;
 using Xunit;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Логика экранов цепочки «новая игра»: выбор сценария → раса → лорд → брифинг. Настоящие данные
 /// (<c>data/ui</c>, <c>data/game</c>, строки <c>ru</c>); поведение, которого нет в данных, — со слов пользователя
@@ -153,9 +153,9 @@ public class MenuLogicTests
         Assert.Equal(Strings["X010TA0003"], ui.TextOf("TXT_DIFF"));
 
         // Смена лица (0x4e6945): звук, разовый ролик старого лица поверх неподвижного нового; пока ролик идёт — нажатия не принимаются.
-        var window = (D2.Data.Ui.Windows.IWindowLogic)logic;
+        var window = (LastEdict.Data.Ui.Windows.IWindowLogic)logic;
         Fire(logic, ui, [new UiClicked("BTN_FACE")]);
-        Assert.Equal(new D2.Data.Ui.Windows.UiSound("CHNGFACE"), window.TakeRequest());
+        Assert.Equal(new LastEdict.Data.Ui.Windows.UiSound("CHNGFACE"), window.TakeRequest());
         Assert.Equal(new UiVideoRef("FACE_UN_0", false, 1), ui.VideoOf("BTN_FACE"));
         Assert.Equal("FACE_UN_1", ui.Frame("BTN_FACE"));
         Fire(logic, ui, [new UiClicked("BTN_FACE")]);

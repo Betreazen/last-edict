@@ -1,4 +1,4 @@
-namespace D2.Data.Ui;
+namespace LastEdict.Data.Ui;
 
 /// <summary>Как картинка ложится в место своего элемента (<see cref="UiScreenState.SetImage"/>).</summary>
 public enum UiImageAlign

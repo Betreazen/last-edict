@@ -2,16 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using D2.Data.Battle;
-using D2.Data.Dbf;
-using D2.Data.Gfx;
-using D2.Data.Menu;
-using D2.Data.Ui;
-using D2.Rules.Battle;
-using D2.Rules.Rng;
+using LastEdict.Data.Battle;
+using LastEdict.Data.Dbf;
+using LastEdict.Data.Gfx;
+using LastEdict.Data.Menu;
+using LastEdict.Data.Ui;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Rng;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Экран боя: поле (<see cref="BattleView"/>) и поверх него разметка <c>DLG_BATTLE_A</c> с кнопками.
 /// Бой ведёт <see cref="BattleSession"/> поверх <c>BattleSim</c>; экран только показывает и передаёт команды,
@@ -49,36 +49,36 @@ public partial class BattleScreen : Node
     /// <summary>Обе стороны — люди «горячего стула» (<see cref="BattleSession.BothHuman"/>): каждый ведёт свою сторону на этом экране.</summary>
     public bool BothHuman { get; set; }
 
-    /// <summary>Нападающие — отряд того, кто за ПК (<c>CTaskBattle</c> <c>+0x2c</c>, <see cref="D2.Data.Play.MapBattle.OwnsAttackerStack"/>):
-    /// только тогда в конце боя есть «Меню героя» (<see cref="D2.Data.Play.MapBattle.PaperdollOffered"/>). Без хозяина — да.</summary>
+    /// <summary>Нападающие — отряд того, кто за ПК (<c>CTaskBattle</c> <c>+0x2c</c>, <see cref="LastEdict.Data.Play.MapBattle.OwnsAttackerStack"/>):
+    /// только тогда в конце боя есть «Меню героя» (<see cref="LastEdict.Data.Play.MapBattle.PaperdollOffered"/>). Без хозяина — да.</summary>
     public bool OwnsAttackerStack { get; set; } = true;
 
     /// <summary>Бой закрыт «Меню героя» (<c>BTN_PAPERDOLL</c> → <c>closeBattleWindow(true)</c> <c>0x633e20</c>): хозяин после итога боя
-    /// откроет окно нападавшего отряда (<see cref="D2.Data.Play.GameSession.RequestPaperdoll"/>).</summary>
+    /// откроет окно нападавшего отряда (<see cref="LastEdict.Data.Play.GameSession.RequestPaperdoll"/>).</summary>
     public bool Paperdoll { get; private set; }
 
     /// <summary>«Поменяться сторонами» (<c>TOG_FLIPBATTLE</c>, ini <c>FlippedBattle</c>): раскладка <see cref="BattleLayout"/>; без хозяина —
     /// <c>--flip</c>.</summary>
     public bool Flipped { get; set; }
 
-    /// <summary>«Скорость битвы» 1…4 (<see cref="D2.Data.Map.MapSettings.BattleSpeed"/>): длительность надписей на портретах; 4 «Сразу» — бой
+    /// <summary>«Скорость битвы» 1…4 (<see cref="LastEdict.Data.Map.MapSettings.BattleSpeed"/>): длительность надписей на портретах; 4 «Сразу» — бой
     /// без показа действий. Без хозяина — <c>--speed N</c>.</summary>
-    public int Speed { get; set; } = new D2.Data.Map.MapSettings().BattleSpeed;
+    public int Speed { get; set; } = new LastEdict.Data.Map.MapSettings().BattleSpeed;
 
-    /// <summary>«Дополнительная анимация в бою» (<see cref="D2.Data.Map.MapSettings.BattleAnim"/>): покой <c>IDLE</c> (иначе <c>STIL</c>),
+    /// <summary>«Дополнительная анимация в бою» (<see cref="LastEdict.Data.Map.MapSettings.BattleAnim"/>): покой <c>IDLE</c> (иначе <c>STIL</c>),
     /// анимированные курсоры, рамки и метки (<see cref="BattleScene.Animated"/>). Без хозяина — выключается <c>--still</c>.</summary>
     public bool BattleAnim { get; set; } = true;
 
     /// <summary>Скорость «Сразу» (<c>data2+9</c>, <c>0x62e26a</c>): замахов, ударов и эффектов нет, покой неподвижен (<c>0x651c34</c>).</summary>
-    private bool InstantSpeed => Speed >= D2.Data.Map.MapSettings.InstantBattleSpeed;
+    private bool InstantSpeed => Speed >= LastEdict.Data.Map.MapSettings.InstantBattleSpeed;
 
-    /// <summary>Сколько держится надпись на портрете, мс: (N + 1) тиков по 66 мс (<see cref="D2.Data.Map.MapSettings.NoteTicks"/>).</summary>
-    private double NoteMs => D2.Data.Map.MapSettings.NoteTicks(Speed) * AnimFrameMs;
+    /// <summary>Сколько держится надпись на портрете, мс: (N + 1) тиков по 66 мс (<see cref="LastEdict.Data.Map.MapSettings.NoteTicks"/>).</summary>
+    private double NoteMs => LastEdict.Data.Map.MapSettings.NoteTicks(Speed) * AnimFrameMs;
 
     /// <summary>Вариант фона места: хозяин тянет <c>rand() % n</c> из потока CRT партии (<see cref="BattleScene.BackgroundVariants"/>).</summary>
     public int BackgroundVariant { get; set; }
 
-    /// <summary>Собственное имя юнита по id и текущему типу (<see cref="D2.Data.Play.GameSession.OwnName"/>: у героя во главе отряда — имя
+    /// <summary>Собственное имя юнита по id и текущему типу (<see cref="LastEdict.Data.Play.GameSession.OwnName"/>: у героя во главе отряда — имя
     /// из сохранения, даже пустое); null — имени нет, подпись берёт имя типа (<see cref="NameOf"/>). Без хозяина (бой из журнала) — у всех
     /// имя типа.</summary>
     public Func<string, string, string?> OwnName { get; set; } = (_, _) => null;
@@ -307,12 +307,12 @@ public partial class BattleScreen : Node
     private void Message(string textId, Action? yes = null)
     {
         if (_message is not null) CloseView(_message);
-        var logic = new D2.Data.Ui.Windows.MessageBoxLogic(Text(textId), yes);
+        var logic = new LastEdict.Data.Ui.Windows.MessageBoxLogic(Text(textId), yes);
         var view = new UiScreenView { Hosted = "DLG_MESSAGE_BOX", Name = "Message", Logic = logic, SlotHost = _host };
         if (Centered("DLG_MESSAGE_BOX") is { } at) view.SlotAt = at;   // окно 337×367 — по середине экрана боя 800×600, а не во всё окно
         view.Fired += _ =>
         {
-            if (logic.TakeRequest() is not D2.Data.Ui.Windows.UiClose) return;
+            if (logic.TakeRequest() is not LastEdict.Data.Ui.Windows.UiClose) return;
             CloseView(view);
             if (ReferenceEquals(_message, view)) _message = null;
         };
@@ -323,22 +323,22 @@ public partial class BattleScreen : Node
 
     /// <summary>Карточка предмета из слота (<c>DLG_R_C_ITEM</c>, <see cref="ItemCardLogic"/>): в бою без цены; закрывается как карточка
     /// юнита.</summary>
-    public void ItemCard(D2.Rules.Magic.Item item)
+    public void ItemCard(LastEdict.Rules.Magic.Item item)
     {
         Card(null);
-        var texts = _itemTexts ??= D2.Data.Ui.Windows.StackTexts.Load(GameData.Rules);
+        var texts = _itemTexts ??= LastEdict.Data.Ui.Windows.StackTexts.Load(GameData.Rules);
         _card = new UiScreenView
         {
-            Hosted = D2.Data.Ui.Windows.ItemCardLogic.Screen, Name = "Card",
-            Logic = new D2.Data.Ui.Windows.ItemCardLogic(Text, item, texts.Items.GetValueOrDefault(item.Id, ""), texts.ItemDescs?.GetValueOrDefault(item.Id, "") ?? ""),
+            Hosted = LastEdict.Data.Ui.Windows.ItemCardLogic.Screen, Name = "Card",
+            Logic = new LastEdict.Data.Ui.Windows.ItemCardLogic(Text, item, texts.Items.GetValueOrDefault(item.Id, ""), texts.ItemDescs?.GetValueOrDefault(item.Id, "") ?? ""),
             SlotHost = _host,
         };
-        if (Centered(D2.Data.Ui.Windows.ItemCardLogic.Screen) is { } at) _card.SlotAt = at;
+        if (Centered(LastEdict.Data.Ui.Windows.ItemCardLogic.Screen) is { } at) _card.SlotAt = at;
         _windows.AddChild(_card);
         GD.Print($"battle item card {item.Id}");
     }
 
-    private D2.Data.Ui.Windows.StackTexts? _itemTexts;
+    private LastEdict.Data.Ui.Windows.StackTexts? _itemTexts;
 
     /// <summary>Карточка юнита поверх боя; <c>null</c> — закрыть.</summary>
     public void Card(BattleUnit? unit)
@@ -360,7 +360,7 @@ public partial class BattleScreen : Node
         // атака по X005TA0787/0788, картина из Events рисует сам экран. Без хозяина (бой из журнала) — простая карточка ниже.
         if (CardLogic?.Invoke(unit) is { } shared)
         {
-            _card = new UiScreenView { Hosted = D2.Data.Ui.Windows.UnitCardLogic.Screen, Name = "Card", Logic = shared };
+            _card = new UiScreenView { Hosted = LastEdict.Data.Ui.Windows.UnitCardLogic.Screen, Name = "Card", Logic = shared };
             _windows.AddChild(_card);
             return;
         }
@@ -374,7 +374,7 @@ public partial class BattleScreen : Node
             Logic = new UnitCard(unit, UnitName(unit), Text,
                                  id => id is 6 or 7 ? Text(id == 6 ? "X005TA0152" : "X005TA0151")
                                        : id >= 0 && id <= 5 ? Text($"X005TA{145 + id:0000}")
-                                       : Enum.IsDefined((D2.Data.Content.Schema.AttackSource)id) ? ((D2.Data.Content.Schema.AttackSource)id).ToString() : "",
+                                       : Enum.IsDefined((LastEdict.Data.Content.Schema.AttackSource)id) ? ((LastEdict.Data.Content.Schema.AttackSource)id).ToString() : "",
                                  id => id == 3 ? Text("X005TA0201") : Text("X005TA0200")),
         };
         _windows.AddChild(_card);
@@ -388,7 +388,7 @@ public partial class BattleScreen : Node
         }
     }
 
-    /// <summary>Картина юнита в карточке: кадр базового типа из <c>Events.ff</c> (350×450, <see cref="D2.Data.Ui.Windows.UnitFaces.Picture"/>)
+    /// <summary>Картина юнита в карточке: кадр базового типа из <c>Events.ff</c> (350×450, <see cref="LastEdict.Data.Ui.Windows.UnitFaces.Picture"/>)
     /// своим размером по центру места <c>IMG_UNIT_ICON</c> (флаги 9 <c>setImage</c>, строитель <c>CEncLayoutUnit</c> общий с картой:
     /// <c>0x574feb</c> → <c>0x576d51</c>); картинка лежит в графике мира, а не в наборе кадров интерфейса.</summary>
     private void CardPortrait(BattleUnit unit)
@@ -424,17 +424,17 @@ public partial class BattleScreen : Node
     public string CardLine()
     {
         if (_card is not { } card) return "карточка=-";
-        var stats = D2.Data.Ui.UiTextStyle.Parse(card.State.TextOf("TXT_STATS"));
-        string kind = card.Logic is D2.Data.Ui.Windows.UnitCardLogic ? "общая" : "простая";
+        var stats = LastEdict.Data.Ui.UiTextStyle.Parse(card.State.TextOf("TXT_STATS"));
+        string kind = card.Logic is LastEdict.Data.Ui.Windows.UnitCardLogic ? "общая" : "простая";
         string text = stats.Text.Replace('\t', '→').Replace('\n', '|').Replace(' ', '_');
         return $"карточка={kind} таб={stats.Tab} нет_кадров={(card.MissingFrames.Count > 0 ? string.Join(",", card.MissingFrames) : "-")} статы={text}";
     }
 
-    /// <summary>Логика карточки юнита от хозяина (бой с карты — <see cref="D2.Data.Ui.Windows.UnitCardLogic.InBattle"/>); null или ответ null —
+    /// <summary>Логика карточки юнита от хозяина (бой с карты — <see cref="LastEdict.Data.Ui.Windows.UnitCardLogic.InBattle"/>); null или ответ null —
     /// простая карточка <see cref="UnitCard"/>.</summary>
-    public Func<BattleUnit, D2.Data.Menu.IScreenLogic?>? CardLogic { get; set; }
+    public Func<BattleUnit, LastEdict.Data.Menu.IScreenLogic?>? CardLogic { get; set; }
 
-    /// <summary>Значки повышения и высокого уровня у портретов панели (бой с карты — <see cref="D2.Data.Ui.Windows.UnitCellsView.BattleLevelMarks"/>);
+    /// <summary>Значки повышения и высокого уровня у портретов панели (бой с карты — <see cref="LastEdict.Data.Ui.Windows.UnitCellsView.BattleLevelMarks"/>);
     /// null — без них.</summary>
     public Func<BattleUnit, (bool Upgrade, int HighLevel)>? LevelMarks { get; set; }
 
@@ -537,7 +537,7 @@ public partial class BattleScreen : Node
     private int? EmptySlotAt(Vector2 at)
     {
         if (_session.Current is not { } unit) return null;
-        for (int s = 0; s < D2.Rules.Units.Formation.Cells; s++)
+        for (int s = 0; s < LastEdict.Rules.Units.Formation.Cells; s++)
         {
             var r = _scene.HitSlot(unit.Attacker, s);
             if (at.X >= r.X && at.Y >= r.Y && at.X < r.X + r.Width && at.Y < r.Y + r.Height
@@ -947,8 +947,8 @@ public partial class BattleScreen : Node
     /// <summary>Можно закрыть бой: он кончился и его конец показан (без хозяина-подписчика — сразу).</summary>
     public bool CanClose => _session.Finished && (Standalone || _endShown || EndReached is null);
 
-    /// <summary>«Меню героя» видно: бой можно закрыть, и кнопку создал бы движок (<see cref="D2.Data.Play.MapBattle.PaperdollOffered"/>).</summary>
-    public bool PaperdollShown => CanClose && D2.Data.Play.MapBattle.PaperdollOffered(_session.State, OwnsAttackerStack);
+    /// <summary>«Меню героя» видно: бой можно закрыть, и кнопку создал бы движок (<see cref="LastEdict.Data.Play.MapBattle.PaperdollOffered"/>).</summary>
+    public bool PaperdollShown => CanClose && LastEdict.Data.Play.MapBattle.PaperdollOffered(_session.State, OwnsAttackerStack);
 
     /// <summary>Опыт конца боя (шаг 15 просмотра, <c>0x6369ee</c> → <c>0x64d4a4</c> на все четыре группы): у выросшего (сообщение
     /// <see cref="BattleNoteKind.LevelUp"/>, список роста <c>0x62c2dd</c>) надписи нет — вспышка светло-жёлтым (<see cref="BattleFace.Experience"/>,
@@ -1053,7 +1053,7 @@ public partial class BattleScreen : Node
     private bool AnySlotAt(Vector2 at)
     {
         foreach (bool attacker in (bool[])[true, false])
-            for (int s = 0; s < D2.Rules.Units.Formation.Cells; s++)
+            for (int s = 0; s < LastEdict.Rules.Units.Formation.Cells; s++)
             {
                 var r = _scene.HitSlot(attacker, s);
                 if (at.X >= r.X && at.Y >= r.Y && at.X < r.X + r.Width && at.Y < r.Y + r.Height) return true;
@@ -1170,17 +1170,17 @@ public partial class BattleScreen : Node
             ?? GameData.FromRoot(Path.Combine("corpus", "sample", "one_battle.jsonl"));
         if (!File.Exists(journal)) throw new FileNotFoundException($"журнал боя не найден: {journal}");
         return JournalBattle?.Invoke(journal, rules)
-               ?? throw new NotSupportedException("бой из журнала зонда оригинала есть только в эталоне (BattleScreen.Journal.cs, D2.Verification)");
+               ?? throw new NotSupportedException("бой из журнала зонда оригинала есть только в эталоне (BattleScreen.Journal.cs, LastEdict.Verification)");
     }
 
     /// <summary>Бой из журнала зонда оригинала (<c>--journal</c>): первый законченный. Разбор журналов — сверка с оригиналом
-    /// (<c>D2.Verification</c>); его ставит <c>BattleScreen.Journal.cs</c> эталона, в сборке без сверок крючка нет.</summary>
+    /// (<c>LastEdict.Verification</c>); его ставит <c>BattleScreen.Journal.cs</c> эталона, в сборке без сверок крючка нет.</summary>
     private static Func<string, GameRules, BattleState>? JournalBattle { get; set; }
 
     /// <summary>Место боя для фона (<c>--place</c>); по умолчанию нейтральная земля.</summary>
     private static string Place(string[] args) => MapSource.Arg(args, "--place") ?? "NEUTRAL";
 
-    /// <summary>Базовый тип картинок юнита (<see cref="D2.Data.Content.Schema.UnitDef.BaseUnit"/>), нет — сам тип.</summary>
+    /// <summary>Базовый тип картинок юнита (<see cref="LastEdict.Data.Content.Schema.UnitDef.BaseUnit"/>), нет — сам тип.</summary>
     private static Func<string, string> BaseUnit()
     {
         var content = GameData.Rules;
@@ -1190,7 +1190,7 @@ public partial class BattleScreen : Node
         return type => (map.TryGetValue(type, out string? based) ? based : type).ToUpperInvariant();
     }
 
-    /// <summary>Тип юнита → раса смерти (<see cref="D2.Data.Content.Schema.DeathAnimation"/> заглавными: <c>HUMAN</c>, <c>GHOST</c>…).</summary>
+    /// <summary>Тип юнита → раса смерти (<see cref="LastEdict.Data.Content.Schema.DeathAnimation"/> заглавными: <c>HUMAN</c>, <c>GHOST</c>…).</summary>
     private static Func<string, string> DeathRace()
     {
         var byUnit = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -1209,7 +1209,7 @@ public partial class BattleScreen : Node
             else _session.AiStep();
         }
         if (_session.Current is not { } unit || GameData.Content.MapArt is null) return;
-        var potion = D2.Data.Play.GameBook.Load(GameData.Rules).Items.Values.First(i => i.Category == D2.Rules.Magic.ItemCategory.PotionHeal);
+        var potion = LastEdict.Data.Play.GameBook.Load(GameData.Rules).Items.Values.First(i => i.Category == LastEdict.Rules.Magic.ItemCategory.PotionHeal);
         unit.Type = unit.Type with { IsLeader = true };
         unit.BattleItems.Add(potion);
         ItemCard(potion);   // правая кнопка по слоту — карточка предмета
@@ -1238,7 +1238,7 @@ public partial class BattleScreen : Node
         }
         _panel.Step("click BTN_RESOLVE", out _);
         for (int i = 0; i < 3; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-        bool question = _message?.Logic is D2.Data.Ui.Windows.MessageBoxLogic { Question: true };
+        bool question = _message?.Logic is LastEdict.Data.Ui.Windows.MessageBoxLogic { Question: true };
         GD.Print($"battle resolve окно={(_message is null ? "-" : question ? "вопрос" : "ОК")}");
         _message?.Step(question ? "click BTN_YES" : "click BTN_OK", out _);
         for (int i = 0; i < 3; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
@@ -1408,9 +1408,9 @@ public sealed class UnitCard(BattleUnit unit, string name, Func<string, string> 
 /// <c>IMG_PUNITGROUP_SPOT</c> отражены.</summary>
 public sealed class BattleButtons(Func<BattleSession> session, Func<BattleScene>? scene = null, Func<bool>? closable = null,
                                   Func<bool>? paperdoll = null)
-    : D2.Data.Ui.Windows.IWindowLogic
+    : LastEdict.Data.Ui.Windows.IWindowLogic
 {
-    public D2.Data.Ui.Windows.UiRequest? TakeRequest() => null;
+    public LastEdict.Data.Ui.Windows.UiRequest? TakeRequest() => null;
 
     /// <summary>Статичные картинки разметки (фоны панелей) у движка — на слое поля 3000 (<c>0x646b67</c>), под кнопками: рисуются первыми,
     /// иначе фон нижней панели закрывает кнопки (снимок 28.09).</summary>

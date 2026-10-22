@@ -1,6 +1,6 @@
-using D2.Data;
-using D2.Data.Game;
-using D2.Data.Map;
+using LastEdict.Data;
+using LastEdict.Data.Game;
+using LastEdict.Data.Map;
 
 // Каталог меню из копии игры: data/game/races.json (Globals/Grace.dbf + Glord.dbf) и
 // data/game/scenarios.json (Exports/*.sg), data/game/campaigns.json (Campaign/CCamp.dbf, CScen.dbf, главы — Scens/*.dbf); данные отрисовки карты data/map/*.json (ImgData/IIsoLay.dbf,
@@ -8,7 +8,7 @@ using D2.Data.Map;
 //
 //   dotnet run --project tools/GameImport [-- --game <папка игры>] [--out <каталог>]
 //
-// Разбор живёт в D2.Data.Game.GameImport — здесь только параметры и запись. Перевод повторяем: те же исходники
+// Разбор живёт в LastEdict.Data.Game.GameImport — здесь только параметры и запись. Перевод повторяем: те же исходники
 // дают тот же байт в байт JSON, это проверяет GameCatalogTests.Catalog_Json_IsUpToDate.
 
 string game = Arg("--game") ?? GamePaths.GameDir;

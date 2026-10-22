@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using D2.Data.Content;
+using LastEdict.Data.Content;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Автозагрузка: единственное место, где сцены берут содержимое игры — базовые данные из <c>data/</c>
 /// и наложенные поверх моды. Сама сборка слоёв живёт в <see cref="GameContent"/> (обычный C#, без Godot),
@@ -31,7 +31,7 @@ public partial class GameData : Node
     private static string _dataDir = "";
 
     /// <summary>Корень распакованных кадров интерфейса (<c>assets/ui</c>). Кадры модов лежат у модов, и путь
-    /// к ним <see cref="D2.Data.Ui.UiAssets.PathOf"/> берёт из самого кадра.</summary>
+    /// к ним <see cref="LastEdict.Data.Ui.UiAssets.PathOf"/> берёт из самого кадра.</summary>
     public static string UiAssetsRoot { get; private set; } = "";
 
     /// <summary>Корень графики карты и боя (<c>assets/gfx</c>, собирает <c>tools/gfx-assets/build_gfx_assets.py</c>).</summary>
@@ -71,9 +71,9 @@ public partial class GameData : Node
     public static string AssetsRoot { get; private set; } = "";
 
     /// <summary>Правила партии (бой, опыт, рост юнитов) из <see cref="Rules"/>. Читаются при первом обращении.</summary>
-    public static D2.Data.Play.GameBook Book => _book ??= D2.Data.Play.GameBook.Load(Rules);
+    public static LastEdict.Data.Play.GameBook Book => _book ??= LastEdict.Data.Play.GameBook.Load(Rules);
 
-    private static D2.Data.Play.GameBook? _book;
+    private static LastEdict.Data.Play.GameBook? _book;
 
     /// <summary>Экраны и кадры с наложенными модами. Читается при первом обращении.</summary>
     public static GameContent Content => _content ??= Report(GameContent.Load(_dataDir, _mods, GameDataDir));
@@ -86,19 +86,19 @@ public partial class GameData : Node
 
     /// <summary>Каталог меню на языке запуска (<see cref="GameContent.CatalogIn"/>): карточки сценариев — с переводом
     /// <c>data/scenarios/lang/&lt;язык&gt;</c>, нет перевода — как в файле.</summary>
-    public static D2.Data.Game.GameCatalog Catalog => Content.CatalogIn(Language);
+    public static LastEdict.Data.Game.GameCatalog Catalog => Content.CatalogIn(Language);
 
     /// <summary>Сценарий порта с переводом на язык запуска (<see cref="GameContent.Localized"/>): тексты событий, имена городов,
     /// отрядов и лордов. Партия начинается из него, так что сохранение несёт уже переведённые тексты, как у локализованной игры.</summary>
-    public static D2.Data.Play.ScenarioData ReadScenario(string path) =>
-        Content.Localized(D2.Data.Play.ScenarioFile.Read(path), Language);
+    public static LastEdict.Data.Play.ScenarioData ReadScenario(string path) =>
+        Content.Localized(LastEdict.Data.Play.ScenarioFile.Read(path), Language);
 
     /// <summary>Строки интерфейса языка — база и моды (<see cref="GameContent.Strings"/>), один разбор на язык за запуск: экраны, карточки,
     /// меню, карта и бой берут одну таблицу.</summary>
     public static IReadOnlyDictionary<string, string> Strings(string language) => Content.Strings(language);
 
     /// <summary>Шрифты интерфейса — база и моды (<see cref="GameContent.Fonts"/>), читаются один раз.</summary>
-    public static D2.Data.Ui.UiFonts Fonts => Content.Fonts;
+    public static LastEdict.Data.Ui.UiFonts Fonts => Content.Fonts;
 
     /// <summary>Язык из аргументов: <c>--lang xx</c>, иначе <c>ru</c>, если импортированы русские строки (слой русификации), иначе <c>en</c>
     /// (копия игры GOG — английская).</summary>
@@ -107,7 +107,7 @@ public partial class GameData : Node
         ArgumentNullException.ThrowIfNull(args);
         int at = Array.IndexOf(args, "--lang");
         if (at >= 0 && at + 1 < args.Length && args[at + 1].Length > 0) return args[at + 1];
-        return GameDataDir.Length == 0 || File.Exists(Path.Combine(GameDataDir, "ui", D2.Data.Ui.UiStrings.FileName("ru"))) ? "ru" : "en";
+        return GameDataDir.Length == 0 || File.Exists(Path.Combine(GameDataDir, "ui", LastEdict.Data.Ui.UiStrings.FileName("ru"))) ? "ru" : "en";
     }
 
     /// <summary>Корень данных, выведенных из копии игры (<c>data/**</c> и <c>assets/**</c> импорта, <c>docs/publishing.md</c>): <c>--data-dir</c>,
@@ -158,13 +158,13 @@ public partial class GameData : Node
         _language = null;
         // Копия игры, из которой импортировано: меню берёт из неё героев (Exports/*.ldr) и свои кампании (Campaign/*.csg).
         // В корне проекта (репозиторий разработчика) копию игры задают D2_GAME_DIR и соседний game-pristine, а не отметка импорта.
-        if (GameRoot != Root && ImportedFrom(GameRoot) is { } game) D2.Data.GamePaths.Use(game);
+        if (GameRoot != Root && ImportedFrom(GameRoot) is { } game) LastEdict.Data.GamePaths.Use(game);
     }
 
     /// <summary>Папка копии игры из отметки импорта (<c>import.json</c>), если она ещё есть на диске.</summary>
     public static string? ImportedFrom(string root)
     {
-        string marker = Path.Combine(root, D2.Data.Import.GameImporter.MarkerFile);
+        string marker = Path.Combine(root, LastEdict.Data.Import.GameImporter.MarkerFile);
         if (!File.Exists(marker)) return null;
         try
         {

@@ -1,9 +1,9 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-using D2.Data.Content.Schema;
+using LastEdict.Data.Content.Schema;
 
-namespace D2.Data.Content;
+namespace LastEdict.Data.Content;
 
 /// <summary>Что слой мода сделал с сущностью: добавил, поправил поля, убрал.</summary>
 public enum LayerAction { Added, Patched, Removed }

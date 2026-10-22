@@ -1,10 +1,10 @@
 using System;
 using System.Linq;
-using D2.Data.Play;
-using D2.Data.Ui.Windows;
+using LastEdict.Data.Play;
+using LastEdict.Data.Ui.Windows;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Команды сервера клиенту без своего окна в ядре (<see cref="NoticeWatch"/>): выделение отряда после <c>L_CREATE_STACK</c> и
 /// <c>L_CHANGE_OWNER</c> (<c>CCmdStackActionMsg</c> 1/2), раскрытый шпион (<c>CCmdDiscoverSpyMsg</c>), гибель иллюзии

@@ -1,7 +1,7 @@
-using D2.Rules.Battle;
-using D2.Rules.Map;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>Входы силы для атаки отряда (<c>0x5dda25</c>): A — сила цели, B — своя сила против числа юнитов цели,
 /// C — поддержка цели соседями из кэша, <see cref="CanDamage"/> — своя группа может ранить цель (<c>0x5dcd53</c>).</summary>
@@ -83,7 +83,7 @@ public static partial class AiTactics
 
     /// <summary>Юнит для силы <c>0x5dd06c</c>: реализация выросшая уровнем, здоровье текущее (<paramref name="fullHp"/> — полное),
     /// броня, атака и иммунитеты — через цепочку модификаторов.</summary>
-    internal static BattleUnit Fighter(D2.Rules.Battle.GameRules rules, MapUnit mu, bool fullHp = false)
+    internal static BattleUnit Fighter(LastEdict.Rules.Battle.GameRules rules, MapUnit mu, bool fullHp = false)
     {
         var u = MapBattle.Unit(mu, 0, rules, isAttacker: false);
         if (fullHp) u.Hp = u.HpMax;
@@ -92,7 +92,7 @@ public static partial class AiTactics
         // (вес 0x5dd21b) действующие. Корпус: A атаки отряда human 816 из 816 (без цепочки 785), счёт атаки крепости у
         // стража столицы с модификаторами сложности (−20 % здоровья, −10 брони, −10 % урона) сходится только так; иммунитеты
         // от модификаторов (варды, навыки лидера) — с 25.09: human, своя сила B 766 → 818, руины B 97 → 136.
-        var eff = D2.Rules.Units.EffectiveStats.Of(u.Type, u.Modifiers);
+        var eff = LastEdict.Rules.Units.EffectiveStats.Of(u.Type, u.Modifiers);
         var type = u.Type with
         {
             Armor = eff.Armor,
@@ -102,7 +102,7 @@ public static partial class AiTactics
         return new BattleUnit
         {
             Id = u.Id, Type = type,
-            Attack = D2.Rules.Units.EffectiveStats.OfAttack(u.Attack, u.Modifiers).Attack, Attack2 = u.Attack2,
+            Attack = LastEdict.Rules.Units.EffectiveStats.OfAttack(u.Attack, u.Modifiers).Attack, Attack2 = u.Attack2,
             Attacker = false, Slot = 0, HpMax = u.HpMax, Hp = u.Hp, Xp = u.Xp, Modifiers = u.Modifiers,
         };
     }

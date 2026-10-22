@@ -1,11 +1,11 @@
 using System.Globalization;
-using D2.Data.Content;
-using D2.Data.Menu;
-using D2.Rules.Magic;
-using D2.Rules.Map;
-using D2.Data.Play.Commands;
+using LastEdict.Data.Content;
+using LastEdict.Data.Menu;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Map;
+using LastEdict.Data.Play.Commands;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>Имя, описание и текст эффекта заклинания (<c>Gspells.NAME_TXT</c>/<c>DESC_TXT</c>/<c>MODIF_TXT</c>).</summary>
 public sealed record SpellText(string NameTxt, string DescTxt, string ModifTxt);

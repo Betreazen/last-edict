@@ -1,4 +1,4 @@
-using D2.Rules.Battle;
+using LastEdict.Rules.Battle;
 
 /// <summary>Возможные цели действия (<c>updateBattleActions</c> <c>0x623d93</c>) и дистанция
 /// досягаемости (<c>0x65aad3</c>/<c>0x65ab4b</c>) — часть A переноса политики ИИ

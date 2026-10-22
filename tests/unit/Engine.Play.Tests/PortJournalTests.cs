@@ -1,7 +1,7 @@
 using System.Text.Json;
-using D2.Data.Diagnostics;
+using LastEdict.Data.Diagnostics;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Журнал зонда порта (<see cref="PortJournal"/>): строки JSON, контекст ошибки, повторы — счётом, итог при закрытии.</summary>
 public class PortJournalTests

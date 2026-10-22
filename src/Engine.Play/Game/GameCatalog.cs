@@ -3,7 +3,7 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace D2.Data.Game;
+namespace LastEdict.Data.Game;
 
 /// <summary>Лорд расы: тип (<c>Llord</c>: 0 — маг, 1 — воин, 2 — вор/дипломат), имя и описание — id строк.</summary>
 public sealed record LordInfo(string Id, int Category, string NameText, string DescText);
@@ -61,7 +61,7 @@ public sealed record ScenarioInfo
     public string LoseVideo { get; init; } = "";
 
     /// <summary>Звук победы записи эпилога (<c>CScen.WAV_WIN</c>, дорожка каталога <c>Music</c>): играет экран эпилога
-    /// (<see cref="D2.Data.Play.GameEnd.EpilogueSound"/>).</summary>
+    /// (<see cref="LastEdict.Data.Play.GameEnd.EpilogueSound"/>).</summary>
     public string WinSound { get; init; } = "";
 
     /// <summary>Запись эпилога в <c>CScen.dbf</c> найдена (кампания сценария есть в <c>CCamp.dbf</c>, <c>0x669464</c>); нет — у эпилога нет

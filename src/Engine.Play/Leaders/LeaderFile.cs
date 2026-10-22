@@ -1,7 +1,7 @@
 using System.Text.Json;
-using D2.Data.Play;
+using LastEdict.Data.Play;
 
-namespace D2.Data.Leaders;
+namespace LastEdict.Data.Leaders;
 
 /// <summary>Герой в формате порта: JSON <c>d2-port-leader</c> с версией (<c>&lt;каталог героев&gt;/&lt;имя&gt;.json</c>).</summary>
 public static class LeaderFile

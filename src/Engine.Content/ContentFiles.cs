@@ -4,9 +4,9 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Schema;
 
-using D2.Data.Content.Schema;
+using LastEdict.Data.Content.Schema;
 
-namespace D2.Data.Content;
+namespace LastEdict.Data.Content;
 
 /// <summary>Содержимое на диске: каталог мода (<c>mod.json</c> + файл на вид) и схемы JSON для редакторов и Студии.
 /// Раскладка данных порта: <c>data/content/base</c> — база (выпускает импорт таблиц оригинала), <c>data/content/schema</c> — схемы

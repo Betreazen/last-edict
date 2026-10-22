@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using D2.Data.Gfx;
-using D2.Data.Ui;
+using LastEdict.Data.Gfx;
+using LastEdict.Data.Ui;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>
 /// Курсор мыши из графики игры (<c>IsoCursr</c>): картинка или анимация, кадр в 66 мс, как у «медленных» анимаций движка;
@@ -20,7 +20,7 @@ namespace D2.Godot;
 /// </summary>
 public partial class AnimatedCursor : Node
 {
-    private const double FrameMs = D2.Data.Map.AnimClock.SlowMs;   // медленная группа
+    private const double FrameMs = LastEdict.Data.Map.AnimClock.SlowMs;   // медленная группа
     private static readonly Dictionary<string, IReadOnlyList<(Texture2D Texture, Vector2 Hotspot)>> Cache = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Узел, чей курсор сейчас стоит.</summary>

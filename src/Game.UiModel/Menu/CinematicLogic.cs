@@ -1,7 +1,7 @@
-using D2.Data.Ui;
-using D2.Data.Ui.Windows;
+using LastEdict.Data.Ui;
+using LastEdict.Data.Ui.Windows;
 
-namespace D2.Data.Menu;
+namespace LastEdict.Data.Menu;
 
 /// <summary>Ролик показа <c>DLG_CINEMATIC</c>: <see cref="Video"/> — имя в описи роликов; <see cref="Framed"/> — в рамке экрана (фон
 /// <c>_CINEMATIC</c>, ролик в месте <c>IMG_ANIM</c>, поверх — <c>_CINEMATIC_OVER</c>), иначе — по центру чёрного экрана без рамки.</summary>

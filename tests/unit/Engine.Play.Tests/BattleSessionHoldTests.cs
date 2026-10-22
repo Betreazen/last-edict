@@ -1,10 +1,10 @@
-using D2.Data.Battle;
-using D2.Data.Play;
-using D2.Rules.Battle;
-using D2.Rules.Rng;
+using LastEdict.Data.Battle;
+using LastEdict.Data.Play;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Rng;
 using Xunit;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Рискованное в отложенном начале хода (<see cref="BattleSession.HoldTurnStart"/>, экран боя): конец боя ударом и тиком, ходы лекарей,
 /// быстрый бой и автобой, «Ждать» и «Отступить» между ходами, тики разных видов — всё как без удержания, только начало следующего хода — по

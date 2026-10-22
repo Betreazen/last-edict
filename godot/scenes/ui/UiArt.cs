@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using D2.Data.Ui;
+using LastEdict.Data.Ui;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Общий на весь запуск кэш того, из чего собираются экраны разметки (<see cref="UiScreenView"/>): картинки кадров по имени,
 /// их текстуры, шрифты по файлу и <see cref="LabelSettings"/> по (шрифт, кегль, цвет). Раньше каждый экран — и каждая карточка по правой

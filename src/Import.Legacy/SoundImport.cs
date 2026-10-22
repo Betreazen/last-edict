@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace D2.Data.Import;
+namespace LastEdict.Data.Import;
 
 /// <summary>Звуки игры: <c>Sounds/*.wdb</c> → <c>assets/sound/&lt;Архив&gt;/&lt;ИМЯ&gt;.mp3|.wav</c> и описи <c>data/sound/&lt;Архив&gt;.json</c>,
 /// звуки юнитов <c>Sounds/Battle.wdt</c> → <c>data/sound/UnitSounds.json</c>, каталог <c>Music/</c> → <c>assets/sound/Music</c> и

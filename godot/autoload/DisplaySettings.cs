@@ -1,10 +1,10 @@
 using System;
 using System.Linq;
-using D2.Data.Map;
-using D2.Data.Ui;
+using LastEdict.Data.Map;
+using LastEdict.Data.Ui;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>
 /// Окно и кадры из раздела <c>display</c> файла настроек (<see cref="SettingsFile"/>): режим окна (<see cref="DisplayMode"/>), вертикальная

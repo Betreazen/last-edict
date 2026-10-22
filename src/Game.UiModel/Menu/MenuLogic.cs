@@ -1,7 +1,7 @@
-using D2.Data.Game;
-using D2.Data.Ui;
+using LastEdict.Data.Game;
+using LastEdict.Data.Ui;
 
-namespace D2.Data.Menu;
+namespace LastEdict.Data.Menu;
 
 /// <summary>Выбор игрока по дороге к новой игре: сценарий, раса, лорд, лицо, сложность, имя. Один на всю цепочку
 /// экранов меню — экраны пишут в него, следующие читают.</summary>
@@ -208,7 +208,7 @@ public sealed class MessageLogic(string text, bool okOnly = false) : IScreenLogi
     public void Open(UiScreenState ui)
     {
         if (ui.Screen.Elements.Any(e => e.Id == "TXT_INFO")) ui.SetText("TXT_INFO", text);
-        if (okOnly && ui.Screen.Elements.Any(e => e.Id == "BTN_OK")) D2.Data.Ui.Windows.MessageBoxLogic.Buttons(ui, question: false);
+        if (okOnly && ui.Screen.Elements.Any(e => e.Id == "BTN_OK")) LastEdict.Data.Ui.Windows.MessageBoxLogic.Buttons(ui, question: false);
     }
 
     public void Handle(UiEvent e, UiScreenState ui)

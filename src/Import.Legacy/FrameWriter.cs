@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 
-namespace D2.Data.Import;
+namespace LastEdict.Data.Import;
 
 /// <summary>Кадр к записи: вид (самостоятельная картинка архива или кадр из кусков листа), имя в архиве, путь от корня выхода, обрезать ли
 /// по занятой части.</summary>

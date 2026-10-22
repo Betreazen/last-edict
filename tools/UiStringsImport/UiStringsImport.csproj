@@ -5,7 +5,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <RootNamespace>D2.Tools.UiStringsImport</RootNamespace>
+    <RootNamespace>LastEdict.Tools.UiStringsImport</RootNamespace>
     <AssemblyName>UiStringsImport</AssemblyName>
     <IsPackable>false</IsPackable>
   </PropertyGroup>

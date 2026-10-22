@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace D2.Data.Sound;
+namespace LastEdict.Data.Sound;
 
 /// <summary>Звук из архива игры: имя, файл (от <c>assets/sound</c>), кодек (<c>mp3</c> — байты MP3, <c>pcm16</c> — WAV),
 /// частота, каналы, число сэмплов, длительность в секундах и хеш исходной записи.</summary>

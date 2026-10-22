@@ -1,10 +1,10 @@
-using D2.Data.Content;
-using D2.Data.Gfx;
-using D2.Data.Map;
-using D2.Data.Play;
-using D2.Rules.Map;
+using LastEdict.Data.Content;
+using LastEdict.Data.Gfx;
+using LastEdict.Data.Map;
+using LastEdict.Data.Play;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Круг цели сценария на карте (<see cref="MapScene"/>, слой <c>SYM_OBJECTIVE</c>; набор — <see cref="GameSession.Objectives"/>
 /// сессии В): у каждой цели зрителя — <c>OBJECTIVE{размер следа}</c> с якорем самого объекта, сложением (<c>opacity</c> 300); без набора и

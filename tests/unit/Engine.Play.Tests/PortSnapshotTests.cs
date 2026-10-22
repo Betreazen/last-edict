@@ -1,8 +1,8 @@
-using D2.Data.Map;
-using D2.Data.Play;
-using D2.Rules.Map;
+using LastEdict.Data.Map;
+using LastEdict.Data.Play;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>
 /// Снимки «порт против порта» на импортированных сценариях (локальный уровень, решение пользователя 22.10): четыре карты разного размера,

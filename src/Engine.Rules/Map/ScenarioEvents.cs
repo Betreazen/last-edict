@@ -1,6 +1,6 @@
-using D2.Rules.Rng;
+using LastEdict.Rules.Rng;
 
-namespace D2.Rules.Map;
+namespace LastEdict.Rules.Map;
 
 /// <summary>Запись квест-лога (<c>MidQuestLog</c>): попап события, показанный игроку. Пишет только <c>L_POPUP</c>
 /// (<c>0x43b290</c>); <c>TYPE</c> у движка всегда 0 и здесь не хранится.</summary>

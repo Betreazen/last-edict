@@ -1,4 +1,4 @@
-namespace D2.Data.Ui;
+namespace LastEdict.Data.Ui;
 
 /// <summary>
 /// Перенос строк текста в месте шириной <c>W</c> — правило движка, а не Godot (<c>CTextBoxInterf</c>, сборка картинки <c>0x533862</c> →

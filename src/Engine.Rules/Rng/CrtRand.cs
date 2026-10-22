@@ -1,4 +1,4 @@
-namespace D2.Rules.Rng;
+namespace LastEdict.Rules.Rng;
 
 /// <summary>
 /// <c>rand()</c> CRT движка (msvcrt, свой у потока; <c>srand</c> зовёт только <c>0x5ae6cf</c>):

@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using D2.Data.Ui;
+using LastEdict.Data.Ui;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Карточки списков картинок (<see cref="UiScreenState.SetCards"/>): на каждую видимую ячейку списка — подложка
 /// выбранного пункта, кадр и подпись. Ячейки — из разметки списка (<see cref="UiList.CellWidth"/>, зазоры); что в них

@@ -1,8 +1,8 @@
-using D2.Data.Dbf;
-using D2.Rules.Map;
-using D2.Rules.Units;
+using LastEdict.Data.Dbf;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Units;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>Найм лидера из журнала для стратегии харнесса (<see cref="GameSession.BeginAiTurn"/>, <c>journalLeaders</c>): крепость,
 /// тип и применение строки журнала к состоянию (null — не применилась).</summary>
@@ -63,7 +63,7 @@ public static partial class AiEconomy
         AiStepType.HealRevive => Care(session, action.Id, action.Target),
         AiStepType.HireLeader => session.JournalLeaders is null ? ExecuteHireLeader(session, action) : session.ExecuteJournalLeader(action),
         AiStepType.GrowCities => session.GrowCity(action.Id) == CityGrowCheck.Allowed,
-        AiStepType.UpgradeLeader => session.ChooseSkill(action.Id, action.Target) == D2.Rules.Units.SkillRefusal.None,
+        AiStepType.UpgradeLeader => session.ChooseSkill(action.Id, action.Target) == LastEdict.Rules.Units.SkillRefusal.None,
         AiStepType.SpellResearch => session.ResearchSpell(playerId, action.Target) is null,
         AiStepType.Diplomacy => Enum.TryParse<AiDiploAction>(action.Target, out var diplo)
                                 && session.ExecuteDiplomacy(playerId, action.Id, diplo, report),
@@ -105,7 +105,7 @@ public static partial class AiEconomy
                               .Select(u => new AiHireOption(u.Id, SmallMelee(u.Impl!), !u.Impl!.Type.SizeSmall))
                               .Where(o => AiStrategicRules.Placeable(cells, free, o.Big)).ToList();
             var garrison = fort.Guards.Select(id => map.Units.TryGetValue(id, out var u) ? book.Rules.ImplOf(u.TypeId) : null)
-                                      .OfType<D2.Rules.Units.UnitImpl>().ToList();
+                                      .OfType<LastEdict.Rules.Units.UnitImpl>().ToList();
             var picked = AiStrategicRules.PickUnits(free, garrison.Any(SmallMelee), garrison.Any(u => !u.Type.SizeSmall), options,
                                                     AiStrategicRules.CrtPicker(session.Crt));
             string fortId = fort.Id;
@@ -120,7 +120,7 @@ public static partial class AiEconomy
 
     /// <summary>Список 1 (<c>0x44ef81</c>, ранг 1): свои отряды с отложенным выбором навыка (<c>upgCount +0x9a</c> &gt; 0),
     /// в порядке отрядов карты; предложение <c>0x5d8b84</c> с фильтром <c>0x5e84c2</c> (<see cref="GameSession.SkillOffer"/>),
-    /// выбор — наибольший <c>PRIORITY</c>, первый при равенстве (<see cref="D2.Rules.Units.SkillChoice.ByAi"/>). Бюджет не
+    /// выбор — наибольший <c>PRIORITY</c>, первый при равенстве (<see cref="LastEdict.Rules.Units.SkillChoice.ByAi"/>). Бюджет не
     /// проверяется, броска нет. Оценка — по отряду (память дня: один навык на героя за ход).</summary>
     private static IEnumerable<AiEvaluation> UpgradeLeader(GameSession session, string playerId)
     {
@@ -129,7 +129,7 @@ public static partial class AiEconomy
         {
             string stackId = stack.Id;
             yield return new AiEvaluation(stackId, () =>
-                D2.Rules.Units.SkillChoice.ByAi(session.SkillOffer(stackId)) is { } pick
+                LastEdict.Rules.Units.SkillChoice.ByAi(session.SkillOffer(stackId)) is { } pick
                     ? [new AiStepAction(AiStepType.UpgradeLeader, stackId, pick.ModifId.ToUpperInvariant())]
                     : []);
         }
@@ -245,8 +245,8 @@ public static partial class AiEconomy
     }
 
     /// <summary>Малый ближний боец (<c>0x44bec7</c> шаг 1): малый, атака по соседу, класс «урон».</summary>
-    private static bool SmallMelee(D2.Rules.Units.UnitImpl u) =>
-        u.Type.SizeSmall && u.Attack is { Reach: D2.Rules.Battle.AttackReach.Adjacent, Class: D2.Rules.Battle.AttackClass.Damage };
+    private static bool SmallMelee(LastEdict.Rules.Units.UnitImpl u) =>
+        u.Type.SizeSmall && u.Attack is { Reach: LastEdict.Rules.Battle.AttackReach.Adjacent, Class: LastEdict.Rules.Battle.AttackClass.Damage };
 
     /// <summary>Список 4 (<c>0x446ccb</c>): доступные постройки лорда, выбор <see cref="AiStrategicRules.PickBuilding"/>
     /// (нет храма — сначала храм, магия, гильдия; иначе здание улучшения, у которого больше всего юнитов карты у
@@ -267,7 +267,7 @@ public static partial class AiEconomy
         // Выросший на месте юнит (UnitUpgrade.IsGrown) зданий улучшения не ждёт: его реализация порождённая, и PREV_ID на неё
         // не ссылается (0x5d7e07) — карта 4 корпуса 20261016b, UU0052 уровня 8 у порога: движок BB0050 не строит.
         var units = map.Units.Values.Select(u => new AiCapitalUnit(
-            D2.Rules.Units.UnitUpgrade.IsGrown(book.Rules.Units, u.TypeId, u.Level) ? [] : upgrades.GetValueOrDefault(u.TypeId, []), u.Xp,
+            LastEdict.Rules.Units.UnitUpgrade.IsGrown(book.Rules.Units, u.TypeId, u.Level) ? [] : upgrades.GetValueOrDefault(u.TypeId, []), u.Xp,
             book.Rules.Units.TryGetValue(u.TypeId, out var t) ? t.XpNext : int.MaxValue)).ToList();
         var pick = AiStrategicRules.PickBuilding(available, temple, units, book.SideshowBuilding(player.RaceId));
         if (pick is null) return [];

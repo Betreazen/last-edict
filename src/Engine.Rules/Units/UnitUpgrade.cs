@@ -1,6 +1,6 @@
-using D2.Rules.Battle;
+using LastEdict.Rules.Battle;
 
-namespace D2.Rules.Units;
+namespace LastEdict.Rules.Units;
 
 /// <summary>Состояние юнита, от которого зависит повышение: тип (<c>MidUnit.TYPE</c>), уровень, опыт и флаг
 /// «Остановить продвижение» (<c>DYNLEVEL</c>).</summary>
@@ -62,7 +62,7 @@ public static class UnitUpgrade
     /// ранг 1 — <c>f7-m9-xpstop</c>: Archer остался <c>UU0006</c> уровня 2);</item>
     /// <item>есть наследник, чья постройка у игрока есть, — его тип и его <c>LEVEL</c> (Squire → Knight L2,
     /// Acolyte → Priest L2; ранг 1). Двух открытых сразу не бывает: постройки ветки взаимоисключающие
-    /// (<see cref="D2.Rules.Map.BuildStatus.SiblingUnitBuilding"/>), поэтому берётся первый;</item>
+    /// (<see cref="LastEdict.Rules.Map.BuildStatus.SiblingUnitBuilding"/>), поэтому берётся первый;</item>
     /// <item>постройки нет ни одной — тип прежний, опыт упирается в <c>XP_NEXT − 1</c> (ранг 1: план Ф7 §1.3; корпус —
     /// <c>UU0007</c> 499/500, <c>UU0011</c> 79/80, <c>UU0009</c> 549/550 держатся на потолке несколько сохранений подряд).
     /// Исключения — <c>UU0057</c> 275/275 первой и <c>UU0093</c> 500/500 второй большой партии: оба дошли до порога

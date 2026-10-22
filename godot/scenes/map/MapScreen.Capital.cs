@@ -2,13 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using D2.Data.Menu;
-using D2.Data.Ui;
-using D2.Data.Ui.Windows;
-using D2.Rules.Map;
+using LastEdict.Data.Menu;
+using LastEdict.Data.Ui;
+using LastEdict.Data.Ui.Windows;
+using LastEdict.Rules.Map;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Столица поверх карты (ответ пользователя 25.09): на месте карты — картинка столицы с постройками
 /// (<see cref="CapitalView"/>), на месте панели команд <c>DLG_STRATEGIC</c> — панель <c>DLG_CAPITAL</c>. Переходы панели —
@@ -141,7 +141,7 @@ public partial class MapScreen
             if (element == "BTN_EXIT_CAPITAL")
             {
                 string stack = logic.VisitorId;
-                string? refused = stack.Length == 0 ? "нет гостя" : _map.Session.Run<string?>(new D2.Data.Play.Commands.LeaveFortCommand(stack));
+                string? refused = stack.Length == 0 ? "нет гостя" : _map.Session.Run<string?>(new LastEdict.Data.Play.Commands.LeaveFortCommand(stack));
                 if (refused is not null)
                 {
                     GD.Print($"panel exit refused {stack} {refused.Replace(' ', '_')}");

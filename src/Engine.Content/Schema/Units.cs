@@ -1,8 +1,8 @@
 using System.ComponentModel;
-using D2.Rules.Battle;
-using D2.Rules.Units;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Units;
 
-namespace D2.Data.Content.Schema;
+namespace LastEdict.Data.Content.Schema;
 
 /// <summary>Тип юнита (<c>Gunits.dbf</c>): солдат, лидер, вор, призванный, страж. Иммунитеты (<c>Gimmu</c>, <c>GimmuC</c>), врождённые
 /// способности лидера (<c>GLabi</c>) и земли без штрафа хода (<c>GMabi</c>) — в нём же, а не отдельными таблицами.</summary>

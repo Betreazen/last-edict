@@ -1,8 +1,8 @@
-using D2.Data.Gfx;
-using D2.Data.Ui;
-using D2.Rules.Battle;
+using LastEdict.Data.Gfx;
+using LastEdict.Data.Ui;
+using LastEdict.Rules.Battle;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Состояния портрета панели боя (<see cref="BattleFaces"/>): таблицы рисования движка (<c>0x5b191f</c>, <c>0x5b19fa</c>,
 /// <c>0x5b1a91</c>, <c>0x5b1add</c>) и выбор вспышки по удару (<c>0x63bcc2…0x63bfa8</c>).</summary>

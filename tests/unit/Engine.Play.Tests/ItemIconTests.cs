@@ -1,7 +1,7 @@
-using D2.Data.Play;
-using D2.Rules.Magic;
+using LastEdict.Data.Play;
+using LastEdict.Rules.Magic;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Значок предмета в <c>IconItem</c> (<see cref="GameBook.ItemIcon"/>, <c>0x5c5d89</c>): у свитков своих значков нет — значок расы
 /// заклинания (раса первого лорда с заклинанием в <c>GspellR</c>, <c>0x5c5f4f</c>). Без этого ячейка свитка показывала одно число

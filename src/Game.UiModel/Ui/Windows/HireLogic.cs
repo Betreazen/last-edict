@@ -1,10 +1,10 @@
 using System.Globalization;
-using D2.Data.Menu;
-using D2.Rules.Map;
-using D2.Data.Play.Commands;
-using D2.Rules.Units;
+using LastEdict.Data.Menu;
+using LastEdict.Rules.Map;
+using LastEdict.Data.Play.Commands;
+using LastEdict.Rules.Units;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>Кого нанимает окно: воина в ячейку гарнизона или героя (новый отряд-гость).</summary>
 public enum HireKind { Unit, Leader }

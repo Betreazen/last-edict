@@ -1,7 +1,7 @@
-using D2.Data.Map;
-using D2.Rules.Map;
+using LastEdict.Data.Map;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>Жезлы в партии: постановка и снос по правилам <see cref="Rods"/>. Общие для человека и ИИ.</summary>
 public sealed partial class GameSession

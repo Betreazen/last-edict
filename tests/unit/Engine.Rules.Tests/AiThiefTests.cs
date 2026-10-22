@@ -1,7 +1,7 @@
-using D2.Rules.Map;
-using D2.Rules.Rng;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Rng;
 
-namespace D2.Rules.Tests;
+namespace LastEdict.Rules.Tests;
 
 /// <summary>Выбор действия вора ИИ (<c>0x45b98a</c>, <see cref="AiThief"/>): перемешивание доступного на R250 и проверки.</summary>
 public class AiThiefTests

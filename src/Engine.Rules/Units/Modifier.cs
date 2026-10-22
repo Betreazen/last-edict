@@ -1,4 +1,4 @@
-namespace D2.Rules.Units;
+namespace LastEdict.Rules.Units;
 
 /// <summary>Модификатор — строка <c>Gmodif.dbf</c> со своими строками эффекта из <c>GmodifL.dbf</c>
 /// в порядке файла. Через него в игру попадает всё, что Ф6 добавляет поверх базового юнита:

@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using D2.Data.Gfx;
-using D2.Rules.Battle;
+using LastEdict.Data.Gfx;
+using LastEdict.Rules.Battle;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Вспышки на портретах панели боя (<c>docs/battle-screen.md</c> §9): состояние портрета (<see cref="BattleFace"/>) — база по
 /// состоянию юнита, поставленное до конца боя (опыт) или вспышка на время надписи.</summary>

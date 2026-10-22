@@ -1,4 +1,4 @@
-namespace D2.Data.Ui;
+namespace LastEdict.Data.Ui;
 
 /// <summary>Как сейчас выглядит кнопка или переключатель — те же четыре состояния, что у <c>ButtonState</c>
 /// движка (реверс тулсета, <c>tools/d2probe/mss32/include/button.h</c>).</summary>

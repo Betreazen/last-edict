@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using D2.Data.Diagnostics;
-using D2.Data.Map;
-using D2.Data.Sound;
+using LastEdict.Data.Diagnostics;
+using LastEdict.Data.Map;
+using LastEdict.Data.Sound;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>
 /// Звук и музыка игры (<c>docs/ai-screen.md</c> §12): один узел под корнем дерева на весь запуск (переживает смену сцен — меню,
@@ -191,7 +191,7 @@ public partial class GameAudio : Node
     }
 
     /// <summary>Музыка брифа (<c>CBriefingInterf</c>, <c>0x48091e</c>): у главы своей музыкой (<paramref name="voice"/>,
-    /// <see cref="D2.Data.Game.ChapterInfo.BriefingMusic"/>: сага эльфов — <c>briefel</c> + номер главы, <c>0x480a71</c>) — озвучка из
+    /// <see cref="LastEdict.Data.Game.ChapterInfo.BriefingMusic"/>: сага эльфов — <c>briefel</c> + номер главы, <c>0x480a71</c>) — озвучка из
     /// <c>Briefing</c> один раз (<c>playMainFile</c> <c>0x5a9eeb</c> без повтора, папка <c>0x61a2cf</c>), по концу — тишина; иначе
     /// <c>GENBRIEF</c> основной по кругу (<c>0x480b59</c>, имя <c>[0x7ae460]</c>). Без нарастания; меню перед ней затухает 700 мс
     /// (<c>0x4e6f11</c>). Музыка уже играет — не трогается (<c>0x480940</c>: возврат на бриф с дочернего окна). Уход с брифа на карту —
@@ -216,14 +216,14 @@ public partial class GameAudio : Node
         FadeThen(_plan.Fades.BriefingOut, () => Start(_main(), _plan.Fades.TempIn));
     }
 
-    /// <summary>Папка озвучки брифа (<c>Briefing</c>): у порта — звук без картинки в описи роликов (<see cref="D2.Data.Ui.UiVideos"/>).</summary>
+    /// <summary>Папка озвучки брифа (<c>Briefing</c>): у порта — звук без картинки в описи роликов (<see cref="LastEdict.Data.Ui.UiVideos"/>).</summary>
     private const string BriefingFolder = "Briefing";
 
     /// <summary>Озвучка брифа по имени описи роликов (<c>.ogg</c>); нет в описи или на диске — null.</summary>
     private static AudioStream? BriefingVoice(string name)
     {
         if (!GameData.Content.VideosByName.TryGetValue(name, out var video) || video.HasVideo) return null;
-        string path = D2.Data.Ui.UiVideos.PathOf(video, GameData.VideoRoot);
+        string path = LastEdict.Data.Ui.UiVideos.PathOf(video, GameData.VideoRoot);
         return File.Exists(path) ? AudioStreamOggVorbis.LoadFromFile(path) : null;
     }
 

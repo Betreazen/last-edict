@@ -1,6 +1,6 @@
-using D2.Rules.Battle;
+using LastEdict.Rules.Battle;
 
-namespace D2.Rules.Units;
+namespace LastEdict.Rules.Units;
 
 /// <summary>Ссылки <c>Gunits</c> на уровневый рост одного типа: <c>DYN_UPG1</c> действует до
 /// уровня <c>DYN_UPG_LV</c> включительно, дальше <c>DYN_UPG2</c>. Пустая строка — ссылки нет

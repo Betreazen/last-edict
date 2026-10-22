@@ -1,6 +1,6 @@
-using D2.Rules.Map;
+using LastEdict.Rules.Map;
 
-namespace D2.Rules.Magic;
+namespace LastEdict.Rules.Magic;
 
 /// <summary>Категория заклинания — <c>Gspells.CATEGORY</c>.
 /// <para><b>Ранг 1: перечень взят из самой игры</b> — <c>Globals/Lspell.dbf</c>, двенадцать строк

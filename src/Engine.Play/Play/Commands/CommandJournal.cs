@@ -4,11 +4,11 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
-using D2.Data.Battle;
-using D2.Rules.Battle;
-using D2.Rules.Map;
+using LastEdict.Data.Battle;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Play.Commands;
+namespace LastEdict.Data.Play.Commands;
 
 /// <summary>Событие хода, случившееся за команду (то, что раньше знал только наблюдатель хода <see cref="ITurnObserver"/>): показ и
 /// журналы строятся по нему, а не по обходу состояния.</summary>

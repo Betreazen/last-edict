@@ -1,10 +1,10 @@
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
-using D2.Data.Dbf;
+using LastEdict.Data.Dbf;
 using Xunit;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Разбор JSON таблиц порта одним проходом <see cref="Utf8JsonReader"/> даёт те же клетки, что прежний разбор
 /// через словари <see cref="JsonElement"/> (эталон ниже — его код как был), — на ручной таблице со всеми видами

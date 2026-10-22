@@ -1,9 +1,9 @@
-using D2.Rules.Battle;
-using D2.Rules.Map;
-using D2.Rules.Rng;
-using D2.Rules.Units;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Rng;
+using LastEdict.Rules.Units;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>Действие тактики отряда ИИ: тип (слот 1), отряд, цель (слот 3), точка (слот 4); у действий к своей
 /// крепости — шаг (<see cref="AiFortStep"/>), у <c>AssistMove</c> — режим «прямо к цели»; у атак — «напрямую»
@@ -115,7 +115,7 @@ public sealed class AiTacticTurn(string player, AiWeights weights, InfluenceMap 
     public AiForces Forces { get; set; } = new([], []);
 
     /// <summary>R250 партии со счётчиком: броски тактики — выбор заклинания перед атакой (<c>0x472142</c>). Харнесс на
-    /// время окна ставит сюда броски журнала (<c>JournalRolls</c> (D2.Verification), схема 7.5).</summary>
+    /// время окна ставит сюда броски журнала (<c>JournalRolls</c> (LastEdict.Verification), схема 7.5).</summary>
     public CountingRng Rng { get; set; } = new(new EngineRng());
 
     /// <summary>Кошелёк тактики (<c>CAiTactic +0x515c</c>, слот <c>0x14</c> <c>IAiTacticInternal</c>): в начале хода —

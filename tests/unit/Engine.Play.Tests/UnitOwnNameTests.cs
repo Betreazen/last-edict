@@ -1,8 +1,8 @@
-using D2.Data.Content;
-using D2.Data.Play;
-using D2.Rules.Battle;
+using LastEdict.Data.Content;
+using LastEdict.Data.Play;
+using LastEdict.Rules.Battle;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Имя юнита <c>CMidUnit::getName</c> (<c>0x5e97dc</c>) — подпись крупного портрета боя <c>X100TA0608</c> (<c>%NAME%</c>,
 /// вызов <c>0x64f864</c>): собственное имя — только у героя во главе отряда (реализация <c>IUsStackLeader</c>, не <c>IUsNoble</c> и не

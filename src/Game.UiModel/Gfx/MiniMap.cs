@@ -1,7 +1,7 @@
-using D2.Data.Map;
-using D2.Rules.Map;
+using LastEdict.Data.Map;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Gfx;
+namespace LastEdict.Data.Gfx;
 
 /// <summary>Мини-карта (<c>docs/map-screen.md</c> §1, разбор <c>CPalMapInterf</c>): растр <c>4N × 2N</c>, клетка
 /// <c>(x, y)</c> ложится в точку <c>(2(x − y) + W/2, x + y)</c> блоком 4×2 по маске движка, а цвет точки берётся из
@@ -92,13 +92,13 @@ public sealed class MiniMap
     {
         var tile = _looks.Map.Tiles[x, y];
         bool hidden = _hidden?.Invoke(x, y) ?? false;
-        if (tile.Ground == D2.Rules.Map.Ground.Water)
+        if (tile.Ground == LastEdict.Rules.Map.Ground.Water)
         {
             Fill(image, x, y, "ISOWA");
             return;
         }
         if (hidden) return;
-        Fill(image, x, y, tile.Ground == D2.Rules.Map.Ground.Mountain ? "ISOMO" : Shore(x, y) ? "ISOWB" : Pattern(tile));
+        Fill(image, x, y, tile.Ground == LastEdict.Rules.Map.Ground.Mountain ? "ISOMO" : Shore(x, y) ? "ISOWB" : Pattern(tile));
     }
 
     /// <summary>Кромка воды (<c>0x67e225</c>): под клеткой — вода по диагонали вниз.</summary>
@@ -106,7 +106,7 @@ public sealed class MiniMap
         Water(x + 1, y + 1) && Water(x + 2, y + 2);
 
     private bool Water(int x, int y) =>
-        _looks.Map.Contains(x, y) && _looks.Map.Tiles[x, y].Ground == D2.Rules.Map.Ground.Water;
+        _looks.Map.Contains(x, y) && _looks.Map.Tiles[x, y].Ground == LastEdict.Rules.Map.Ground.Water;
 
     private static string Pattern(Tile tile) =>
         TerrainPattern[tile.Terrain >= 0 && tile.Terrain < TerrainPattern.Length ? tile.Terrain : 0];

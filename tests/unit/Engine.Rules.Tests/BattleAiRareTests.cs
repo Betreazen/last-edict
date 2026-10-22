@@ -1,5 +1,5 @@
-using D2.Rules.Battle;
-using D2.Rules.Rng;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Rng;
 using static BattleAiTests;
 
 /// <summary>Редкие классы политики ИИ (<see cref="AiRareTargets"/>) — по Lua тулсета (ранг 2) и журналу

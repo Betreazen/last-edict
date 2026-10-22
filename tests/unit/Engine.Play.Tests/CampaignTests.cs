@@ -1,11 +1,11 @@
-using D2.Data.Content;
-using D2.Data.Menu;
-using D2.Data.Play;
-using D2.Data.Ui;
-using D2.Data.Ui.Windows;
-using D2.Rules.Map;
+using LastEdict.Data.Content;
+using LastEdict.Data.Menu;
+using LastEdict.Data.Play;
+using LastEdict.Data.Ui;
+using LastEdict.Data.Ui.Windows;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Саги (<c>docs/day-cycle.md</c> §15): «Новая сага» — выбор расы выбирает кампанию, партия — её первая глава и помнит главу
 /// (сохранение v6); победа в не последней главе — перенос героя и вещей в столицу следующей главы, в последней — вывоз героя.</summary>
@@ -134,7 +134,7 @@ public class CampaignTests
     public void CarryOver_Talisman_GetsCharges()
     {
         var (content, book) = Shared.Value;
-        var talisman = book.Items.Values.First(i => i.Category == D2.Rules.Magic.ItemCategory.Talisman);
+        var talisman = book.Items.Values.First(i => i.Category == LastEdict.Rules.Magic.ItemCategory.Talisman);
         var setup = new NewGameSetup
         {
             Scenario = content.Catalog.Scenario("S108SC0000"), Race = 0, LordCategory = 1, Difficulty = 1,

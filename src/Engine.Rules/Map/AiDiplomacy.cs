@@ -1,6 +1,6 @@
-using D2.Rules.Rng;
+using LastEdict.Rules.Rng;
 
-namespace D2.Rules.Map;
+namespace LastEdict.Rules.Map;
 
 /// <summary>Вид подарка ИИ — второй бросок <c>rng(3)</c> в <c>0x448bda</c>: 0 предмет (<c>0x448c51</c>),
 /// 1 заклинание (<c>0x448e84</c>), 2 золото (<c>0x448fc6</c>). Ранг 1 по листингу.</summary>

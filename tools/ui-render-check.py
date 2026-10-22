@@ -470,7 +470,7 @@ TEXT_BLOCK_EXPECT = {"DLG_CAPITAL/TXT_LEADER_NAME": (0, 18), "DLG_CAPITAL/TXT_LE
 
 
 def text_block(repo: Path) -> tuple[bool, str]:
-    """Положение строк подписи по вертикали (прогон 3 пользователя 11.10, пункт 2): правило движка 0x52ad04 (D2.Data.Ui.UiTextBlock) —
+    """Положение строк подписи по вертикали (прогон 3 пользователя 11.10, пункт 2): правило движка 0x52ad04 (LastEdict.Data.Ui.UiTextBlock) —
     блок = строки × шаг шрифта, середина с отбрасыванием дроби, не влез — от верха; подпись не растёт по шрифту темы. Экран карты
     столицы на сохранении снимка 28.09 (без окна), --labels: верх блока и высота подписи. Нет корпуса — пропуск."""
     sg = corpus_dir(repo) / "20260928-shots" / "dyhanie-smerti-human-t01-002.sg"
@@ -488,7 +488,7 @@ def text_block(repo: Path) -> tuple[bool, str]:
 STAGE = re.compile(r"^stage показ=(?P<mode>\S+) буфер=(?P<w>\d+)x(?P<h>\d+) масштаб=(?P<scale>[\d.]+) угол=(?P<x>-?\d+),(?P<y>-?\d+) "
                    r"фильтр=(?P<filter>\S+)$", re.MULTILINE)
 
-# Показ в окне 1280×720 (D2.Data.Ui.ScreenFit): чёткий — буфер 2133×1200 (экраны в нём ×2), сжатие 0,6 по площади; целый — 1067×600
+# Показ в окне 1280×720 (LastEdict.Data.Ui.ScreenFit): чёткий — буфер 2133×1200 (экраны в нём ×2), сжатие 0,6 по площади; целый — 1067×600
 # точка в точку, рамка 106,60.
 SCALED_FLOW = {"sharp": ("2133", "1200", "0.6", "area"), "integer": ("1067", "600", "1", "nearest")}
 
@@ -563,7 +563,7 @@ def flow(repo: Path, name: str, start: str | None, steps: list, more: list[str] 
     return True, f"граф «{name}»: {len(steps)} шагов, стек как ожидалось (фаза в конце {got[-1]['phase']})"
 
 
-# Ролики «Вступления» (D2.Data.Menu.CinematicLogic): шаг сценария → (стек, ролик IMG_FULL, ролик IMG_ANIM, рамка IMG_ANIM_OVER, фон, ролик
+# Ролики «Вступления» (LastEdict.Data.Menu.CinematicLogic): шаг сценария → (стек, ролик IMG_FULL, ролик IMG_ANIM, рамка IMG_ANIM_OVER, фон, ролик
 # смены). Таймер показа — раз в 1000 мс от открытия (0x4c66be): пропуск (левая кнопка 0x4c6668, Enter/пробел/Esc 0x4c668f) действует на
 # ближайшем тике; конец показа — главное меню через TRANS_INTRO2MAIN (0x4ea1f3(1), 0x4eb909).
 CINEMATIC_STEPS = [
@@ -2187,7 +2187,7 @@ SCENARIO_TEXT_STEPS = ["click BTN_SINGLE", "click BTN_NEW_SKIRMISH", "key 13", "
 
 
 def scenario_texts(repo: Path) -> tuple[bool, str]:
-    """Перевод сценариев (data/scenarios/lang/<язык>, D2.Data.Play.ScenarioTexts): с языком ru (по умолчанию) описание в выборе
+    """Перевод сценариев (data/scenarios/lang/<язык>, LastEdict.Data.Play.ScenarioTexts): с языком ru (по умолчанию) описание в выборе
     сценария и задание брифинга первого квеста ('A Return To Simpler Times', перевод порта) и попап события «Ненависти» в ход ИИ
     дня 1 (S073EV0002, текст Руссобит-М) — русские; с --lang en (перевода нет) — оригинал."""
     found = {}

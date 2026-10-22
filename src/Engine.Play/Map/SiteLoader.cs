@@ -1,8 +1,8 @@
-using D2.Data.Sg;
-using D2.Rules.Map;
+using LastEdict.Data.Sg;
+using LastEdict.Rules.Map;
 using KSg = Kaitai.Sg;
 
-namespace D2.Data.Map;
+namespace LastEdict.Data.Map;
 
 /// <summary>
 /// Сценарий или сохранение -> объекты карты, которые можно посетить (<see cref="MapSite"/>).

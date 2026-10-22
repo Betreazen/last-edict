@@ -1,10 +1,10 @@
-using D2.Data.Content;
-using D2.Data.Map;
-using D2.Data.Play;
-using D2.Data.Play.Commands;
-using D2.Rules.Map;
+using LastEdict.Data.Content;
+using LastEdict.Data.Map;
+using LastEdict.Data.Play;
+using LastEdict.Data.Play.Commands;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Сторона дипломатии игрока (<see cref="MapPlayer.Party"/>, этап Э2, задача E): игрок отдельно от расы. Без своей стороны —
 /// род расы, как у движка (все партии оригинала и харнессы); со своей — два игрока одной расы ведут дипломатию каждый за себя.</summary>

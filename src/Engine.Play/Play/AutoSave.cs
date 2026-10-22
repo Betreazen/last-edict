@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>Автосохранение — флажок «Автосохранение» настроек (<c>TOG_AUTOSAVE</c>, <c>MapSettings.AutoSave</c>).
 /// <para>Когда — как у движка: по «Конец хода» человека, до хода остальных (корпус <c>20260919-human</c>: <c>ui_click BTN_END_TURN</c>,

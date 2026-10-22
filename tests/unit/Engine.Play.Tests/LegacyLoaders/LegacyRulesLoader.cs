@@ -1,11 +1,11 @@
 // Загрузчики правил ДО схемы содержимого (main 639961ee): правила читались прямо из строк таблиц оригинала. Эталон сверки
 // «старая модель = новая» (ContentRulesParityTests) — не править; удаляется вместе с ней, когда таблицы уйдут из проверок.
-using D2.Data.Dbf;
-using D2.Rules.Battle;
-using D2.Rules.Map;
-using D2.Rules.Units;
+using LastEdict.Data.Dbf;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Units;
 
-namespace D2.Data.Tests.LegacyLoaders;
+namespace LastEdict.Data.Tests.LegacyLoaders;
 
 /// <summary>Gunits/Gattacks/GVars/Gimmu/GimmuC -> GameRules. Ключи регистронезависимы: в .dbf
 /// нижний регистр, в корпусе — верхний.</summary>
@@ -118,7 +118,7 @@ public static class LegacyRulesLoader
     /// <c>LeaderCategory</c> — <c>LEADER_CAT</c> (<c>LleadC.dbf</c>: 1 <c>L_FIGHTER</c>, 2 <c>L_EXPLORER</c>,
     /// 3 <c>L_MAGE</c>, 4 <c>L_ROD</c>, 5 <c>L_NOBLE</c> — вор, задача 12 Ф7); у не-лидера столбец пуст и
     /// приходит нулём. <c>Negotiate</c> — <c>NEGOTIATE</c>, сопротивление отряда действию вора
-    /// (<see cref="D2.Rules.Map.Thieves.StackResistance"/>); растёт с уровнем шагами
+    /// (<see cref="LastEdict.Rules.Map.Thieves.StackResistance"/>); растёт с уровнем шагами
     /// <c>GDynUpgr.NEGOTIATE</c>. <c>Subrace</c> — <c>SUBRACE</c> типа (<c>LSubRace</c>: 1 Human … 5 Neutral … 14 Elf).
     /// <c>LifeTime</c> — <c>LIFE_TIME</c>: сколько дней живёт призванный (у призывов 1, у иллюзий 3; у прочих 0 — срока нет).</summary>
     public sealed record UnitExtra(string Id, string UpgradeBuildingId, string DynUpg1Id, int DynUpgLevel,
@@ -138,8 +138,8 @@ public static class LegacyRulesLoader
     public sealed record Transformation(string AttackId, string TransformUnitId);
 
     /// <summary>То, что Ф6 дочитывает поверх <see cref="GameRules"/>. Отдельной записью, а не полями
-    /// <c>GameRules</c>, потому что <c>GameRules</c> живёт в <c>D2.Rules</c>: расширяет её задача 2,
-    /// а задача 1 не трогает <c>D2.Rules</c> и не ломает бит в бит поведение Ф4/Ф5.</summary>
+    /// <c>GameRules</c>, потому что <c>GameRules</c> живёт в <c>LastEdict.Rules</c>: расширяет её задача 2,
+    /// а задача 1 не трогает <c>LastEdict.Rules</c> и не ломает бит в бит поведение Ф4/Ф5.</summary>
     public sealed record RulesExtras(IReadOnlyDictionary<string, AttackExtra> Attacks,
                                      IReadOnlyDictionary<string, UnitExtra> Units,
                                      IReadOnlyList<ImmunityRow> ImmunityBySource,

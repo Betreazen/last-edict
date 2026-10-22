@@ -1,7 +1,7 @@
-using D2.Rules.Battle;
-using D2.Rules.Battle.Effects;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Battle.Effects;
 
-namespace D2.Rules.Tests;
+namespace LastEdict.Rules.Tests;
 
 /// <summary>Реестр эффектов (этап Э2, задача D): признаки встроенных эффектов — ровно прежние списки по классам движка (ранг 1, слоты
 /// vftable <c>CBatAttack*</c>), числа ИИ — прежние таблицы <c>AiStrength</c>/<c>AiTargets</c>. Списки ниже — те, что стояли в коде
@@ -93,7 +93,7 @@ public class AttackEffectsTests
         Assert.IsType<UnknownEffect>(effect);
         Assert.False(effect.HasPower);
         var unit = new BattleUnit { Id = "U", Attacker = true, HpMax = 10, Slot = 0, Type = new UnitType("t", 1, 10, 0, "a", "", false, true, 0, 0), Attack = new AttackType("a", 0, (AttackClass)99, 100, 2, 1, 0, false, 0) };
-        Assert.Contains("не реализован", Assert.Throws<NotSupportedException>(() => effect.Hit(new EffectHit(unit, unit.Attack, unit, 0, new D2.Rules.Rng.ScriptedRng([]), new RulesConstants(0, 0), 1, null))).Message, StringComparison.Ordinal);
+        Assert.Contains("не реализован", Assert.Throws<NotSupportedException>(() => effect.Hit(new EffectHit(unit, unit.Attack, unit, 0, new LastEdict.Rules.Rng.ScriptedRng([]), new RulesConstants(0, 0), 1, null))).Message, StringComparison.Ordinal);
     }
 
     [Fact]

@@ -1,10 +1,10 @@
-using D2.Data.Menu;
-using D2.Rules.Magic;
-using D2.Rules.Map;
-using D2.Data.Play.Commands;
-using D2.Rules.Units;
+using LastEdict.Data.Menu;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Map;
+using LastEdict.Data.Play.Commands;
+using LastEdict.Rules.Units;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>
 /// Общее окон площадок (открывает команда сервера <c>StackVisit</c> → <c>0x48b218</c> по категории площадки, у человека — когда
@@ -424,12 +424,12 @@ public sealed class TrainingDoneLogic(WindowContext context, string unitId, bool
     /// движок раздвигает по ширине картинки с центром на месте (<c>0x49e606…0x49e671</c>: x = левый + (ширина места − ширина картинки)/2,
     /// высота прежняя) — то же, что <see cref="UiImageAlign.Center"/> при высоте рамки, равной месту. Прежде порт клал голый широкий
     /// <c>FACE</c> большого юнита, ужатый в место (пометка 32 партии 17.10: Горгулья «полоской» 100×56).</summary>
-    public static string Face(WindowContext context, D2.Rules.Map.MapUnit unit)
+    public static string Face(WindowContext context, LastEdict.Rules.Map.MapUnit unit)
     {
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(unit);
         bool big = context.Session.RequireBook().Rules.Units.TryGetValue(unit.TypeId, out var type) && !type.SizeSmall;
-        return UiFrameRef.Layered(big ? D2.Data.Map.MapCards.LargeBorder : D2.Data.Map.MapCards.SmallBorder, context.Faces.Small(unit.TypeId));
+        return UiFrameRef.Layered(big ? LastEdict.Data.Map.MapCards.LargeBorder : LastEdict.Data.Map.MapCards.SmallBorder, context.Faces.Small(unit.TypeId));
     }
 
     public bool Allows(string element, UiScreenState ui) => element != "BTN_OK";

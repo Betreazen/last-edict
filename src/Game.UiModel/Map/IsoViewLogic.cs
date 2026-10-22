@@ -1,7 +1,7 @@
-using D2.Data.Menu;
-using D2.Data.Ui;
+using LastEdict.Data.Menu;
+using LastEdict.Data.Ui;
 
-namespace D2.Data.Map;
+namespace LastEdict.Data.Map;
 
 /// <summary>Вид карты <c>DLG_ISO_VIEW</c> (<c>CIsoView</c>): поверх карты и под панелями — рамка края поля <c>ISO_OUTLINE</c>
 /// (800×600, непрозрачна только полоса x 594…641: линия края и уголки-орнаменты вверху и внизу, внизу — x 595…640, y 505…600). Имя

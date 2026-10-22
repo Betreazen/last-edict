@@ -19,7 +19,7 @@ window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
 [dotnet]
-project/assembly_name="D2.Godot"
+project/assembly_name="LastEdict.Godot"
 
 [rendering]
 textures/canvas_textures/default_texture_filter=0

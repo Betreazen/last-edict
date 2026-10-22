@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>
 /// Болтливый вывод показа — строки о каждом событии карты, хода ИИ и звука (<c>aimove</c>, <c>aisight</c>, <c>walked</c>, <c>fx</c>,

@@ -1,6 +1,6 @@
-using D2.Data.Sound;
+using LastEdict.Data.Sound;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Опись звуков (<see cref="SoundAssets"/>, <c>data/sound</c>): у каждого заклинания оригинала есть звук литья в
 /// <c>Midgard</c> (имя — id заклинания, как у движка <c>0x5b0986</c>).</summary>
@@ -77,10 +77,10 @@ public class SoundAssetsTests
         Assert.Null(sounds.Find(WindowSounds.Archive, "CLOSINTR"));
         // Вход в лавку, попапы, действия в окнах и захват — звуки есть в описи Midgard.
         Assert.Equal(("ENTRSITE", "BKPOPUP"), (WindowSounds.Open("DLG_MAGE"), WindowSounds.Open("DLG_OFFER")));
-        foreach (var kind in Enum.GetValues<D2.Data.Play.TurnSightKind>())
+        foreach (var kind in Enum.GetValues<LastEdict.Data.Play.TurnSightKind>())
             if (WindowSounds.OfAction(kind) is { } name) Assert.NotNull(sounds.Find(WindowSounds.Archive, name));
-        Assert.Equal("OCCUPY", WindowSounds.OfAction(D2.Data.Play.TurnSightKind.Capture));
-        Assert.False(WindowSounds.IsWindowAction(D2.Data.Play.TurnSightKind.Capture));
+        Assert.Equal("OCCUPY", WindowSounds.OfAction(LastEdict.Data.Play.TurnSightKind.Capture));
+        Assert.False(WindowSounds.IsWindowAction(LastEdict.Data.Play.TurnSightKind.Capture));
         foreach (string name in new[] { "ENTRSITE", "BKPOPUP", "ENTRCITY", "LOOTRUIN", "ENTRRUIN", "SBATTLE" })
             Assert.NotNull(sounds.Find(WindowSounds.Archive, name));
     }
@@ -92,35 +92,35 @@ public class SoundAssetsTests
     public void SightSounds_ByObject()
     {
         var sounds = SoundAssets.Load(ImportedData.PathOf("sound"));
-        var book = D2.Data.Play.GameBook.Load(ImportedData.PathOf("rules"));
-        static D2.Data.Play.TurnSight Sight(D2.Data.Play.TurnSightKind kind, string id) => new(kind, "P", 0, 0, id);
-        var potions = new (D2.Rules.Magic.ItemCategory Category, string Sound)[]
+        var book = LastEdict.Data.Play.GameBook.Load(ImportedData.PathOf("rules"));
+        static LastEdict.Data.Play.TurnSight Sight(LastEdict.Data.Play.TurnSightKind kind, string id) => new(kind, "P", 0, 0, id);
+        var potions = new (LastEdict.Rules.Magic.ItemCategory Category, string Sound)[]
         {
-            (D2.Rules.Magic.ItemCategory.PotionBoost, "PBOOST"), (D2.Rules.Magic.ItemCategory.PotionHeal, "PHEAL"),
-            (D2.Rules.Magic.ItemCategory.PotionRevive, "PREVIVE"), (D2.Rules.Magic.ItemCategory.PotionPermanent, "USEITEM"),
+            (LastEdict.Rules.Magic.ItemCategory.PotionBoost, "PBOOST"), (LastEdict.Rules.Magic.ItemCategory.PotionHeal, "PHEAL"),
+            (LastEdict.Rules.Magic.ItemCategory.PotionRevive, "PREVIVE"), (LastEdict.Rules.Magic.ItemCategory.PotionPermanent, "USEITEM"),
         };
         foreach (var (category, sound) in potions)
         {
             var item = book.Items.Values.First(i => i.Category == category);
-            Assert.Equal(sound, WindowSounds.OfSight(Sight(D2.Data.Play.TurnSightKind.PotionDrunk, item.Id), book));
+            Assert.Equal(sound, WindowSounds.OfSight(Sight(LastEdict.Data.Play.TurnSightKind.PotionDrunk, item.Id), book));
         }
         string anyItem = book.Items.Keys.First(), anySpell = book.Spells.Keys.First();
-        Assert.Equal(("TRADITEM", "TRADSPEL"), (WindowSounds.OfSight(Sight(D2.Data.Play.TurnSightKind.Traded, anyItem), book),
-                                                WindowSounds.OfSight(Sight(D2.Data.Play.TurnSightKind.Traded, anySpell), book)));
-        Assert.Equal(("REFTRITM", "REFTRSPE"), (WindowSounds.OfSight(Sight(D2.Data.Play.TurnSightKind.TradeRefused, anyItem), book),
-                                                WindowSounds.OfSight(Sight(D2.Data.Play.TurnSightKind.TradeRefused, anySpell), book)));
-        Assert.Equal("BUILDING", WindowSounds.OfSight(Sight(D2.Data.Play.TurnSightKind.Built, "x"), book));   // прежние — как OfAction
-        foreach (var kind in Enum.GetValues<D2.Data.Play.TurnSightKind>())
+        Assert.Equal(("TRADITEM", "TRADSPEL"), (WindowSounds.OfSight(Sight(LastEdict.Data.Play.TurnSightKind.Traded, anyItem), book),
+                                                WindowSounds.OfSight(Sight(LastEdict.Data.Play.TurnSightKind.Traded, anySpell), book)));
+        Assert.Equal(("REFTRITM", "REFTRSPE"), (WindowSounds.OfSight(Sight(LastEdict.Data.Play.TurnSightKind.TradeRefused, anyItem), book),
+                                                WindowSounds.OfSight(Sight(LastEdict.Data.Play.TurnSightKind.TradeRefused, anySpell), book)));
+        Assert.Equal("BUILDING", WindowSounds.OfSight(Sight(LastEdict.Data.Play.TurnSightKind.Built, "x"), book));   // прежние — как OfAction
+        foreach (var kind in Enum.GetValues<LastEdict.Data.Play.TurnSightKind>())
             if (WindowSounds.OfSight(Sight(kind, anyItem), book) is { } name) Assert.NotNull(sounds.Find(WindowSounds.Archive, name));
 
         Assert.Equal(("CHNGFACE", null), (WindowSounds.OfClick("DLG_CHOOSE_LORD", "BTN_FACE"), WindowSounds.OfClick("DLG_HOTSEAT_LOBBY", "BTN_FACE")));
         Assert.NotNull(sounds.Find(WindowSounds.Archive, "CHNGFACE"));
 
-        Assert.Equal("UNTRANSF", BattleNoteSounds.Of(D2.Rules.Battle.BattleNoteKind.Untransformed, -1));
-        Assert.Equal("UNSUMMON", BattleNoteSounds.Of(D2.Rules.Battle.BattleNoteKind.Unsummoned, 0));
-        Assert.Equal(("UPGRADEEL", "UPGRADEHU", "UPGRADENE"), (BattleNoteSounds.Of(D2.Rules.Battle.BattleNoteKind.LevelUp, 5),
-                                                               BattleNoteSounds.Of(D2.Rules.Battle.BattleNoteKind.LevelUp, 0),
-                                                               BattleNoteSounds.Of(D2.Rules.Battle.BattleNoteKind.LevelUp, -1)));
+        Assert.Equal("UNTRANSF", BattleNoteSounds.Of(LastEdict.Rules.Battle.BattleNoteKind.Untransformed, -1));
+        Assert.Equal("UNSUMMON", BattleNoteSounds.Of(LastEdict.Rules.Battle.BattleNoteKind.Unsummoned, 0));
+        Assert.Equal(("UPGRADEEL", "UPGRADEHU", "UPGRADENE"), (BattleNoteSounds.Of(LastEdict.Rules.Battle.BattleNoteKind.LevelUp, 5),
+                                                               BattleNoteSounds.Of(LastEdict.Rules.Battle.BattleNoteKind.LevelUp, 0),
+                                                               BattleNoteSounds.Of(LastEdict.Rules.Battle.BattleNoteKind.LevelUp, -1)));
         foreach (string name in new[] { "UNTRANSF", "UNSUMMON", "UPGRADEEL" })
             Assert.NotNull(sounds.Find(BattleNoteSounds.Archive, name));
     }

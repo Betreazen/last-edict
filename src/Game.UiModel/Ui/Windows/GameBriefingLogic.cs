@@ -1,9 +1,9 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
-using D2.Data.Game;
-using D2.Data.Menu;
+using LastEdict.Data.Game;
+using LastEdict.Data.Menu;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>
 /// Брифинг сценария <c>DLG_SCENARIO_BRIEFING</c> — «Задание» из партии (<c>BTN_REPORT</c>, F1 → <c>CBriefingInGame</c> <c>0x482103</c>) и

@@ -1,8 +1,8 @@
-using D2.Rules.Battle;
-using D2.Rules.Map;
-using D2.Rules.Units;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Units;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>
 /// Построитель <c>HireUnit</c> (0xa, <c>CAiHireUnitTactic</c> <c>0x459f0d</c>, <c>docs/ai-tactic-candidates.md</c> §19): «за юнитами

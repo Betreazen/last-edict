@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
-using D2.Data.Map;
+using LastEdict.Data.Map;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Карточка объекта карты по правой кнопке (<see cref="MapCards"/>, <c>docs/ai-screen.md</c> §10): пока кнопка нажата над
 /// объектом — окно <c>DLG_R_C_*</c> по середине экрана, отпущена — окна нет (как у движка при <c>StickyEncy</c> = 0). Не во время хода
@@ -27,7 +27,7 @@ public partial class MapScreen
             || Windows is not { } context)
             return false;
         _landmarkNames ??= MapCards.LandmarkNames(GameData.Rules);
-        var card = MapCards.At(context, _raceNames ??= D2.Data.Ui.Windows.RaceNames.Load(GameData.Rules), _landmarkNames,
+        var card = MapCards.At(context, _raceNames ??= LastEdict.Data.Ui.Windows.RaceNames.Load(GameData.Rules), _landmarkNames,
                                cell.X, cell.Y, (x, y) => _map.Scene.Hidden(x, y));
         if (card is null) return false;
         _card = new UiScreenView { Hosted = card.Screen, Name = "Card", SlotHost = _host, Logic = card.Logic };
@@ -64,9 +64,9 @@ public partial class MapScreen
         string leader = card.State.Screen.Elements.Any(e => e.Id == "IMG_LEADER") ? card.State.Frame("IMG_LEADER") ?? "-" : "-";
         string missing = card.MissingFrames.Count > 0 ? string.Join(",", card.MissingFrames) : "-";
         // Портреты групп в рамке (кадр из слоёв «рамка&портрет», MapCards.Framed): число, рамки и размеры собранных картинок.
-        var framed = card.State.Screen.Elements.Where(e => e.Kind == D2.Data.Ui.UiKind.Image).Select(e => card.State.Frame(e.Id))
-                         .OfType<string>().Select(f => (Frame: f, Layers: D2.Data.Ui.UiFrameRef.Layers(f))).Where(p => p.Layers is not null).ToList();
-        int portraits = card.State.Screen.Elements.Count(e => e.Kind == D2.Data.Ui.UiKind.Image && card.State.Frame(e.Id) is { } f
+        var framed = card.State.Screen.Elements.Where(e => e.Kind == LastEdict.Data.Ui.UiKind.Image).Select(e => card.State.Frame(e.Id))
+                         .OfType<string>().Select(f => (Frame: f, Layers: LastEdict.Data.Ui.UiFrameRef.Layers(f))).Where(p => p.Layers is not null).ToList();
+        int portraits = card.State.Screen.Elements.Count(e => e.Kind == LastEdict.Data.Ui.UiKind.Image && card.State.Frame(e.Id) is { } f
                                                               && f.Contains("Faces:", System.StringComparison.Ordinal));
         string borders = framed.Count == 0 ? "-"
             : string.Join(",", framed.GroupBy(p => $"{p.Layers!.Value.Under.Split(':')[^1]}:{card.FrameSize(p.Frame)}").Select(g => $"{g.Key}×{g.Count()}"));

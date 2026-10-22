@@ -1,11 +1,11 @@
-using D2.Data.Content;
-using D2.Data.Gfx;
-using D2.Data.Ui;
-using D2.Rules.Battle;
+using LastEdict.Data.Content;
+using LastEdict.Data.Gfx;
+using LastEdict.Data.Ui;
+using LastEdict.Rules.Battle;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Поле боя (<see cref="BattleScene"/>, <c>docs/battle-render.md</c>): места юнитов из разметки,
 /// точка кадра по якорю и имена анимаций.</summary>
@@ -311,7 +311,7 @@ public class BattleSceneTests(ITestOutputHelper output)
         string[] expected = ["UPGRADEHU", "UPGRADEUN", "UPGRADEHE", "UPGRADEDW", "UPGRADENE", "UPGRADEEL"];   // по типу расы Lrace 0…5
         for (int race = -1; race < expected.Length; race++)
         {
-            string name = D2.Data.Sound.BattleNoteSounds.Of(BattleNoteKind.LevelUp, race);
+            string name = LastEdict.Data.Sound.BattleNoteSounds.Of(BattleNoteKind.LevelUp, race);
             string? s = scene.UnitEffect(name, small)?.Name, l = scene.UnitEffect(name, big)?.Name;
             output.WriteLine($"раса {race}: малый {s}, большой {l}");
             string want = race < 0 ? "UPGRADENE" : expected[race];
@@ -345,8 +345,8 @@ public class BattleSceneTests(ITestOutputHelper output)
     [Fact]
     public void ShowsItems_OnlyLeaderNotTransformed()
     {
-        var potion = new D2.Rules.Magic.Item("g000ig0001", D2.Rules.Magic.ItemCategory.PotionHeal, new D2.Rules.Map.Bank(0, 0, 0, 0, 0, 0),
-                                             "", "", 50, "", new D2.Rules.Map.Bank(0, 0, 0, 0, 0, 0), "", "");
+        var potion = new LastEdict.Rules.Magic.Item("g000ig0001", LastEdict.Rules.Magic.ItemCategory.PotionHeal, new LastEdict.Rules.Map.Bank(0, 0, 0, 0, 0, 0),
+                                             "", "", 50, "", new LastEdict.Rules.Map.Bank(0, 0, 0, 0, 0, 0), "", "");
         var plain = Unit();
         plain.BattleItems.Add(potion);
         var leader = Unit();

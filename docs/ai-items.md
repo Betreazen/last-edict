@@ -3,9 +3,9 @@
 Разбор `Discipl2.exe` (GOG 3.01) дизассемблером и сверка с корпусом (`20260919-human`, `20260920-legions`). Ранги: 1 —
 листинг, 2 — листинг и корпус, 3 — догадка. Код: `src/Engine.Play/Play/AiStackItems.cs` (решения ИИ),
 `GameSession.Items.cs` (действия: выпить, надеть, снять, забрать склад — общие с окном отряда человека), правила —
-`D2.Rules.Magic.Equipment` / `ItemUse` (сверены раньше харнессами Ф7). Юниты гарнизона, расстановка и лечение (§6) —
+`LastEdict.Rules.Magic.Equipment` / `ItemUse` (сверены раньше харнессами Ф7). Юниты гарнизона, расстановка и лечение (§6) —
 `AiStackUnits.cs`, `GameSession.Units.cs` (обмен клеток групп — им же воспользуется окно города), чистая логика —
-`D2.Rules.Map.GroupArrange`. Тесты: `AiStackItemsTests`, `GroupArrangeTests`, харнесс `AiStackItemsHarnessTests`.
+`LastEdict.Rules.Map.GroupArrange`. Тесты: `AiStackItemsTests`, `GroupArrangeTests`, харнесс `AiStackItemsHarnessTests`.
 
 ## 1. Где в ходе (ранг 1)
 

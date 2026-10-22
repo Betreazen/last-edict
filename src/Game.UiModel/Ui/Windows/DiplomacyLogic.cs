@@ -1,8 +1,8 @@
-using D2.Data.Menu;
-using D2.Rules.Map;
-using D2.Data.Play.Commands;
+using LastEdict.Data.Menu;
+using LastEdict.Rules.Map;
+using LastEdict.Data.Play.Commands;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>
 /// Общее окна дипломатии (<c>CDiplomacyInterf</c>): игроки поля — сам игрок первым, затем до трёх других, ведущих дипломатию
@@ -296,7 +296,7 @@ public sealed class DiplomacyPanelLogic(DiplomacyModel model, IReadOnlyDictionar
                 else if (self.LastMapExchange(sel.Id) is int last && last >= c.Map.Turn) Tell("X160TA0023");
                 else _requests.Add(new UiAsk(c.Text("X160TA0006"), () =>
                 {
-                    var result = c.Session.Run<D2.Data.Play.ProposalResult>(new ProposeExchangeMapCommand(self.Id, sel.Id));
+                    var result = c.Session.Run<LastEdict.Data.Play.ProposalResult>(new ProposeExchangeMapCommand(self.Id, sel.Id));
                     LastResult = result.Refusal ?? result.Accepted switch { true => "обмен областями", false => "отказ обмена областями", _ => "ждёт ответа" };
                     if (result.Refusal is { } refused)
                     {
@@ -340,7 +340,7 @@ public sealed class DiplomacyPanelLogic(DiplomacyModel model, IReadOnlyDictionar
                 }));
                 break;
             case "BTN_TRADE_SPELL" when !self.KnownSpells.Any(s => book.Spells.TryGetValue(s, out var sp)
-                                                                 && sp.Category != D2.Rules.Magic.SpellCategory.Summon):
+                                                                 && sp.Category != LastEdict.Rules.Magic.SpellCategory.Summon):
                 Tell("X005TA0505");
                 break;
             case "BTN_TRADE_SPELL" when spellTexts is not null:

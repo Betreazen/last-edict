@@ -1,11 +1,11 @@
 using System.Collections.Concurrent;
-using D2.Data.Map;
-using D2.Rules.Map;
+using LastEdict.Data.Map;
+using LastEdict.Rules.Map;
 
-namespace D2.Rules.Tests;
+namespace LastEdict.Rules.Tests;
 
 /// <summary>Карта и объекты сохранения (<see cref="MapLoader.Load(string)"/>, <see cref="SiteLoader.Load(string)"/>) — один раз на процесс
-/// D2.Rules.Tests. Харнессы правил сверяют по одним и тем же сохранениям корпуса: на 20.10 — 62 тыс. открытий 1256 сохранений, а разбор
+/// LastEdict.Rules.Tests. Харнессы правил сверяют по одним и тем же сохранениям корпуса: на 20.10 — 62 тыс. открытий 1256 сохранений, а разбор
 /// карты из <c>.sg</c> (~16 мс) дороже самого чтения файла. Только для чтения: харнесс, который меняет карту (земля заклинаний у
 /// <c>C4MoveHarnessTests</c>), берёт свою копию через <see cref="MapLoader.Load(string)"/>. Ключ — полный путь, время записи и длина
 /// (как у <c>SgFile.Open</c>); ошибка разбора запоминается и бросается снова при каждом обращении, как бросал бы разбор.</summary>

@@ -1,7 +1,7 @@
-using D2.Data.Gfx;
+using LastEdict.Data.Gfx;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Смешение кадра карты по его <c>opacity</c> (<see cref="GfxBlend"/>, <c>docs/ai-screen.md</c> §13): половина — прозрачность 0,5
 /// (та же формула <c>⌊d/2⌋+⌊s/2⌋</c> с точностью до округления 565), сложение и вычитание — материал с режимом смешения, 0 — скрыт.</summary>

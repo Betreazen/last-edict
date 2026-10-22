@@ -1,6 +1,6 @@
-using D2.Data.Dbf;
+using LastEdict.Data.Dbf;
 
-namespace D2.Data.Ui;
+namespace LastEdict.Data.Ui;
 
 /// <summary>Однократный импорт строк игры в данные порта. В рантайме порт читает только
 /// <c>data/ui/strings.&lt;язык&gt;.json</c>; dbf нужен здесь и больше нигде (правило проекта:

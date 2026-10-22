@@ -1,11 +1,11 @@
 using System;
 using System.Linq;
-using D2.Data.Play;
-using D2.Data.Ui;
-using D2.Data.Ui.Windows;
+using LastEdict.Data.Play;
+using LastEdict.Data.Ui;
+using LastEdict.Data.Ui.Windows;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Предложения человека другому человеку «горячего стула» — сразу, ещё в ход предложившего (<see cref="HotseatCourierLogic"/>,
 /// сессия Б): гонец, «ОК» — окно ответа адресата поверх карты предложившего, ответ — итог предложившему. Отложенные предложения
@@ -21,7 +21,7 @@ public partial class MapScreen
         if (_logics.Any(l => l is HotseatCourierLogic or AllianceOfferLogic or TradeOfferLogic)) return;
         var offer = session.State.Offers.FirstOrDefault(o => o.From.Equals(viewer, StringComparison.OrdinalIgnoreCase)
             && session.State.Info.Humans.Contains(o.To, StringComparer.OrdinalIgnoreCase)
-            && (o.IsAlliance || o.Exchange || o.Trade is { Kind: not D2.Rules.Map.AiGiftKind.Gold }));
+            && (o.IsAlliance || o.Exchange || o.Trade is { Kind: not LastEdict.Rules.Map.AiGiftKind.Gold }));
         if (offer is null || !session.Map.Players.TryGetValue(offer.To, out var to) || !session.Map.Players.TryGetValue(offer.From, out var from)) return;
         var raceNames = _raceNames ??= RaceNames.Load(GameData.Rules);
         UiOpen? answer = offer.Trade is null
@@ -38,8 +38,8 @@ public partial class MapScreen
     private TradeOfferLogic CourierTrade(WindowContext context, TradeOffer trade, System.Collections.Generic.IReadOnlyDictionary<string, string> raceNames) =>
         new(context, trade, raceNames, TradeThingName(trade.IsItem), yes =>
         {
-            string? refused = (string?)_map.Session.Execute(new D2.Data.Play.Commands.AnswerTradeCommand(trade.From, trade.To, yes)).Value;
-            if (refused is not null && yes) _map.Session.Execute(new D2.Data.Play.Commands.AnswerTradeCommand(trade.From, trade.To, false));
+            string? refused = (string?)_map.Session.Execute(new LastEdict.Data.Play.Commands.AnswerTradeCommand(trade.From, trade.To, yes)).Value;
+            if (refused is not null && yes) _map.Session.Execute(new LastEdict.Data.Play.Commands.AnswerTradeCommand(trade.From, trade.To, false));
             bool done = yes && refused is null;
             context.Announce(done ? TurnSightKind.Traded : TurnSightKind.TradeRefused, trade.ThingId);
             string addressee = _map.Map.Players.TryGetValue(trade.To, out var p) ? p.Name : trade.To;

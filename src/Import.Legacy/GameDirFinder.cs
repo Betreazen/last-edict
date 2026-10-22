@@ -1,6 +1,6 @@
 using Microsoft.Win32;
 
-namespace D2.Data.Import;
+namespace LastEdict.Data.Import;
 
 /// <summary>Где искать копию Disciples II для импорта без вопросов: установка GOG (реестр <c>GOG.com\Games</c>: id 1207663713 —
 /// «Disciples II: Rise of the Elves» 3.01, иначе любая игра с «Disciples II» в имени) и обычные папки GOG. Годность папки проверяет

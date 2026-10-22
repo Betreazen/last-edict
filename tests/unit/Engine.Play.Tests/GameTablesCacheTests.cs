@@ -1,7 +1,7 @@
-using D2.Data.Dbf;
+using LastEdict.Data.Dbf;
 using Xunit;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Кеш <see cref="GameTables.Read"/>: повторное чтение того же файла — тот же экземпляр, переписанный файл
 /// (другой размер или время записи) — новая таблица.</summary>

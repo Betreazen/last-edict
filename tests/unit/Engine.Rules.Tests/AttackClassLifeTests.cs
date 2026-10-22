@@ -1,8 +1,8 @@
-using D2.Data;
-using D2.Data.Battle;
-using D2.Rules.Battle;
-using D2.Rules.Rng;
-using D2.Rules.Units;
+using LastEdict.Data;
+using LastEdict.Data.Battle;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Rng;
+using LastEdict.Rules.Units;
 using Xunit.Abstractions;
 
 /// <summary>
@@ -520,10 +520,10 @@ public class AttackClassLifeTests(ITestOutputHelper output)
         ImportedData.RequireRules();
         var a = Of(Occultist, SummonMany, id: "summoner");
         var state = State(a, Of(Squire, attacker: true, id: "enemy"));
-        state.ProcessRand = new D2.Rules.Rng.CrtRand(12345);
+        state.ProcessRand = new LastEdict.Rules.Rng.CrtRand(12345);
         var candidates = state.Rules!.SummonCandidates(SummonMany, smallSlot: true);
         Assert.True(candidates.Count > 1);
-        var mirror = new D2.Rules.Rng.CrtRand(12345);
+        var mirror = new LastEdict.Rules.Rng.CrtRand(12345);
 
         Attacks.Apply(a, Attack(SummonMany), a, new ScriptedRng([]), C, round: 1, state);
 
@@ -531,9 +531,9 @@ public class AttackClassLifeTests(ITestOutputHelper output)
         Assert.Equal(mirror.State, state.ProcessRand.State);
 
         var one = State(Of(Occultist, SummonOne, id: "occultist"), Of(Squire, attacker: true, id: "enemy"));
-        one.ProcessRand = new D2.Rules.Rng.CrtRand(7);
+        one.ProcessRand = new LastEdict.Rules.Rng.CrtRand(7);
         Attacks.Apply(one.Units[0], Attack(SummonOne), one.Units[0], new ScriptedRng([]), C, round: 1, one);
-        Assert.Equal(new D2.Rules.Rng.CrtRand(7).State, one.ProcessRand.State);
+        Assert.Equal(new LastEdict.Rules.Rng.CrtRand(7).State, one.ProcessRand.State);
     }
 
     /// <summary>Отряд полон — призывать некуда, эффекта нет.</summary>

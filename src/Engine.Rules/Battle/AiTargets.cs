@@ -1,7 +1,7 @@
-using D2.Rules.Battle.Effects;
-using D2.Rules.Units;
+using LastEdict.Rules.Battle.Effects;
+using LastEdict.Rules.Units;
 
-namespace D2.Rules.Battle;
+namespace LastEdict.Rules.Battle;
 
 /// <summary>Выбор цели политикой ИИ — функции дерева <c>aiChooseBattleAction</c> (<c>0x5ce2b9</c>).
 /// Ранг 1: разбор <c>docs/synthetic-maps/analysis/G-ai-battle.md</c> §2, перенос один в один с модели
@@ -43,7 +43,7 @@ public static class AiTargets
     }
 
     /// <summary>Оценка урона не бросает (<c>addRandom</c> = false) — генератор ей не нужен.</summary>
-    private static readonly D2.Rules.Rng.IRng NoRolls = new D2.Rules.Rng.ScriptedRng([]);
+    private static readonly LastEdict.Rules.Rng.IRng NoRolls = new LastEdict.Rules.Rng.ScriptedRng([]);
 
     /// <summary>Источник для <see cref="SelectKill"/> (<c>0x5ce802</c>): первой атаки, если она с уроном,
     /// иначе второй, если с уроном, иначе снова первой.</summary>

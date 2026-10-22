@@ -1,8 +1,8 @@
-using D2.Data.Content;
-using D2.Data.Play;
-using D2.Rules.Map;
+using LastEdict.Data.Content;
+using LastEdict.Data.Play;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>Портреты юнитов в графике игры (<c>Faces.ff</c>): малый <c>{база}FACE</c> (70×85, у большого 150×85) и
 /// крупный <c>{база}FACEB</c> (130×142). База — <c>Gunits.BASE_UNIT</c> (выросший тип рисуется картинкой исходного),

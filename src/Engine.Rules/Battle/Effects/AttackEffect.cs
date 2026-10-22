@@ -1,6 +1,6 @@
-using D2.Rules.Rng;
+using LastEdict.Rules.Rng;
 
-namespace D2.Rules.Battle.Effects;
+namespace LastEdict.Rules.Battle.Effects;
 
 /// <summary>Удар, дошедший до эффекта (после броска точности и иммунитета): кто, чем (атака уже с модификаторами атакующего), по кому.
 /// <see cref="DrainPercent"/> — прибавка вампиризма цепочки атакующего (<c>GmodifL TYPE 15</c>), её читает только вампиризм.

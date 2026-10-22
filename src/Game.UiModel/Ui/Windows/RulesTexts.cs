@@ -1,7 +1,7 @@
-using D2.Data.Content;
-using D2.Data.Content.Schema;
+using LastEdict.Data.Content;
+using LastEdict.Data.Content.Schema;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>
 /// Тексты окон из содержимого правил — id строк по ключу сущности: описание и раса воина, имя расы, имя постройки, имя атаки, здание

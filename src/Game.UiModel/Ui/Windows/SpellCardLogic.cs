@@ -1,8 +1,8 @@
 using System.Globalization;
-using D2.Rules.Magic;
-using D2.Rules.Map;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>
 /// Энциклопедия заклинания (<c>DLG_R_C_SPELL</c>, <c>CEncLayoutSpell</c> <c>0x57cdca</c>, заполнение <c>0x57d066</c>), пока держится правая

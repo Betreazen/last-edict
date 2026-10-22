@@ -1,8 +1,8 @@
 using System;
-using D2.Data.Ui;
+using LastEdict.Data.Ui;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Время экрана: автоповтор зажатой кнопки (<see cref="UiScreenState.Hold"/>) и всплывающая подсказка (<see cref="UiTooltip"/>) —
 /// чёрный текст на белом в рамке, снизу слева от мыши, прижат к краям окна игры.</summary>

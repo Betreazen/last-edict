@@ -1,18 +1,18 @@
 // Загрузчики правил ДО схемы содержимого (main 639961ee): правила читались прямо из строк таблиц оригинала. Эталон сверки
 // «старая модель = новая» (ContentRulesParityTests) — не править; удаляется вместе с ней, когда таблицы уйдут из проверок.
-using D2.Data.Battle;
-using D2.Data.Dbf;
-using D2.Rules.Magic;
-using D2.Rules.Map;
+using LastEdict.Data.Battle;
+using LastEdict.Data.Dbf;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Tests.LegacyLoaders;
+namespace LastEdict.Data.Tests.LegacyLoaders;
 
-/// <summary><c>Gspells.dbf</c> -> <see cref="Spell"/>. Запись живёт в <c>D2.Rules.Magic</c>, а не
-/// здесь: ссылка идёт <c>D2.Data → D2.Rules</c>, кольца не будет.
+/// <summary><c>Gspells.dbf</c> -> <see cref="Spell"/>. Запись живёт в <c>LastEdict.Rules.Magic</c>, а не
+/// здесь: ссылка идёт <c>LastEdict.Data → LastEdict.Rules</c>, кольца не будет.
 ///
 /// <para><b>Долг задачи 9, закрытый задачей 10.</b> Прежде загрузчик отдавал собственную запись
 /// <c>SpellType</c>, а перевод в правило жил в тестовом хелпере <c>SpellTests.ToRule</c> — задаче 9
-/// правка <c>D2.Data</c> была запрещена. Заодно ушло имя, расходившееся с данными: колонку
+/// правка <c>LastEdict.Data</c> была запрещена. Заодно ушло имя, расходившееся с данными: колонку
 /// <c>RESTORE_M</c> задача 1 прочла как <c>RestoreMana</c>, а это <b>проценты очков хода</b>
 /// (ранг 1 по текстам самой игры — см. <see cref="Spell.RestoreMovePercent"/>).</para>
 ///

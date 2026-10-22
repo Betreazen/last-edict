@@ -1,7 +1,7 @@
-using D2.Data.Map;
-using D2.Data.Ui;
+using LastEdict.Data.Map;
+using LastEdict.Data.Ui;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Настройки показа карты (<see cref="MapSettings"/>) и их часть окна <c>DLG_OPTIONS</c> (<see cref="MapOptionsLogic"/>).</summary>
 public class MapOptionsTests
@@ -85,7 +85,7 @@ public class MapOptionsTests
     }
 
     /// <summary>Окно из главного меню (партии нет, <c>0x4bf5a4</c>): «Сохранить», «Загрузить», «Экспорт», «Выход» спрятаны; в партии —
-    /// на месте. Изменение в меню уходит хозяину через <see cref="D2.Data.Menu.MenuContext.SettingsChanged"/>.</summary>
+    /// на месте. Изменение в меню уходит хозяину через <see cref="LastEdict.Data.Menu.MenuContext.SettingsChanged"/>.</summary>
     [SkippableFact]
     public void Window_OutsideGame_HidesGameButtons()
     {
@@ -95,11 +95,11 @@ public class MapOptionsTests
         Assert.All(MapOptionsLogic.GameButtons, b => Assert.False(inGame.IsHidden(b)));
 
         var got = new List<MapSettings>();
-        var menu = new D2.Data.Menu.MenuContext(null!, new Dictionary<string, string>(), new D2.Data.Menu.NewGameSetup(), "игрок")
+        var menu = new LastEdict.Data.Menu.MenuContext(null!, new Dictionary<string, string>(), new LastEdict.Data.Menu.NewGameSetup(), "игрок")
         {
             SettingsChanged = got.Add,
         };
-        var logic = Assert.IsType<MapOptionsLogic>(D2.Data.Menu.MenuLogic.For(MapOptionsLogic.Screen, menu));
+        var logic = Assert.IsType<MapOptionsLogic>(LastEdict.Data.Menu.MenuLogic.For(MapOptionsLogic.Screen, menu));
         var ui = new UiScreenState(screen);
         logic.Open(ui);
         Assert.All(MapOptionsLogic.GameButtons, b => Assert.True(ui.IsHidden(b)));
@@ -280,7 +280,7 @@ public class MapOptionsTests
         var logic = new MapOptionsLogic(new MapSettings(), saved.Add, id => $"[{id}]");
         logic.Open(ui);
         Click(screen, ui, logic, "BTN_LOWEND");
-        var ask = Assert.IsType<D2.Data.Ui.Windows.UiAsk>(logic.TakeRequest());
+        var ask = Assert.IsType<LastEdict.Data.Ui.Windows.UiAsk>(logic.TakeRequest());
         Assert.Equal("[X005TA0863]", ask.Text);
         Assert.Empty(saved);   // до «Да» — ничего
         ask.Yes();
@@ -295,7 +295,7 @@ public class MapOptionsTests
         Assert.Equal((83, 1, true), (low.FxVolume, low.PlayerSpeed, low.AutoSave));   // прочее — как было
 
         Click(screen, ui, logic, "BTN_HIGHEND");
-        var high = Assert.IsType<D2.Data.Ui.Windows.UiAsk>(logic.TakeRequest());
+        var high = Assert.IsType<LastEdict.Data.Ui.Windows.UiAsk>(logic.TakeRequest());
         Assert.Equal("[X005TA0864]", high.Text);
         high.Yes();
         logic.Resume(ui);
@@ -344,8 +344,8 @@ public class MapOptionsTests
     [Fact]
     public void Settings_Scaling_DefaultsToSharp()
     {
-        Assert.Equal(D2.Data.Ui.ScreenScaling.Sharp, new MapSettings().ScreenScaling);
-        Assert.Equal(D2.Data.Ui.ScreenScaling.Integer, new MapSettings(Scaling: "Integer").ScreenScaling);
+        Assert.Equal(LastEdict.Data.Ui.ScreenScaling.Sharp, new MapSettings().ScreenScaling);
+        Assert.Equal(LastEdict.Data.Ui.ScreenScaling.Integer, new MapSettings(Scaling: "Integer").ScreenScaling);
         Assert.Equal("nearest", new MapSettings(Scaling: "NEAREST").Clamped().Scaling);
         Assert.Equal("sharp", new MapSettings(Scaling: "blurry").Clamped().Scaling);
         Assert.Equal("sharp", new MapSettings(Scaling: null!).Clamped().Scaling);
@@ -355,9 +355,9 @@ public class MapOptionsTests
         {
             Directory.CreateDirectory(dir);
             File.WriteAllText(path, """{"PlayerSpeed": 2}""");
-            Assert.Equal(D2.Data.Ui.ScreenScaling.Sharp, MapSettings.Load(path).ScreenScaling);
+            Assert.Equal(LastEdict.Data.Ui.ScreenScaling.Sharp, MapSettings.Load(path).ScreenScaling);
             new MapSettings(Scaling: "integer").Save(path);
-            Assert.Equal(D2.Data.Ui.ScreenScaling.Integer, MapSettings.Load(path).ScreenScaling);
+            Assert.Equal(LastEdict.Data.Ui.ScreenScaling.Integer, MapSettings.Load(path).ScreenScaling);
         }
         finally
         {

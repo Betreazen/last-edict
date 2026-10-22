@@ -1,10 +1,10 @@
 using System;
 using System.IO;
 using System.Linq;
-using D2.Data.Gfx;
+using LastEdict.Data.Gfx;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Анимированная вода (<c>docs/ground-render.md</c> §4): под землёй — фон <c>WATERBKGND1</c> (IsoAnim, 128×128, 16 кадров)
 /// плиткой на всю карту с периодом 128 по миру, кадр раз в 66 мс (медленный аниматор, <c>docs/map-render.md</c>); точки воды
@@ -13,7 +13,7 @@ public partial class MapView
 {
     private const string WaterAnim = "WATERBKGND1";
     private const int WaterTile = 128;
-    private const double WaterFrameSeconds = D2.Data.Map.AnimClock.SlowMs / 1000.0;
+    private const double WaterFrameSeconds = LastEdict.Data.Map.AnimClock.SlowMs / 1000.0;
 
     private Sprite2D? _water;
     private Texture2D[] _waterFrames = [];

@@ -1,13 +1,13 @@
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using D2.Data.Battle;
-using D2.Data.Content;
-using D2.Data.Content.Schema;
-using D2.Data.Dbf;
-using D2.Rules.Battle.Effects;
+using LastEdict.Data.Battle;
+using LastEdict.Data.Content;
+using LastEdict.Data.Content.Schema;
+using LastEdict.Data.Dbf;
+using LastEdict.Rules.Battle.Effects;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Схема содержимого (<c>docs/content-schema.md</c>): импорт таблиц оригинала без потерь, запись и чтение мода, слои модов,
 /// схемы JSON. Сверка «старая модель правил = новая» — <c>ContentRulesParityTests</c>.</summary>
@@ -197,8 +197,8 @@ public class ContentSchemaTests
         string json = ContentJson.Write(ContentSet.KindNamed("modifier"), set.Modifiers, null);
         Assert.Contains("\"scope\": 2", json, StringComparison.Ordinal);
         Assert.Equal("legacy:class/99", set.Attacks.Single(a => a.LegacyId == "g999aa0001").Effect);
-        var attack = D2.Data.Battle.RulesLoader.Load(set).Attacks["g999aa0001"];
-        Assert.IsType<D2.Rules.Battle.Effects.UnknownEffect>(attack.Effect);
+        var attack = LastEdict.Data.Battle.RulesLoader.Load(set).Attacks["g999aa0001"];
+        Assert.IsType<LastEdict.Rules.Battle.Effects.UnknownEffect>(attack.Effect);
     }
 
     /// <summary>Эффект мода на встроенном поведении (этап Э2, задача D): своя сущность эффекта со своими числами ИИ и звуком, атака базы
@@ -221,15 +221,15 @@ public class ContentSchemaTests
             File.WriteAllText(Path.Combine(mod, "content", "attacks.json"),
                 """{ "attacks": [ { "id": "base:attack/knight", "effect": "acid:effect/acid" } ] }""");
 
-            var rules = D2.Data.Battle.RulesLoader.Load(ContentLayers.Load(baseDir, [GameContent.ReadMod(mod)]));
+            var rules = LastEdict.Data.Battle.RulesLoader.Load(ContentLayers.Load(baseDir, [GameContent.ReadMod(mod)]));
             var attack = rules.Attacks[knight.Key];
-            Assert.Equal((D2.Rules.Battle.AttackClass.Poison, "acid:effect/acid", "ACID", 2.0),
+            Assert.Equal((LastEdict.Rules.Battle.AttackClass.Poison, "acid:effect/acid", "ACID", 2.0),
                          (attack.Class, attack.Effect.Id, attack.Effect.Looks.Sound, attack.Effect.Tuning.SecondFactor));
             Assert.True(attack.Effect.IsDot);
 
             File.WriteAllText(Path.Combine(mod, "content", "effects.json"),
                 """{ "effects": [ { "id": "acid:effect/acid", "behavior": "acidRain" } ] }""");
-            var ex = Assert.Throws<InvalidDataException>(() => D2.Data.Battle.RulesLoader.Load(ContentLayers.Load(baseDir, [GameContent.ReadMod(mod)])));
+            var ex = Assert.Throws<InvalidDataException>(() => LastEdict.Data.Battle.RulesLoader.Load(ContentLayers.Load(baseDir, [GameContent.ReadMod(mod)])));
             Assert.Contains("acidRain", ex.Message, StringComparison.Ordinal);
         }
         finally { Directory.Delete(root, recursive: true); }
@@ -255,19 +255,19 @@ public class ContentSchemaTests
                   { "id": "base:race/neutral", "neutral": false },
                   { "id": "base:race/empire", "land": null, "turnOrder": null } ] }
                 """);
-            var races = D2.Data.Map.EconomyLoader.Load(ContentLayers.Load(baseDir, [GameContent.ReadMod(mod)])).Races;
+            var races = LastEdict.Data.Map.EconomyLoader.Load(ContentLayers.Load(baseDir, [GameContent.ReadMod(mod)])).Races;
             string Key(string id) => set.Races.Single(r => r.Id == id).Key;
             var clans = races[Key("base:race/mountain-clans")];
             Assert.Equal((6, 9, -1, true), (clans.Terrain, clans.TurnOrder, clans.EventFlag, clans.Neutral));
             Assert.False(races[Key("base:race/neutral")].Neutral);
             var empire = races[Key("base:race/empire")];
             Assert.Equal((1, 0), (empire.Terrain, empire.TurnOrder));   // по роду human: L_HU, первая в очереди
-            Assert.False(D2.Rules.Map.ScenarioEvents.RaceFlag([true, true, true, true, true, true], clans));
+            Assert.False(LastEdict.Rules.Map.ScenarioEvents.RaceFlag([true, true, true, true, true, true], clans));
         }
         finally { Directory.Delete(root, recursive: true); }
     }
 
-    /// <summary>Цена с валютой мода (этап Э2, задача E): шесть валют оригинала — в поля казны, новая — в <see cref="D2.Rules.Map.Bank.Extra"/>,
+    /// <summary>Цена с валютой мода (этап Э2, задача E): шесть валют оригинала — в поля казны, новая — в <see cref="LastEdict.Rules.Map.Bank.Extra"/>,
     /// и обратно в цену без потерь; прежде такая цена была ошибкой данных.</summary>
     [Fact]
     public void Price_WithModCurrency_ReachesTheBankAndBack()
@@ -277,8 +277,8 @@ public class ContentSchemaTests
         Assert.Equal((50L, 10L, 2L), (bank.Gold, bank.Life, bank["mymod:amber"]));
         Assert.Equal(price.OrderBy(p => p.Key), Prices.Of(bank).OrderBy(p => p.Key));
         Assert.Null(Prices.ToBank(new Dictionary<string, long> { ["gold"] = 5 }).Extra);
-        var saved = System.Text.Json.JsonSerializer.Deserialize<D2.Rules.Map.Bank>(
-            System.Text.Json.JsonSerializer.Serialize(bank, D2.Data.Play.SaveJson.Options), D2.Data.Play.SaveJson.Options)!;
+        var saved = System.Text.Json.JsonSerializer.Deserialize<LastEdict.Rules.Map.Bank>(
+            System.Text.Json.JsonSerializer.Serialize(bank, LastEdict.Data.Play.SaveJson.Options), LastEdict.Data.Play.SaveJson.Options)!;
         Assert.Equal(bank, saved);   // путь сохранения партии (SaveJson) — та же казна
     }
 

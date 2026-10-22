@@ -1,6 +1,6 @@
-using D2.Data.Map;
+using LastEdict.Data.Map;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Смена тумана кольцами (<see cref="FogReveal"/>, <c>CMidAnim2ChangeFog</c>).</summary>
 public class FogRevealTests

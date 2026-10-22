@@ -1,9 +1,9 @@
-using D2.Data.Content;
-using D2.Data.Map;
-using D2.Data.Play;
-using D2.Rules.Map;
+using LastEdict.Data.Content;
+using LastEdict.Data.Map;
+using LastEdict.Data.Play;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>
 /// Счётчики id после чтения карты (<see cref="MapState.IdNext"/>): движок счётчиков в файле не держит — после чтения карты
@@ -67,10 +67,10 @@ public sealed class IdNextLoadTests
         var content = SharedContent.Load(data);
         var book = GameBook.Load(Path.Combine(data, "rules"));
         var scenario = ScenarioFile.Read(path);
-        var setup = new D2.Data.Menu.NewGameSetup
+        var setup = new LastEdict.Data.Menu.NewGameSetup
         {
             Scenario = content.Catalog.Scenarios.Single(s => s.Id == "Power to Corrupt"), Difficulty = 1,
-            Hotseat = [new D2.Data.Menu.HotseatSeat(3, "", 0, 0), new D2.Data.Menu.HotseatSeat(2, "", 0, 1)],
+            Hotseat = [new LastEdict.Data.Menu.HotseatSeat(3, "", 0, 0), new LastEdict.Data.Menu.HotseatSeat(2, "", 0, 1)],
         };
         var map = NewGame.Start(scenario, setup, content.Catalog, book, new Random(1)).Looks.Map;
 

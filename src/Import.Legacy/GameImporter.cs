@@ -1,13 +1,13 @@
 using System.Diagnostics;
 using System.Globalization;
-using D2.Data.Content;
-using D2.Data.Dbf;
-using D2.Data.Game;
-using D2.Data.Map;
-using D2.Data.Play;
-using D2.Data.Ui;
+using LastEdict.Data.Content;
+using LastEdict.Data.Dbf;
+using LastEdict.Data.Game;
+using LastEdict.Data.Map;
+using LastEdict.Data.Play;
+using LastEdict.Data.Ui;
 
-namespace D2.Data.Import;
+namespace LastEdict.Data.Import;
 
 /// <summary>Полный импорт данных порта из копии игры (<c>docs/publishing.md</c>): всё, что в репозитории выведено из файлов игры, собирается
 /// заново — таблицы правил, каталог меню, отрисовка карты, сценарии, экраны и строки интерфейса, переводы сценариев (из слоя русификации),
@@ -21,7 +21,7 @@ public static class GameImporter
 
     public const string MarkerFile = "import.json";
 
-    /// <summary>Таблицы правил, которые читают загрузчики D2.Data (как у <c>tools/RulesImport</c>).</summary>
+    /// <summary>Таблицы правил, которые читают загрузчики LastEdict.Data (как у <c>tools/RulesImport</c>).</summary>
     public static readonly string[] RuleTables =
     [
         "Gattacks.dbf", "Gunits.dbf", "GVars.dbf", "Gimmu.dbf", "GimmuC.dbf", "Gtransf.dbf", "GDynUpgr.dbf",

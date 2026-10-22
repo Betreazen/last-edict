@@ -1,10 +1,10 @@
 using System.Globalization;
-using D2.Data.Play;
-using D2.Rules.Magic;
-using D2.Rules.Map;
-using D2.Data.Play.Commands;
+using LastEdict.Data.Play;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Map;
+using LastEdict.Data.Play.Commands;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>
 /// Посох или свиток (<c>BTN_WAND_SCROLL</c> панели команд, клавиша U → <c>DLG_WAND_SCROLL</c>, <c>CWandScrollInterf</c>; проверка до

@@ -1,4 +1,4 @@
-namespace D2.Rules.Map;
+namespace LastEdict.Rules.Map;
 
 /// <summary>
 /// Вид цели атаки глазами обёртки <c>attack</c> (<c>0x5d96fa</c>): она различает цель по типу id —

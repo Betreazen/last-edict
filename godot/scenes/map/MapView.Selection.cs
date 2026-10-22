@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
-using D2.Data.Play;
+using LastEdict.Data.Play;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>
 /// Эллипс выделения (<c>SELECTED</c>, слой <c>SYM_STACK_SEL</c>) на время хода своего отряда (реестр Ин49). Движок снимает его, когда

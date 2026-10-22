@@ -1,6 +1,6 @@
-using D2.Data.Ui;
+using LastEdict.Data.Ui;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Состояние снимка для попиксельной сверки (<see cref="UiShotState"/>, <c>tools/pixel-states</c>): флажки, спрятанные кнопки,
 /// счётчики и фон ложатся на экран; опечатка в имени элемента — ошибка, а не молча «в пределах».</summary>

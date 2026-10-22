@@ -1,7 +1,7 @@
-using D2.Data.Play;
-using D2.Rules.Map;
+using LastEdict.Data.Play;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>Одно окно полученного: тип предмета с числом штук или одно заклинание; <see cref="Library"/> — заклинания из библиотеки
 /// взятой столицы (флаг сообщения 43 <c>+0x2c</c>).</summary>
@@ -28,7 +28,7 @@ public sealed class GivenWatch(Func<string, bool> human, Func<string?>? atPc = n
     {
     }
 
-    public IReadOnlyList<D2.Rules.Battle.TurnRecord>? Battle(D2.Rules.Battle.BattleState state) => null;
+    public IReadOnlyList<LastEdict.Rules.Battle.TurnRecord>? Battle(LastEdict.Rules.Battle.BattleState state) => null;
 
     public void Happened(TurnSight sight)
     {

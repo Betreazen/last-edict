@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace D2.Rules.Map;
+namespace LastEdict.Rules.Map;
 
 /// <summary>
 /// Условие события сценария. <see cref="Category"/> — номер из <c>Globals/LEvCond.DBF</c>
@@ -222,7 +222,7 @@ public sealed record ScenarioEvent(
     IReadOnlyList<bool>? TriggerRaces = null);
 
 /// <summary>События сценария и всё, без чего их не проверить: области (для <c>L_LOCATION</c>)
-/// и переменные (для <c>L_MODIFY_VARIABLE</c>). Собирает <c>D2.Data.Map.EventLoader</c>.</summary>
+/// и переменные (для <c>L_MODIFY_VARIABLE</c>). Собирает <c>LastEdict.Data.Map.EventLoader</c>.</summary>
 public sealed record ScenarioEventSet(
     IReadOnlyList<ScenarioEvent> Events,
     IReadOnlyDictionary<string, EventZone> Zones,

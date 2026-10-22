@@ -12,7 +12,7 @@
 
 | Задача | Цель | Файлы | Приёмка (числами) |
 |---|---|---|---|
-| E0.1 | проект `src/D2.Authoring` + `D2.Authoring.Tests`, в `Disciples.sln` | `src/D2.Authoring/*.csproj` | `$env:CI='true'; dotnet build Disciples.sln -c Release` — 0 предупреждений |
+| E0.1 | проект `src/LastEdict.Authoring` + `LastEdict.Authoring.Tests`, в `Disciples.sln` | `src/LastEdict.Authoring/*.csproj` | `$env:CI='true'; dotnet build Disciples.sln -c Release` — 0 предупреждений |
 | E0.2 | `ScenarioDocument.Open/Save` с атомарной записью и резервом | `Documents/ScenarioDocument.cs` | тест: 85 сценариев открыть→сохранить во временный мод → **байт в байт** (если нет — сперва найти, где `SaveJson` нестабилен, и закрепить порядок; `ScenarioFileTests.EveryScenario_RoundTrips` уже есть — расширить до байтов) |
 | E0.3 | `LooksBuilder` | `Looks/LooksBuilder.cs` | тест: на 85 сценариях `LooksBuilder.From(Map)` совпадает с импортированным `Looks` поле в поле; расхождения — список с причиной (не подгонять импорт) |
 | E0.4 | `IdAllocator` + пересчёт `Plan` | `Ids/IdAllocator.cs`, `Map/PlanBuilder.cs` | тест: удалить и пересчитать `Plan` на 85 картах → совпадает; новые id не пересекаются |

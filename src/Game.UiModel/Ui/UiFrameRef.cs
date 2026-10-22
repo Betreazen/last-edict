@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace D2.Data.Ui;
+namespace LastEdict.Data.Ui;
 
 /// <summary>
 /// Кадр графики игры в кадре интерфейса: <c>архив:картинка</c> (<c>Faces:G000UU0001FACE</c>), с необязательной подкраской
@@ -92,16 +92,16 @@ public readonly record struct UiFrameRef(string Archive, string Name, UiColor? T
     }
 
     /// <summary>Как кадр ложится на то, что под ним: знак сложения (<see cref="Add"/>) — сложение; кадр графики игры (<c>архив:картинка</c>) —
-    /// по <c>opacity</c> описи (<see cref="D2.Data.Gfx.GfxAssets.BlendOf(string, string, bool)"/>: отметка изученного заклинания
+    /// по <c>opacity</c> описи (<see cref="LastEdict.Data.Gfx.GfxAssets.BlendOf(string, string, bool)"/>: отметка изученного заклинания
     /// <c>Icons:ICNSY001</c> — 300, сложение, у движка — та же отрисовка <c>CDisplayDDraw</c> <c>0x671fb0</c>); прочее — копия.</summary>
-    public static D2.Data.Gfx.GfxBlend BlendOf(string frame, D2.Data.Gfx.GfxAssets gfx)
+    public static LastEdict.Data.Gfx.GfxBlend BlendOf(string frame, LastEdict.Data.Gfx.GfxAssets gfx)
     {
         ArgumentNullException.ThrowIfNull(frame);
         ArgumentNullException.ThrowIfNull(gfx);
-        if (frame.Length > 1 && frame[0] == Add) return D2.Data.Gfx.GfxBlend.Add;
-        if (Layers(frame) is not null) return D2.Data.Gfx.GfxBlend.Opaque;   // слои уже смешаны при сборке
+        if (frame.Length > 1 && frame[0] == Add) return LastEdict.Data.Gfx.GfxBlend.Add;
+        if (Layers(frame) is not null) return LastEdict.Data.Gfx.GfxBlend.Opaque;   // слои уже смешаны при сборке
         if (frame.Length > 1 && frame[^1] == Mirror) frame = frame[..^1];
-        return Parse(frame) is { } r && r.Tint is null && r.Mask is null ? gfx.BlendOf(r.Archive, r.Name, anim: false) : D2.Data.Gfx.GfxBlend.Opaque;
+        return Parse(frame) is { } r && r.Tint is null && r.Mask is null ? gfx.BlendOf(r.Archive, r.Name, anim: false) : LastEdict.Data.Gfx.GfxBlend.Opaque;
     }
 
     /// <summary>Подкраска точки: половина своего цвета плюс половина цвета подкраски.</summary>

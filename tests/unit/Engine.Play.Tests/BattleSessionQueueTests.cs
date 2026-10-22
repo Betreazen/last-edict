@@ -1,10 +1,10 @@
-using D2.Data.Battle;
-using D2.Rules.Battle;
-using D2.Rules.Rng;
+using LastEdict.Data.Battle;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Rng;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Очередь ходов раунда для полосы очереди (<see cref="BattleSession.Upcoming"/>, <see cref="BattleSession.QueueChanged"/>,
 /// <c>docs/own-version-roadmap.md</c> §3.3): кто ходит сейчас и дальше, пометки «ходит», «пропустит», «ждёт», и событие при каждом изменении.

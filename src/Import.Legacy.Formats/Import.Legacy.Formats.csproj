@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!-- Форматы файлов оригинала (этап Э2, задача A3): сохранения и сценарии .sg/.csg (Kaitai, tools/ksy), таблицы .dbf. Нижний слой:
-       ни от чего в порте не зависит; ядро (D2.Data) читает через него карты, сценарии и таблицы при импорте. -->
+       ни от чего в порте не зависит; ядро (LastEdict.Data) читает через него карты, сценарии и таблицы при импорте. -->
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>

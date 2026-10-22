@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "D2.Godot", "D2.Godot.csproj", "{6693BB78-9DCF-411C-9CE7-3AB43DFB6E78}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LastEdict.Godot", "LastEdict.Godot.csproj", "{6693BB78-9DCF-411C-9CE7-3AB43DFB6E78}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "D2.Data", "..\src\Engine.Play\Engine.Play.csproj", "{77AF8FA6-4EEC-4609-943C-A121320064B4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LastEdict.Data", "..\src\Engine.Play\Engine.Play.csproj", "{77AF8FA6-4EEC-4609-943C-A121320064B4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "D2.Rules", "..\src\Engine.Rules\Engine.Rules.csproj", "{B12A2806-E02B-417D-8C85-5D490FDB3FB2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LastEdict.Rules", "..\src\Engine.Rules\Engine.Rules.csproj", "{B12A2806-E02B-417D-8C85-5D490FDB3FB2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

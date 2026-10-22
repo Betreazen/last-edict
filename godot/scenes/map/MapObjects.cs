@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using D2.Data.Gfx;
+using LastEdict.Data.Gfx;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Слой картинок карты над землёй: <see cref="MapScene.Sprites"/> в порядке движка — порядок детей узла и
 /// есть порядок отрисовки. Анимации — +1 кадр каждые 66 мс у всех сразу, первый кадр случайный
@@ -13,7 +13,7 @@ namespace D2.Godot;
 /// разобрано. Текстуры грузятся один раз на картинку — общим кэшем <see cref="GfxTextures"/>.</summary>
 public partial class MapObjects : Node2D
 {
-    private const double FrameMs = D2.Data.Map.AnimClock.SlowMs;   // медленная группа (FactoryImageAnim, 0x52def4)
+    private const double FrameMs = LastEdict.Data.Map.AnimClock.SlowMs;   // медленная группа (FactoryImageAnim, 0x52def4)
 
     private readonly Dictionary<(string, string), FrameSet> _textures = new();
     private readonly List<(Sprite2D Sprite, FrameSet Frames, int Frame)> _animated = new();
@@ -31,7 +31,7 @@ public partial class MapObjects : Node2D
     public int Builds { get; private set; }
 
     /// <summary>Знамёна отрядов (слой <c>BANNERS</c>) видны: у движка картинка знамени рисуется, только пока включён <c>TOG_BANNERS</c>
-    /// или зажат Shift (<see cref="D2.Data.Map.MapPalette"/>, <c>0x5b3369</c>). Узлы знамён остаются в порядке отрисовки, меняется
+    /// или зажат Shift (<see cref="LastEdict.Data.Map.MapPalette"/>, <c>0x5b3369</c>). Узлы знамён остаются в порядке отрисовки, меняется
     /// только их видимость.</summary>
     public bool BannersShown
     {
@@ -44,7 +44,7 @@ public partial class MapObjects : Node2D
         }
     }
 
-    private bool _bannersShown = D2.Data.Map.MapPalette.Banners;
+    private bool _bannersShown = LastEdict.Data.Map.MapPalette.Banners;
     private readonly List<Sprite2D> _banners = new();
     private static int? _bannerLayer;
 

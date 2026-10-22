@@ -1,8 +1,8 @@
-using D2.Data.Ui;
+using LastEdict.Data.Ui;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Опись роликов: <c>data/video/videos.json</c> лежит в git, сами <c>.ogv</c> — нет.
 /// Числа сверены переводом роликов GOG 3.01 (<c>tools/video-import/build_videos.py</c>).</summary>

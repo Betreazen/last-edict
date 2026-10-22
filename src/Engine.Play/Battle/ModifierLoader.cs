@@ -1,8 +1,8 @@
-using D2.Data.Content;
-using D2.Data.Content.Schema;
-using D2.Rules.Units;
+using LastEdict.Data.Content;
+using LastEdict.Data.Content.Schema;
+using LastEdict.Rules.Units;
 
-namespace D2.Data.Battle;
+namespace LastEdict.Data.Battle;
 
 /// <summary>Лорд — класс игрока (<see cref="LordDef"/>): раса, категория (0 маг, 1 воин, 2 гильдмастер), тексты.</summary>
 public sealed record Lord(string Id, string RaceId, int Category, string NameTxt, string DescTxt);
@@ -13,7 +13,7 @@ public sealed record ModifierTables(IReadOnlyDictionary<string, Modifier> Modifi
                                     IReadOnlyDictionary<string, Lord> Lords);
 
 /// <summary>Содержимое (модификаторы с элементами, навыки лидера, лорды) → <see cref="ModifierTables"/>. Ключи регистронезависимы.
-/// <para>Записи <see cref="Modifier"/> и <see cref="ModifierElement"/> живут в <c>D2.Rules.Units</c>. Строки элементов без хозяина в
+/// <para>Записи <see cref="Modifier"/> и <see cref="ModifierElement"/> живут в <c>LastEdict.Rules.Units</c>. Строки элементов без хозяина в
 /// таблицах оригинала (7 строк <c>GmodifL</c>) содержимое не несёт — правила их и так не читали; факт о таблицах проверяет
 /// <c>F6DataTests</c> по самим таблицам.</para></summary>
 public static class ModifierLoader

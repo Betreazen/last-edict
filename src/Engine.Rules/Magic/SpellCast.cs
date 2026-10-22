@@ -1,7 +1,7 @@
-using D2.Rules.Map;
-using D2.Rules.Units;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Units;
 
-namespace D2.Rules.Magic;
+namespace LastEdict.Rules.Magic;
 
 /// <summary>Что заклинание делает. Разложено по <b>заполненным колонкам</b>, а не по категории:
 /// у <c>g000ss0100</c> («Swift») эффекта два — возврат очков хода и модификатор.</summary>
@@ -57,7 +57,7 @@ public readonly record struct SpellEffect(
 /// вот почему: (1) колонки <c>Gspells.WARD1..4</c> пусты у всех 120 строк ванили, то есть на карте
 /// оберег выдать нечем — сверяет счётчик <c>spell_ward_columns</c>; (2) остаток одноразового
 /// оберега живёт в <c>BattleMsgData</c> (байт <c>+0x24</c> записи варда, <c>0x62190F…0x62196C</c>,
-/// см. <see cref="D2.Rules.Battle.Immunity"/>), а не в <c>.sg</c>: ни у <c>CMidUnit</c>
+/// см. <see cref="LastEdict.Rules.Battle.Immunity"/>), а не в <c>.sg</c>: ни у <c>CMidUnit</c>
 /// (<c>midunit.h:38-55</c>, 80 байт), ни у <c>CMidStack</c> поля «оберег потрачен» нет вовсе,
 /// и переносить расход через день физически некуда. Поэтому «раз за бой» остаётся как есть, а
 /// утверждение вики уходит открытым пунктом §3 плана Ф7: закрывает его живой замер — два боя одним
@@ -76,8 +76,8 @@ public static class SpellCast
     /// <item><c>0x5DC4A0</c> → <c>visitorAddSpellCast</c> (<c>0x5E7EC5</c>) →
     /// <c>CVisitorAddSpellCast</c> (<c>0x613558</c>, <c>apply 0x613613</c>) → запись
     /// <c>PLAYER_ID / ORIGIN / TURN_STOP</c> в <c>CMidSpellCast</c> (<c>0x606F64</c>) — это
-    /// <see cref="D2.Rules.Map.MapState.SpellCasts"/> и
-    /// <see cref="D2.Rules.Map.MapState.ItemCasts"/>;</item>
+    /// <see cref="LastEdict.Rules.Map.MapState.SpellCasts"/> и
+    /// <see cref="LastEdict.Rules.Map.MapState.ItemCasts"/>;</item>
     /// <item><c>0x5D7187</c> → <c>visitorAddSpellEffect</c> (<c>0x5E7DDA</c>) →
     /// <c>CVisitorAddSpellEffect</c> (<c>0x6131CF</c>) → запись
     /// <c>UNIT_ID / ORIGIN_ID / MODIF_ID / CASTER_ID / TURN_STOP</c> в <c>CMidSpellEffects</c> —

@@ -1,10 +1,10 @@
-using D2.Data.Game;
-using D2.Data.Leaders;
-using D2.Data.Map;
-using D2.Data.Menu;
-using D2.Rules.Map;
+using LastEdict.Data.Game;
+using LastEdict.Data.Leaders;
+using LastEdict.Data.Map;
+using LastEdict.Data.Menu;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>Начало партии из сценария и выбора игрока в меню (<see cref="NewGameSetup"/>). Что делает движок на
 /// старте — <c>docs/new-game.md</c> (код <c>0x421667</c> и сохранения первого дня живых партий):
@@ -238,7 +238,7 @@ public static class NewGame
             string instance = GameSession.NewId(ref ids, itemTypes.Keys, capital.Id, "IM");
             itemTypes[instance] = type.ToUpperInvariant();
             // Новый талисман — с записью зарядов TALIS_CHRG, как при любом создании (GameSession.ChargeNewTalismans).
-            if (book.Items[type.ToUpperInvariant()].Category == D2.Rules.Magic.ItemCategory.Talisman) charges[instance] = book.Vars.TalismanCharges;
+            if (book.Items[type.ToUpperInvariant()].Category == LastEdict.Rules.Magic.ItemCategory.Talisman) charges[instance] = book.Vars.TalismanCharges;
             stored.Add(instance);
         }
         var sites = map.Sites.Select(s => s.Id == capital.Id ? s with { Items = stored } : s).ToList();
@@ -279,7 +279,7 @@ public static class NewGame
         return pool[random.Next(pool.Count)];
     }
 
-    private const int EquipmentSlots = D2.Rules.Magic.Equipment.SlotCount, GroupCells = UnitCells.CellCount;
+    private const int EquipmentSlots = LastEdict.Rules.Magic.Equipment.SlotCount, GroupCells = UnitCells.CellCount;
 
     /// <summary>Потолок золота и маны лобби «горячего стула» (<c>SPIN_GOLD</c>/<c>SPIN_MANA</c>, <c>0x42b343</c>).</summary>
     private const long LobbyMax = 2000;
@@ -345,7 +345,7 @@ public static class NewGame
 
     /// <summary>Отряд в пустой столице (<c>CVisitorCreateStackInside</c> <c>0x60e7fe</c>/<c>0x60e8da</c>): один воин типа героя, владелец и
     /// подраса столицы, приказ «обычный», внутри столицы; клетка лидера — 2 при ближней атаке или большом воине, иначе 3.</summary>
-    private static MapLooks StackInside(MapLooks looks, MapSite capital, string type, D2.Rules.Battle.UnitType grown, GameBook book)
+    private static MapLooks StackInside(MapLooks looks, MapSite capital, string type, LastEdict.Rules.Battle.UnitType grown, GameBook book)
     {
         var map = looks.Map;
         var ids = map.IdNext;
@@ -356,7 +356,7 @@ public static class NewGame
         {
             Id = stackId, Owner = capital.Owner, Subrace = capital.Subrace, LeaderId = unitId, LeaderAlive = true, X = capital.X, Y = capital.Y,
             Inside = capital.Id, UnitIds = [unitId], Slots = slots, Equipment = [.. Enumerable.Repeat("", EquipmentSlots)],
-            Order = (int)D2.Rules.Battle.StackOrder.Normal, CreationLevel = 1,
+            Order = (int)LastEdict.Rules.Battle.StackOrder.Normal, CreationLevel = 1,
         };
         var units = map.Units.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase);
         units[unitId] = new MapUnit { Id = unitId, TypeId = type, Level = grown.Level, Hp = grown.HitPoints };

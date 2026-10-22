@@ -1,4 +1,4 @@
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>Быстрое сохранение — клавиша Q на карте.
 /// <para>Движок: обработчик клавиш карты (<c>0x48e8e3</c>) на <c>'Q'</c>/<c>'q'</c> (<c>0x48e967</c>) зовёт запись партии по имени
@@ -7,7 +7,7 @@ namespace D2.Data.Play;
 /// <c>input key vk=81</c> без Ctrl). Код клавиши без учёта Ctrl — значит, Ctrl+Q то же самое; обёртка DisciplesGL-HD шлёт на F5 тот же
 /// <c>WM_KEYDOWN 'Q'</c> (<c>Window.cpp</c>, режим WASD). На <c>'L'</c> тот же обработчик грузит быстрое сохранение — в порт пока не
 /// перенесено.</para>
-/// <para>Что видит игрок — строки чата карты (<see cref="D2.Data.Map.IsoChatLogic"/>): перед записью <c>X005TA0581</c> «Сохраняется
+/// <para>Что видит игрок — строки чата карты (<see cref="LastEdict.Data.Map.IsoChatLogic"/>): перед записью <c>X005TA0581</c> «Сохраняется
 /// %SAVEGAME%.sg...», после — <c>X005TA0582</c> «Игра записана под именем %SAVEGAME%» (корпус: <c>ui_text DLG_ISO</c> 0581 → <c>save</c> →
 /// 0582 в 16 сессиях из 16, где строки попали в журнал). Так же — у автосохранения (та же запись <c>0x48fa11</c>, <c>0x48f999</c>).</para></summary>
 public static class QuickSave

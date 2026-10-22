@@ -1,6 +1,6 @@
-using D2.Rules.Units;
+using LastEdict.Rules.Units;
 
-namespace D2.Rules.Map;
+namespace LastEdict.Rules.Map;
 
 /// <summary>Сложность партии (<c>Ldiff.dbf</c>: 0 <c>L_EASY</c>, 1 <c>L_AVERAGE</c>,
 /// 2 <c>L_HARD</c>, 3 <c>L_VERY_HARD</c>; в <c>.sg</c> — <c>ScenarioInfo.DIFFGAME</c>). Ранг 1.</summary>
@@ -89,8 +89,8 @@ public sealed record BuildingType(
 public sealed record UnitHire(string UnitId, string RaceId, Bank Cost, string BuildingId, int Level);
 
 /// <summary>
-/// Справочники экономики, уже прочитанные из <c>.dbf</c> (<c>D2.Rules</c> файлов не читает).
-/// Собирает <c>D2.Data.Map.EconomyLoader</c>.
+/// Справочники экономики, уже прочитанные из <c>.dbf</c> (<c>LastEdict.Rules</c> файлов не читает).
+/// Собирает <c>LastEdict.Data.Map.EconomyLoader</c>.
 /// </summary>
 /// <param name="IncomeBonusPercent">
 /// <c>GVars: INCOME_E/A/H/V</c> по индексу <see cref="Difficulty"/> (30/0/0/0 в ванили).

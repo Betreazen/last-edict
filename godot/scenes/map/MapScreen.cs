@@ -3,15 +3,15 @@ using System.Globalization;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using D2.Data.Gfx;
-using D2.Data.Map;
-using D2.Data.Menu;
-using D2.Data.Play;
-using D2.Data.Ui;
-using D2.Rules.Map;
+using LastEdict.Data.Gfx;
+using LastEdict.Data.Map;
+using LastEdict.Data.Menu;
+using LastEdict.Data.Play;
+using LastEdict.Data.Ui;
+using LastEdict.Rules.Map;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Экран карты, собранный как в игре: <c>DLG_ISO_VIEW</c> (800×600) задаёт три места — <c>IMG_MAIN</c>
 /// 640×600 (карта и поверх неё <c>DLG_ISO</c>), <c>IMG_RESOURCE</c> (<c>DLG_ISO_PAL</c>, мини-карта и кнопки) и
@@ -126,12 +126,12 @@ public partial class MapScreen : Node
             WireCards();
             _map.SiteVisited += OnSiteVisited;
             // Снос жезла жезлоносцем — вопрос X005TA0272 (0x4d144d), «Да» — ход к жезлу и снос (0x4d1ec7), «Нет» — путь стёрт (0x4d1f06, Ин82).
-            _map.RodBreakAsked += (stack, rod) => OpenWindow(D2.Data.Ui.Windows.MessageBoxLogic.Screen,
-                new D2.Data.Ui.Windows.MessageBoxLogic(Text(GameSession.RodBreakQuestion), () => _map.ConfirmRodBreak(stack, rod), _map.DropRoute));
+            _map.RodBreakAsked += (stack, rod) => OpenWindow(LastEdict.Data.Ui.Windows.MessageBoxLogic.Screen,
+                new LastEdict.Data.Ui.Windows.MessageBoxLogic(Text(GameSession.RodBreakQuestion), () => _map.ConfirmRodBreak(stack, rod), _map.DropRoute));
             // Щелчок по союзнику — «Перед тем, как атаковать союзника, расторгните альянс с ним.» (0x4d0ca4 → 0x4d0da1), кнопка одна; «ОК» —
             // путь стёрт (0x4d201e, Ин82).
-            _map.AllyRefused += () => OpenWindow(D2.Data.Ui.Windows.MessageBoxLogic.Screen,
-                new D2.Data.Ui.Windows.MessageBoxLogic(Text(GameSession.AllyRefusalText), null, _map.DropRoute));
+            _map.AllyRefused += () => OpenWindow(LastEdict.Data.Ui.Windows.MessageBoxLogic.Screen,
+                new LastEdict.Data.Ui.Windows.MessageBoxLogic(Text(GameSession.AllyRefusalText), null, _map.DropRoute));
             SyncPanels();
             Place();
             GetViewport().SizeChanged += Place;
@@ -167,7 +167,7 @@ public partial class MapScreen : Node
         if (path.EndsWith(ScenarioFile.Extension, StringComparison.OrdinalIgnoreCase))
         {
             var events = GameData.ReadScenario(path).Events;
-            state = state with { Events = events, EventProgress = D2.Rules.Map.EventProgress.From(events), Info = state.Info with { ScenarioId = name } };
+            state = state with { Events = events, EventProgress = LastEdict.Rules.Map.EventProgress.From(events), Info = state.Info with { ScenarioId = name } };
         }
         // --events (проверка): события сценария из сохранения .sg (импорт EventLoader) — у сохранений корпуса их иначе нет.
         if (args.Contains("--events") && path.EndsWith(".sg", StringComparison.OrdinalIgnoreCase))
@@ -233,7 +233,7 @@ public partial class MapScreen : Node
     /// <summary>Вариант фона боя, как у движка: при открытии экрана боя два <c>rand()</c> потока CRT — <c>% n</c> вариантов места
     /// (<c>0x5b35ab</c>) и <c>% 1</c>. Журнал зонда 28.09 (passive-002): после <c>ui_open DLG_BATTLE_A</c> — <c>rng_std max 3</c> (r = 1 и 2 —
     /// фоны <c>NEUTRAL_1</c>/<c>NEUTRAL_2</c> на снимках) и <c>rng_std max 1</c> — у каждого боя.</summary>
-    private static int BackgroundDraw(GameSession session, D2.Rules.Battle.BattleState state)
+    private static int BackgroundDraw(GameSession session, LastEdict.Rules.Battle.BattleState state)
     {
         int variant = session.Crt.Next() % BattleScene.BackgroundVariants(GameData.Content.Gfx, MapBattle.PlaceOf(session.Map, state.DefenderGroup));
         for (int i = 1; i < BackgroundDraws; i++) session.Crt.Next();
@@ -248,7 +248,7 @@ public partial class MapScreen : Node
 
     /// <summary>Конец боя на экране — командой: журнал ходов и действия экрана (повтор журнала сыграет бой по ним).</summary>
     private void EndBattleCommand(BattleScreen battle) =>
-        _map.Session.Execute(new D2.Data.Play.Commands.EndBattleCommand([.. battle.Session.Log], battle.Session.Played(_battleCrtDraws)));
+        _map.Session.Execute(new LastEdict.Data.Play.Commands.EndBattleCommand([.. battle.Session.Log], battle.Session.Played(_battleCrtDraws)));
 
     private void OpenBattle(string attackerId, string defenderId, int? variant)
     {
@@ -264,7 +264,7 @@ public partial class MapScreen : Node
     {
         var session = _map.Session;
         if (_battle is not null || session.Book is null) return;
-        var state = (D2.Rules.Battle.BattleState)session.Execute(new D2.Data.Play.Commands.StartBattleCommand(attackerId, defenderId)).Value!;
+        var state = (LastEdict.Rules.Battle.BattleState)session.Execute(new LastEdict.Data.Play.Commands.StartBattleCommand(attackerId, defenderId)).Value!;
         NoteAttack(attackerId, defenderId);   // нападение — в итоги хода других людей (MapScreen.Windows.cs)
         // Стороны — по собранному бою: цель-невидимка нападает сама (GameSession.StartBattle, CEffectBattle 0x433a57).
         bool playerAttacks = _map.Viewer is null
@@ -292,7 +292,7 @@ public partial class MapScreen : Node
                  $"place={_battle.PlaceName} move_left={session.Map.Stacks[attackerId].Move}");
     }
 
-    /// <summary>«Закрыть» после боя человека: исход — в карту (<see cref="D2.Data.Play.GameSession.CommitBattle"/>: выигранные сражения, снятые
+    /// <summary>«Закрыть» после боя человека: исход — в карту (<see cref="LastEdict.Data.Play.GameSession.CommitBattle"/>: выигранные сражения, снятые
     /// отряды, могилы, добыча, вход, события), экран боя снимается, карта пересобирается. Конец боя модели и его показ уже были
     /// (<see cref="EndBattleOnScreen"/>). Узел снимается отложенно: закрытие приходит из его же обработчика ввода.</summary>
     private void CloseBattle()
@@ -305,7 +305,7 @@ public partial class MapScreen : Node
         try
         {
             if (!_battleEnded) EndBattleCommand(battle);   // закрыт без показа конца (проверка автобоем)
-            var visit = (VisitReport?)session.Execute(new D2.Data.Play.Commands.CommitBattleCommand()).Value;
+            var visit = (VisitReport?)session.Execute(new LastEdict.Data.Play.Commands.CommitBattleCommand()).Value;
             bool defenderAlive = session.Map.Stacks.ContainsKey(defender) || MapBattle.DefenderOf(session.Map, defender) is not null;
             GD.Print($"mapbattle end winner={battle.Session.Winner ?? "-"} attacker_alive={(session.Map.Stacks.ContainsKey(attacker) ? 1 : 0)} " +
                      $"defender_alive={(defenderAlive ? 1 : 0)} turns={battle.Session.Log.Count}" +
@@ -332,7 +332,7 @@ public partial class MapScreen : Node
         if (battle.Paperdoll) OpenPaperdoll(attacker);
     }
 
-    /// <summary>Бой человека кончился (после ходов лекарей): конец боя модели (<see cref="D2.Data.Play.GameSession.EndBattle"/> — предметы,
+    /// <summary>Бой человека кончился (после ходов лекарей): конец боя модели (<see cref="LastEdict.Data.Play.GameSession.EndBattle"/> — предметы,
     /// уход призванных, откат превращений, опыт, рост) и его показ на ещё открытом экране (<see cref="BattleScreen.PlayEnd"/>, снимок
     /// <see cref="BattleScreen.BeforeEnd"/> — до конца боя), затем «Опыт: +N» и кнопки «Закрыть»/«Меню героя» (<see cref="BattleScreen.ShowEnd"/>).
     /// Так у движка: <c>updateGroupsIfBattleIsOver</c> <c>0x62953c</c> → эффекты шагов 13–16 → <c>battleEnd</c> <c>0x630a3c</c> (замечание 33
@@ -429,7 +429,7 @@ public partial class MapScreen : Node
         string? face = type.Length == 0 ? null : Faces.PanelName(type);
         return new MapPanelState(name, face, stack.Move, _map.DayAllowance(stack), _map.Map.Turn, bank, _map.Session.CanExchange(stack.Id),
                                  _map.NextLeaders().Count > 0, PanelFaceOf(stack, face), _map.CanContinueMove, CanDropRod: true, CanGuard: true,
-                                 CanWandScroll: Windows is { } context && D2.Data.Ui.Windows.WandScrollLogic.CanOpen(context, stack.Id));
+                                 CanWandScroll: Windows is { } context && LastEdict.Data.Ui.Windows.WandScrollLogic.CanOpen(context, stack.Id));
     }
 
     /// <summary>Портрет панели целиком (<see cref="PanelFace"/>): павший — маска, раненый — красная доля, значки; ширина картинки — из описи.</summary>
@@ -441,7 +441,7 @@ public partial class MapScreen : Node
         return PanelFace.Of(context, leader, face, info?.W ?? PanelFace.SmallWidth);
     }
 
-    /// <summary>Портрет лидера: картинка <c>{база типа}FACES</c>/<c>FACE</c> (<see cref="D2.Data.Ui.Windows.UnitFaces.PanelName"/>) лежит в графике карты (<c>Faces.ff</c>), а не в наборе
+    /// <summary>Портрет лидера: картинка <c>{база типа}FACES</c>/<c>FACE</c> (<see cref="LastEdict.Data.Ui.Windows.UnitFaces.PanelName"/>) лежит в графике карты (<c>Faces.ff</c>), а не в наборе
     /// кадров интерфейса, поэтому рисуется своим спрайтом в окне <c>IMG_LEADER</c> панели. Движок кладёт её флагами 9 (<c>0x48dc0b</c> →
     /// <c>setImage</c> <c>0x530e29</c>): по центру места, без масштаба; что шире места 70×85, обрезается по нему. Прежде порт вписывал
     /// картинку целиком: широкий <c>FACE</c> 150×85 большого юнита без своего <c>FACES</c> (призванный «Оживший доспех» <c>G000UU0024</c>)
@@ -704,7 +704,7 @@ public partial class MapScreen : Node
                 for (int i = 0; i < 3; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
                 await AiTurnDone();   // ход ИИ идёт в фоне (MapScreen.AiTurn.cs)
                 // Окно начала хода нового дня — «ОК» (оно первое из окон хода; за ним — итоги, навыки, как прежде видел шаг «end»).
-                if (_overlay is { Logic: D2.Data.Ui.Windows.BeginTurnLogic })
+                if (_overlay is { Logic: LastEdict.Data.Ui.Windows.BeginTurnLogic })
                 {
                     DismissBeginTurn();
                     for (int i = 0; i < 2; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
@@ -715,7 +715,7 @@ public partial class MapScreen : Node
             if (step == "win" && _map.Viewer is { } viewer)   // победа зрителя (конец главы кампании, docs/day-cycle.md §15)
             {
                 AcceptLeaderName();
-                _map.Session.Run(new D2.Data.Play.Commands.WinCommand(viewer));
+                _map.Session.Run(new LastEdict.Data.Play.Commands.WinCommand(viewer));
                 SyncPanels();   // окна конца партии выкладывает очередь окон
                 for (int i = 0; i < 3; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
                 continue;
@@ -730,7 +730,7 @@ public partial class MapScreen : Node
             {
                 for (int i = 0; i < 3; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
                 await AiTurnDone();
-                if (_overlay is { Logic: D2.Data.Ui.Windows.BeginTurnLogic })
+                if (_overlay is { Logic: LastEdict.Data.Ui.Windows.BeginTurnLogic })
                 {
                     DismissBeginTurn();
                     for (int i = 0; i < 2; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
@@ -908,7 +908,7 @@ public partial class MapScreen : Node
             {
                 var own = _map.Map.Sites.Where(f => f.Kind is SiteKind.Capital or SiteKind.Village
                                                     && f.Owner.Equals(_map.Viewer, StringComparison.OrdinalIgnoreCase));
-                GD.Print($"forts {string.Join(" ", own.Select(f => $"{f.Id}:{f.Kind}@{(D2.Rules.Map.PathFinder.EntranceOf(_map.Map, f.Id) is { } e ? $"{e.X},{e.Y}" : "-")}:гость={(f.StackId.Length > 0 ? f.StackId : "-")}"))}");
+                GD.Print($"forts {string.Join(" ", own.Select(f => $"{f.Id}:{f.Kind}@{(LastEdict.Rules.Map.PathFinder.EntranceOf(_map.Map, f.Id) is { } e ? $"{e.X},{e.Y}" : "-")}:гость={(f.StackId.Length > 0 ? f.StackId : "-")}"))}");
                 continue;
             }
             if (step == "tombs")   // могилы модели (MapState.Tombs): клетка и число записей
@@ -972,7 +972,7 @@ public partial class MapScreen : Node
                 // Клетка для мешка («Бросить предмет»): «drop 30,12».
                 DropAt(ParseCell(step[5..].Trim()));
                 for (int i = 0; i < 3; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-                GD.Print($"drop {step[5..].Trim()} панель={(_dropPanel is not null ? D2.Data.Ui.Windows.DropBagPanelLogic.Screen : "-")} {WindowLine()}");
+                GD.Print($"drop {step[5..].Trim()} панель={(_dropPanel is not null ? LastEdict.Data.Ui.Windows.DropBagPanelLogic.Screen : "-")} {WindowLine()}");
                 continue;
             }
             if (step.StartsWith("select ", StringComparison.Ordinal))
@@ -1022,7 +1022,7 @@ public partial class MapScreen : Node
                 string cursor = ExchangeCursorAt(at) ?? "-", mark = MarksLine(_exchangeMarks);
                 ExchangeAt(at);
                 for (int i = 0; i < 3; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-                GD.Print($"pick {step[5..].Trim()} курсор={cursor} отметка={mark} панель={(_exchangePanel is not null ? D2.Data.Ui.Windows.DropBagPanelLogic.Screen : "-")} {WindowLine()}");
+                GD.Print($"pick {step[5..].Trim()} курсор={cursor} отметка={mark} панель={(_exchangePanel is not null ? LastEdict.Data.Ui.Windows.DropBagPanelLogic.Screen : "-")} {WindowLine()}");
                 continue;
             }
             if (step.StartsWith("fight ", StringComparison.Ordinal))
@@ -1117,7 +1117,7 @@ public partial class MapScreen : Node
             if (step.StartsWith("rename ", StringComparison.Ordinal))   // «rename Длинное_имя» — имя лидера выбранного отряда (подчёркивание — пробел)
             {
                 string name = step[7..].Trim().Replace('_', ' ');
-                string? refused = _map.Selected is { } renamed ? _map.Session.Run<string?>(new D2.Data.Play.Commands.RenameLeaderCommand(renamed, name)) : "нет отряда";
+                string? refused = _map.Selected is { } renamed ? _map.Session.Run<string?>(new LastEdict.Data.Play.Commands.RenameLeaderCommand(renamed, name)) : "нет отряда";
                 GD.Print($"rename {(refused ?? "ok").Replace(' ', '_')} имя={name.Replace(' ', '_')}");
                 continue;
             }
@@ -1164,7 +1164,7 @@ public partial class MapScreen : Node
                     await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
                 if (_map.AiRunning) await AiTurnDone();   // ответ на предложение в ход ИИ отпустил ход — до конца или до следующего окна
                 GD.Print($"{(toPanel ? "panel" : "ui")} {input.Replace(' ', '_')} on={top.Hosted} ok={(ok ? 1 : 0)} " +
-                         $"панель={(_diploPanel is not null ? "DLG_DIPLOMACY" : _exchangePanel is not null || _dropPanel is not null ? D2.Data.Ui.Windows.DropBagPanelLogic.Screen : _capitalPanel is null ? "DLG_STRATEGIC" : "DLG_CAPITAL")} {WindowLine()} " +
+                         $"панель={(_diploPanel is not null ? "DLG_DIPLOMACY" : _exchangePanel is not null || _dropPanel is not null ? LastEdict.Data.Ui.Windows.DropBagPanelLogic.Screen : _capitalPanel is null ? "DLG_STRATEGIC" : "DLG_CAPITAL")} {WindowLine()} " +
                          $"записано={(_saving?.Saved is { } saved ? Path.GetFileName(saved).Replace(' ', '_') : "-")} " +
                          $"подсказка={top.TooltipShown?.Replace(' ', '_') ?? "-"} портрет={(FaceShown ? 1 : 0)} " +
                          $"выбран={_map.Selected ?? "-"} укрепление={_map.SelectedFort ?? "-"} жезлов={_map.Map.Rods.Count}");

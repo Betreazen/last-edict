@@ -1,7 +1,7 @@
-using D2.Rules.Magic;
-using D2.Rules.Rng;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Rng;
 
-namespace D2.Rules.Map;
+namespace LastEdict.Rules.Map;
 
 /// <summary>Юнит места лечения: <paramref name="CanRevive"/> — <c>0x5de06e</c> == 0, <paramref name="CanHeal"/> —
 /// <c>0x5de32f</c> == 0; цены — <c>vft +0x58</c> (воскрешение) и <c>+0x5c</c> (лечение).</summary>

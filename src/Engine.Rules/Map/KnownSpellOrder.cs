@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace D2.Rules.Map;
+namespace LastEdict.Rules.Map;
 
 /// <summary>
 /// Порядок изученных заклинаний игрока у движка. <c>CPlayerKnownSpells</c> — список (<c>+0x8</c>, голова <c>+0xc</c>); поток объекта

@@ -1,7 +1,7 @@
-using D2.Rules.Rng;
+using LastEdict.Rules.Rng;
 using Kaitai;
 
-namespace D2.Data.Gfx;
+namespace LastEdict.Data.Gfx;
 
 /// <summary>
 /// Варианты масок границ и берега, как их выбирает движок (<c>docs/ai-screen.md</c> §14; разбор 27.09, ранг 1 по листингу, ранг 2 —

@@ -1,8 +1,8 @@
-using D2.Rules.Magic;
-using D2.Rules.Map;
-using D2.Rules.Units;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Units;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>Действия окон человека: перестановка юнитов внутри одной группы — перетаскивание в окне армии (между группами —
 /// <see cref="SwapUnits"/>), вывод героя из укрепления.</summary>
@@ -46,7 +46,7 @@ public sealed partial class GameSession
     public int DismissCheck(string groupId, string unitId)
     {
         if (GroupCells(groupId) is not { } cells || !cells.Units.Contains(unitId, StringComparer.OrdinalIgnoreCase)) return 4;
-        if (Map.Units.TryGetValue(unitId, out var unit) && RequireBook().CategoryOf(unit.TypeId) == D2.Rules.Battle.UnitCategory.Guardian) return 2;
+        if (Map.Units.TryGetValue(unitId, out var unit) && RequireBook().CategoryOf(unit.TypeId) == LastEdict.Rules.Battle.UnitCategory.Guardian) return 2;
         if (!Map.Stacks.TryGetValue(groupId, out var stack) || !Same(stack.LeaderId, unitId)) return 0;
         if (stack.UnitIds.Count > 1) return 5;
         return stack.Inside.Length == 0 ? 6 : 0;
@@ -248,7 +248,7 @@ public sealed partial class GameSession
         var plan = map.Plan.ToDictionary(p => p.Key, p => p.Value);
         plan[(x, y)] = [.. plan.GetValueOrDefault((x, y)) ?? [], bagId];
         var next = With(map, sites: [.. map.Sites, bag], plan: plan, idNext: ids);
-        State = State with { Looks = Retold(Looks, next, Looks.Stacks) with { Bags = [.. Looks.Bags, new D2.Data.Map.BagLook(bagId, x, y, 0)] } };
+        State = State with { Looks = Retold(Looks, next, Looks.Stacks) with { Bags = [.. Looks.Bags, new LastEdict.Data.Map.BagLook(bagId, x, y, 0)] } };
         Observer?.Happened(new TurnSight(TurnSightKind.BagDropped, owner, x, y, bagId));   // зонд порта
         RunActionEvents(stackId);   // DropBag 0x41f257
         return null;
@@ -320,7 +320,7 @@ public sealed partial class GameSession
         if (unit.DynLevel) return 0x13;
         var book = RequireBook();
         if (book.Rules.Units.TryGetValue(unit.TypeId, out var type) && type.IsLeader) return 0x12;
-        return book.CategoryOf(unit.TypeId) == D2.Rules.Battle.UnitCategory.Guardian ? 0x11 : 0;
+        return book.CategoryOf(unit.TypeId) == LastEdict.Rules.Battle.UnitCategory.Guardian ? 0x11 : 0;
     }
 
     /// <summary>

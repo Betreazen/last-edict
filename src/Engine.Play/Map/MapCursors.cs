@@ -1,8 +1,8 @@
-using D2.Data.Play;
-using D2.Rules.Battle;
-using D2.Rules.Map;
+using LastEdict.Data.Play;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Map;
+namespace LastEdict.Data.Map;
 
 /// <summary>
 /// Курсор над клеткой карты (<c>docs/ai-screen.md</c> §10; разбор <c>Discipl2.exe</c>, ранг 1 по листингу, игрой не проверено):

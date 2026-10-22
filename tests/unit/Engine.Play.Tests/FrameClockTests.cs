@@ -1,6 +1,6 @@
-using D2.Data.Ui;
+using LastEdict.Data.Ui;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Время интерфейса в целых миллисекундах (<c>UiScreenView</c>: автоповтор, подсказка, анимации): остаток кадра копится, и
 /// счёт не зависит от частоты кадров.</summary>

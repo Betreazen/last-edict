@@ -1,9 +1,9 @@
-using D2.Data;
-using D2.Data.Map;
-using D2.Rules.Map;
+using LastEdict.Data;
+using LastEdict.Data.Map;
+using LastEdict.Rules.Map;
 using Xunit.Abstractions;
 
-namespace D2.Rules.Tests;
+namespace LastEdict.Rules.Tests;
 
 /// <summary>
 /// Экономика: справочники, дневной доход, найм, постройки. Формула дохода — ранг 1, прочитана

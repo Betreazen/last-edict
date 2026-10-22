@@ -1,4 +1,4 @@
-namespace D2.Data;
+namespace LastEdict.Data;
 
 /// <summary>Копия игры (только для импорта и проверок): переменная <c>D2_GAME_DIR</c>, иначе соседний <c>disciples-modding/game-pristine</c>.
 /// Игра после импорта знает свою копию из отметки импорта и ставит её <see cref="Use"/> (герои <c>Exports/*.ldr</c> и кампании

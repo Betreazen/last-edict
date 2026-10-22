@@ -1,6 +1,6 @@
-using D2.Rules.Rng;
+using LastEdict.Rules.Rng;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>
 /// Оперативный слой ИИ в ходе игрока (<c>CAiOperational</c>, <c>docs/ai-spells.md</c>): драйвер <c>0x46d602</c> — до тактики
@@ -13,7 +13,7 @@ public sealed partial class GameSession
     public int LastOperationalDraws { get; private set; }
 
     /// <summary>Броски оперативного слоя до тактики вместо генератора партии (харнессы: строки <c>ai_rng</c> журнала схемы 7.5 —
-    /// «натиск», <c>op_spell_*</c>, перемешивания слоя, <c>JournalRolls</c> (D2.Verification)); null — генератор партии.</summary>
+    /// «натиск», <c>op_spell_*</c>, перемешивания слоя, <c>JournalRolls</c> (LastEdict.Verification)); null — генератор партии.</summary>
     public IRng? OperationalRolls { get; set; }
 
     /// <summary>Оперативный слой до тактики (состояния 1–4): лечение (<c>0x46d691</c>), смена приказов (<c>0x46dee2</c>),

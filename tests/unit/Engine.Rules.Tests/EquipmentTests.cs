@@ -1,8 +1,8 @@
-using D2.Rules.Magic;
-using D2.Rules.Map;
-using D2.Rules.Units;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Units;
 
-namespace D2.Rules.Tests;
+namespace LastEdict.Rules.Tests;
 
 /// <summary>Модульные тесты задачи 9: гейт экипировки, карта слотов, три источника способностей и
 /// цепочка <c>MOD_EQUIP</c>. Синтетика — чтобы проверить то, чего в корпусе нет: <b>отказов

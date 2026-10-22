@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace D2.Data.Map;
+namespace LastEdict.Data.Map;
 
 /// <summary>
 /// Файл настроек порта (<c>user://settings.json</c>) — слой файла над <see cref="MapSettings"/>: в памяти настройки остаются одной плоской

@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using D2.Data.Ui;
+using LastEdict.Data.Ui;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Живые элементы экрана: ввод из Godot переводится в координаты <c>Design</c> и отдаётся
 /// <see cref="UiScreenState"/>, а кадры спрайтов после каждого шага берутся из него же. Решений здесь нет —
@@ -39,7 +39,7 @@ public partial class UiScreenView
             {
                 TipMove(x, y);
                 DragCursorAt(x, y);
-                if (Logic is D2.Data.Ui.Windows.IWindowLogic w) Guarded(() => w.Motion(x, y, _state), $"motion {x},{y}");
+                if (Logic is LastEdict.Data.Ui.Windows.IWindowLogic w) Guarded(() => w.Motion(x, y, _state), $"motion {x},{y}");
                 return _state.Move(x, y);
             }),
             InputEventMouseButton { ButtonIndex: MouseButton.Left } button => Pointer(button, (x, y) =>
@@ -76,12 +76,12 @@ public partial class UiScreenView
         return pointed;
     }
 
-    /// <summary>Клавиша — сначала логике окна (<see cref="D2.Data.Ui.Windows.IWindowLogic.Key"/>; клавиша без кода — 0), не съела —
+    /// <summary>Клавиша — сначала логике окна (<see cref="LastEdict.Data.Ui.Windows.IWindowLogic.Key"/>; клавиша без кода — 0), не съела —
     /// горячим клавишам кнопок. Поле ввода с фокусом логике окна клавиш не отдаёт: стирание и прочие — полю.</summary>
     private IReadOnlyList<UiEvent> KeyPressed(int? vk)
     {
         bool eaten = false;
-        if (_state.Focused is null && Logic is D2.Data.Ui.Windows.IWindowLogic window)
+        if (_state.Focused is null && Logic is LastEdict.Data.Ui.Windows.IWindowLogic window)
             Guarded(() => eaten = window.Key(vk ?? 0, _state), $"key {vk ?? 0}");
         return eaten || vk is not int code ? [] : _state.Key(code);
     }
@@ -93,7 +93,7 @@ public partial class UiScreenView
     /// <summary>Курсор тащения сейчас (для строки проверки): <c>NODRAGDROP</c> или null.</summary>
     public string? DragCursor { get; private set; }
 
-    /// <summary>Картинка тащимого на курсоре (<see cref="D2.Data.Ui.Windows.IWindowLogic.DragImage"/>); не тащат — null.</summary>
+    /// <summary>Картинка тащимого на курсоре (<see cref="LastEdict.Data.Ui.Windows.IWindowLogic.DragImage"/>); не тащат — null.</summary>
     public Image? DragImage { get; private set; }
 
     /// <summary>Кадр картинки тащимого (ключ кэша курсора); не тащат — пусто.</summary>
@@ -101,7 +101,7 @@ public partial class UiScreenView
 
     private void DragCursorAt(int x, int y)
     {
-        var window = Logic as D2.Data.Ui.Windows.IWindowLogic;
+        var window = Logic as LastEdict.Data.Ui.Windows.IWindowLogic;
         bool? accepts = window?.DropAccepts(x, y, _state);
         string? cursor = accepts == false ? "NODRAGDROP" : accepts is null ? window?.ToolCursor(x, y, _state) : null;
         string key = accepts is null ? "" : window!.DragImage ?? "";
@@ -119,7 +119,7 @@ public partial class UiScreenView
     /// <summary>Левая кнопка отпущена в точке разметки — хозяину (портрет героя панели команд открывает окно отряда).</summary>
     public event Action<int, int>? Released;
 
-    /// <summary>Нажатие и отпускание левой кнопки — логике окна (<see cref="D2.Data.Ui.Windows.IWindowLogic"/>), в
+    /// <summary>Нажатие и отпускание левой кнопки — логике окна (<see cref="LastEdict.Data.Ui.Windows.IWindowLogic"/>), в
     /// координатах разметки; отпускание — ещё и хозяину (<see cref="Released"/>). <c>false</c> — логика не окна.</summary>
     private bool Point(InputEventMouseButton button)
     {
@@ -127,7 +127,7 @@ public partial class UiScreenView
         Vector2I at = new Vector2I(Mathf.FloorToInt(local.Position.X), Mathf.FloorToInt(local.Position.Y)) + Origin(_state.Screen);
         bool right = button.ButtonIndex == MouseButton.Right;
         if (!button.Pressed && !right) Released?.Invoke(at.X, at.Y);
-        if (Logic is not D2.Data.Ui.Windows.IWindowLogic window) return false;
+        if (Logic is not LastEdict.Data.Ui.Windows.IWindowLogic window) return false;
         if (right && button.Pressed) Guarded(() => window.RightPress(at.X, at.Y, _state), $"rpress {at.X},{at.Y}");
         else if (right) Guarded(() => window.RightRelease(at.X, at.Y, _state), $"rrelease {at.X},{at.Y}");
         else if (button.Pressed)

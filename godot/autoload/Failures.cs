@@ -3,7 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Пойманные исключения C# в главном потоке. Необработанное исключение Godot процесс не роняет — пишет ошибку и крутит цикл
 /// дальше (<c>docs/godot-notes.md</c>), а цепочка, которая ждала продолжения (ход ИИ, показ боя, проверка), стоит навсегда. Поэтому

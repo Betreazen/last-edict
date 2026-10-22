@@ -1,6 +1,6 @@
-using D2.Rules.Magic;
+using LastEdict.Rules.Magic;
 
-namespace D2.Rules.Map;
+namespace LastEdict.Rules.Map;
 
 /// <summary>
 /// Цены юнита в части казны, которых нет в <see cref="UnitHire"/>. Прямая проекция
@@ -17,7 +17,7 @@ namespace D2.Rules.Map;
 public sealed record UnitCosts(string UnitId, Bank Revive, Bank Heal, Bank Training, int XpNext);
 
 /// <summary>Справочники казны сверх <see cref="EconomyRules"/>. Собирает
-/// <c>D2.Data.Map.EconomyLoader.LoadTreasury</c>.</summary>
+/// <c>LastEdict.Data.Map.EconomyLoader.LoadTreasury</c>.</summary>
 /// <param name="Units">Цены юнитов по <c>UNIT_ID</c> (регистр не важен).</param>
 /// <param name="RodCost"><c>GVars.ROD_COST</c> = <c>g0150</c>. Ранг 1: таблица и 7 из 7 установок
 /// прогонов 1–2 Ф7 (план Ф7, §10.1, §11.1).</param>

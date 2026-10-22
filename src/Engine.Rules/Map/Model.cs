@@ -1,4 +1,4 @@
-namespace D2.Rules.Map;
+namespace LastEdict.Rules.Map;
 
 /// <summary>
 /// Грунт клетки — старшие биты байта типа клетки.
@@ -454,7 +454,7 @@ public sealed class MapState
     /// <summary>Жезлы (<c>CMidRod</c>) по id. Ранг 1.</summary>
     public IReadOnlyDictionary<string, MapRod> Rods { get; init; } = new Dictionary<string, MapRod>();
 
-    /// <summary>Посещаемые объекты карты (<c>D2.Data.Map.SiteLoader</c>): укрепления с владельцем и уровнем,
+    /// <summary>Посещаемые объекты карты (<c>LastEdict.Data.Map.SiteLoader</c>): укрепления с владельцем и уровнем,
     /// руины, лавки и прочее. Нужны росту земли — деревня тоже источник (план Ф7 §3 п. 26), а чужое
     /// укрепление обход отвергает. У синтетической карты пусто.</summary>
     public IReadOnlyList<MapSite> Sites { get; init; } = [];

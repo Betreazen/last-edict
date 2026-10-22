@@ -1,7 +1,7 @@
-using D2.Rules.Battle;
-using D2.Rules.Map;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>
 /// Подготовка к атаке (срез 7, <c>docs/ai-spells.md</c> §5): построители атаки отряда (<c>0x453d15</c>) и крепости

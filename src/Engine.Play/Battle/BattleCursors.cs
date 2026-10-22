@@ -1,6 +1,6 @@
-using D2.Rules.Battle;
+using LastEdict.Rules.Battle;
 
-namespace D2.Data.Battle;
+namespace LastEdict.Data.Battle;
 
 /// <summary>
 /// Курсор экрана боя (<c>updateCursor</c> <c>0x633a1f</c>, <c>docs/battle-screen.md</c> §2.3): вне цели и без права бить — <c>CUDEFAULT</c>;

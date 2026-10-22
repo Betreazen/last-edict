@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 
-namespace D2.Rules.Battle.Effects;
+namespace LastEdict.Rules.Battle.Effects;
 
 /// <summary>
 /// Реестр эффектов атак: встроенные двадцать три класса оригинала с числами ИИ движка и эффекты модов. Встроенный эффект находится
@@ -77,5 +77,5 @@ public sealed record UnknownEffect(AttackClass Class) : AttackEffect($"unknown{(
 {
     public override AttackOutcome Hit(in EffectHit hit) => throw new NotSupportedException(
         $"класс атаки {Class} ({(int)Class}) не реализован: в Globals/LattC.dbf двадцать три класса, и все двадцать три модель умеет " +
-        "(встроенные эффекты D2.Rules.Battle.Effects). Значит это класс из мода — ему нужен свой эффект в реестре");
+        "(встроенные эффекты LastEdict.Rules.Battle.Effects). Значит это класс из мода — ему нужен свой эффект в реестре");
 }

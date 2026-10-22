@@ -1,6 +1,6 @@
-﻿using D2.Rules.Battle;
+﻿using LastEdict.Rules.Battle;
 
-namespace D2.Rules.Map;
+namespace LastEdict.Rules.Map;
 
 /// <summary>Класс обёртки отряда ИИ — фабрика <c>0x465af9</c> (ранг 1): у каждого класса свой построитель списка
 /// действий (слот 18 таблицы <c>IAiStack</c>).</summary>

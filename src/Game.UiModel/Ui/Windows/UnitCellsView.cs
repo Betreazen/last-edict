@@ -1,8 +1,8 @@
 using System.Globalization;
-using D2.Rules.Map;
-using D2.Rules.Units;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Units;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>
 /// Ячейки группы юнитов в окнах (<c>CDDUnitGroup</c>, отрисовка <c>0x56e02d</c>): малый портрет в ячейке, большой — в колонке
@@ -63,7 +63,7 @@ public static class UnitCellsView
             ui.SetImage(UnitGroupLayout.Icon(group, key, UnitGroupLayout.UpgradeIcon), ReadyToUpgrade(c, unit, owner) ? $"{Archive}:FIUPGRADE" : null);
             int high = HighLevel(c, unit);
             ui.SetImage(UnitGroupLayout.Icon(group, key, UnitGroupLayout.HighLevelIcon), high > 0 ? $"{Archive}:FIHIGHLEVEL{high}" : null);
-            var marks = D2.Data.Gfx.BattleMarkSets.Of(c.Session.RequireBook());
+            var marks = LastEdict.Data.Gfx.BattleMarkSets.Of(c.Session.RequireBook());
             ui.SetImage(UnitGroupLayout.Icon(group, key, UnitGroupLayout.PotionIcon), unit.Modifiers.Any(marks.Potion.Contains) ? $"{Archive}:FIPOTIONBOOST" : null);
             ui.SetImage(UnitGroupLayout.Icon(group, key, UnitGroupLayout.BoostIcon), unit.Modifiers.Any(marks.SpellBoost.Contains) ? $"{Archive}:FIISOSPELLBOOST" : null);
             ui.SetImage(UnitGroupLayout.Icon(group, key, UnitGroupLayout.LowerIcon), unit.Modifiers.Any(marks.SpellLower.Contains) ? $"{Archive}:FIISOSPELLLOWER" : null);

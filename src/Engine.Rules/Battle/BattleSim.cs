@@ -1,7 +1,7 @@
-using D2.Rules.Magic;
-using D2.Rules.Rng;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Rng;
 
-namespace D2.Rules.Battle;
+namespace LastEdict.Rules.Battle;
 
 /// <summary>Одна запись хода: один бросок точности (событие miss журнала) или одно лечение.
 /// Attack — номер атаки юнита (1 или 2). У лечения Miss = false, Damage = 0. Crit — урон крита сверх Damage (<c>*critDamage</c>
@@ -255,7 +255,7 @@ public sealed class BattleSim(BattleState state, IRng rng, RulesConstants consta
     /// <para>Флаг снимается здесь же, чтобы один <c>GiveAttack</c> давал ровно один лишний ход.
     /// Юнит, уже ходивший в этом раунде, ходит ещё раз — это и есть смысл класса.</para></summary>
     /// <summary>Внеочередные ходы (класс GiveAttack) вставляются сразу за ходящим. Открыто для экрана боя:
-    /// он ведёт бой по шагам (<c>D2.Data.Battle.BattleSession</c>) и повторяет порядок <see cref="Run"/> сам.</summary>
+    /// он ведёт бой по шагам (<c>LastEdict.Data.Battle.BattleSession</c>) и повторяет порядок <see cref="Run"/> сам.</summary>
     public void InsertExtraTurns(List<BattleUnit> queue, int after)
     {
         foreach (var u in state.Units)

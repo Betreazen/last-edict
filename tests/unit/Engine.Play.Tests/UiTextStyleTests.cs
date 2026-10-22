@@ -1,9 +1,9 @@
 using System.Text.RegularExpressions;
-using D2.Data.Ui;
+using LastEdict.Data.Ui;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Разбор разметки оформления. Главная часть — перечисление всех значений, которые реально встречаются
 /// в <c>data/ui/screens.json</c>: сколько их, какие и во что каждое разбирается. Числа сверены пересчётом самого

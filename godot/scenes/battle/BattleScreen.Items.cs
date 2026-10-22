@@ -1,11 +1,11 @@
 using System;
 using System.Linq;
-using D2.Data.Battle;
-using D2.Data.Gfx;
-using D2.Rules.Battle;
+using LastEdict.Data.Battle;
+using LastEdict.Data.Gfx;
+using LastEdict.Rules.Battle;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Показ применения боевого предмета или зелья — шаг 12 просмотра движка (<c>showAttackEffect</c> → <c>0x6365f2</c>,
 /// <see cref="BattleItemUse"/>).</summary>

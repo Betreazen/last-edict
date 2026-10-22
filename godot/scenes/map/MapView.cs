@@ -5,13 +5,13 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading;
-using D2.Data.Gfx;
-using D2.Data.Map;
-using D2.Data.Play;
-using D2.Rules.Map;
+using LastEdict.Data.Gfx;
+using LastEdict.Data.Map;
+using LastEdict.Data.Play;
+using LastEdict.Rules.Map;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Вид карты: картинки объектов (<see cref="MapObjects"/>) над землёй кусками (<see cref="GroundChunks"/>) под камерой, прокрутка. Куски собираются в одном
 /// фоновом потоке и появляются по готовности; видимые запрашиваются каждый кадр, невидимые текстуры сверх
@@ -133,7 +133,7 @@ public partial class MapView : Node2D
     {
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
         GameSave.Write(path + ".start.d2save", session.Snapshot());
-        session.Journal = D2.Data.Play.Commands.CommandJournal.Start(session, GameData.ModIds);
+        session.Journal = LastEdict.Data.Play.Commands.CommandJournal.Start(session, GameData.ModIds);
         _journalPath = path;
     }
 
@@ -156,8 +156,8 @@ public partial class MapView : Node2D
     {
         var frames = new System.Diagnostics.StackTrace(1, false).GetFrames();
         var outside = frames.Select(f => f.GetMethod()).FirstOrDefault(m => m?.DeclaringType is { } t
-            && !t.FullName!.StartsWith("D2.Data.Play.GameSession", StringComparison.Ordinal) && t != typeof(MapView) && t.DeclaringType != typeof(MapView));
-        var session = frames.Select(f => f.GetMethod()).LastOrDefault(m => m?.DeclaringType?.FullName?.StartsWith("D2.Data.Play.GameSession", StringComparison.Ordinal) == true);
+            && !t.FullName!.StartsWith("LastEdict.Data.Play.GameSession", StringComparison.Ordinal) && t != typeof(MapView) && t.DeclaringType != typeof(MapView));
+        var session = frames.Select(f => f.GetMethod()).LastOrDefault(m => m?.DeclaringType?.FullName?.StartsWith("LastEdict.Data.Play.GameSession", StringComparison.Ordinal) == true);
         string site = $"{outside?.DeclaringType?.Name}.{outside?.Name} → GameSession.{session?.Name}";
         if (_auditedSites.Add(site)) GD.Print($"command-audit {site}");
     }

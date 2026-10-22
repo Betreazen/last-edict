@@ -1,9 +1,9 @@
-using D2.Data.Content;
-using D2.Data.Map;
-using D2.Data.Play;
-using D2.Rules.Map;
+using LastEdict.Data.Content;
+using LastEdict.Data.Map;
+using LastEdict.Data.Play;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Цели сценария для круга <c>SYM_OBJECTIVE</c> (<see cref="GameSession.Objectives"/>, <c>docs/scenario-events.md</c> §8):
 /// события победы расы зрителя, id их условий, отряд в крепости — крепость, тип предмета — держатели.</summary>

@@ -10,7 +10,7 @@
 ## Запуск сцены
 
 ```bash
-dotnet build godot/D2.Godot.csproj                                  # сначала C#
+dotnet build godot/LastEdict.Godot.csproj                                  # сначала C#
 cmd //c "C:\Tools\bin\godot.cmd --headless --path godot"            # главная сцена, без окна
 cmd //c "C:\Tools\bin\godot.cmd --path godot res://RefProbe.tscn -- --arg"   # окно + своя сцена
 ```
@@ -121,7 +121,7 @@ sp.TextureFilter = CanvasItem.TextureFilterEnum.Nearest;   // обязатель
   Ставить оформление раньше текста и размер — после (`UiArt.Place`).
 - **Вертикальное выравнивание `Label`**: блок = высоты строк + межстрочные между ними (без последнего), начало — `(высота − блок) / 2`
   с отбрасыванием дроби; текст выше места выравнивание не сбрасывает. Замер: шрифт 13, межстрочный 4, место 85 — одна строка с 36,
-  две — с 27; место 18 — с 2. У движка игры правило другое (`D2.Data.Ui.UiTextBlock`, `docs/ui-text.md`).
+  две — с 27; место 18 — с 2. У движка игры правило другое (`LastEdict.Data.Ui.UiTextBlock`, `docs/ui-text.md`).
 - **Ввод в `SubViewport` без контейнера** — `PushInput(событие, true)` в его координатах; `IsInputHandled()` после вызова говорит, взял
   ли его кто-то внутри. `GetMousePosition()` такого вьюпорта — точка последнего поданного события мыши.
 - **До первого события мыши она (0, 0)** (проверено 21.10.2026, `tools/publish/screenshots.py`): окно в фокусе, мышь в стороне от

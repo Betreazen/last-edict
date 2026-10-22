@@ -1,10 +1,10 @@
-using D2.Data.Map;
-using D2.Rules.Battle;
-using D2.Rules.Map;
-using D2.Rules.Rng;
-using D2.Rules.Units;
+using LastEdict.Data.Map;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Rng;
+using LastEdict.Rules.Units;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>Ход партии: держит текущий снимок (<see cref="GameState"/>) и меняет его командами игрока и правилами
 /// дня. Снимки неизменяемы — команда строит новый; сцена карты только показывает <see cref="Looks"/> и зовёт команды.
@@ -32,7 +32,7 @@ public sealed partial class GameSession(GameState state, MapArtData art, GameBoo
 
     /// <summary>CRT <c>rand()</c> потока игры (msvcrt, старт <c>srand(1)</c>): им ИИ выбирает юнитов найма
     /// (<c>0x44c137</c>) и имена лидеров. Продолжается с сохранённого места.</summary>
-    public D2.Rules.Rng.CrtRand Crt { get; } = new(state.Random?.Crt ?? 1);
+    public LastEdict.Rules.Rng.CrtRand Crt { get; } = new(state.Random?.Crt ?? 1);
 
     /// <summary>Порождённые реализации, созданные в этом запуске (<see cref="GeneratedImpls"/>): с входа в партию только растут.</summary>
     private readonly HashSet<string> _generated = new(state.GeneratedUnits, StringComparer.OrdinalIgnoreCase);
@@ -691,7 +691,7 @@ public sealed partial class GameSession(GameState state, MapArtData art, GameBoo
         // Записи литья игрока снимаются в начале его хода (CEffectRemoveSpell 0x443d01: игрок и ход ≥ TURN_STOP) — в обоих списках
         // CMidSpellCast: 0x607099 зовёт фильтр 0x6070c4 по спискам +0x8 и +0x18 (заклинания и предметы). Ранг 1 по листингу; в сохранениях корпуса
         // устаревших записей нет ни в одном списке (map_effect_turn_stop).
-        bool Kept(CastRecord c) => !c.PlayerId.Equals(playerId, StringComparison.OrdinalIgnoreCase) || D2.Rules.Magic.SpellCast.Live(c.TurnStop, map.Turn);
+        bool Kept(CastRecord c) => !c.PlayerId.Equals(playerId, StringComparison.OrdinalIgnoreCase) || LastEdict.Rules.Magic.SpellCast.Live(c.TurnStop, map.Turn);
         var casts = map.SpellCasts.Where(Kept).ToList();
         var itemCasts = map.ItemCasts.Where(Kept).ToList();
         map = With(map, stacks: stacks, spellCasts: casts.Count == map.SpellCasts.Count ? null : casts,
@@ -968,7 +968,7 @@ public sealed partial class GameSession(GameState state, MapArtData art, GameBoo
     private void UnequipFallen(string group)
     {
         if (!Map.Stacks.TryGetValue(group, out var fallen) || fallen.LeaderAlive) return;
-        for (int slot = 0; slot < D2.Rules.Magic.Equipment.Slots(fallen).Count; slot++) UnequipItem(group, slot);
+        for (int slot = 0; slot < LastEdict.Rules.Magic.Equipment.Slots(fallen).Count; slot++) UnequipItem(group, slot);
     }
 
     /// <summary>Идёт бой: собран (<see cref="StartBattle"/>) и ещё не записан в карту (<see cref="CommitBattle"/>). Зонд в это время
@@ -1063,8 +1063,8 @@ public sealed partial class GameSession(GameState state, MapArtData art, GameBoo
         {
             Looks = Retold(Looks, map, stacks) with
             {
-                Forts = FortLooks(Looks.Forts, map), Tombs = [.. map.Tombs.Select(t => new D2.Data.Map.TombLook(t.Id, t.X, t.Y))],
-                Bags = [.. Looks.Bags, .. loots.Select(l => l.Bag).OfType<D2.Data.Map.BagLook>()],
+                Forts = FortLooks(Looks.Forts, map), Tombs = [.. map.Tombs.Select(t => new LastEdict.Data.Map.TombLook(t.Id, t.X, t.Y))],
+                Bags = [.. Looks.Bags, .. loots.Select(l => l.Bag).OfType<LastEdict.Data.Map.BagLook>()],
             },
         };
         foreach (var loot in loots) AnnounceLoot(loot);   // сообщение 44 — за гибелью отряда (0x438cc2)
@@ -1150,7 +1150,7 @@ public sealed partial class GameSession(GameState state, MapArtData art, GameBoo
         // Туман хозяина — от новой клетки, как у хода (MoveByEvent).
         var moved = Map;
         if (moved.Players.TryGetValue(fled.Owner, out var owner) && !IsNeutral(fled.Owner) && moved.Fog.TryGetValue(owner.FogId, out var fog))
-            D2.Rules.Map.Fog.Reveal(fog, at.X, at.Y, ScoutRange(moved, moved.Stacks[fled.Id]), D2.Rules.Map.Fog.DefaultShape);
+            LastEdict.Rules.Map.Fog.Reveal(fog, at.X, at.Y, ScoutRange(moved, moved.Stacks[fled.Id]), LastEdict.Rules.Map.Fog.DefaultShape);
     }
 
     /// <summary>Сообщение о гибели иллюзии (<c>CEffectKillStack</c> <c>0x43895c</c> → <c>CCmdStackIllusionMsg</c> вместо
@@ -1370,7 +1370,7 @@ public sealed partial class GameSession(GameState state, MapArtData art, GameBoo
     public static IReadOnlyDictionary<string, int> IdNextOf(MapState map)
     {
         ArgumentNullException.ThrowIfNull(map);
-        return D2.Data.Map.MapLoader.IdNextOf(map.Stacks.Keys.Concat(map.Units.Keys).Concat(map.Players.Keys).Concat(map.Objects.Keys)
+        return LastEdict.Data.Map.MapLoader.IdNextOf(map.Stacks.Keys.Concat(map.Units.Keys).Concat(map.Players.Keys).Concat(map.Objects.Keys)
             .Concat(map.Rods.Keys).Concat(map.Sites.Select(s => s.Id)).Concat(map.ItemTypes.Keys).Concat(map.Fog.Keys)
             .Concat(map.Tombs.Select(t => t.Id)).Concat(map.Subraces.Keys).Concat(map.Plan.Values.SelectMany(v => v)));
     }

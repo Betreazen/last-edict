@@ -1,8 +1,8 @@
 using System.Globalization;
-using D2.Data.Menu;
-using D2.Data.Ui;
+using LastEdict.Data.Menu;
+using LastEdict.Data.Ui;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>Строка сохранения в списке и его описание — общие для экранов записи и загрузки.</summary>
 internal static class SaveText

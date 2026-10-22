@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 
-namespace D2.Rules.Map;
+namespace LastEdict.Rules.Map;
 
 /// <summary>
 /// Клетки объекта по занятости карты (<see cref="MapState.Plan"/>) — указатель id → клетки, собранный один раз на экземпляр

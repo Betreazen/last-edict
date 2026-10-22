@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace D2.Data.Import;
+namespace LastEdict.Data.Import;
 
 /// <summary>Слои картинки столицы: <c>Imgs/capital.dat</c> игры (ini в cp1251: раздел на расу, строки
 /// <c>LAYER_&lt;номер&gt;=&lt;постройка&gt;,&lt;картинка&gt;,&lt;?&gt;,&lt;x&gt;,&lt;y&gt;,&lt;…&gt;,&lt;x1&gt;,&lt;y1&gt;,&lt;x2&gt;,&lt;y2&gt;</c>) → <c>data/ui/capital.json</c>

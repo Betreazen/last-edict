@@ -1,7 +1,7 @@
 using System.ComponentModel;
-using D2.Rules.Magic;
+using LastEdict.Rules.Magic;
 
-namespace D2.Data.Content.Schema;
+namespace LastEdict.Data.Content.Schema;
 
 /// <summary>Заклинание (<c>Gspells.dbf</c>).</summary>
 [LegacyTable("Gspells", "SPELL_ID")]

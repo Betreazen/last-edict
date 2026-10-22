@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using D2.Data.Ui;
+using LastEdict.Data.Ui;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Первый настоящий экран порта: берёт <see cref="UiScreen"/> из <see cref="GameData.Content"/>
 /// (базовые <c>data/ui</c> плюс наложенные моды) и рисует его кадрами из <c>assets/ui</c>, а надписи — строками
@@ -292,7 +292,7 @@ public partial class UiScreenView : Node2D
         // Кадр графики мира (gfx:Архив/Кадр) — картинка события из Events и т. п.: прозрачность уже запечена.
         if (frame.StartsWith("gfx:", StringComparison.Ordinal) && frame[4..].Split('/', 2) is [var archive, var name])
         {
-            if (GameData.Content.Gfx.Image(archive, name) is { } info && D2.Data.Gfx.GfxAssets.PathOf(info, GameData.GfxRoot) is { } world
+            if (GameData.Content.Gfx.Image(archive, name) is { } info && LastEdict.Data.Gfx.GfxAssets.PathOf(info, GameData.GfxRoot) is { } world
                 && File.Exists(world))
                 image = GfxTextures.Canvas(world);
             else problem = $" (нет {frame} в описи графики или на диске)";
@@ -322,12 +322,12 @@ public partial class UiScreenView : Node2D
         if (reference.Archive == "Outline") return (Outline(reference), null);
         var info = GameData.Content.Gfx.Image(reference.Archive, reference.Name);
         if (info is null) return (null, null);
-        string path = D2.Data.Gfx.GfxAssets.PathOf(info, GameData.GfxRoot);
+        string path = LastEdict.Data.Gfx.GfxAssets.PathOf(info, GameData.GfxRoot);
         if (!File.Exists(path)) return (null, $" (нет {path}; python tools/gfx-assets)");
         var image = GfxTextures.Canvas(path);
         if (reference.Tint is { } tint) Tint(image, tint, reference.FromPercent);
         if (reference.Mask is { } mask && GameData.Content.Gfx.Image(reference.Archive, mask) is { } maskInfo
-            && D2.Data.Gfx.GfxAssets.PathOf(maskInfo, GameData.GfxRoot) is var maskPath && File.Exists(maskPath))
+            && LastEdict.Data.Gfx.GfxAssets.PathOf(maskInfo, GameData.GfxRoot) is var maskPath && File.Exists(maskPath))
             Blend(image, GfxTextures.Canvas(maskPath));
         return (image, null);
     }

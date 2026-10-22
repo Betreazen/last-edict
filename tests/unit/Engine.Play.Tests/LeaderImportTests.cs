@@ -1,9 +1,9 @@
-using D2.Data.Content;
-using D2.Data.Leaders;
-using D2.Data.Menu;
-using D2.Data.Play;
+using LastEdict.Data.Content;
+using LastEdict.Data.Leaders;
+using LastEdict.Data.Menu;
+using LastEdict.Data.Play;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Импорт героя (<c>docs/day-cycle.md</c> §12): файл игры <c>.ldr</c> → формат порта → герой в столице на старте партии.</summary>
 public class LeaderImportTests
@@ -121,7 +121,7 @@ public class LeaderImportTests
         {
             var content = SharedContent.Load(Data);
             var lordScreen = content.Screens.Single(s => s.Id == "DLG_CHOOSE_LORD");
-            var empty = new D2.Data.Ui.UiScreenState(lordScreen);
+            var empty = new LastEdict.Data.Ui.UiScreenState(lordScreen);
             empty.Apply(content.Defaults.For(lordScreen.Id));
             MenuLogic.For("DLG_CHOOSE_LORD", new MenuContext(content.Catalog, new Dictionary<string, string>(),
                                                             new NewGameSetup { Scenario = content.Catalog.Scenarios[0], Race = 0 }, "Игрок")
@@ -137,28 +137,28 @@ public class LeaderImportTests
             LeaderFile.Write(Path.Combine(dir, "Merlot.json"), hero);
             var setup = new NewGameSetup { Scenario = content.Catalog.Scenarios[0], Race = 0 };
             var context = new MenuContext(content.Catalog, new Dictionary<string, string>(), setup, "Игрок") { LeadersDir = dir };
-            var logic = (D2.Data.Ui.Windows.IWindowLogic)MenuLogic.For("DLG_CHOOSE_LORD", context)!;
+            var logic = (LastEdict.Data.Ui.Windows.IWindowLogic)MenuLogic.For("DLG_CHOOSE_LORD", context)!;
             var screen = content.Screens.Single(s => s.Id == "DLG_CHOOSE_LORD");
-            var ui = new D2.Data.Ui.UiScreenState(screen);
+            var ui = new LastEdict.Data.Ui.UiScreenState(screen);
             ui.Apply(content.Defaults.For(screen.Id));
             logic.Open(ui);
             Assert.True(ui.IsEnabled("BTN_IMPORT_LEADER"));
             Assert.False(logic.Allows("BTN_IMPORT_LEADER", ui));
-            logic.Handle(new D2.Data.Ui.UiClicked("BTN_IMPORT_LEADER"), ui);
-            var open = Assert.IsType<D2.Data.Ui.Windows.UiOpen>(logic.TakeRequest());
-            var window = (D2.Data.Ui.Windows.IWindowLogic)open.Logic;
-            var wui = new D2.Data.Ui.UiScreenState(content.Screens.Single(s => s.Id == open.Screen));
+            logic.Handle(new LastEdict.Data.Ui.UiClicked("BTN_IMPORT_LEADER"), ui);
+            var open = Assert.IsType<LastEdict.Data.Ui.Windows.UiOpen>(logic.TakeRequest());
+            var window = (LastEdict.Data.Ui.Windows.IWindowLogic)open.Logic;
+            var wui = new LastEdict.Data.Ui.UiScreenState(content.Screens.Single(s => s.Id == open.Screen));
             wui.SetList("LBOX_LEADERS", 0, rowHeight: 93);
             window.Open(wui);
             wui.Select("LBOX_LEADERS", 1);
-            window.Handle(new D2.Data.Ui.UiClicked("BTN_OK"), wui);
-            Assert.IsType<D2.Data.Ui.Windows.UiAsk>(window.TakeRequest()).Yes();
+            window.Handle(new LastEdict.Data.Ui.UiClicked("BTN_OK"), wui);
+            Assert.IsType<LastEdict.Data.Ui.Windows.UiAsk>(window.TakeRequest()).Yes();
             Assert.Equal(("Мерло", "Мерло"), (setup.ImportedLeader?.Name, ui.TextOf("TXT_IMPORT_NAME")));
 
             // Назад в меню, другая раса: выбор прежней расы не этой партии.
             setup.Race = 3;
             var again = MenuLogic.For("DLG_CHOOSE_LORD", context)!;
-            var ui2 = new D2.Data.Ui.UiScreenState(screen);
+            var ui2 = new LastEdict.Data.Ui.UiScreenState(screen);
             ui2.Apply(content.Defaults.For(screen.Id));
             again.Open(ui2);
             Assert.Null(setup.ImportedLeader);
@@ -176,12 +176,12 @@ public class LeaderImportTests
     public void ViewLeader_RightClickCards()
     {
         var content = SharedContent.Load(Data);
-        var strings = D2.Data.Ui.UiStrings.Load(ImportedData.StringsDir(), "ru");
+        var strings = LastEdict.Data.Ui.UiStrings.Load(ImportedData.StringsDir(), "ru");
         var book = GameBook.Load(ImportedData.PathOf("rules"));
         var context = new MenuContext(content.Catalog, strings, new NewGameSetup(), "Игрок")
         {
-            Book = book, Rules = D2.Data.Ui.Windows.RulesTexts.Load(ImportedData.PathOf("rules")),
-            ItemTexts = D2.Data.Ui.Windows.StackTexts.Load(ImportedData.PathOf("rules")),
+            Book = book, Rules = LastEdict.Data.Ui.Windows.RulesTexts.Load(ImportedData.PathOf("rules")),
+            ItemTexts = LastEdict.Data.Ui.Windows.StackTexts.Load(ImportedData.PathOf("rules")),
         };
         var hero = new ExportedLeader
         {
@@ -191,15 +191,15 @@ public class LeaderImportTests
         };
         var logic = new ViewLeaderLogic(context, hero);
         var screen = content.Screens.Single(s => s.Id == "DLG_VIEW_EXPLEAD");
-        var ui = new D2.Data.Ui.UiScreenState(screen);
+        var ui = new LastEdict.Data.Ui.UiScreenState(screen);
         ui.SetList("LBOX_ITEM_ICON", 0, rowHeight: 36);
         logic.Open(ui);
-        D2.Data.Ui.UiRect At(string id) => screen.Elements.Single(e => e.Id == id).Rect;
+        LastEdict.Data.Ui.UiRect At(string id) => screen.Elements.Single(e => e.Id == id).Rect;
 
         var face = At("IMG_LEADER_FACE");
         logic.RightPress(face.X + 5, face.Y + 5, ui);
-        var card = Assert.IsType<D2.Data.Ui.Windows.UiOpen>(logic.TakeRequest());
-        var cui = new D2.Data.Ui.UiScreenState(content.Screens.Single(s => s.Id == card.Screen));
+        var card = Assert.IsType<LastEdict.Data.Ui.Windows.UiOpen>(logic.TakeRequest());
+        var cui = new LastEdict.Data.Ui.UiScreenState(content.Screens.Single(s => s.Id == card.Screen));
         cui.SetList("MLBOX_ITEM_ICON", 0, rowHeight: 36);
         card.Logic.Open(cui);
         Assert.Contains("Мерло", cui.TextOf("TXT_UNIT_NAME"));
@@ -209,14 +209,14 @@ public class LeaderImportTests
 
         var list = At("LBOX_ITEM_ICON");
         logic.RightPress(list.X + 5, list.Y + 5, ui);   // первая строка — первая способность файла (14, сферы)
-        var ability = Assert.IsType<D2.Data.Ui.Windows.UiOpen>(logic.TakeRequest());
-        var aui = new D2.Data.Ui.UiScreenState(content.Screens.Single(s => s.Id == ability.Screen));
+        var ability = Assert.IsType<LastEdict.Data.Ui.Windows.UiOpen>(logic.TakeRequest());
+        var aui = new LastEdict.Data.Ui.UiScreenState(content.Screens.Single(s => s.Id == ability.Screen));
         ability.Logic.Open(aui);
         Assert.Contains(strings["X005TA0907"], aui.TextOf("TXT_INFO"));
 
         var slot = At("IMG_BATTLE1");
         logic.RightPress(slot.X + 5, slot.Y + 5, ui);
-        Assert.Equal("DLG_R_C_ITEM", Assert.IsType<D2.Data.Ui.Windows.UiOpen>(logic.TakeRequest()).Screen);
+        Assert.Equal("DLG_R_C_ITEM", Assert.IsType<LastEdict.Data.Ui.Windows.UiOpen>(logic.TakeRequest()).Screen);
     }
 
     /// <summary>Хвосты импорта (<c>0x42f359</c>): в пустой столице — новый отряд из героя (владелец и подраса столицы, внутри неё,
@@ -235,20 +235,20 @@ public class LeaderImportTests
             Attack = new LeaderAttack("G000AA0021", 1, "Lightning", 80, 0, 30, 7, 40, 1),
         };
         var map = looks.Map;
-        var capital = map.Sites.Single(s => s.Kind == D2.Rules.Map.SiteKind.Capital && s.Owner.Equals("S073PL000a", StringComparison.OrdinalIgnoreCase));
+        var capital = map.Sites.Single(s => s.Kind == LastEdict.Rules.Map.SiteKind.Capital && s.Owner.Equals("S073PL000a", StringComparison.OrdinalIgnoreCase));
 
         // Пустая столица.
-        var empty = D2.Data.Play.GameSession.Retold(looks, D2.Data.Play.GameSession.With(map,
+        var empty = LastEdict.Data.Play.GameSession.Retold(looks, LastEdict.Data.Play.GameSession.With(map,
             stacks: map.Stacks.Where(p => p.Key != capital.StackId).ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase),
             sites: [.. map.Sites.Select(s => s.Id == capital.Id ? s with { StackId = "" } : s)]), looks.Stacks);
         var created = NewGame.ImportLeader(empty, "S073PL000a", leader, book).Map;
         var inside = created.Stacks[created.Sites.Single(s => s.Id == capital.Id).StackId];
-        Assert.Equal((capital.Owner, capital.Subrace, capital.Id, (int)D2.Rules.Battle.StackOrder.Normal, 1),
+        Assert.Equal((capital.Owner, capital.Subrace, capital.Id, (int)LastEdict.Rules.Battle.StackOrder.Normal, 1),
                      (inside.Owner, inside.Subrace, inside.Inside, inside.Order, inside.CreationLevel));
         Assert.Equal("G000UU0021", created.Units[inside.LeaderId].TypeId);
 
         // Большой герой — обе клетки колонки (2 и 3).
-        var bigType = book.Rules.Units.Values.First(u => !u.SizeSmall && book.CategoryOf(u.Id) == D2.Rules.Battle.UnitCategory.Leader
+        var bigType = book.Rules.Units.Values.First(u => !u.SizeSmall && book.CategoryOf(u.Id) == LastEdict.Rules.Battle.UnitCategory.Leader
                                                          && u.Id.Substring(4, 2).Equals("UU", StringComparison.OrdinalIgnoreCase));
         var bigMap = NewGame.ImportLeader(empty, "S073PL000a", leader with { UnitType = bigType.Id }, book).Map;
         var bigStack = bigMap.Stacks[bigMap.Sites.Single(s => s.Id == capital.Id).StackId];
@@ -258,7 +258,7 @@ public class LeaderImportTests
         var stack = map.Stacks[capital.StackId];
         var extra = map.Stacks.Values.Where(s => s.Id != stack.Id).SelectMany(s => s.UnitIds).Take(3).ToList();
         var big = stack with { UnitIds = [stack.LeaderId, .. extra], Slots = [1, 2, 0, 3, -1, -1] };
-        var full = D2.Data.Play.GameSession.Retold(looks, D2.Data.Play.GameSession.With(map,
+        var full = LastEdict.Data.Play.GameSession.Retold(looks, LastEdict.Data.Play.GameSession.With(map,
             stacks: map.Stacks.ToDictionary(p => p.Key, p => p.Key == stack.Id ? big : p.Value, StringComparer.OrdinalIgnoreCase),
             sites: [.. map.Sites.Select(s => s.Id == capital.Id ? s with { Guards = [], GuardSlots = [-1, -1, -1, -1, -1, -1] } : s)]), looks.Stacks);
         int guards = 0;   // гарнизон пуст — места хватает, никто не удаляется
@@ -293,7 +293,7 @@ public class LeaderImportTests
         };
         var state = NewGame.Start(ScenarioFile.Read(path), setup, content.Catalog, book, new Random(1));
         var map = state.Looks.Map;
-        var capital = map.Sites.Single(s => s.Kind == D2.Rules.Map.SiteKind.Capital && s.Owner.Equals("S073PL000a", StringComparison.OrdinalIgnoreCase));
+        var capital = map.Sites.Single(s => s.Kind == LastEdict.Rules.Map.SiteKind.Capital && s.Owner.Equals("S073PL000a", StringComparison.OrdinalIgnoreCase));
         var stack = map.Stacks[capital.StackId];
         var hero = map.Units[stack.LeaderId];
         var grown = book.Grown("G000UU0021", 3)!;

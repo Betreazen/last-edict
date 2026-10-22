@@ -18,7 +18,7 @@ UiFlow с --start DLG_MAIN_MENU и --stage-shot. Полноразмерный с
 
 Данные: графика — D2_ASSETS_DIR, сохранения — D2_CORPUS_DIR (в рабочей копии ../dg-wt-* — основной каталог, как у check.py).
 Корпус и графика только читаются; каталоги меню (герои, кампании, сохранения) — во временном каталоге, не в user://.
-Перед запуском — dotnet build godot/D2.Godot.csproj (скрипт собирает сам, --no-build — нет).
+Перед запуском — dotnet build godot/LastEdict.Godot.csproj (скрипт собирает сам, --no-build — нет).
 Инструмент разработчика: в публичном дереве ему нужны импортированные данные игры (py tools/import_game.py, docs/publishing.md) и
 сохранения корпуса журналов зонда, которых в репозитории нет.
 
@@ -181,7 +181,7 @@ def small_copy(image: Image.Image, path: Path) -> tuple[int, int] | None:
 
 
 def build(env: dict[str, str]) -> bool:
-    proc = subprocess.run(["dotnet", "build", str(REPO / "godot" / "D2.Godot.csproj"), "-nologo", "-v", "q"], cwd=REPO, env=env,
+    proc = subprocess.run(["dotnet", "build", str(REPO / "godot" / "LastEdict.Godot.csproj"), "-nologo", "-v", "q"], cwd=REPO, env=env,
                           capture_output=True, text=True, encoding="utf-8", errors="replace")
     if proc.returncode != 0:
         print((proc.stdout or "") + (proc.stderr or ""))
@@ -203,7 +203,7 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--only", action="append", default=[], help="только этот снимок (ключ повторяется)")
     parser.add_argument("--hold-ms", action="append", default=[], help="выдержка снимка: ИМЯ=МС")
     parser.add_argument("--out", type=Path, default=OUT, help=f"каталог снимков (по умолчанию {OUT.relative_to(REPO)})")
-    parser.add_argument("--no-build", action="store_true", help="не собирать godot/D2.Godot.csproj")
+    parser.add_argument("--no-build", action="store_true", help="не собирать godot/LastEdict.Godot.csproj")
     args = parser.parse_args(argv)
     known = {s.name for s in SHOTS}
     if unknown := set(args.only) - known:
@@ -217,7 +217,7 @@ def main(argv: list[str]) -> int:
     env = dict(data_env(), D2_PORT_PROBE="0")
     corpus = Path(env.get("D2_CORPUS_DIR") or REPO / "corpus")
     if not args.no_build and not build(env):
-        print("сборка godot/D2.Godot.csproj не прошла")
+        print("сборка godot/LastEdict.Godot.csproj не прошла")
         return 1
     args.out.mkdir(parents=True, exist_ok=True)
     failed, rows = 0, []

@@ -1,7 +1,7 @@
-using D2.Data.Play;
-using D2.Data.Sg;
+using LastEdict.Data.Play;
+using LastEdict.Data.Sg;
 
-namespace D2.Data.Game;
+namespace LastEdict.Data.Game;
 
 /// <summary>Однократный импорт готового перевода сценариев из локализованной копии игры (слой Руссобит-М
 /// <c>disciples-vanilla/l10n/russobit</c>: <c>Exports/*.sg</c> квестов и <c>Scens/Sinfo</c>, <c>Scens/Tscen</c> глав саг) в языковой

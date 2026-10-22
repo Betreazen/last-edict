@@ -1,7 +1,7 @@
 using System.Buffers.Binary;
 using System.IO.Compression;
 
-namespace D2.Data.Import;
+namespace LastEdict.Data.Import;
 
 /// <summary>PNG для импорта без движка: разбор картинок архивов игры и запись атласов шрифтов. Разбор — 8 бит на канал (серый, RGB, серый с
 /// альфой, RGBA) и палитра 1/2/4/8 бит с <c>tRNS</c>, без чересстрочности: в архивах игры только RGB 8 бит и палитра 8 бит (замер всех 12 778

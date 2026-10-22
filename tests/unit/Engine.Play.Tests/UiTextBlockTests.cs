@@ -1,7 +1,7 @@
-using D2.Data.Ui;
+using LastEdict.Data.Ui;
 using Xunit;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Положение блока строк в месте подписи по вертикали — правило движка (<c>0x52ad04</c>), сверенное со снимками оригинала 28.09:
 /// блок — число строк × шаг строки шрифта (ячейка + межстрочный MFT, вместе с последним), не влез — от верха.</summary>

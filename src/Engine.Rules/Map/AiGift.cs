@@ -1,6 +1,6 @@
-using D2.Rules.Rng;
+using LastEdict.Rules.Rng;
 
-namespace D2.Rules.Map;
+namespace LastEdict.Rules.Map;
 
 /// <summary>
 /// Сделка-«подарок» ИИ (<c>0x448bda</c>, вид — <see cref="AiGiftKind"/>): предмет или заклинание за золото

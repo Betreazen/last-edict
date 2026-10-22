@@ -1,11 +1,11 @@
 using System.Globalization;
-using D2.Data.Menu;
-using D2.Rules.Battle;
-using D2.Rules.Battle.Effects;
-using D2.Rules.Map;
-using D2.Rules.Units;
+using LastEdict.Data.Menu;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Battle.Effects;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Units;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>
 /// Карточка юнита в окнах карты (<c>DLG_R_C_UNIT</c>, <c>CEncyclopediaPopup</c> <c>0x4c5fca</c>, строитель <c>CEncLayoutUnit</c>
@@ -189,7 +189,7 @@ public sealed class UnitCardLogic(WindowContext context, string unitId, MapUnit?
 
     private static int Accuracy(AttackType a) => AlwaysHit.Contains(a.Class) ? 100 : Math.Min(100, a.Power);
 
-    /// <summary>Классы без броска точности — для карточки героя из файла (<c>D2.Data.Menu.LeaderFileCardLogic</c>).</summary>
+    /// <summary>Классы без броска точности — для карточки героя из файла (<c>LastEdict.Data.Menu.LeaderFileCardLogic</c>).</summary>
     internal static IReadOnlyCollection<AttackClass> AlwaysHitClasses => AlwaysHit;
 
     /// <summary>Строка действия атаки по классу.</summary>

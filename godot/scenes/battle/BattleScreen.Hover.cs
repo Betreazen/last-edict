@@ -1,11 +1,11 @@
 using System.Collections.Generic;
 using System.Linq;
-using D2.Data.Battle;
-using D2.Data.Gfx;
-using D2.Rules.Battle;
+using LastEdict.Data.Battle;
+using LastEdict.Data.Gfx;
+using LastEdict.Rules.Battle;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Проверка «--hover» (слова пользователя 15.10): зона мыши юнита на поле и анимация метки под ним — числами, без окна.
 /// Зона — место и 32 px под ним (<see cref="BattleScene.HitSlot"/>, <c>0x6326b9</c>): строка «battle hoverzone» — кто ловится у точек

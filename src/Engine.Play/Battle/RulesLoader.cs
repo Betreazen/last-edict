@@ -1,11 +1,11 @@
-using D2.Data.Content;
-using D2.Data.Content.Schema;
-using D2.Rules.Battle;
-using D2.Rules.Battle.Effects;
-using D2.Rules.Map;
-using D2.Rules.Units;
+using LastEdict.Data.Content;
+using LastEdict.Data.Content.Schema;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Battle.Effects;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Units;
 
-namespace D2.Data.Battle;
+namespace LastEdict.Data.Battle;
 
 /// <summary>Содержимое (<see cref="ContentSet"/>: юниты, атаки, рост, модификаторы, глобальные величины) → <see cref="GameRules"/>.
 /// Каталог — база содержимого или таблицы оригинала (<see cref="ContentSource.Open"/>). Ключи правил регистронезависимы и пока —
@@ -99,7 +99,7 @@ public static class RulesLoader
     /// Уровневый рост несут <c>DynUpg1Id</c> до уровня <c>DynUpgLevel</c> и дальше <c>DynUpg2Id</c>. <c>Category</c> — роль юнита
     /// (<see cref="UnitRole"/>: 0 солдат, 1 вор, 2 лидер, 4 призванный, 5 иллюзия, 8 страж); по ней отбираются получатели опыта.
     /// <c>LeaderCategory</c> — 1 воин, 2 следопыт, 3 маг, 4 жезлоносец, 5 вор; у не-лидера — 0. <c>Negotiate</c> — сопротивление
-    /// отряда действию вора (<see cref="D2.Rules.Map.Thieves.StackResistance"/>), растёт с уровнем шагами роста. <c>Subrace</c> —
+    /// отряда действию вора (<see cref="LastEdict.Rules.Map.Thieves.StackResistance"/>), растёт с уровнем шагами роста. <c>Subrace</c> —
     /// подраса (<see cref="Subrace"/>). <c>LifeTime</c> — сколько дней живёт призванный (у призывов 1, у иллюзий 3; у прочих 0 — срока
     /// нет).</summary>
     public sealed record UnitExtra(string Id, string UpgradeBuildingId, string DynUpg1Id, int DynUpgLevel,
@@ -108,7 +108,7 @@ public static class RulesLoader
                                    int LifeTime = 0);
 
     /// <summary>То, что правила читают поверх <see cref="GameRules"/>. Отдельной записью, потому что <c>GameRules</c> живёт в
-    /// <c>D2.Rules</c>.</summary>
+    /// <c>LastEdict.Rules</c>.</summary>
     public sealed record RulesExtras(IReadOnlyDictionary<string, AttackExtra> Attacks,
                                      IReadOnlyDictionary<string, UnitExtra> Units,
                                      IReadOnlyDictionary<string, DynUpgrade> DynUpgrades);

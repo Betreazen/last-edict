@@ -1,7 +1,7 @@
-using D2.Data.Ui;
-using D2.Rules.Battle;
+using LastEdict.Data.Ui;
+using LastEdict.Rules.Battle;
 
-namespace D2.Data.Gfx;
+namespace LastEdict.Data.Gfx;
 
 /// <summary>Метки модификаторов для значков 13–15: заклинание-усиление, заклинание-ослабление, зелье (id модификаторов, <c>0x5ea500</c>).</summary>
 public sealed record BattleMarkSets(IReadOnlySet<string> SpellBoost, IReadOnlySet<string> SpellLower, IReadOnlySet<string> Potion)
@@ -12,15 +12,15 @@ public sealed record BattleMarkSets(IReadOnlySet<string> SpellBoost, IReadOnlySe
 
     /// <summary>По книге правил (один раз на книгу): зелья-усиления (<c>0x5ea5e7</c>), заклинания усиления и ослабления (<c>0x5ea6c1</c>).
     /// Те же значки — у ячеек воинов в окнах.</summary>
-    public static BattleMarkSets Of(D2.Data.Play.GameBook book)
+    public static BattleMarkSets Of(LastEdict.Data.Play.GameBook book)
     {
         ArgumentNullException.ThrowIfNull(book);
         if (_last is { } last && ReferenceEquals(last.Book, book)) return last.Marks;
         static HashSet<string> Ids(IEnumerable<string> ids) => ids.Where(m => m.Length > 0).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var marks = new BattleMarkSets(
-            Ids(book.Spells.Values.Where(s => s.Category == D2.Rules.Magic.SpellCategory.Boost).Select(s => s.ModifierId)),
-            Ids(book.Spells.Values.Where(s => s.Category == D2.Rules.Magic.SpellCategory.Lower).Select(s => s.ModifierId)),
-            Ids(book.Items.Values.Where(i => i.Category == D2.Rules.Magic.ItemCategory.PotionBoost).Select(i => i.PotionModifierId)));
+            Ids(book.Spells.Values.Where(s => s.Category == LastEdict.Rules.Magic.SpellCategory.Boost).Select(s => s.ModifierId)),
+            Ids(book.Spells.Values.Where(s => s.Category == LastEdict.Rules.Magic.SpellCategory.Lower).Select(s => s.ModifierId)),
+            Ids(book.Items.Values.Where(i => i.Category == LastEdict.Rules.Magic.ItemCategory.PotionBoost).Select(i => i.PotionModifierId)));
         _last = (book, marks);
         return marks;
     }

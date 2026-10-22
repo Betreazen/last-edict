@@ -1,10 +1,10 @@
-using D2.Rules.Battle;
-using D2.Rules.Magic;
-using D2.Rules.Map;
-using D2.Rules.Rng;
-using D2.Rules.Units;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Magic;
+using LastEdict.Rules.Map;
+using LastEdict.Rules.Rng;
+using LastEdict.Rules.Units;
 
-namespace D2.Data.Play;
+namespace LastEdict.Data.Play;
 
 /// <summary>Списки отрядов оперативного слоя, собранные в начале хода (<c>0x4719f8</c> → <c>0x4760b0</c>): свои сильнейшие
 /// (<c>CAi +0x24</c> → <c>CAiOperational +0x1c</c>) и чужие (<c>CAi +0x34</c> → <c>+0x18</c>). Хранятся id: к моменту

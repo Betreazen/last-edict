@@ -1,5 +1,5 @@
-using D2.Rules.Battle;
-using D2.Rules.Rng;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Rng;
 
 /// <summary>Классы атак первого круга Ф4 (Task 6) и то, что измерил корпус 20260906-b/c/e (Task 15):
 /// лечение без бросков, вторая атака юнита, площадная цель с перемешиванием, тик и снятие DoT,
@@ -372,8 +372,8 @@ public class AttacksTests
     /// не 52 (от суммы 105) и не 50 (без крита).</summary>
     [Fact] public void Damage_ModifierDrain_HealsFromHpLost_IncludingCritAndKill()
     {
-        var drain = new D2.Rules.Units.Modifier("drain50",
-            [new D2.Rules.Units.ModifierElement(D2.Rules.Units.ModifierElementType.AttackDrain, Percent: 50)]);
+        var drain = new LastEdict.Rules.Units.Modifier("drain50",
+            [new LastEdict.Rules.Units.ModifierElement(LastEdict.Rules.Units.ModifierElementType.AttackDrain, Percent: 50)]);
         var (plain, t) = Pair(AttackClass.Damage, dam: 100);
         var a = new BattleUnit
         {

@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using D2.Data.Gfx;
-using D2.Data.Map;
+using LastEdict.Data.Gfx;
+using LastEdict.Data.Map;
 using Godot;
 
-namespace D2.Godot;
+namespace LastEdict.Godot;
 
 /// <summary>Мини-карта в окне <c>IMG_PALMAP</c> экрана <c>DLG_ISO_PAL</c>: растр <see cref="MiniMap"/> сдвинут так,
 /// что клетка в центре вида приходится на центр окна, поверх — белая рамка вида постоянного размера

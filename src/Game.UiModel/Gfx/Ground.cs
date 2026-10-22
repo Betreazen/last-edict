@@ -1,6 +1,6 @@
-using D2.Rules.Map;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Gfx;
+namespace LastEdict.Data.Gfx;
 
 /// <summary>Тип земли клетки для отрисовки — порядок создания узоров в движке (<c>TileIndices</c> <c>0x5ab45c</c>),
 /// он же старшинство границ: узор старшего типа наползает на младший (<c>docs/ground-render.md</c>).</summary>

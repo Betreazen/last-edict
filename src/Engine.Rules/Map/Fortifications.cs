@@ -1,6 +1,6 @@
-using D2.Rules.Units;
+using LastEdict.Rules.Units;
 
-namespace D2.Rules.Map;
+namespace LastEdict.Rules.Map;
 
 /// <summary>
 /// Ответ проверки роста города. Значения — коды отказа движка, ранг 1 (cities §2.4, план Ф7 §1.4):
@@ -186,7 +186,7 @@ public static class Fortifications
     /// захватывать города.». Вор — ранг 2 (тот же свиток, живого захода вора не было).
     /// Это про <b>заход</b>: подкуп захватывает город вором без проверки лидера (<see cref="Thieves.Bribe"/>).</summary>
     public static bool CanCapture(int unitCategory, int leaderCategory) =>
-        !D2.Rules.Battle.UnitCategory.IsSummonImpl(unitCategory) && leaderCategory != ThiefLeaderCategory;
+        !LastEdict.Rules.Battle.UnitCategory.IsSummonImpl(unitCategory) && leaderCategory != ThiefLeaderCategory;
 
     /// <summary>
     /// Сколько юнитов влезает в гарнизон деревни. <b>Ранг 3 — открытый вопрос плана §3 п. 1:</b>

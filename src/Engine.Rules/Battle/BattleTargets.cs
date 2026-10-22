@@ -1,6 +1,6 @@
-using D2.Rules.Units;
+using LastEdict.Rules.Units;
 
-namespace D2.Rules.Battle;
+namespace LastEdict.Rules.Battle;
 
 /// <summary>Возможные цели действия — список, который <c>updateBattleActions</c> (GOG <c>0x623d93</c>)
 /// строит для атаки ходящего; действие <c>Attack</c> доступно, если список не пуст. Им пользуется

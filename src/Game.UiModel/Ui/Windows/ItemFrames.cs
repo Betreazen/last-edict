@@ -1,6 +1,6 @@
-using D2.Rules.Magic;
+using LastEdict.Rules.Magic;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>
 /// Рамки допустимости для предметов при перетаскивании: слоты куклы лидера и списки предметов (сумка, склад). Как у движка:

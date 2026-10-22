@@ -1,13 +1,13 @@
 using System.Text.Json;
-using D2.Data.Content;
-using D2.Data.Diagnostics;
-using D2.Data.Map;
-using D2.Data.Menu;
-using D2.Data.Play;
-using D2.Rules.Map;
+using LastEdict.Data.Content;
+using LastEdict.Data.Diagnostics;
+using LastEdict.Data.Map;
+using LastEdict.Data.Menu;
+using LastEdict.Data.Play;
+using LastEdict.Rules.Map;
 using Xunit.Abstractions;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Подписчик зонда порта (<see cref="PortJournalWatcher"/>) на долгой партии: снимок дня и сохранение в начале хода человека,
 /// итоги боёв, события, трасса ИИ — пишутся, а партия идёт так же, как без него (трасса и подписчик ничего не решают).</summary>
@@ -163,11 +163,11 @@ public class PortJournalWatcherTests(ITestOutputHelper output)
         {
         }
 
-        public IReadOnlyList<D2.Rules.Battle.TurnRecord>? Battle(D2.Rules.Battle.BattleState state) => null;
+        public IReadOnlyList<LastEdict.Rules.Battle.TurnRecord>? Battle(LastEdict.Rules.Battle.BattleState state) => null;
 
         public void BattleEnded(BattleOutcome outcome) => Battles++;
 
-        public void EventFired(D2.Rules.Map.EventFiring firing) => Events++;
+        public void EventFired(LastEdict.Rules.Map.EventFiring firing) => Events++;
     }
 
     /// <summary>Одно и то же нарушение одного объекта — не чаще раза в день; новый день — снова.</summary>

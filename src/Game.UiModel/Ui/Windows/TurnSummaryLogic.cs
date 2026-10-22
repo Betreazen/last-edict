@@ -1,9 +1,9 @@
-using D2.Data.Map;
-using D2.Data.Play;
-using D2.Rules.Battle;
-using D2.Rules.Map;
+using LastEdict.Data.Map;
+using LastEdict.Data.Play;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Map;
 
-namespace D2.Data.Ui.Windows;
+namespace LastEdict.Data.Ui.Windows;
 
 /// <summary>
 /// Итоги хода (<c>CTurnSummaryInterf</c> <c>0x4c4b88</c>, <c>DLG_TURNSUMMARY</c>): записи о том, что случилось с игроком, пока ходили другие.

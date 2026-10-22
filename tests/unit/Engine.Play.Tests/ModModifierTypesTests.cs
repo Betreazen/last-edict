@@ -1,8 +1,8 @@
-using D2.Data.Battle;
-using D2.Rules.Battle;
-using D2.Rules.Units;
+using LastEdict.Data.Battle;
+using LastEdict.Rules.Battle;
+using LastEdict.Rules.Units;
 
-namespace D2.Data.Tests;
+namespace LastEdict.Data.Tests;
 
 /// <summary>Типы элементов модификатора, которых в ванили нет (<c>LmodifE</c> 0 <c>L_QTY_TARGET</c> и 14 <c>L_IMMUNITYC</c>), — на
 /// модовых таблицах, как их разбирает движок (<see cref="ModifierLoader"/>, читатели <c>0x5a3d13</c>/<c>0x5a4a90</c>/<c>0x5a31eb</c>).</summary>

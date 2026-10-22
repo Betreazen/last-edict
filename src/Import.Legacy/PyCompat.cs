@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Numerics;
 using System.Text;
 
-namespace D2.Data.Import;
+namespace LastEdict.Data.Import;
 
 /// <summary>Мелочи Python, от которых зависят байты описей прежних сборщиков: <c>round</c> по точному двоичному значению, <c>str.strip</c>,
 /// <c>str.splitlines</c>, <c>str.upper</c> и JSON с <c>ensure_ascii=True</c> (по умолчанию у <c>json.dumps</c>).</summary>

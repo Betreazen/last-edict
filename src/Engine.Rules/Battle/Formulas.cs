@@ -1,6 +1,6 @@
-using D2.Rules.Rng;
+using LastEdict.Rules.Rng;
 
-namespace D2.Rules.Battle;
+namespace LastEdict.Rules.Battle;
 
 /// <summary>Чистые формулы боя. Каждая сверяется с корпусом (С1, ТЗ §7): power, miss, dmg_max,
 /// dmg_buffs, armor, dmg — на нынешнем корпусе 0 расхождений. Порядок вычисления — из журнала:
@@ -61,11 +61,11 @@ public static class Formulas
     /// Имена категорий — ранг 2 (тулсет <c>difficultylevel.cpp</c>, Gog). Сдвиг идёт до штрафа мага-лидера
     /// (<c>0x627a08</c>). Корпус: <c>20260915-passive</c> — юниты ИИ на лёгкой, <c>power</c> 65 при <c>POWER</c> 80.
     /// </summary>
-    public static int AiPowerShift(D2.Rules.Map.Difficulty difficulty) => difficulty switch
+    public static int AiPowerShift(LastEdict.Rules.Map.Difficulty difficulty) => difficulty switch
     {
-        D2.Rules.Map.Difficulty.Easy => -15,
-        D2.Rules.Map.Difficulty.Hard => 5,
-        D2.Rules.Map.Difficulty.VeryHard => 10,
+        LastEdict.Rules.Map.Difficulty.Easy => -15,
+        LastEdict.Rules.Map.Difficulty.Hard => 5,
+        LastEdict.Rules.Map.Difficulty.VeryHard => 10,
         _ => 0,
     };
 

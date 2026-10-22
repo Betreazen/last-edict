@@ -227,7 +227,7 @@ public partial class BattleScreen : Node
             Card(UnitAt(ToField(right.Position)));
             return;
         }
-        if (@event is InputEventKey { Pressed: true, Keycode: Key.Escape }) { CancelItemDrag(); Card(null); return; }
+        if (@event.IsActionPressed("ui_cancel")) { CancelItemDrag(); Card(null); return; }
         if (@event is InputEventMouseMotion motion && _itemDrag is not null)
         {
             // Тащение предмета — та же метка под живым юнитом под курсором, что без него (markAttackTargets 0x632b35 зовётся на каждое

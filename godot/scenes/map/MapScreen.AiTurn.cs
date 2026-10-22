@@ -142,6 +142,7 @@ public partial class MapScreen
         _map.AiSpeed = OS.GetCmdlineUserArgs().Contains("--check") ? MapView.CheckAiSpeed : MapSettings.SpeedFactor(_settings.OpponentSpeed);
         _map.AiAnimate = _settings.PlayAiMoves;
         GameAudio.Of(this).Apply(_settings, preview);
+        InputBindings.Apply(_settings.Bindings);
         _map.RegionCount = _settings.AudioRegions;
         _map.AnimatedIso = _settings.AnimatedIso;
         _map.Clouds = _settings.IsoClouds;
@@ -162,6 +163,19 @@ public partial class MapScreen
                  $"фоны={_settings.AudioRegions} " +
                  $"голоса={_settings.Acknowledgements} слабая={(_settings.LowEndVideoCard ? 1 : 0)}");
     }, Text);
+
+    /// <summary>Окно настроек Last Edict в партии (Э5): выбор — сразу в вид и звук, «Применить» — ещё и в файл (весь: окно держит все поля),
+    /// знамёна — и в палитру. Язык в партии не меняется (<see cref="LastEdict.Data.Settings.SettingsLogic.LanguageLocked"/>).</summary>
+    private LastEdict.Data.Settings.SettingsLogic SettingsLogic() => new(_settings, inGame: true,
+        settings => ApplySettings(settings, preview: true),
+        settings =>
+        {
+            ApplySettings(settings);
+            MapPalette.Banners = settings.Banners;
+            SaveSettings(_ => settings);
+            GD.Print($"settings применено противник={_settings.OpponentSpeed} ходы_ИИ={(_settings.PlayAiMoves ? 1 : 0)} " +
+                     $"итоги={(_settings.ShowTurnSummary ? 1 : 0)} музыка={_settings.MusicVolume} знамёна={(_settings.Banners ? 1 : 0)}");
+        });
 
     private void OnAiStarted()
     {

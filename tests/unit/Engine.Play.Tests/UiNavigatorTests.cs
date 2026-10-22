@@ -64,10 +64,10 @@ public class UiNavigatorTests
         }
 
         var game = new UiNavigator(content.Flow, "DLG_ISO_PAL", UiPhase.Game);
-        Assert.Equal("DLG_OPTIONS", game.Activate("BTN_OPTIONS")!.Target);
+        Assert.Equal("LE_SETTINGS", game.Activate("BTN_OPTIONS")!.Target);   // окно настроек Last Edict (Э5) на месте DLG_OPTIONS
         Assert.Equal("DLG_LOAD_GAME", game.Activate("BTN_LOAD")!.Target);
         Assert.Equal(UiFlowAction.Close, game.Activate("BTN_CLOSE")?.Action);
-        Assert.Equal(["DLG_ISO_PAL", "DLG_OPTIONS"], game.Stack);
+        Assert.Equal(["DLG_ISO_PAL", "LE_SETTINGS"], game.Stack);
 
         var menu = new UiNavigator(content.Flow, "DLG_MAIN_MENU");
         menu.Activate("BTN_SINGLE");
@@ -105,7 +105,7 @@ public class UiNavigatorTests
     {
         var nav = new UiNavigator(Content.Flow, "DLG_MAIN_MENU");
         Assert.Equal(UiFlowAction.Open, nav.Activate("BTN_OPTIONS")!.Action);
-        Assert.Equal(["DLG_MAIN_MENU", "DLG_OPTIONS"], nav.Stack);
+        Assert.Equal(["DLG_MAIN_MENU", "LE_SETTINGS"], nav.Stack);
         Assert.Equal(UiFlowAction.Close, nav.Activate("BTN_CLOSE")!.Action);
         Assert.Equal(["DLG_MAIN_MENU"], nav.Stack);
         Assert.False(nav.Quit);
@@ -142,7 +142,9 @@ public class UiNavigatorTests
     [SkippableFact]
     public void ManualFlow_ReferencesKnownScreensAndElements()
     {
-        var screens = UiScreens.Load(ImportedData.PathOf("ui/screens.json"))
+        // Свои экраны Last Edict (data/ui/own: окно настроек LE_SETTINGS) — тоже экраны графа.
+        var screens = UiScreens.Merge(UiScreens.Load(ImportedData.PathOf("ui/screens.json")),
+                                      UiScreens.Load(Path.Combine(AppContext.BaseDirectory, "data", "ui", "own", "screens.json")))
                                .ToDictionary(s => s.Id);
         var manual = UiFlows.Load(Path.Combine(AppContext.BaseDirectory, "data", "ui", "flow.manual.json"));
         Assert.NotEmpty(manual.Screens);
@@ -150,7 +152,8 @@ public class UiNavigatorTests
         foreach (var e in s.Edges)
         {
             Assert.True(screens.TryGetValue(s.Id, out var scr), $"экран {s.Id}");
-            Assert.Contains(scr.Elements, x => x.Id == e.Element);
+            // Экран без элементов разметки — окно на Control (LE_SETTINGS): события элементов шлёт окно.
+            if (scr.Elements.Count > 0) Assert.Contains(scr.Elements, x => x.Id == e.Element);
             if (e.Target is { } t) Assert.True(screens.ContainsKey(t), $"{s.Id}.{e.Element} -> {t}");
             if (e.Via is { } v) Assert.True(screens.ContainsKey(v), $"{s.Id}.{e.Element} via {v}");
         }

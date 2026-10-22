@@ -93,6 +93,12 @@ public sealed record MenuContext(GameCatalog Catalog, IReadOnlyDictionary<string
 
     public Action<Map.MapSettings>? SettingsChanged { get; init; }
 
+    /// <summary>Окно настроек Last Edict (<see cref="Settings.SettingsLogic"/>): выбор действует сразу (без записи) —
+    /// <see cref="SettingsPreview"/>, «Применить» — <see cref="SettingsApplied"/> (хозяин применяет, пишет файл, меняет язык).</summary>
+    public Action<Map.MapSettings>? SettingsPreview { get; init; }
+
+    public Action<Map.MapSettings>? SettingsApplied { get; init; }
+
     /// <summary>Ролики следующего показа <c>DLG_CINEMATIC</c> (запуск игры — <see cref="Cinematic.Startup"/>); нет — ролик меню
     /// (<see cref="Cinematic.Menu"/>, кнопка «Вступление»). Показ забирает их.</summary>
     public IReadOnlyList<CinematicClip>? Cinematic { get; set; }
@@ -169,6 +175,12 @@ public static class MenuLogic
             context.Settings = settings;
             context.SettingsChanged?.Invoke(settings);
         }, context.Text, inGame: false),
+        // Окно настроек Last Edict (Э5) — на месте DLG_OPTIONS в графе (data/ui/flow.manual.json).
+        Settings.SettingsLogic.Screen => new Settings.SettingsLogic(context.Settings, inGame: false, context.SettingsPreview, settings =>
+        {
+            context.Settings = settings;
+            context.SettingsApplied?.Invoke(settings);
+        }),
         "DLG_CREDITS" => new CreditsLogic(),
         CinematicLogic.Screen => new CinematicLogic(TakeCinematic(context)),
         _ => null,

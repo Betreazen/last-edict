@@ -65,7 +65,7 @@ public partial class MapScreen
             if (element is null || from.Hosted != nav.Top) continue;
             if (from.Logic is { } logic && !logic.Allows(element, from.State)) continue;
             // Выход в меню: в игре — окно подтверждения X005TA0089; здесь сразу.
-            if (from.Hosted == "DLG_OPTIONS" && element == "BTN_QUIT")
+            if (from.Hosted is "DLG_OPTIONS" or LastEdict.Data.Settings.SettingsLogic.Screen && element == "BTN_QUIT")
             {
                 _leaving = true;
                 QuitRequested?.Invoke();
@@ -232,6 +232,7 @@ public partial class MapScreen
         {
             "DLG_SAVE_GAME" => _saving = new SaveGameLogic(dir, session.Snapshot, AutoSave.Title(session.State)),
             "DLG_OPTIONS" => OptionsLogic(),   // показ карты: скорости и ходы ИИ (MapScreen.AiTurn.cs)
+            LastEdict.Data.Settings.SettingsLogic.Screen => SettingsLogic(),   // окно настроек Last Edict (MapScreen.AiTurn.cs)
             "DLG_LOAD_GAME" => new LoadGameLogic(dir, path =>
             {
                 if (_leaving) return;
@@ -541,6 +542,7 @@ public partial class MapScreen
             foreach (var list in top.State.Screen.Elements.Where(e => e.Kind == UiKind.TextList && top.RowsLine(e.Id) != "-"))
                 missing += $" строки_{list.Id}={top.RowsLine(list.Id)}";
         if (top?.DragCursor is { } dragCursor) missing += $" тащение={dragCursor}";
+        if (top?.OverlayLine() is { } overlay) missing += $" {overlay}";   // окно настроек на Control (UiScreenView.Overlay.cs)
         if (top is { ImagelessCards.Count: > 0 }) missing += $" без_значка={string.Join(",", top.ImagelessCards)}";
         if (top is { AdditiveOverlays: > 0 }) missing += $" сложением={top.AdditiveOverlays}";
         if (top is not null && top.State.Screen.Elements.Any(e => e.Id == "TXT_LEMPTY"))

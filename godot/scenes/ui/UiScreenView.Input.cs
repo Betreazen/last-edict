@@ -47,7 +47,9 @@ public partial class UiScreenView
             // Поле ввода с фокусом забирает печатные символы — иначе буква нажала бы кнопку с этой горячей клавишей.
             InputEventKey { Pressed: true } key when _state.Focused is not null && key.Unicode >= ' ' =>
                 _state.Type((char)key.Unicode),
-            InputEventKey { Pressed: true, Echo: false } key => KeyPressed(VirtualKey(key.Keycode)),
+            // Клавиши и геймпад — через действия ввода (InputBindings, data/ui/input.json): переназначенная клавиша жмёт код оригинала.
+            InputEventKey { Pressed: true, Echo: false } or InputEventJoypadButton or InputEventJoypadMotion =>
+                [.. InputBindings.VirtualKeys(@event, _state.Screen, VirtualKey).SelectMany(KeyPressed)],
             // Колесо мыши у движка — стрелки: WndProc 0x5626a3 переводит WM_MOUSEWHEEL в нажатие VK_UP (вперёд) или VK_DOWN (назад) и шлёт
             // его тем же путём, что WM_KEYDOWN (0x562993). Списки сами клавиш не берут (CListBoxInterf, слот клавиатуры — общий 0x5305ac),
             // листают кнопки со стрелками в горячих клавишах (38/40: книга заклинаний, сохранения, сценарии, журнал, наёмники…).
@@ -57,7 +59,8 @@ public partial class UiScreenView
         };
         bool pointed = Dispatch(events, @event is InputEventMouseButton { ButtonIndex: MouseButton.Left or MouseButton.Right } mouse
                                         ? () => Point(mouse) : null,
-                                hotkey: @event is InputEventKey or InputEventMouseButton { ButtonIndex: MouseButton.WheelUp or MouseButton.WheelDown });
+                                hotkey: @event is InputEventKey or InputEventJoypadButton or InputEventJoypadMotion
+                                        or InputEventMouseButton { ButtonIndex: MouseButton.WheelUp or MouseButton.WheelDown });
         if (pointed) Pointed?.Invoke();
     }
 
@@ -318,6 +321,7 @@ public partial class UiScreenView
         string[] parts = step.Split(' ', 2, StringSplitOptions.TrimEntries);
         string verb = parts[0];
         string arg = parts.Length > 1 ? parts[1] : "";
+        if (_overlay is not null && _overlay.Step(verb, arg)) return true;   // окно поверх экрана (UiScreenView.Overlay.cs)
 
         if (verb == "type")
         {
@@ -338,6 +342,15 @@ public partial class UiScreenView
             if (!int.TryParse(arg, out int vk) || KeyOf(vk) is not Key key) return false;
             Push(new InputEventKey { Keycode = key, Pressed = true });
             Push(new InputEventKey { Keycode = key, Pressed = false });
+            return true;
+        }
+
+        if (verb == "pad")
+        {
+            // Кнопка геймпада по имени JoyButton Godot («pad Y»): нажатие и отпускание — через действия ввода (InputBindings).
+            if (!Enum.TryParse(arg, ignoreCase: true, out JoyButton button)) return false;
+            Push(new InputEventJoypadButton { ButtonIndex = button, Pressed = true });
+            Push(new InputEventJoypadButton { ButtonIndex = button, Pressed = false });
             return true;
         }
 

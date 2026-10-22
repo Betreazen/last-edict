@@ -84,6 +84,10 @@ public partial class GameData : Node
 
     private static string? _language;
 
+    /// <summary>Сменить язык на ходу (окно настроек, «Применить» в главном меню): «» — по умолчанию; строки нового языка — при следующем
+    /// обращении (<see cref="Strings"/>), хозяин экранов строит их заново.</summary>
+    public static void UseLanguage(string language) => _language = string.IsNullOrEmpty(language) ? DefaultLanguage : language;
+
     /// <summary>Каталог меню на языке запуска (<see cref="GameContent.CatalogIn"/>): карточки сценариев — с переводом
     /// <c>data/scenarios/lang/&lt;язык&gt;</c>, нет перевода — как в файле.</summary>
     public static LastEdict.Data.Game.GameCatalog Catalog => Content.CatalogIn(Language);
@@ -107,8 +111,16 @@ public partial class GameData : Node
         ArgumentNullException.ThrowIfNull(args);
         int at = Array.IndexOf(args, "--lang");
         if (at >= 0 && at + 1 < args.Length && args[at + 1].Length > 0) return args[at + 1];
-        return GameDataDir.Length == 0 || File.Exists(Path.Combine(GameDataDir, "ui", LastEdict.Data.Ui.UiStrings.FileName("ru"))) ? "ru" : "en";
+        // Язык окна настроек (вкладка «Язык», поле файла interface.language); проверки файл пользователя не читают.
+        if (!args.Any(a => a is "--check" or "--input")
+            && LastEdict.Data.Map.MapSettings.Load(ProjectSettings.GlobalizePath("user://settings.json")).Language is { Length: > 0 } chosen)
+            return chosen;
+        return DefaultLanguage;
     }
+
+    /// <summary>Язык по умолчанию: <c>ru</c>, если импортированы русские строки (слой русификации), иначе <c>en</c>.</summary>
+    public static string DefaultLanguage =>
+        GameDataDir.Length == 0 || File.Exists(Path.Combine(GameDataDir, "ui", LastEdict.Data.Ui.UiStrings.FileName("ru"))) ? "ru" : "en";
 
     /// <summary>Корень данных, выведенных из копии игры (<c>data/**</c> и <c>assets/**</c> импорта, <c>docs/publishing.md</c>): <c>--data-dir</c>,
     /// переменная <c>D2_DATA_DIR</c>, сам <see cref="Root"/>, если в нём уже есть импорт (репозиторий разработчика, переносная сборка),

@@ -6,18 +6,23 @@ using Godot;
 
 namespace LastEdict.Godot;
 
-/// <summary>Быстрое сохранение (<see cref="QuickSave"/>): Q (и Ctrl+Q — у движка код клавиши без учёта Ctrl) на карте в свой ход человека —
+/// <summary>Быстрое сохранение (<see cref="QuickSave"/>): Q (действие <c>map.quicksave</c>; и Ctrl+Q — у движка код клавиши без учёта Ctrl) на карте в свой ход человека —
 /// партия в слот «QuickSave» каталога сохранений, один файл. Только когда карта принимает ввод: нет окон поверх, попапов, боя, столицы и
 /// дипломатии, прицела, хода ИИ и идущего отряда (у движка клавишу берёт обработчик карты <c>CStratInterf</c>, <c>0x48e8e3</c>). Строки о
 /// записи — в чат карты (<see cref="IsoChatLogic"/>), как у движка и у автосохранения.</summary>
 public partial class MapScreen
 {
+    /// <summary>Действие ввода быстрого сохранения (<c>data/ui/input.json</c>, по умолчанию Q; переназначается во вкладке «Управление»).</summary>
+    private const string QuickSaveAction = "map.quicksave";
+
     private IsoChatLogic? _chat;
     private UiScreenView? _chatView;
 
     public override void _UnhandledInput(InputEvent @event)
     {
-        if (@event is InputEventKey { Pressed: true, Echo: false, Keycode: Key.Q } && QuickSaveAllowed) WriteQuickSave();
+        bool pressed = InputBindings.Has(QuickSaveAction) ? @event.IsActionPressed(QuickSaveAction)
+            : @event is InputEventKey { Pressed: true, Echo: false, Keycode: Key.Q };   // нет данных ввода — прежняя Q
+        if (pressed && QuickSaveAllowed) WriteQuickSave();
     }
 
     /// <summary>Карта принимает ввод человека в его ход.</summary>

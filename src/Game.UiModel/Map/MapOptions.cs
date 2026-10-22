@@ -41,6 +41,10 @@ namespace LastEdict.Data.Map;
 /// <c>windowed</c>, <c>borderless</c>, <c>fullscreen</c>), <paramref name="VSync"/> — вертикальная синхронизация, <paramref name="MaxFps"/> —
 /// предел кадров в секунду (0 — без предела, иначе <see cref="MinFps"/>…<see cref="MaxFpsLimit"/>); применяются при запуске игры (сцена
 /// <c>Boot</c>), не в проверках. В памяти настройки — одна плоская запись; в файле — разделы с версией схемы (<see cref="SettingsFile"/>).</para>
+/// <para><paramref name="Language"/> — язык строк (Р14, Э5: окно настроек, вкладка «Язык»): <c>ru</c>, <c>en</c> или пусто — по умолчанию (русский,
+/// если импортирован, иначе английский); ключ <c>--lang</c> главнее.</para>
+/// <para><paramref name="Bindings"/> — переназначенные клавиши и кнопки геймпада (Р12, Э5: вкладка «Управление»,
+/// <see cref="LastEdict.Data.Input.InputActions"/>); null — все по умолчанию.</para>
 /// </summary>
 public sealed record MapSettings(int PlayerSpeed = 1, int OpponentSpeed = 1, bool PlayAiMoves = true,
                                  int FxVolume = 83, int MusicVolume = 80, int Acknowledgements = 66, int AudioRegions = 3,
@@ -54,7 +58,7 @@ public sealed record MapSettings(int PlayerSpeed = 1, int OpponentSpeed = 1, boo
                                  bool InversedPalMap = false, int ScrollSpeed = 0, bool Intro = true,
                                  bool QueueStrip = true,
                                  int MasterVolume = 100, int AmbientVolume = 100, string WindowMode = "windowed", bool VSync = true,
-                                 int MaxFps = 0)
+                                 int MaxFps = 0, string Language = "", LastEdict.Data.Input.KeyBindings? Bindings = null)
 {
     /// <summary>Режим вписывания экрана в окно; неизвестное имя в файле — чёткий (<see cref="LastEdict.Data.Ui.ScreenScaling.Sharp"/>).</summary>
     [System.Text.Json.Serialization.JsonIgnore]
@@ -124,6 +128,8 @@ public sealed record MapSettings(int PlayerSpeed = 1, int OpponentSpeed = 1, boo
         AmbientVolume = Math.Clamp(AmbientVolume, 0, MaxBusVolume),
         WindowMode = LastEdict.Data.Ui.DisplayModes.Name(Display),
         MaxFps = MaxFps <= 0 ? 0 : Math.Clamp(MaxFps, MinFps, MaxFpsLimit),
+        Language = (Language ?? "").Trim().ToLowerInvariant(),
+        Bindings = Bindings is { Count: > 0 } ? Bindings : null,
     };
 
     /// <summary>Быстрые настройки «для слабых» и «для мощных систем» (<c>BTN_LOWEND</c>/<c>BTN_HIGHEND</c>, ответ «Да» на вопрос

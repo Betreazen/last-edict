@@ -12,6 +12,9 @@ docs/godot-notes.md), сам проходит по сценарию и клад�
 UiFlow с --start DLG_MAIN_MENU и --stage-shot. Полноразмерный снимок — 1600×1200, ×2 ближайшим соседом (точка в точку, как
 окно 1600×1200 в режиме «целый»); уменьшенный *-small.png — не больше 200 КБ (палитра 256 цветов, ширина 640 и меньше, пока не влезет).
 
+Широкий экран (Э5): снимок с size (1280×720) снимается в окне этого размера в режиме показа по умолчанию («чёткий», как у игрока),
+без увеличения ×2. --repo <рабочая копия> — снимать сборкой другой рабочей копии (кадр «было» для пары: сборка начала этапа).
+
 Детерминированно: сохранения корпуса фиксированы, --check отключает пересев генератора боя (бой повторяется ход в ход), моды
 выключены (--no-mods), зонд порта выключен (D2_PORT_PROBE=0 — ни журнала, ни надписи «Пометка … записана»), звук — Dummy.
 Мгновение боя задаёт выдержка в мс: ±кадр от прогона к прогону.
@@ -46,6 +49,7 @@ from check import data_env  # noqa: E402  (корпус и графика раб
 OUT = REPO / "docs" / "screenshots"
 GODOT = os.environ.get("GODOT", r"C:\Tools\bin\godot.cmd")
 WIDTH, HEIGHT = 800, 600          # родной размер экранов игры
+WIDE = (1280, 720)                # широкий экран (Э5)
 FULL_SCALE = 2                    # полноразмерный снимок — 1600×1200
 SMALL_MAX_BYTES = 200_000
 SMALL_WIDTHS = (640, 560, 480, 400)
@@ -67,6 +71,11 @@ class Shot:
     at: str | None = None     # клетка в центре вида
     hold_ms: int = 800
     extra: tuple[str, ...] = ()   # свои ключи сцены (--queue-strip — полоса очереди Last Edict, под --check она выключена)
+    size: tuple[int, int] = (WIDTH, HEIGHT)   # окно; не 800×600 — показ «чёткий» и без увеличения (широкий экран, Э5)
+
+    @property
+    def wide(self) -> bool:
+        return self.size != (WIDTH, HEIGHT)
 
 
 SHOTS = (
@@ -80,10 +89,17 @@ SHOTS = (
     Shot("spellbook", SAVE_LATE, "окна=DLG_CAST_SPELL", clicks="panel click BTN_CAST_SPELL"),
     Shot("hero", SAVE_LATE, "окна=DLG_MANAGE_STACK", clicks="select S073KC0001;panel release IMG_LEADER"),
     Shot("diplomacy", SAVE_LATE, "панель=DLG_DIPLOMACY", clicks="panel click BTN_DIPLOMACY;diplo 3"),
+    # Э5: широкий экран, окно настроек, вкладка «Управление», подсказки геймпада.
+    Shot("wide-map", SAVE_LATE, "ground_ready=True", at="60,55", hold_ms=1500, size=WIDE),
+    Shot("settings", SAVE_LATE, "окна=LE_SETTINGS", clicks="ui click BTN_OPTIONS", size=WIDE),
+    Shot("options-old", SAVE_LATE, "окна=DLG_OPTIONS", clicks="ui click BTN_OPTIONS", size=WIDE),   # «было»: окно оригинала (--repo)
+    Shot("controls", SAVE_LATE, "окна=LE_SETTINGS", clicks="ui click BTN_OPTIONS;ui tab Controls", size=WIDE),
+    Shot("gamepad", SAVE_LATE, "ground_ready=True", clicks="select S073KC0001;ui pad DpadDown", at="60,55", hold_ms=1500, size=WIDE,
+         extra=("--shot-window",)),   # полоса подсказок — верхний слой окна, не буфер стенда
 )
 
 
-def window_position() -> list[str]:
+def window_position(size: tuple[int, int] = (WIDTH, HEIGHT)) -> list[str]:
     """Окно — в угол основного экрана подальше от мыши: курсор над окном дал бы подсветку клетки или кнопки на снимке. Мышь на
     другом мониторе — угол любой, окно её и так не накроет."""
     if sys.platform != "win32":
@@ -98,13 +114,15 @@ def window_position() -> list[str]:
     except (AttributeError, OSError):
         return []
     margin = 60
-    x = margin if point.x > screen_w // 2 else max(margin, screen_w - WIDTH - margin)
-    y = margin if point.y > screen_h // 2 else max(margin, screen_h - HEIGHT - margin * 2)
+    x = margin if point.x > screen_w // 2 else max(margin, screen_w - size[0] - margin)
+    y = margin if point.y > screen_h // 2 else max(margin, screen_h - size[1] - margin * 2)
     return ["--position", f"{x},{y}"]
 
 
-def godot_args(shot: Shot, raw: Path, menu_dirs: Path, corpus: Path) -> list[str]:
-    head = [GODOT, "--path", str(REPO / "godot"), "--resolution", f"{WIDTH}x{HEIGHT}", *window_position(), "--audio-driver", "Dummy"]
+def godot_args(shot: Shot, raw: Path, menu_dirs: Path, corpus: Path, repo: Path = REPO) -> list[str]:
+    w, h = shot.size
+    head = [GODOT, "--path", str(repo / "godot"), "--resolution", f"{w}x{h}", *window_position(shot.size), "--audio-driver", "Dummy"]
+    scale = "sharp" if shot.wide else "integer"
     if shot.save is None:
         empty = menu_dirs / "empty"
         empty.mkdir(parents=True, exist_ok=True)
@@ -113,7 +131,7 @@ def godot_args(shot: Shot, raw: Path, menu_dirs: Path, corpus: Path) -> list[str
                 "--ldr", str(empty), "--csg", str(empty), "--leaders", str(menu_dirs / "leaders"),
                 "--campaigns", str(menu_dirs / "campaigns"), "--saves", str(menu_dirs / "saves")]
     args = [*head, "res://scenes/dev/StageHost.tscn", "--", "--no-mods", "--scene", "res://scenes/map/MapScreen.tscn",
-            "--scale", "integer", "--sg", str(corpus / shot.save), "--player", HUMAN, "--check",
+            "--scale", scale, "--sg", str(corpus / shot.save), "--player", HUMAN, "--check",
             "--hold-ms", str(shot.hold_ms), "--shot", str(raw)]
     if shot.at:
         args += ["--at", shot.at]
@@ -131,11 +149,11 @@ def kill_tree(proc: subprocess.Popen) -> None:
     proc.communicate()
 
 
-def capture(shot: Shot, raw: Path, menu_dirs: Path, corpus: Path, env: dict[str, str]) -> str | None:
+def capture(shot: Shot, raw: Path, menu_dirs: Path, corpus: Path, env: dict[str, str], repo: Path = REPO) -> str | None:
     """Прогон сцены с окном; None — снимок есть и сцена дошла до нужного экрана, иначе причина."""
     if shot.save is not None and not (corpus / shot.save).is_file():
         return f"нет сохранения {corpus / shot.save} (корпус: D2_CORPUS_DIR)"
-    proc = subprocess.Popen(godot_args(shot, raw, menu_dirs, corpus), cwd=REPO, env=env, stdout=subprocess.PIPE,
+    proc = subprocess.Popen(godot_args(shot, raw, menu_dirs, corpus, repo), cwd=repo, env=env, stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace")
     try:
         out, _ = proc.communicate(timeout=RUN_TIMEOUT)
@@ -153,15 +171,15 @@ def capture(shot: Shot, raw: Path, menu_dirs: Path, corpus: Path, env: dict[str,
     return None
 
 
-def verify(image: Image.Image) -> tuple[str | None, str]:
+def verify(image: Image.Image, size: tuple[int, int] = (WIDTH, HEIGHT)) -> tuple[str | None, str]:
     """Числа снимка: (причина отказа или None, строка чисел)."""
     rgb = np.asarray(image.convert("RGB")).astype(np.int32)
     luma = rgb @ np.array([299, 587, 114]) // 1000
     dark = float((rgb.sum(axis=2) < 30).mean())
     magenta = int(((rgb[..., 0] >= 250) & (rgb[..., 1] <= 5) & (rgb[..., 2] >= 250)).sum())
     line = f"{image.width}x{image.height} яркость={luma.mean():.0f} разброс={luma.std():.0f} тёмного={dark:.0%} маджента={magenta}"
-    if image.size != (WIDTH, HEIGHT):
-        return f"размер {image.size}, ожидался {WIDTH}x{HEIGHT}", line
+    if image.size != size:
+        return f"размер {image.size}, ожидался {size[0]}x{size[1]}", line
     if luma.std() < 20:
         return "почти однотонный — пустой экран?", line
     if luma.mean() < 25 or dark > 0.5:
@@ -174,7 +192,7 @@ def verify(image: Image.Image) -> tuple[str | None, str]:
 def small_copy(image: Image.Image, path: Path) -> tuple[int, int] | None:
     """Уменьшенная копия ≤ SMALL_MAX_BYTES: палитра 256 цветов, ширина по убыванию, пока не влезет; не влезла и самая узкая — None."""
     for width in SMALL_WIDTHS:
-        height = width * HEIGHT // WIDTH
+        height = width * image.height // image.width
         scaled = image.resize((width, height), Image.Resampling.LANCZOS)
         # Октодерево без размытия ошибки: при той же палитре файл на треть меньше медианного сечения (640×480 влезает).
         scaled.quantize(colors=256, method=Image.Quantize.FASTOCTREE, dither=Image.Dither.NONE).save(path, optimize=True)
@@ -183,8 +201,8 @@ def small_copy(image: Image.Image, path: Path) -> tuple[int, int] | None:
     return None
 
 
-def build(env: dict[str, str]) -> bool:
-    proc = subprocess.run(["dotnet", "build", str(REPO / "godot" / "LastEdict.Godot.csproj"), "-nologo", "-v", "q"], cwd=REPO, env=env,
+def build(env: dict[str, str], repo: Path = REPO) -> bool:
+    proc = subprocess.run(["dotnet", "build", str(repo / "godot" / "LastEdict.Godot.csproj"), "-nologo", "-v", "q"], cwd=repo, env=env,
                           capture_output=True, text=True, encoding="utf-8", errors="replace")
     if proc.returncode != 0:
         print((proc.stdout or "") + (proc.stderr or ""))
@@ -208,6 +226,7 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--hold-ms", action="append", default=[], help="выдержка снимка: ИМЯ=МС")
     parser.add_argument("--out", type=Path, default=OUT, help=f"каталог снимков (по умолчанию {OUT.relative_to(REPO)})")
     parser.add_argument("--no-build", action="store_true", help="не собирать godot/LastEdict.Godot.csproj")
+    parser.add_argument("--repo", type=Path, default=REPO, help="рабочая копия, чьей сборкой снимать (кадр «было»)")
     args = parser.parse_args(argv)
     known = {s.name for s in SHOTS}
     if unknown := set(args.only) - known:
@@ -220,7 +239,7 @@ def main(argv: list[str]) -> int:
         return 1
     env = dict(data_env(), D2_PORT_PROBE="0")
     corpus = Path(env.get("D2_CORPUS_DIR") or REPO / "corpus")
-    if not args.no_build and not build(env):
+    if not args.no_build and not build(env, args.repo):
         print("сборка godot/LastEdict.Godot.csproj не прошла")
         return 1
     args.out.mkdir(parents=True, exist_ok=True)
@@ -229,15 +248,19 @@ def main(argv: list[str]) -> int:
         work = Path(tmp)
         for shot in shots:
             raw = work / f"{shot.name}.png"
-            reason = capture(shot, raw, work / "menu", corpus, env)
+            reason = capture(shot, raw, work / "menu", corpus, env, args.repo)
             numbers = "-"
             if reason is None:
                 with Image.open(raw) as opened:
                     image = opened.convert("RGB")
-                reason, numbers = verify(image)
+                # Широкий кадр снимается из буфера показа (экраны ×2, «чёткий»): окно показывает его уменьшенным — так же и здесь.
+                if shot.wide and image.size != shot.size and abs(image.width / image.height - shot.size[0] / shot.size[1]) < 0.01:
+                    image = image.resize(shot.size, Image.Resampling.LANCZOS)
+                reason, numbers = verify(image, shot.size)
             small_size = None
             if reason is None:
-                image.resize((WIDTH * FULL_SCALE, HEIGHT * FULL_SCALE), Image.Resampling.NEAREST).save(work / "full.png", optimize=True)
+                full_image = image if shot.wide else image.resize((WIDTH * FULL_SCALE, HEIGHT * FULL_SCALE), Image.Resampling.NEAREST)
+                full_image.save(work / "full.png", optimize=True)
                 if (small_size := small_copy(image, work / "small.png")) is None:
                     reason = f"уменьшенная копия и в {SMALL_WIDTHS[-1]} точек больше {SMALL_MAX_BYTES} байт"
             if reason is not None:

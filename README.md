@@ -43,15 +43,15 @@ change what the original could not:
 | Feature | Disciples II | Last Edict |
 |---|---|---|
 | Turn order in battle | hidden | ✅ strip of portraits above the battlefield, exact for the current and the next round |
-| Settings | 15 toggles, no window modes | ✅ window/fullscreen, vsync, frame cap, Alt+Enter, five audio buses · 📋 new settings window: tabs, key and gamepad remapping, language |
+| Settings | 15 toggles, no window modes | ✅ a new settings window with tabs: window/fullscreen, vsync, frame cap, picture scaling, large interface, five audio buses, key and gamepad remapping, language |
 | Rules data | binary tables fixed in the engine | ✅ typed JSON content with schemas and mod layers |
 | Game actions | direct calls | ✅ commands with a state hash — any game can be replayed from its journal |
 | Initiative | rolled each round | ✅ rolled a round ahead, effects applied live |
 | Random numbers | one generator for everything | ✅ separate streams for battles, AI, loot and the map — one AI change no longer reshuffles every battle |
-| Players and races | up to 5 players, one per race | ✅ the same race twice, teams with a shared victory, more than five players, races as mod content · 🚧 lobby and race choice screens |
+| Players and races | up to 5 players, one per race | ✅ the same race twice, teams with a shared victory, more than five players, races as mod content, race choice built from the content (mod races included) · 📋 lobby for friends (E7) |
 | Balance | by feel | ✅ headless simulator: thousands of AI games per seed, win rates by race, first move, snowballing |
-| Screen | 800×600 | 📋 any aspect ratio (16:9, 16:10, 21:9, 4:3), HD art |
-| Input | mouse and keyboard | 📋 full gamepad, Steam Deck |
+| Screen | 800×600 | ✅ any aspect ratio (16:9, 16:10, 21:9, 4:3): the map fills the screen, windows stay sharp · ✅ HD art pipeline (export → upscale → import, BC7) · 📋 an HD art pack |
+| Input | mouse and keyboard | ✅ full gamepad: stick pointer, D-pad between buttons, button hints for Xbox, PlayStation and Steam Deck, remapping · 🚧 tested on real devices |
 | Multiplayer | LAN of 2002 | 📋 friends' rooms via a relay, async games |
 | Modding | external tools | 📋 built-in Studio: building tree, content, maps without a size limit |
 
@@ -63,6 +63,18 @@ change what the original could not:
 
 Who acts next is visible at a glance: portraits in initiative order, the current unit highlighted, waiting and skipping units
 marked; hovering a portrait highlights the unit on the field.
+
+### Widescreen
+
+<a href="https://github.com/Betreazen/last-edict/releases/download/media/compare-widescreen.png"><img src="https://github.com/Betreazen/last-edict/releases/download/media/compare-widescreen-small.png" alt="The world map at 16:9 before and in Last Edict"></a>
+
+The map fills any aspect ratio instead of a 4:3 picture with bars; windows and panels keep their pixel-sharp size.
+
+### Settings window
+
+<a href="https://github.com/Betreazen/last-edict/releases/download/media/compare-settings.png"><img src="https://github.com/Betreazen/last-edict/releases/download/media/compare-settings-small.png" alt="The original options screen and the Last Edict settings window"></a>
+
+One window with tabs — screen, sound, game, battle, controls, language — with hints and a 15-second confirmation for a new window mode.
 
 ## Gallery
 
@@ -79,6 +91,10 @@ marked; hovering a portrait highlights the unit on the field.
 <td><a href="https://github.com/Betreazen/last-edict/releases/download/media/hero.png"><img src="https://github.com/Betreazen/last-edict/releases/download/media/hero-small.png" alt="Hero"></a><br><sub>Hero and inventory</sub></td>
 <td><a href="https://github.com/Betreazen/last-edict/releases/download/media/diplomacy.png"><img src="https://github.com/Betreazen/last-edict/releases/download/media/diplomacy-small.png" alt="Diplomacy"></a><br><sub>Diplomacy</sub></td>
 </tr>
+<tr>
+<td><a href="https://github.com/Betreazen/last-edict/releases/download/media/controls.png"><img src="https://github.com/Betreazen/last-edict/releases/download/media/controls-small.png" alt="Controls"></a><br><sub>Key and gamepad remapping</sub></td>
+<td><a href="https://github.com/Betreazen/last-edict/releases/download/media/gamepad.png"><img src="https://github.com/Betreazen/last-edict/releases/download/media/gamepad-small.png" alt="Gamepad hints"></a><br><sub>Playing with a gamepad: button hints</sub></td>
+</tr>
 </table>
 
 ## Roadmap
@@ -90,8 +106,8 @@ marked; hovering a portrait highlights the unit on the field.
 | E2 Foundation — content schema, effect registry, commands and journal, assemblies | ✅ done |
 | E3 Separation — this repository, own test content, "port vs port" snapshots | ✅ done |
 | E4 Own rules — initiative a round ahead, separate random streams, five races, teams, more players, balance simulator | ✅ done |
-| E5 Screen and input — any aspect ratio, new settings window, gamepad and Steam Deck, HD art pipeline | 📋 next |
-| E6 Building tree window and the Studio | 📋 |
+| E5 Screen and input — any aspect ratio, new settings window, gamepad and Steam Deck, HD art pipeline | ✅ done |
+| E6 Building tree window and the Studio | 📋 next |
 | E7 Play with friends | 📋 |
 
 Decisions and details: [`docs/own-version-roadmap.md`](docs/own-version-roadmap.md).
@@ -99,6 +115,12 @@ Decisions and details: [`docs/own-version-roadmap.md`](docs/own-version-roadmap.
 ## Progress
 
 <!-- Новые записи — сверху: дата, что изменилось, снимки «было / стало» (порядок — docs/media.md). -->
+
+- **2026-10-22 — Screen and input.** The map fills any aspect ratio ([before / after](https://github.com/Betreazen/last-edict/releases/download/media/compare-widescreen.png)); a new settings
+  window with tabs, key and gamepad remapping ([before / after](https://github.com/Betreazen/last-edict/releases/download/media/compare-settings.png)); the whole game is playable with a gamepad —
+  the stick drives the pointer, the D-pad jumps between buttons, hints follow the device (Xbox, PlayStation, Steam Deck); the race
+  choice is built from the content, so mod races appear on their own; an HD art round trip (export → upscale → import, BC7 textures).
+  Hotseat is gone — friends will play over the network (E7). Rules unchanged: the snapshots are identical.
 
 - **2026-10-22 — Own rules.** Initiative is rolled a round ahead and the turn-order strip shows two exact rounds; every system draws
   from its own random stream; rules work on content ids, so a mod race needs no original ids; two players of the same race, teams with

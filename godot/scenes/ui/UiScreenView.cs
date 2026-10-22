@@ -56,6 +56,11 @@ public partial class UiScreenView : Node2D
     /// <c>null</c> — сцена запущена сама и берёт экран из аргументов.</summary>
     public string? Hosted { get; set; }
 
+    /// <summary>Экран во всё окно — рисует паспарту (<see cref="UiScreen.Border"/>): экраны меню (<see cref="UiFlowView"/>) и экран, запущенный
+    /// сам. Окна поверх сцены (карты, боя) его не рисуют: рамка 1280×1024 разбиралась и ставилась при каждом окне сообщения над картой — на
+    /// EliteBook +13 мс к холодному открытию карты из сохранения (окно «Повтор миссии»).</summary>
+    public bool Framed { get; set; }
+
     /// <summary>Место экрана-панели на экране хозяина: левый верхний угол в точках хозяина размером
     /// <see cref="SlotHost"/> (так игра вкладывает <c>DLG_ISO_PAL</c> и <c>DLG_STRATEGIC</c> в места <c>DLG_ISO_VIEW</c>).
     /// null — экран вписывается во всё окно сам.</summary>

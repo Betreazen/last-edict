@@ -48,10 +48,10 @@ public partial class UiScreenView
 
     /// <summary>Паспарту экрана <see cref="UiFit.Letterbox"/> во всё окно (<see cref="UiScreen.Border"/>, <c>ui/layout.json</c>): кадр по центру
     /// разметки под экраном, точка в точку с ней (дыра <c>BORDER_1280</c> — ровно 800×600); всё, что за краем кадра, — чёрное. Панели и окна
-    /// в местах хозяина (<see cref="SlotAt"/>) паспарту не рисуют.</summary>
+    /// в местах хозяина (<see cref="SlotAt"/>) и окна поверх сцены (не <see cref="Framed"/>) паспарту не рисуют.</summary>
     private void BuildBorder(Node2D root, UiScreen screen)
     {
-        if (SlotAt is not null || screen.Fit != UiFit.Letterbox || string.IsNullOrEmpty(screen.Border)) return;
+        if (!(Framed || Hosted is null) || SlotAt is not null || screen.Fit != UiFit.Letterbox || string.IsNullOrEmpty(screen.Border)) return;
         if (FrameImage(screen.Border, out _) is not { } image)
         {
             GD.PrintErr($"{screen.Id}: нет кадра паспарту {screen.Border}");

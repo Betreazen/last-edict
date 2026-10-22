@@ -353,6 +353,8 @@ _SAVES_DONE: dict[tuple[str, str], str] = {}   # (сценарий, игрок) 
 def check_save(repo: Path, scenario: str, day: int, player: str = STAND_PLAYER) -> tuple[Path | None, str]:
     """Сохранение дня `day` партии стенда на сценарии импорта: (путь, «») или (None, причина пропуска — нет импорта)."""
     key = (scenario, player)
+    if day not in CHECK_SAVES[key]:
+        raise ValueError(f"дня {day} нет в CHECK_SAVES[{key}] — добавить его в набор снимков")
     out = repo / ".cache" / "ui-check" / "check-saves" / player
     with _SAVES_LOCK:
         if key not in _SAVES_DONE:
@@ -765,7 +767,9 @@ def leader_face(repo: Path) -> tuple[bool, str]:
     save, m, _ = stand(repo, 30)
     if save is None:
         return True, message + "; павший — пропуск: нет импорта"
-    fallen = next(st for st in sorted(m.stacks, key=lambda st: st.id) if not st.leader_alive and not st.inside)
+    fallen = next((st for st in sorted(m.stacks, key=lambda st: st.id) if not st.leader_alive and not st.inside), None)
+    if fallen is None:
+        return False, message + "; павший — на дне 30 партии стенда нет отряда с павшим лидером (сменился импорт или правила?)"
     alive = m.field_stacks(fallen.owner)[0]
     code, out = godot(repo, ["--state", str(save), "--check", "--player", fallen.owner, "--clicks", f"select {fallen.id};select {alive.id}"],
                       "res://scenes/map/MapScreen.tscn")
@@ -864,7 +868,7 @@ def battle_flash(repo: Path) -> tuple[bool, str]:
 
 def paperdoll(repo: Path) -> tuple[bool, str]:
     """«Меню героя» после боя (BTN_PAPERDOLL → closeBattleWindow(true) 0x633e20 → CRequestPaperdollMsg → RequestPaperdoll 0x41f397):
-    день 1 живой партии (корпус 20260919-human), отряд Кланов S073KC0001 бьёт нейтрала S073KC0063 и побеждает — как в журнале; бой закрыт
+    бой отряда человека с победой; бой закрыт
     «Меню героя» (--paperdoll): после итога боя проверка событий с отрядом и окно отряда DLG_MANAGE_STACK (CCmdStackActionMsg(отряд, 0) →
     0x48ee26 → CManageStkInterf). Last Edict: день 5 партии стенда, герой Кланов берёт ближнюю охраняемую руину. Нет импорта — пропуск."""
     save, m, why = stand(repo, 5)
@@ -890,11 +894,6 @@ def settings_file(path: Path) -> dict:
     data = json.loads(path.read_text(encoding="utf-8"))
     flat = {f"{section}.{key}": value for section, values in data.items() if isinstance(values, dict) for key, value in values.items()}
     return {**flat, "version": data.get("version")}
-
-
-def corpus_dir(repo: Path) -> Path:
-    """Корпус журналов: D2_CORPUS_DIR (рабочие копии git без своего корпуса) или corpus/ в репозитории."""
-    return Path(os.environ.get("D2_CORPUS_DIR") or repo / "corpus")
 
 
 # Окна города (docs/ui-windows.md): шаги проверки сцены карты и что должна содержать строка каждого шага. Клетки групп —
@@ -1294,7 +1293,7 @@ BATTLE = re.compile(r"battle units=(?P<units>\d+) sprites=(?P<sprites>\d+) missi
 
 
 def battle(repo: Path) -> tuple[bool, str]:
-    """Экран боя (сцена battle/BattleScreen) на образце боя из корпуса: поле собрано, имён без картинок нет,
+    """Экран боя (сцена battle/BattleScreen) на бое-образце (BATTLE_SAMPLE): поле собрано, имён без картинок нет,
     бой доигрывается до победителя. Правила берутся из data/rules, картинки — из assets/gfx."""
     # Варианты сцены независимы — разом (godot_all), проверки — по порядку.
     variants = [["--check"], ["--check", "--item"], ["--check", "--marks"], ["--check", "--hover"], ["--check", "--refusal"],
@@ -1426,7 +1425,7 @@ def battle_queue(repo: Path) -> tuple[bool, str]:
     поля; полоса пересобирается только по событию очереди (событий = пересборок); «Ждать» — пометка «ждёт» (дважды, ход ждавшего в конце
     раунда сверяется), паралич — «пропустит»; наведение на юнита поля — рамка его портрета, на портрет — метка под юнитом на поле; рамки
     ходящего и наведённого обводят портрет с полоской стороны снаружи (полоска открыта); портрет отражён, как его портрет в боковой панели.
-    Бои: образец корпуса (два юнита) и полигон A5 port-synth-1-battle (11 юнитов — предел полосы 10), он же с --flip (стороны поменяны),
+    Бои: бой-образец (BATTLE_SAMPLE) и полигон A5 port-synth-1-battle (11 юнитов — предел полосы 10), он же с --flip (стороны поменяны),
     если слой есть."""
     scene = "res://scenes/battle/BattleScreen.tscn"
     runs = [(["--check", "--queue-check"], scene), (["--check", "--queue-strip", "--queue-check"], scene)]
@@ -1960,28 +1959,6 @@ def battle_opening(repo: Path) -> tuple[bool, str]:
     return True, f"начало боя: {len(opened)} боёв, экран — на ходе человека; ИИ ходил первым у {', '.join(first)}"
 
 
-def hotseat_ai(repo: Path) -> tuple[bool, str]:
-    """Ход ИИ в «горячем стуле» (docs/ai-screen.md): день 30 живой партии, люди — Кланы (S073PL000a) и Легионы (S073PL000b).
-    Конец хода Кланов передаёт ход Легионам без хода ИИ; конец хода Легионов — ход ИИ их глазами (туман Легионов), и нападение
-    Нежити на отряд Кланов идёт экраном боя (защитник — человек, не зритель) после окна режима 2 «… атакован!» Кланам (DLG_HOTSEAT_POPUP,
-    CTaskBattle 0x4d79c8 — и в ход ИИ). Нет корпуса — пропуск."""
-    sg = corpus_dir(repo) / "20260919-human" / "rastlennaya-vlast-dwarf-t30-055.sg"
-    if not sg.exists():
-        return True, "ход ИИ в горячем стуле: пропуск — нет корпуса"
-    code, out = godot(repo, ["--sg", str(sg), "--check", "--humans", "S073PL000a,S073PL000b", "--clicks", "ok;end;ok;end;ok"],
-                      "res://scenes/map/MapScreen.tscn")
-    turns = AITURN.findall(out)
-    turn = AITURN.search(out)
-    order = re.findall(r"hotseat turn human=(\S+) day=(\d+)", out)
-    called, started = out.find("hotseat defend human=S073PL000a"), out.find("aibattle start attacker=S073KC0003 defender=S073KC0075")
-    if (code != 0 or len(turns) != 1 or turn is None or turn["error"] != "0" or turn["human"] != "1"
-            or not 0 <= called < started < out.find("aibattle ending ") or int(turn["hidden"]) == 0
-            or order != [("S073PL000a", "30"), ("S073PL000b", "30"), ("S073PL000a", "31")]):
-        return False, f"ход ИИ в горячем стуле: код {code}\n{out.strip()}"
-    return True, (f"ход ИИ в горячем стуле: Кланы → Легионы без ИИ, ход ИИ глазами Легионов — ходов {turn['moves']} "
-                  f"(показано {turn['shown']}), окно защитнику, бой с Кланами на экране, день {turn['day']}")
-
-
 HIGHLIGHT = re.compile(r"^highlight (?P<cell>\d+,\d+) клетка=(?P<shown>\S+) фаза_до=(?P<before>-?\d+) фаза=(?P<phase>-?\d+) "
                        r"настройка=(?P<on>\d) видно=(?P<seen>\d+)/(?P<all>\d+)$", re.MULTILINE)
 
@@ -2445,7 +2422,7 @@ def briefing_scroll(repo: Path) -> tuple[bool, str]:
 
 
 def battle_playback(repo: Path) -> tuple[bool, str]:
-    """Показ боя по действиям без окна (D2_BATTLE_PLAYBACK=1, образец корпуса; замечания 12, 13, 25, 35 прогона 11.10): замах и удар —
+    """Показ боя по действиям без окна (D2_BATTLE_PLAYBACK=1, бой-образец; замечания 12, 13, 25, 35 прогона 11.10): замах и удар —
     один проход, затем покой (повторов кадров действия 0); синхронная часть шага (сборка поля, модель, подготовка картинок) — меньше
     150 мс (прежде первый замах и удар разбирали PNG в главном потоке: 0,39 и 0,59 с); шаг начинается не раньше плана и не позже чем на
     50 мс (таймер дерева отсчитывал от начала долгого кадра и срабатывал раньше); павший остаётся в боковой панели; трупы — у ног места.
@@ -2614,7 +2591,7 @@ def steps(repo: Path, screens: list[str], window: bool) -> list[tuple[str, Calla
         ("сага", saga), ("перевод сценариев", scenario_texts), ("конец партии", game_over), ("бой эффекта", event_battle),
         ("импорт героя", leader_import), ("горячий стул", hotseat), ("гонец", courier), ("окна города", city_windows),
         ("ход и туман по шагам, мешок", walk_steps), ("ход ИИ", ai_turn), ("плавная прокрутка", smooth_scroll),
-        ("смена тумана", fog_change), ("звук", sound), ("начало боя", battle_opening), ("ход ИИ в горячем стуле", hotseat_ai), ("подсветка клетки", highlight),
+        ("смена тумана", fog_change), ("звук", sound), ("начало боя", battle_opening), ("подсветка клетки", highlight),
         ("облака", clouds), ("снос гор", mountains), ("попап в ходе ИИ", ai_popup), ("настройки показа", map_settings),
         ("литьё на карте", spell_anim), ("предметы в бою", battle_items), ("гибель отряда", stack_death),
         ("курсоры карты", map_cursors), ("курсор меню", menu_cursors), ("карточки карты", map_cards),

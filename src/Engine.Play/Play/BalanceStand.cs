@@ -79,7 +79,8 @@ public static class BalanceStand
         foreach (int want in days.Order())
         {
             while (session.Map.Turn < want && !session.Over) session.Execute(new EndTurnCommand());
-            if (session.Map.Turn != want) yield break;
+            if (session.Map.Turn > want) continue;   // день раньше начала партии
+            if (session.Map.Turn < want) yield break;   // партия кончилась
             yield return (want, HumanTurn(session.Snapshot(), book, human));
         }
     }

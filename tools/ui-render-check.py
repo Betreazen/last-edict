@@ -967,6 +967,77 @@ def gamepad(repo: Path) -> tuple[bool, str]:
                   f"{len(map_hints)} на карте, «✥» в окне")
 
 
+HD_SCREENS = ["DLG_MAIN_MENU", "DLG_SINGLE_PLAYER", "DLG_CHOOSE_RACE", "DLG_ACTION_RESULT", "DLG_BATTLE_A", "DLG_STRATEGIC",
+              "DLG_ISO_PAL", "DLG_CAPITAL", "DLG_CITY_STACK"]
+SPRITE = re.compile(r"^sprite (\S+) (\S+?)(?::(\d+))?$", re.M)
+
+
+def hd_mods(repo: Path) -> Path | str:
+    """Синтетический HD-слой (Р19) для проверки: интерфейс и портреты выгружены tools/hd/hd_layer.py, «апскейл» ×2 ближайшим соседом
+    (вместо Topaz — точки те же, только вдвое гуще), импорт тем же инструментом в мод. Строится один раз в .cache/ui-check/hd."""
+    base = repo / ".cache" / "ui-check" / "hd"
+    mod = base / "mods" / "hd"
+    if (mod / "import-report.txt").exists():
+        return base / "mods"
+    sys.path.insert(0, str(repo / "tools" / "hd"))
+    import hd_layer
+    from PIL import Image
+    export, up = base / "export", base / "up"
+    if hd_layer.export(export, ["ui", "faces"], None, repo / "data", hd_layer.assets_root()) != 0:
+        return "выгрузка не прошла"
+    up.mkdir(parents=True, exist_ok=True)
+    for f in export.glob("*.png"):
+        with Image.open(f) as im:
+            im.resize((im.width * 2, im.height * 2), Image.Resampling.NEAREST).save(up / f.name)
+    hd_layer.import_layer(export, up, mod, "hd-check")
+    hd_layer.compress(mod)   # DDS BC7 рядом с PNG — текстуры берут его
+    return base / "mods"
+
+
+def hd_layer_step(repo: Path) -> tuple[bool, str]:
+    """HD-графика (Р19, scale в описях): слой ×2 интерфейса и портретов (hd_mods) — экраны с ним и без совпадают по каждому спрайту:
+    кадр, место и нарисованный размер (текстура HD — логического размера), непрозрачных точек почти столько же (логическая копия
+    HD — уменьшение). Портрет панели карты — того же места и размера. Нет импорта — пропуск."""
+    if not (repo / "data" / "ui" / "assets.json").exists():
+        return True, "HD-слой: пропуск — нет импорта"
+    mods = hd_mods(repo)
+    if isinstance(mods, str):
+        return False, f"HD-слой: {mods}"
+    report = (mods / "hd" / "import-report.txt").read_text(encoding="utf-8").splitlines()[0]
+    runs = [(["--screen", sid, "--check", "--sprites"], "res://scenes/ui/UiScreen.tscn") for sid in HD_SCREENS]
+    plain = godot_all(repo, runs)
+    layered = godot_all(repo, [([*extra, "--mods", str(mods)], scene) for extra, scene in runs])
+    compared = 0
+    packed = sum(int(m) for _, out in layered for m in re.findall(r"^hd текстур_из_dds=(\d+)", out, re.M))
+    for sid, (c1, o1), (c2, o2) in zip(HD_SCREENS, plain, layered):
+        a = {m[1]: (m[2], int(m[3] or 0)) for m in SPRITE.finditer(o1)}
+        b = {m[1]: (m[2], int(m[3] or 0)) for m in SPRITE.finditer(o2)}
+        if c1 != 0 or c2 != 0 or not a or a.keys() != b.keys():
+            return False, f"HD-слой, {sid}: коды {c1}/{c2}, спрайты {sorted(a)} / {sorted(b)}\n{o2.strip()[-2000:]}"
+        for key, (place, opaque) in a.items():
+            place2, opaque2 = b[key]
+            if place != place2 or abs(opaque - opaque2) > max(20, opaque // 30):
+                return False, f"HD-слой, {sid} {key}: {place}:{opaque} без слоя, {place2}:{opaque2} со слоем"
+            compared += 1
+    save, m, why = stand(repo, 21)
+    if save is None:
+        return True, f"HD-слой: {compared} спрайтов на {len(HD_SCREENS)} экранах совпали ({report}); карта — пропуск: {why}"
+    own = m.field_stacks(STAND_PLAYER)[0]
+    lines = []
+    for extra in ([], ["--mods", str(mods)]):
+        code, out = godot(repo, ["--state", str(save), "--check", "--player", STAND_PLAYER, "--clicks", f"select {own.id}", *extra],
+                          "res://scenes/map/MapScreen.tscn")
+        face = re.search(r"^panel select .* портрет=1 лицо=(\S+) кадр=(\S+) ", out, re.M)
+        if code != 0 or face is None:
+            return False, f"HD-слой, карта: код {code}, портрета нет\n{out.strip()[-2000:]}"
+        lines.append((face[1], face[2]))
+    if lines[0] != lines[1]:
+        return False, f"HD-слой, портрет панели карты: без слоя {lines[0]}, со слоем {lines[1]}"
+    dds = f"текстур из DDS {packed}" if packed else "DDS нет (слой не сжат)"
+    return True, (f"HD-слой: {compared} спрайтов на {len(HD_SCREENS)} экранах — те же места и размеры со слоем ×2 ({report}; {dds}); "
+                  f"портрет панели карты {lines[0][0]} — то же место {lines[0][1]}")
+
+
 # Окна города (docs/ui-windows.md): шаги проверки сцены карты и что должна содержать строка каждого шага. Клетки групп —
 # «x» воин, «b» большой, «.» пусто; позиции 0…5, чётные — передний ряд.
 def city_cases(repo: Path) -> list[tuple[Path, str, list[tuple[str, list[str]]]]] | str:
@@ -2700,7 +2771,7 @@ def steps(repo: Path, screens: list[str], window: bool) -> list[tuple[str, Calla
         ("импорт героя", leader_import), ("окна города", city_windows),
         ("ход и туман по шагам, мешок", walk_steps), ("ход ИИ", ai_turn), ("плавная прокрутка", smooth_scroll),
         ("смена тумана", fog_change), ("звук", sound), ("начало боя", battle_opening), ("подсветка клетки", highlight),
-        ("облака", clouds), ("снос гор", mountains), ("попап в ходе ИИ", ai_popup), ("настройки показа", map_settings), ("окно настроек", settings_window), ("переназначение клавиш", rebinding), ("геймпад", gamepad),
+        ("облака", clouds), ("снос гор", mountains), ("попап в ходе ИИ", ai_popup), ("настройки показа", map_settings), ("окно настроек", settings_window), ("переназначение клавиш", rebinding), ("геймпад", gamepad), ("HD-слой", hd_layer_step),
         ("литьё на карте", spell_anim), ("предметы в бою", battle_items), ("гибель отряда", stack_death),
         ("курсоры карты", map_cursors), ("курсор меню", menu_cursors), ("карточки карты", map_cards),
         ("вписывание экранов", screen_fit), ("рамка и слои карты", map_frame), ("палитра карты", map_palette), ("вор у цели", noble), ("выбор навыка лидера", upgrade_leader)]]

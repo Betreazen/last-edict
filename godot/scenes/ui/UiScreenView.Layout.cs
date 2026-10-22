@@ -57,10 +57,10 @@ public partial class UiScreenView
             GD.PrintErr($"{screen.Id}: нет кадра паспарту {screen.Border}");
             return;
         }
-        var size = image.GetSize();
+        var size = ImageScales.Logical(image);
         root.AddChild(new Sprite2D
         {
-            Name = "Border", Texture = Texture(image), Centered = false,
+            Name = "Border", Texture = Texture(image), Centered = false, TextureFilter = ImageScales.Filter(Texture(image), TextureFilterEnum.ParentNode),
             Position = new Vector2((screen.Design.Width - size.X) / 2, (screen.Design.Height - size.Y) / 2),
         });
     }

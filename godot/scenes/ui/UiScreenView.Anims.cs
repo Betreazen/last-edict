@@ -39,7 +39,7 @@ public partial class UiScreenView
         foreach (var sprite in _sprites.Values)
         {
             if (!sprite.Visible || AnimFrames((string)sprite.GetMeta(FrameMeta)) is not { Length: > 1 } frames) continue;
-            if (FrameImage(frames[tick % frames.Length], out _) is { } image) sprite.Texture = Texture(image);
+            if (FrameImage(frames[tick % frames.Length], out _) is { } image) Show(sprite, image);
         }
     }
 }

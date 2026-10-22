@@ -1,0 +1,98 @@
+using System.IO;
+using System.Runtime.CompilerServices;
+using Godot;
+
+namespace LastEdict.Godot;
+
+/// <summary>
+/// Множитель HD-картинок (Р19, <c>scale</c> в описях): файл крупнее кадра в <c>scale</c> раз, а раскладка, попадания и сложение кадров
+/// считаются в логических точках. Множитель живёт рядом с картинкой (<see cref="ConditionalWeakTable{TKey,TValue}"/>: не держит её),
+/// текстура получает логический размер (<see cref="Texture"/>, <c>SetSizeOverride</c>) — спрайт рисуется в логическом месте, а точки берёт
+/// из полной картинки. Кто складывает картинки по точкам, берёт логическую копию (<see cref="ToLogical"/>). Сжатая копия файла (DDS BC7 с
+/// mip-уровнями рядом с PNG, <c>godot/bench/hd_compress.gd</c>) идёт в текстуру вместо несжатой картинки — в видеопамяти ≈ ×0,33.
+/// </summary>
+public static class ImageScales
+{
+    private sealed record Info(int Scale, string? Dds);
+
+    /// <summary>Текстур, созданных из сжатой копии (DDS), — для проверок.</summary>
+    public static int FromDds { get; private set; }
+
+    private static readonly ConditionalWeakTable<Image, Info> Scales = new();
+
+    /// <summary>Множитель картинки; не задан — 1.</summary>
+    public static int Of(Image image) => image is not null && Scales.TryGetValue(image, out var info) ? info.Scale : 1;
+
+    /// <summary>Запомнить множитель картинки (больше 1) и вернуть её; <paramref name="file"/> — файл, из которого она прочитана как есть:
+    /// рядом с ним ищется сжатая копия <c>.dds</c> для текстуры.</summary>
+    public static Image With(Image image, int scale, string? file = null)
+    {
+        if (image is not null && scale > 1) Scales.AddOrUpdate(image, new Info(scale, file is null ? null : Dds(file)));
+        return image!;
+    }
+
+    /// <summary>Картинку изменили (подкраска, маска): текстура — из её точек, а не из сжатой копии файла; множитель остаётся.</summary>
+    public static Image Detach(Image image)
+    {
+        if (image is not null && Scales.TryGetValue(image, out var info) && info.Dds is not null) Scales.AddOrUpdate(image, info with { Dds = null });
+        return image!;
+    }
+
+    /// <summary>Сжатая копия файла (<c>.dds</c> рядом, не старше файла); нет — null.</summary>
+    public static string? Dds(string file)
+    {
+        string dds = Path.ChangeExtension(file, ".dds");
+        return File.Exists(dds) && File.GetLastWriteTimeUtc(dds) >= File.GetLastWriteTimeUtc(file) ? dds : null;
+    }
+
+    /// <summary>Картинка сжатой копии (BC7 с mip-уровнями) или null, если не читается.</summary>
+    public static Image? LoadDds(string dds)
+    {
+        var image = new Image();
+        return image.LoadDdsFromBuffer(File.ReadAllBytes(dds)) == Error.Ok ? image : null;
+    }
+
+    /// <summary>Логический размер картинки — в точках кадра.</summary>
+    public static Vector2I Logical(Image image)
+    {
+        int scale = Of(image);
+        var size = image.GetSize();
+        return scale <= 1 ? size : new Vector2I(Mathf.Max(1, size.X / scale), Mathf.Max(1, size.Y / scale));
+    }
+
+    /// <summary>Картинка в логических точках: без множителя — она сама, иначе уменьшенная копия (для масок, сложения кадров, проверок точек;
+    /// показ идёт текстурой полной картинки, <see cref="Texture"/>).</summary>
+    public static Image ToLogical(Image image)
+    {
+        if (Of(image) <= 1) return image;
+        var copy = (Image)image.Duplicate();
+        var size = Logical(image);
+        copy.Resize(size.X, size.Y, Image.Interpolation.Nearest);   // ближайшим: край альфы чёткий — маски и попадания (A > 0) не растут ореолом
+        return copy;
+    }
+
+    /// <summary>Текстура картинки: с множителем — логического размера (<c>SetSizeOverride</c>), точки — полные.</summary>
+    public static ImageTexture Texture(Image image)
+    {
+        var source = Scales.TryGetValue(image, out var info) && info.Dds is { } dds && LoadDds(dds) is { } packed ? packed : image;
+        if (source != image) FromDds++;
+        var texture = ImageTexture.CreateFromImage(source);
+        if (Of(image) > 1) Mark(texture, Logical(image));
+        return texture;
+    }
+
+    /// <summary>Метка HD-текстуры: по ней узел берёт сглаживание с mip-уровнями (<see cref="Filter"/>).</summary>
+    public const string HdMeta = "hd";
+
+    /// <summary>HD-текстура: логический размер и метка.</summary>
+    public static void Mark(ImageTexture texture, Vector2I logical)
+    {
+        texture.SetSizeOverride(logical);
+        texture.SetMeta(HdMeta, true);
+    }
+
+    /// <summary>Фильтр узла текстуры: HD — сглаживание с mip-уровнями (у HD при показе в окне меньше полного размера ближайший рябит),
+    /// иначе — <paramref name="pixel"/> (пиксельная графика — «ближайший»).</summary>
+    public static CanvasItem.TextureFilterEnum Filter(Texture2D? texture, CanvasItem.TextureFilterEnum pixel) =>
+        texture is not null && texture.HasMeta(HdMeta) ? CanvasItem.TextureFilterEnum.LinearWithMipmaps : pixel;
+}

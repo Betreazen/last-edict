@@ -121,7 +121,7 @@ public static class SettingsTheme
         string path = UiAssets.PathOf(asset, GameData.UiAssetsRoot);
         if (!File.Exists(path)) return null;
         var image = Image.LoadFromFile(path);
-        return image is null ? null : ImageTexture.CreateFromImage(image);
+        return image is null ? null : ImageScales.Texture(ImageScales.With(image, asset.Factor));   // HD — логического размера (9-patch)
     }
 
     private static FontFile? Font(string file)

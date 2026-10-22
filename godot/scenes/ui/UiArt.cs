@@ -19,14 +19,20 @@ namespace LastEdict.Godot;
 ///
 /// <para>Ключ кадра — его имя из разметки: все входы разбора (опись <see cref="GameData.Content"/>, корни графики, слои модов) за запуск
 /// не меняются. Картинки и шрифты общие: потребители их не меняют (подкраска, маска, вырезка и зеркало делаются над свежей копией до
-/// того, как она попала сюда); общий <see cref="LabelSettings"/> тоже только читается. Сверх <see cref="ImageLimitBytes"/> картинки и
-/// текстуры забываются без <c>Dispose</c> — кто ещё держит их (спрайт живого экрана), держит дальше. Все вызовы — из главного потока.</para></summary>
+/// того, как она попала сюда); общий <see cref="LabelSettings"/> тоже только читается. Сверх <see cref="ImageLimitBytes"/> забываются самые
+/// давно не нужные картинки и их текстуры (LRU, Э5 — для HD: прежде кэш сбрасывался целиком) без <c>Dispose</c> — кто ещё держит их (спрайт
+/// живого экрана), держит дальше. Все вызовы — из главного потока.</para></summary>
 public static class UiArt
 {
     /// <summary>Предел кэша картинок по байтам; дальше картинки и текстуры начинаются заново (портреты карточек копятся за партию).</summary>
     public const long ImageLimitBytes = 256L << 20;
 
-    private static readonly Dictionary<string, (Image? Image, string? Problem)> _images = new(StringComparer.OrdinalIgnoreCase);
+    private sealed record Entry(string Frame, Image? Image, string? Problem, long Bytes);
+
+    private static readonly Dictionary<string, LinkedListNode<Entry>> _images = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Порядок давности кадров: в начале — последний нужный, с конца забываются.</summary>
+    private static readonly LinkedList<Entry> _order = new();
     private static readonly Dictionary<Image, ImageTexture> _textures = new();
     private static readonly Dictionary<string, FontFile> _faces = new(StringComparer.OrdinalIgnoreCase);
     private static readonly Dictionary<(string File, int Size, int Line, Color Color), LabelSettings> _settings = new();
@@ -37,6 +43,7 @@ public static class UiArt
     public static void ForgetImages()
     {
         _images.Clear();
+        _order.Clear();
         _textures.Clear();
         _bytes = 0;
     }
@@ -47,31 +54,44 @@ public static class UiArt
     /// <summary>Картинка кадра, если она уже разбиралась (в том числе «нет такой» — <c>null</c>), и пояснение к пропуску.</summary>
     public static bool TryImage(string frame, out Image? image, out string? problem)
     {
-        bool found = _images.TryGetValue(frame, out var entry);
-        (image, problem) = entry;
-        return found;
+        if (!_images.TryGetValue(frame, out var node))
+        {
+            (image, problem) = (null, null);
+            return false;
+        }
+        _order.Remove(node);
+        _order.AddFirst(node);
+        (image, problem) = (node.Value.Image, node.Value.Problem);
+        return true;
     }
 
     /// <summary>Запомнить разобранную картинку кадра (или её отсутствие с пояснением) и вернуть её.</summary>
     public static Image? Remember(string frame, Image? image, string? problem)
     {
         long size = image?.GetDataSize() ?? 0;
-        if (_bytes + size > ImageLimitBytes)
+        // Сверх предела — забыть самые давние (без Dispose: картинки и текстуры у живых экранов остаются, остальные заберёт сборщик мусора).
+        while (_bytes + size > ImageLimitBytes && _order.Last is { } oldest)
         {
-            _images.Clear();     // без Dispose: картинки и текстуры у живых экранов остаются, остальные заберёт сборщик мусора
-            _textures.Clear();
-            _bytes = 0;
+            _order.RemoveLast();
+            _images.Remove(oldest.Value.Frame);
+            if (oldest.Value.Image is { } old) _textures.Remove(old);
+            _bytes -= oldest.Value.Bytes;
         }
-        _images[frame] = (image, problem);
+        if (_images.Remove(frame, out var stale))
+        {
+            _order.Remove(stale);
+            _bytes -= stale.Value.Bytes;
+        }
+        _images[frame] = _order.AddFirst(new Entry(frame, image, problem, size));
         _bytes += size;
         return image;
     }
 
-    /// <summary>Текстура картинки, одна на картинку.</summary>
+    /// <summary>Текстура картинки, одна на картинку; у HD-картинки — логического размера (<see cref="ImageScales.Texture"/>).</summary>
     public static ImageTexture Texture(Image image)
     {
         if (!_textures.TryGetValue(image, out var texture))
-            _textures[image] = texture = ImageTexture.CreateFromImage(image);
+            _textures[image] = texture = ImageScales.Texture(image);
         return texture;
     }
 

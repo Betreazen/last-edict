@@ -20,6 +20,14 @@ public sealed record UiAsset
     /// <summary>Имя анимации, если это её кадр. Тогда <see cref="Name"/> — «анимация/номер»: имена кадров внутри
     /// архива односимвольные и у разных анимаций совпадают, а экран ссылается на анимацию целиком.</summary>
     public string? Anim { get; init; }
+
+    /// <summary>Множитель файла (HD, Р19): файл крупнее кадра в <c>scale</c> раз, <see cref="W"/>×<see cref="H"/> — логический размер кадра
+    /// (раскладка экранов, попадания). Нет — 1, файл размером с кадр.</summary>
+    public int? Scale { get; init; }
+
+    /// <summary>Множитель файла: <see cref="Scale"/>, не больше 1 — 1.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public int Factor => Scale is > 1 ? Scale.Value : 1;
 }
 
 /// <summary>Список кадров интерфейса: чтение <c>data/ui/assets.json</c> и наложение модов.

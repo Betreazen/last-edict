@@ -187,7 +187,7 @@ public partial class BattleView : Node2D
                 var sprite = new Sprite2D
                 {
                     Texture = frames[0], Centered = false, Position = new Vector2(mark.X, mark.Y), ZIndex = mark.Layer,
-                    TextureFilter = TextureFilterEnum.Nearest,
+                    TextureFilter = ImageScales.Filter(frames[0], TextureFilterEnum.Nearest),
                 };
                 Blend(sprite, mark);
                 _layer.AddChild(sprite);
@@ -235,7 +235,7 @@ public partial class BattleView : Node2D
                 var node = new Sprite2D
                 {
                     Texture = textures[PanelFrame(textures.Length)], Centered = false, Position = new Vector2(frame.X, frame.Y),
-                    ZIndex = frame.Layer, TextureFilter = TextureFilterEnum.Nearest,
+                    ZIndex = frame.Layer, TextureFilter = ImageScales.Filter(textures[0], TextureFilterEnum.Nearest),
                 };
                 Blend(node, frame);
                 into.AddChild(node);
@@ -290,7 +290,8 @@ public partial class BattleView : Node2D
                 var at = scene.BigFaceAt(left);
                 into.AddChild(new Sprite2D
                 {
-                    Texture = bigFrames[0], Centered = false, Position = new Vector2(at.X, at.Y), TextureFilter = TextureFilterEnum.Nearest,
+                    Texture = bigFrames[0], Centered = false, Position = new Vector2(at.X, at.Y),
+                    TextureFilter = ImageScales.Filter(bigFrames[0], TextureFilterEnum.Nearest),
                     FlipH = !left,   // IMG_RBIGFACE — отражён всегда, левый — никогда (0x64f62a: !bigFace[+4]; ранг 1, снимки 28.09)
                 });
                 BigText(into, scene.BigFaceAt(left, text: true), Text("X100TA0608").Replace("%NAME%", name)
@@ -569,7 +570,7 @@ public partial class BattleView : Node2D
         if (_uiImages.TryGetValue(name, out var cached) && (cached is null || IsInstanceValid(cached))) return cached;
         var texture = GameData.Content.AssetsByName.TryGetValue(name, out var asset) && UiAssets.PathOf(asset, GameData.UiAssetsRoot) is var path
                       && File.Exists(path)
-            ? ImageTexture.CreateFromImage(Image.LoadFromFile(path)) : null;
+            ? ImageScales.Texture(ImageScales.With(Image.LoadFromFile(path), asset!.Factor)) : null;   // HD — логического размера
         return _uiImages[name] = texture;
     }
 

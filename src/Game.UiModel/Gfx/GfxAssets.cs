@@ -19,6 +19,9 @@ public sealed record GfxImage
     /// <summary>Угол файла в холсте <see cref="W"/>×<see cref="H"/>, <c>[x, y]</c>: сборка пишет только занятую часть кадра (Г19,
     /// <see cref="GfxPlace"/>). Нет поля — файл и есть холст (мод, прежняя сборка): занятую часть ищет рантайм.</summary>
     [JsonPropertyName("at")] public IReadOnlyList<int>? At { get; init; }
+    /// <summary>Множитель файла (HD, Р19): файл крупнее холста в <c>scale</c> раз; <see cref="W"/>, <see cref="H"/> и <see cref="At"/> — в
+    /// логических точках холста. Нет — 1.</summary>
+    [JsonPropertyName("scale")] public int? Scale { get; init; }
 }
 
 /// <summary>Анимация: каталог кадров (от <c>assets/gfx</c>), размер холста первого кадра и имена кадров по порядку —
@@ -38,6 +41,8 @@ public sealed record GfxAnim
     /// <summary>Углы файлов кадров в холсте <see cref="W"/>×<see cref="H"/> подряд, <c>[x0, y0, x1, y1, …]</c> (Г19, <see cref="GfxPlace"/>).
     /// Нет поля (мод, прежняя сборка, кадры с разным холстом) — файлы и есть холсты: занятую часть ищет рантайм.</summary>
     [JsonPropertyName("at")] public IReadOnlyList<int>? At { get; init; }
+    /// <summary>Множитель файлов кадров (HD, Р19), как у <see cref="GfxImage.Scale"/>. Нет — 1.</summary>
+    [JsonPropertyName("scale")] public int? Scale { get; init; }
 }
 
 /// <summary>Где файл кадра лежит в холсте: сборка (<c>tools/gfx-assets</c>, Г19 <c>docs/perf-log.md</c>) пишет только занятую часть
@@ -136,7 +141,7 @@ public sealed class GfxAssets
     {
         ArgumentNullException.ThrowIfNull(image);
         string path = Combine(root, image.File);
-        Note(path, image.At is [var x, var y] ? new GfxPlace(x, y, image.W, image.H) : null);
+        Note(path, image.At is [var x, var y] ? new GfxPlace(x, y, image.W, image.H) : null, image.Scale);
         return path;
     }
 
@@ -149,7 +154,7 @@ public sealed class GfxAssets
         for (int i = 0; i < paths.Length; i++)
         {
             paths[i] = Combine(root, $"{anim.Dir}/{anim.Frames[i]}{anim.Ext}");
-            Note(paths[i], at is null ? null : new GfxPlace(at[2 * i], at[(2 * i) + 1], anim.W, anim.H));
+            Note(paths[i], at is null ? null : new GfxPlace(at[2 * i], at[(2 * i) + 1], anim.W, anim.H), anim.Scale);
         }
         return paths;
     }
@@ -158,12 +163,19 @@ public sealed class GfxAssets
     /// загрузчики кадров берут только пути от них. Нет — файл и есть холст (мод, прежняя сборка): занятую часть ищет рантайм.</summary>
     public static GfxPlace? PlaceOf(string path) => _places.TryGetValue(path, out var place) ? place : null;
 
+    /// <summary>Множитель файла (HD) по пути от <see cref="PathOf"/> или <see cref="FramePaths"/>; нет — 1.</summary>
+    public static int ScaleOf(string path) => _scales.TryGetValue(path, out int scale) ? scale : 1;
+
+    private static readonly ConcurrentDictionary<string, int> _scales = new(StringComparer.Ordinal);
+
     /// <summary>Запомнить угол файла по последней описи, что выдала путь; в ней угла нет — забыть прежний (перезагрузка описей, мод без
     /// <c>at</c> поверх того же пути): устаревший угол сдвинул бы картинку молча.</summary>
-    private static void Note(string path, GfxPlace? place)
+    private static void Note(string path, GfxPlace? place, int? scale)
     {
         if (place is { } p) _places[path] = p;
         else if (!_places.IsEmpty) _places.TryRemove(path, out _);
+        if (scale is > 1) _scales[path] = scale.Value;
+        else if (!_scales.IsEmpty) _scales.TryRemove(path, out _);
     }
 
     public static GfxArchive Parse(string json) =>

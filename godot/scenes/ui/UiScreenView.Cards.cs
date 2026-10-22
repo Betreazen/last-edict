@@ -78,7 +78,7 @@ public partial class UiScreenView
                 if (card is null) continue;
                 if (card.Overlay is { Length: > 0 } over && FrameImage(over, out _) is { } overImage)
                 {
-                    slot.Overlay.Texture = Texture(overImage);
+                    Show(slot.Overlay, overImage);
                     slot.Overlay.Position = new Vector2(slot.Cell.X + card.ImageAt.X - origin.X, slot.Cell.Y + card.ImageAt.Y - origin.Y);
                     // Наложение — по смешению своей картинки: отметка изученного заклинания ICNSY001 ложится сложением (opacity 300),
                     // копией её чёрный фон закрывал значок (замечание 23 прогона 11.10).
@@ -86,7 +86,7 @@ public partial class UiScreenView
                 }
                 if (card.Image is { Length: > 0 } frame && FrameImage(frame, out _) is { } image)
                 {
-                    slot.Image.Texture = Texture(image);
+                    Show(slot.Image, image);
                     slot.Image.SetMeta(FrameMeta, frame);
                     slot.Image.Position = new Vector2(slot.Cell.X + card.ImageAt.X - origin.X, slot.Cell.Y + card.ImageAt.Y - origin.Y);
                     slot.Image.Modulate = card.Dimmed ? new Color(127f / 255f, 127f / 255f, 127f / 255f) : Colors.White;

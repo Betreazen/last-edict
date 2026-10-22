@@ -36,8 +36,10 @@
 - **Снимки** (`tests/Shared/PortSnapshot.cs`): `test-pack-*` — свои карты, 20 дней ИИ и бои; `imported-*` — четыре сценария импорта,
   15 дней и бои (те же строки, что у эталона на `vanilla-reference`). После осознанной правки правил: `D2_SNAPSHOTS_ACCEPT=1 dotnet test
   --filter Category=Snapshot`, посмотреть `git diff tests/snapshots`.
-- `dotnet build godot/LastEdict.Godot.csproj` перед запуском сцен; `python tools/ui-render-check.py` — экраны без окна, числами (нужен импорт;
-  шаги на сохранениях корпуса эталона здесь пропускаются — свой набор шагов на test-pack и импорте — задача Э5).
+- `dotnet build godot/LastEdict.Godot.csproj` перед запуском сцен; `py tools/ui-render-check.py -j 16` — экраны без окна, числами, ~1,5 мин
+  (нужны импорт и `D2_ASSETS_DIR`; партии середины игры — снимки стенда `tools/CheckSaves`, клетки — `tools/ui_check_maps.py`).
+- Бенч сцен — `py tools/bench/run_all.py <имя>` → `bench/<имя>.json` (время, память); «до/после» — `py tools/bench/ab.py <до> <после>`,
+  запись — `docs/perf-log.md`.
 - Всё, что меняет партию, — командой (`docs/game-commands.md`): окна и сцены зовут `Session.Run<T>(команда)`.
 - **Сборки:** `Engine.Rules` (правила) ← `Import.Legacy.Formats` (`.sg`/Kaitai, `.dbf`) ← `Engine.Content` (схема содержимого, слои модов)
   ← `Engine.Play` (ядро: партия, команды, бой) ← `Game.UiModel` (окна, меню, графика и звук, диагностика порта) ← `Import.Legacy`

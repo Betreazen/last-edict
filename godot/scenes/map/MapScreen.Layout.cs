@@ -48,7 +48,7 @@ public partial class MapScreen
         var main = HostSlot("IMG_MAIN");
         _mapRect = new Rect2(main.X, main.Y, main.Width, main.Height);
         // Подэкран места стоит ровно в его углу (панели, поле дипломатии, полоса ресурсов); портрет и мини-карта — внутри места.
-        Vector2 Moved(Vector2 at, bool inside, out string? slot)
+        Vector2 Moved(Vector2 at, bool inside, out string? slot, Vector2? size = null)
         {
             foreach (var (id, was) in old)
                 if (inside ? at.X >= was.X && at.Y >= was.Y && at.X < was.Right && at.Y < was.Bottom : at.X == was.X && at.Y == was.Y)
@@ -58,7 +58,9 @@ public partial class MapScreen
                     return at - new Vector2(was.X, was.Y) + new Vector2(now.X, now.Y);
                 }
             slot = null;
-            return at + ((_host - oldHost) / 2f).Floor();   // окно по центру холста — остаётся по центру
+            // Окно по центру холста — остаётся по центру, тем же округлением, что у открытого заново (MapScreen.Centered).
+            var d = size ?? Vector2.Zero;
+            return at + ((_host - d) / 2f).Floor() - ((oldHost - d) / 2f).Floor();
         }
         _faceSlot = new Rect2(Moved(_faceSlot.Position, inside: true, out _), _faceSlot.Size);
         _miniRect = new Rect2(Moved(_miniRect.Position, inside: true, out _), _miniRect.Size);
@@ -66,7 +68,8 @@ public partial class MapScreen
         {
             if (view.SlotHost == oldHost) view.SlotHost = _host;
             if (view.SlotAt is not { } at) continue;
-            view.SlotAt = Moved(at, inside: false, out _);
+            var design = view.State.Screen.Design;
+            view.SlotAt = Moved(at, inside: false, out _, new Vector2(design.Width, design.Height));
             // Холст подэкрана: весь экран карты или место карты — растут с ними (MapScreen.AddScreen).
             if (view.SlotSize is { } canvas)
                 view.SlotSize = canvas == new Vector2I((int)oldHost.X, (int)oldHost.Y) ? new Vector2I(w, h)

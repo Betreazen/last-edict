@@ -119,6 +119,7 @@ public partial class UiScreenView
     {
         var design = _state.Screen.Design;
         if (SlotAt is not { } at) return design;
+        at += SlotInset();   // экран по середине места больше разметки (UiScreenView.Layout.cs)
         return new UiRect(design.X - (int)at.X, design.Y - (int)at.Y, (int)SlotHost.X, (int)SlotHost.Y);
     }
 }

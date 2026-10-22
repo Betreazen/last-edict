@@ -531,7 +531,8 @@ public partial class UiScreenView : Node2D
     /// по каждой оси: 0 у Left/Top, 0.5 у Center, 1 у Right/Bottom.</summary>
     private void Rescale()
     {
-        if (_root is null) return;
+        // Снятый с дерева (панель команд под панелью столицы): вьюпорта нет; места хозяина уже запомнены — впишется при возвращении (_EnterTree).
+        if (_root is null || !IsInsideTree()) return;
         Relayout();   // экран Anchors на холсте новой формы — заново (UiScreenView.Layout.cs)
         if (_root is null) return;
         Vector2 view = GetViewportRect().Size;

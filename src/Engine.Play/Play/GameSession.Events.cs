@@ -233,7 +233,7 @@ public sealed partial class GameSession
                     // тот, кто ходил перед ним; 0x4177bf → 0x403834, фильтр 0x489536); попап другому человеку пропадает, остаётся
                     // запись в журнале заданий (решение пользователя 28.09 — как в оригинале).
                     if (State.Info.Humans.Contains(to, StringComparer.OrdinalIgnoreCase)
-                        && (!Hotseat || to.Equals(ActiveHuman, StringComparison.OrdinalIgnoreCase)))
+                        && (!SeveralHumans || to.Equals(ActiveHuman, StringComparison.OrdinalIgnoreCase)))
                     {
                         State = State with { Messages = [.. State.Messages, new EventMessage(to, Map.Turn, f.Event.Id, p, leaderName, leaderType, ownName)] };
                         Observer?.Happened(new TurnSight(TurnSightKind.EventPopup, to, -1, -1, f.Event.Id));   // показ сразу — и в ходе ИИ

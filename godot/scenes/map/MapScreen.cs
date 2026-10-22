@@ -255,8 +255,6 @@ public partial class MapScreen : Node
         var session = _map.Session;
         if (_battle is not null || session.Book is null) return;
         if (OpenThief(attackerId, defenderId)) return;   // вор у цели — окно вора вместо боя (MapScreen.Windows.cs)
-        // «Горячий стул»: защитник — человек этого ПК — сначала окно «на вас напали» (MapScreen.Overlays.cs), бой — после «ОК».
-        if (CallDefender(defenderId, () => OpenBattleNow(attackerId, defenderId, variant))) return;
         OpenBattleNow(attackerId, defenderId, variant);
     }
 
@@ -275,7 +273,6 @@ public partial class MapScreen : Node
             Name = "Battle", Standalone = false, Prepared = state, Rules = session.Book.Rules, Rng = session.BattleRng,
             PlaceName = MapBattle.PlaceOf(session.Map, state.DefenderGroup), PlayerIsAttacker = playerAttacks,
             OwnsAttackerStack = MapBattle.OwnsAttackerStack(session.Map, state.AttackerGroup, _map.Viewer),   // «Меню героя» (CTaskBattle +0x2c, 0x4d77b8)
-            BothHuman = HotseatCalls.BothHuman(session, state.AttackerGroup, state.DefenderGroup),
             Flipped = _settings.FlippedBattle,   // «Поменяться сторонами» (MapScreen.AiTurn.cs — настройки)
             Speed = _settings.BattleSpeed, BattleAnim = _settings.BattleAnim,   // «Скорость битвы», «Дополнительная анимация в бою»
             QueueStrip = _settings.QueueStrip,   // полоса очереди ходов (своя настройка, MapSettings.QueueStrip)

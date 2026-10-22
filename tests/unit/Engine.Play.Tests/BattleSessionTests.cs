@@ -152,39 +152,6 @@ public class BattleSessionTests(ITestOutputHelper output)
         Assert.Equal(BattleSession.NoGuardianCopy, session.RefusalText(other));
     }
 
-    /// <summary>Бой двух людей «горячего стула»: автобой у каждой стороны свой (<c>data2+0x38</c>/<c>+0x39</c>) — включённый у защитника,
-    /// он не ведёт нападающего: их юнитам команду ждёт экран (партия 28.09 эталона, <c>corpus/20260929-hotseat</c>).</summary>
-    [Fact]
-    public void Auto_BothHuman_EachSideOwnFlag()
-    {
-        var rules = PackRules;
-        var state = PackFight();
-        var session = new BattleSession(state, new BattleSim(state, RngStreams.Derive(Seed, RngStream.Battle), rules.Constants), rules.Constants)
-        {
-            BothHuman = true,
-        };
-        session.SetAuto(attacker: false, on: true);
-
-        int attackers = 0;
-        for (int i = 0; i < 500 && !session.Finished; i++)
-        {
-            var unit = session.Current!;
-            Assert.Equal(unit.Attacker, session.WaitsPlayer);   // защитники идут сами, нападающие ждут команду
-            if (!session.WaitsPlayer)
-            {
-                session.AiStep();
-                continue;
-            }
-            attackers++;
-            session.Defend();
-        }
-        output.WriteLine($"ходов нападающих вручную {attackers}, автобой: нап={session.AutoAttackers} защ={session.AutoDefenders}");
-        Assert.True(attackers > 0);
-        Assert.False(session.Auto);
-        session.Auto = true;
-        Assert.True(session.AutoOf(true) && session.AutoOf(false));
-    }
-
     /// <summary>Защита кончает ход и ставит признак защиты — до начала следующего своего хода (его снимает <see cref="BattleSim"/> в начале хода
     /// юнита). С удержанием начала хода, как на экране, признак виден сразу после команды; следующий ходящий — по
     /// <see cref="BattleSession.StartTurn"/>: другой юнит — признак держится; сам защитник (последний в раунде и первый в следующем) — снят

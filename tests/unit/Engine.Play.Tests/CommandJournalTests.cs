@@ -176,11 +176,15 @@ public class CommandJournalTests
         ];
         var derived = typeof(BattleInput).Assembly.GetTypes().Where(t => t.IsSubclassOf(typeof(BattleInput)) && !t.IsAbstract).ToHashSet();
         Assert.Equal(derived, all.Select(c => c.GetType()).ToHashSet());
-        var play = new BattlePlay(new BattleSetup(PlayerIsAttacker: false, BothHuman: true, HoldTurnStart: true), all, CrtDraws: 2);
+        var play = new BattlePlay(new BattleSetup(PlayerIsAttacker: false, HoldTurnStart: true), all, CrtDraws: 2);
         string json = JsonSerializer.Serialize(play, CommandJournal.Json);
         var back = JsonSerializer.Deserialize<BattlePlay>(json, CommandJournal.Json)!;
         Assert.Equal(json, JsonSerializer.Serialize(back, CommandJournal.Json));
         Assert.Equal(all, back.Actions);
+        // Журнал до вырезки «горячего стула» (Р33) с полем BothHuman читается: поле пропускается.
+        string old = json.Replace("\"HoldTurnStart\"", "\"BothHuman\":true,\"HoldTurnStart\"", StringComparison.Ordinal);
+        Assert.NotEqual(json, old);
+        Assert.Equal(play.Setup, JsonSerializer.Deserialize<BattlePlay>(old, CommandJournal.Json)!.Setup);
     }
 
     /// <summary>Повтор ловит расхождение: иное начало, иная команда или правка партии мимо команд — ошибка с номером команды.</summary>

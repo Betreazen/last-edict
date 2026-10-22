@@ -26,19 +26,15 @@ public sealed class NewGameSetup
     /// <summary>Импортированный герой одиночной игры (<c>DLG_CHOOSE_LORD</c> → <c>DLG_IMPORT_LEADER</c>); null — стартовый.</summary>
     public Leaders.ExportedLeader? ImportedLeader { get; set; }
 
-    /// <summary>«Горячий стул» (лобби <c>DLG_HOTSEAT_LOBBY</c>): люди в порядке ячеек — раса, имя, лицо, лорд; пусто — одиночная
-    /// игра по <see cref="Race"/>, <see cref="LordCategory"/>, <see cref="Face"/>, <see cref="LordName"/>.</summary>
-    public IReadOnlyList<HotseatSeat> Hotseat { get; set; } = [];
+    /// <summary>Места людей партии нескольких людей (лобби сетевой игры, Э7; «горячий стул» вырезан, Р33): раса, имя, лицо, лорд; пусто —
+    /// одиночная игра по <see cref="Race"/>, <see cref="LordCategory"/>, <see cref="Face"/>, <see cref="LordName"/>.</summary>
+    public IReadOnlyList<PlayerSeat> Seats { get; set; } = [];
 
-    /// <summary>Стартовое золото и мана лобби «горячего стула» (0…2000): оба 0 — казна из сценария, иначе казна каждого игрока
-    /// карты — золото и столько же маны каждого вида (<c>0x42b74f</c>).</summary>
+    /// <summary>Стартовое золото и мана лобби (0…2000): оба 0 — казна из сценария, иначе казна каждого игрока карты — золото и столько же
+    /// маны каждого вида (<c>0x42b74f</c>).</summary>
     public int StartGold { get; set; }
 
     public int StartMana { get; set; }
-
-    /// <summary>Меню открыто из «горячего стула» (<c>DLG_HOTSEAT</c>), а не из одиночной игры: экран загрузки проверяет людей партии
-    /// по-своему (<see cref="Play.LoadGameLogic"/>).</summary>
-    public bool HotseatMenu { get; set; }
 
     /// <summary>Сохранение, выбранное для загрузки на экране загрузки меню; хозяин начинает партию из него.</summary>
     public string? LoadPath { get; set; }
@@ -56,12 +52,12 @@ public sealed class NewGameSetup
     public IReadOnlyList<int>? RaceLimit { get; set; }
 }
 
-/// <summary>Человек в лобби «горячего стула»: тип расы, имя лорда, лицо (0…3) и категория лорда (<c>Llord</c>).</summary>
+/// <summary>Место человека в лобби: тип расы, имя лорда, лицо (0…3) и категория лорда (<c>Llord</c>).</summary>
 /// <param name="Leader">Импортированный герой (<c>BTN_IMPORT_LEADER</c>); null — стартовый герой сценария.</param>
 /// <param name="PlayerId">Игрок сценария этого места; null — первый ещё не занятый игрок расы <paramref name="Race"/> (у сценария бывает
 /// несколько игроков одной расы, Э4).</param>
 /// <param name="Team">Команда игрока (<see cref="LastEdict.Rules.Map.Teams"/>); null — как в сценарии.</param>
-public sealed record HotseatSeat(int Race, string Name, int Face, int LordCategory, Leaders.ExportedLeader? Leader = null,
+public sealed record PlayerSeat(int Race, string Name, int Face, int LordCategory, Leaders.ExportedLeader? Leader = null,
                                  string? PlayerId = null, string? Team = null);
 
 /// <summary>Что нужно логике экранов: каталог, строки языка, выбор игрока и системное имя (им игра заполняет поле
@@ -147,24 +143,22 @@ public static class MenuLogic
         "DLG_CHOOSE_RACE" => new ChooseRaceLogic(context),
         "DLG_CHOOSE_LORD" => new ChooseLordLogic(context),
         "DLG_SCENARIO_BRIEFING" => BriefingLogic.Create(context),
-        "DLG_HOTSEAT_NEW" => new ChooseSkirmishLogic(context),
-        "DLG_HOTSEAT_LOBBY" when context.Screens.Any(s => s.Id == HotseatLobbyLogic.Cell) => new HotseatLobbyLogic(context),
+        // «Мультиплеер» погашен: «горячий стул» вырезан (Р33), люди одной партии — только по сети (Э7).
+        "DLG_MAIN_MENU" => new MainMenuLogic(),
         "DLG_LOAD" when context.SavesDir.Length > 0 => new Play.LoadGameLogic(context.SavesDir, path => context.Setup.LoadPath = path,
-                                                                              context.Setup.HotseatMenu, Play.SaveKind.Quest),
+                                                                              singlePlayer: true, Play.SaveKind.Quest),
         "DLG_LOAD_TOURNEMENT" when context.SavesDir.Length > 0 =>
-            new Play.LoadGameLogic(context.SavesDir, path => context.Setup.LoadPath = path, false, Play.SaveKind.Saga),
+            new Play.LoadGameLogic(context.SavesDir, path => context.Setup.LoadPath = path, singlePlayer: true, Play.SaveKind.Saga),
         "DLG_LOAD_CUSTOM_TOURNEMENT" when context.SavesDir.Length > 0 =>
-            new Play.LoadGameLogic(context.SavesDir, path => context.Setup.LoadPath = path, false, Play.SaveKind.Custom),
-        "DLG_HOTSEAT" => new MenuModeLogic(() => context.Setup.HotseatMenu = true),
+            new Play.LoadGameLogic(context.SavesDir, path => context.Setup.LoadPath = path, singlePlayer: true, Play.SaveKind.Custom),
         "DLG_SINGLE_PLAYER" => new MenuModeLogic(() =>
         {
-            context.Setup.HotseatMenu = false;
             context.Setup.Saga = false;
             context.Setup.Campaign = null;
             context.Setup.Carry = null;
             context.Setup.RaceLimit = null;
-            // Места лобби прошлой партии «горячего стула» одиночной игре не нужны (иначе NewGame строит людей по ним).
-            context.Setup.Hotseat = [];
+            // Места лобби одиночной игре не нужны (иначе NewGame строит людей по ним).
+            context.Setup.Seats = [];
             context.Setup.StartGold = 0;
             context.Setup.StartMana = 0;
         }, element => context.Setup.Saga = element == "BTN_NEW_TOURNEMENT"),
@@ -205,6 +199,25 @@ internal sealed class CreditsLogic : IScreenLogic
 
 /// <summary>Экран-развилка меню («горячий стул» или одиночная игра): при открытии отмечает режим в выборе игрока; нажатая кнопка —
 /// <paramref name="clicked"/> (одиночная игра: «Новая сага» или квест).</summary>
+/// <summary>Главное меню: «Мультиплеер» (<c>BTN_MULTI</c> → выбор протокола → «горячий стул» или сеть) погашен — «горячий стул» вырезан
+/// (Р33), сетевая игра — Э7.</summary>
+public sealed class MainMenuLogic : IScreenLogic
+{
+    public const string Multiplayer = "BTN_MULTI";
+
+    public void Open(UiScreenState ui)
+    {
+        ArgumentNullException.ThrowIfNull(ui);
+        if (ui.Screen.Elements.Any(e => e.Id == Multiplayer)) ui.SetEnabled(Multiplayer, false);
+    }
+
+    public void Handle(UiEvent e, UiScreenState ui)
+    {
+    }
+
+    public bool Allows(string element, UiScreenState ui) => element != Multiplayer;
+}
+
 internal sealed class MenuModeLogic(Action mark, Action<string>? clicked = null) : IScreenLogic
 {
     public void Open(UiScreenState ui) => mark();

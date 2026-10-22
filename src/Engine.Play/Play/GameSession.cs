@@ -444,8 +444,8 @@ public sealed partial class GameSession(GameState state, MapArtData art, GameBoo
     /// <summary>Человек, чей сейчас ход (<see cref="GameState.ActiveHuman"/>; пусто — первый из людей).</summary>
     public string ActiveHuman => State.ActiveHuman.Length > 0 ? State.ActiveHuman : State.Info.Humans.FirstOrDefault() ?? "";
 
-    /// <summary>Людей больше одного — «горячий стул».</summary>
-    public bool Hotseat => State.Info.Humans.Count > 1;
+    /// <summary>Людей в партии больше одного (сетевая игра, Э7; «горячий стул» вырезан, Р33).</summary>
+    public bool SeveralHumans => State.Info.Humans.Count > 1;
 
     /// <summary>Смена дня после ходов ИИ (<c>0x420a6b</c>): день растёт, начинается ход первого человека
     /// (<see cref="BeginHumanTurn"/>). Отдельно от <see cref="EndTurn"/> — чтобы сверять начало хода человека с журналом без
@@ -1283,7 +1283,7 @@ public sealed partial class GameSession(GameState state, MapArtData art, GameBoo
         {
             // «Горячий стул» — многопользовательская партия (CMidgardData+0x30): взятие столицы человека партию не кончает, если у
             // захватчика есть другие живые соперники (0x440ee0; docs/day-cycle.md §13).
-            var outcome = CapitalCapture.Apply(map, site, stack.Owner, Book.Economy, State.Events, multiplayer: Hotseat);
+            var outcome = CapitalCapture.Apply(map, site, stack.Owner, Book.Economy, State.Events, multiplayer: SeveralHumans);
             if (outcome.Refused is { } why) return new VisitReport(siteId, why);
             victory = outcome.Victory;
             if (!victory)

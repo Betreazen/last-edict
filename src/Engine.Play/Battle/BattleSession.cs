@@ -86,12 +86,6 @@ public sealed class BattleSession
     /// <summary>Чья сторона — игрока (левая в бою).</summary>
     public bool PlayerIsAttacker { get; }
 
-    /// <summary>Обе стороны — люди «горячего стула» за одним ПК (<c>CBattleViewerInterfData +0x14f8</c>, <c>0x62d2e6</c>): команды ждёт
-    /// каждый юнит, кто бы ни ходил, — сервер шлёт выбор действия хозяину ходящего юнита (<c>0x42840e</c>). Автобой у каждой стороны свой
-    /// (<see cref="AutoOf"/>, <c>data2+0x38</c>/<c>+0x39</c>; партия 28.09 <c>corpus/20260929-hotseat</c>: автобой защитника не вёл
-    /// нападающего).</summary>
-    public bool BothHuman { get; init; }
-
     public BattleState State => _state;
 
     public BattleSim Sim => _sim;
@@ -605,7 +599,7 @@ public sealed class BattleSession
     public IReadOnlyList<BattleInput> Actions => _actions;
 
     /// <summary>Сыгранное до сих пор: устройство сессии и её действия; <paramref name="crtDraws"/> — числа <c>rand()</c> экрана.</summary>
-    public BattlePlay Played(int crtDraws = 0) => new(new BattleSetup(PlayerIsAttacker, BothHuman, HoldTurnStart), [.. _actions], crtDraws);
+    public BattlePlay Played(int crtDraws = 0) => new(new BattleSetup(PlayerIsAttacker, HoldTurnStart), [.. _actions], crtDraws);
 
     private T Act<T>(BattleInput action, Func<T> body)
     {
@@ -654,7 +648,7 @@ public sealed class BattleSession
     private BattleUnit UnitOf(string id) => _state.Unit(id) ?? throw new InvalidDataException($"в бою нет юнита {id}");
 
     /// <summary>Юнит на стороне игрока.</summary>
-    public bool IsPlayers(BattleUnit unit) => unit is not null && (BothHuman || unit.Attacker == PlayerIsAttacker);
+    public bool IsPlayers(BattleUnit unit) => unit is not null && unit.Attacker == PlayerIsAttacker;
 
     private void FinishTurn()
     {

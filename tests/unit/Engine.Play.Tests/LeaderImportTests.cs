@@ -290,7 +290,7 @@ public class LeaderImportTests
         var setup = new NewGameSetup
         {
             Scenario = content.Catalog.Scenarios.Single(s => s.Id == "Power to Corrupt"),
-            Hotseat = [new HotseatSeat(3, "Гимли", 0, 1, leader), new HotseatSeat(2, "Б", 0, 1)],
+            Seats = [new PlayerSeat(3, "Гимли", 0, 1, leader), new PlayerSeat(2, "Б", 0, 1)],
         };
         var state = NewGame.Start(ScenarioFile.Read(path), setup, content.Catalog, book, new Random(1));
         var map = state.Looks.Map;
@@ -304,7 +304,7 @@ public class LeaderImportTests
         Assert.Equal("Мерло", state.Looks.Stacks.Single(s => s.Id == stack.Id).LeaderName);
 
         // Герой чужой расы (Империя в ячейке Кланов) не встаёт: лидер — стартовый.
-        setup.Hotseat = [new HotseatSeat(3, "Гимли", 0, 1, leader with { Race = 0 }), new HotseatSeat(2, "Б", 0, 1)];
+        setup.Seats = [new PlayerSeat(3, "Гимли", 0, 1, leader with { Race = 0 }), new PlayerSeat(2, "Б", 0, 1)];
         var foreign = NewGame.Start(ScenarioFile.Read(path), setup, content.Catalog, book, new Random(1)).Looks.Map;
         var foreignStack = foreign.Stacks[foreign.Sites.Single(s => s.Id == capital.Id).StackId];
         Assert.NotEqual("base:unit/archmage", foreign.Units[foreignStack.LeaderId].TypeId);

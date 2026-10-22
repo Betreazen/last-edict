@@ -99,9 +99,6 @@ public partial class UiFlowView : Node
 
     private const string MessageBox = "DLG_MESSAGE_BOX";
 
-    /// <summary>Загрузчик лобби «горячего стула» («Далее» лобби ведёт в него, фаза «Игра») — тоже начало партии.</summary>
-    private const string HotseatLoader = "CMenuHotseatLobbyLoaderInterf";
-
     /// <summary>Идущая партия — экран карты вместо стека экранов меню.</summary>
     private MapScreen? _game;
 
@@ -240,7 +237,7 @@ public partial class UiFlowView : Node
                 return;
             }
         }
-        if ((_nav.Top == GameScreen || _nav.Top == HotseatLoader) && _menu is not null)
+        if (_nav.Top == GameScreen && _menu is not null)
         {
             string? loaded = _loaded;
             _loaded = null;
@@ -434,7 +431,7 @@ public partial class UiFlowView : Node
             setup.LordName = human.Name;
         }
         setup.Difficulty = session.State.Info.Difficulty;
-        setup.Hotseat = [];
+        setup.Seats = [];
         setup.ImportedLeader = null;
         if (saga.Custom && !File.Exists(saga.Chapters[run.Chapter + 1].Scenario.File))
         {

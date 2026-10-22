@@ -64,13 +64,12 @@ public sealed class SaveGameLogic(string dir, Func<GameState> current, string de
 /// игра). Список сохранений, у выбранного — описание; «Загрузить» или двойной щелчок отдают файл хозяину
 /// (<paramref name="load"/>): он закрывает текущую партию и открывает сохранённую. Переход графа от кнопки
 /// (в игре — окно подтверждения) не нужен: загрузку делает хозяин.
-/// <para>Меню (<paramref name="hotseat"/> — открыто из «горячего стула», <c>CMenuLoadSkirmishHotseat</c>; иначе одиночная игра)
-/// проверяет людей партии (<c>menuload:ButtonCallback 0x4df7b0</c>): «горячему стулу» нужно не меньше двух —
-/// <c>X006TA0033</c>; одиночной игре партия с несколькими людьми — <c>X006TA0037</c> (<c>0x4dfa4c</c>). В игре
-/// (<paramref name="hotseat"/> null) проверок нет.</para></summary>
+/// <para>Меню одиночной игры (<paramref name="singlePlayer"/>) проверяет людей партии (<c>menuload:ButtonCallback 0x4df7b0</c>): партия
+/// с несколькими людьми — <c>X006TA0037</c> (<c>0x4dfa4c</c>; «горячий стул» вырезан, Р33 — такие партии вернутся сетевой игрой, Э7). В игре
+/// проверок нет.</para></summary>
 /// <para>Меню загрузки саги (<c>DLG_LOAD_TOURNEMENT</c>) и своей кампании (<c>DLG_LOAD_CUSTOM_TOURNEMENT</c>) показывают только свои
 /// сохранения, одиночной игры — только квесты (<paramref name="kind"/>; null — все, в игре).</para>
-public sealed class LoadGameLogic(string dir, Action<string> load, bool? hotseat = null, SaveKind? kind = null) : IScreenLogic
+public sealed class LoadGameLogic(string dir, Action<string> load, bool singlePlayer = false, SaveKind? kind = null) : IScreenLogic
 {
     private IReadOnlyList<SaveSlot> _slots = [];
     private string _list = "TLBOX_GAME_LIST", _description = "TXT_DESCRIPTION";
@@ -108,12 +107,8 @@ public sealed class LoadGameLogic(string dir, Action<string> load, bool? hotseat
     public string? Refusal(string element, UiScreenState ui) =>
         element is "BTN_LOAD" || element == _list ? Selected(ui) is { } slot ? RefusalOf(slot) : null : null;
 
-    private string? RefusalOf(SaveSlot slot) => hotseat switch
-    {
-        true when slot.Humans < 2 => "X006TA0033",   // «В сохраненной игре должно быть как минимум два игрока.»
-        false when slot.Humans > 1 => "X006TA0037",  // «В этой миссии участвовало несколько игроков. …»
-        _ => null,
-    };
+    private string? RefusalOf(SaveSlot slot) =>
+        singlePlayer && slot.Humans > 1 ? "X006TA0037" : null;   // «В этой миссии участвовало несколько игроков. …»
 
     private SaveSlot? Selected(UiScreenState ui)
     {

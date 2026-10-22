@@ -91,8 +91,7 @@ public partial class MapScreen
 
     /// <summary>
     /// Окно начала хода (<see cref="BeginTurnLogic"/>, <c>DLG_BEGIN_TURN</c>): каждому человеку в начале его хода — «Начинается N день» и доход
-    /// этого начала хода (<see cref="GameSession.TurnIncome"/>), раз на человека и день, первым из окон хода (в «горячем стуле» — за окном
-    /// передачи хода: <c>DLG_HOTSEAT_POPUP</c> → <c>DLG_BEGIN_TURN</c>, журналы 20260920-ui). Загруженная партия окна не показывает до следующего
+    /// этого начала хода (<see cref="GameSession.TurnIncome"/>), раз на человека и день, первым из окон хода. Загруженная партия окна не показывает до следующего
     /// хода — у неё сообщение «Повтор миссии» (<see cref="ResumeMessage"/>, <c>CCmdTurnInfoMsg</c> с «загрузка» = 1). Прежде у порта этого окна
     /// не было вовсе, а в день 1 попапы событий шли раньше окна имени (разбор партий 17.10, карта 9).
     /// </summary>
@@ -118,7 +117,7 @@ public partial class MapScreen
     /// Загруженная партия (хозяин есть, партия не новая): сервер движка при загрузке начала хода не проводит (<c>0x421667</c> →
     /// <c>0x4218a0</c>: только <c>CCmdBeginTurnMsg</c> и <c>CCmdTurnInfoMsg</c> с «загрузка» = 1), и клиент вместо окна начала хода
     /// показывает сообщение (<c>CTaskBeginTurn</c> <c>0x4d881a</c> → <c>0x4d8950</c>): «Повтор миссии с дня N» (<c>X005TA0079</c>), в
-    /// хотсите (флаг сетевой игры, ранг 2) — <c>X005TA0828</c>. После окна передачи хода, если оно есть. Окон навыка лидера, итогов хода,
+    /// партии нескольких людей (флаг сетевой игры, ранг 2) — <c>X005TA0828</c>. Окон навыка лидера, итогов хода,
     /// попапов и имени героя после загрузки у движка нет — до следующего начала хода (ранг 1; журналы 20260920-gaps, -legions,
     /// 20260928-shots: брифинг → карта → это окно).
     /// </summary>
@@ -126,14 +125,11 @@ public partial class MapScreen
     {
         if (_resumeQueued || Session is null || NewGame || session.Over) return;
         _resumeQueued = true;
-        string text = Text(session.Hotseat ? "X005TA0828" : "X005TA0079").Replace("%NUMBER%", session.Map.Turn.ToString(System.Globalization.CultureInfo.InvariantCulture), StringComparison.Ordinal);
+        string text = Text(session.SeveralHumans ? "X005TA0828" : "X005TA0079").Replace("%NUMBER%", session.Map.Turn.ToString(System.Globalization.CultureInfo.InvariantCulture), StringComparison.Ordinal);
         _resumeLogic = new MessageLogic(text, okOnly: true);
         _overlayQueue.Enqueue(("DLG_MESSAGE_BOX", _resumeLogic, "BTN_OK,BTN_YES,BTN_NO"));
-        GD.Print($"resume message day={session.Map.Turn} hotseat={(session.Hotseat ? 1 : 0)}");
+        GD.Print($"resume message day={session.Map.Turn} людей={(session.SeveralHumans ? 2 : 1)}");
     }
-
-    /// <summary>Ход какого человека и в какой день уже показан окном передачи хода («горячий стул»).</summary>
-    private (string Human, int Day) _turnShown = ("", -1);
 
     /// <summary>Окна поверх карты: выложить новые попапы и конец партии в очередь и показать первое, если ничего не открыто.</summary>
     private void PumpOverlays()
@@ -143,21 +139,6 @@ public partial class MapScreen
         WatchGiven();   // окна полученных предметов (MapScreen.Given.cs)
         WatchNotices();   // выделение отряда, шпион, иллюзия, взятые ресурсы (MapScreen.Notices.cs)
         WatchSummaries();   // итоги хода в сохранении v9 (MapScreen.Windows.cs)
-        // «Горячий стул»: начался ход другого человека (или первого — в день 1) — карта его глазами и окно передачи хода.
-        if (session.Hotseat && !session.Over && (session.ActiveHuman, session.Map.Turn) != _turnShown
-            && session.Map.Players.TryGetValue(session.ActiveHuman, out var next))
-        {
-            _turnShown = (session.ActiveHuman, session.Map.Turn);
-            // Окно — в очередь до смены зрителя: смена перерисовывает панели и снова зовёт очередь (попапы нового игрока — после окна).
-            _overlayQueue.Enqueue(("DLG_HOTSEAT_POPUP", new HotseatTurnLogic(next, GameData.Catalog, Text), "BTN_OK"));
-            GD.Print($"hotseat turn human={next.Id} day={session.Map.Turn}");
-            if (next.CapturedBy.Length > 0) AskCaptured(next.Id);
-            if (!string.Equals(_map.Viewer, next.Id, StringComparison.OrdinalIgnoreCase))
-            {
-                _map.ChangeViewer(next.Id);
-                RebuildMiniMap();
-            }
-        }
         ResumeMessage(session);
         AnnounceTurn(session);
         AnnounceConquests(session);
@@ -325,14 +306,8 @@ public partial class MapScreen
     private void OpenEventBattle()
     {
         var session = _map.Session;
-        if (_battle is not null || _leaving || _defenderCalled || session.Book is null || !session.EventBattleWaiting
+        if (_battle is not null || _leaving || session.Book is null || !session.EventBattleWaiting
             || session.Execute(new LastEdict.Data.Play.Commands.NextEventBattleCommand()).Value is not LastEdict.Rules.Battle.BattleState state) return;
-        // «Горячий стул»: защищается человек (триггерер события) — окно режима 2 и у боя эффекта (CTaskBattle тот же).
-        if (_eventBattleCalled != state && CallDefender(state.DefenderGroup, () =>
-            {
-                _eventBattleCalled = state;
-                OpenEventBattle();
-            })) return;
         bool playerAttacks = _map.Viewer is { } viewer && session.Map.Stacks.TryGetValue(state.AttackerGroup, out var attacker)
                              && attacker.Owner.Equals(viewer, StringComparison.OrdinalIgnoreCase);
         ShowMap(false);
@@ -341,7 +316,6 @@ public partial class MapScreen
             Name = "Battle", Standalone = false, Prepared = state, Rules = session.Book.Rules, Rng = session.BattleRng,
             PlaceName = MapBattle.PlaceOf(session.Map, state.DefenderGroup), PlayerIsAttacker = playerAttacks,
             OwnsAttackerStack = MapBattle.OwnsAttackerStack(session.Map, state.AttackerGroup, _map.Viewer),   // «Меню героя» (0x4d77b8)
-            BothHuman = HotseatCalls.BothHuman(session, state.AttackerGroup, state.DefenderGroup),
             OwnName = session.OwnName,   // подпись крупного портрета — как у боя с карты
             QueueStrip = _settings.QueueStrip,
             CardLogic = BattleCard(),
@@ -354,35 +328,6 @@ public partial class MapScreen
         GD.Print($"eventbattle start attacker={state.AttackerGroup} defender={state.DefenderGroup} units={state.Units.Count} " +
                  $"place={_battle.PlaceName}");
         if (!playerAttacks) _battle.Continue();   // нападает сторона события — первыми могут ходить её юниты
-    }
-
-    /// <summary>Бой эффекта, для которого окно режима 2 уже закрыто «ОК».</summary>
-    private LastEdict.Rules.Battle.BattleState? _eventBattleCalled;
-
-    /// <summary>Открыто окно режима 2 и бой ждёт его «ОК». Один на оба пути (бой с карты и бой эффекта): окно модальное, второй вызов
-    /// <see cref="CallDefender"/> до его закрытия невозможен.</summary>
-    private bool _defenderCalled;
-
-    /// <summary>
-    /// «Горячий стул», защитник боя — человек этого ПК (<see cref="HotseatCalls.Defender"/>, <c>CTaskBattle</c> <c>0x4d79c8</c>): окно
-    /// <c>DLG_HOTSEAT_POPUP</c> режима 2 — «%TARGETNAME% атакован! … Вы должны защищаться!», портрет защитника; бой (<paramref name="open"/>) —
-    /// после «ОК». Место за ПК окно не меняет: карта — глазами того, чей ход; в бою каждый ведёт свою сторону
-    /// (<see cref="HotseatCalls.BothHuman"/>). Не хотсит или защитник — ИИ: false, окна нет.
-    /// </summary>
-    private bool CallDefender(string defenderGroup, Action open)
-    {
-        if (HotseatCalls.Defender(_map.Session, defenderGroup, Text) is not { } call) return false;
-        var logic = new HotseatTurnLogic(call.Player, GameData.Catalog, Text, HotseatCall.Defend, target: call.Target);
-        _overlayQueue.Enqueue(("DLG_HOTSEAT_POPUP", logic, "BTN_OK"));
-        _defenderCalled = true;
-        _overlayAnswers[logic] = _ =>
-        {
-            _defenderCalled = false;
-            open();
-        };
-        GD.Print($"hotseat defend human={call.Player.Id} target={call.Target.Replace(' ', '_')}");
-        if (_overlay is null) ShowOverlay();
-        return true;
     }
 
     /// <summary>Эпилог (<c>DLG_END_WIN_LOSE_</c>) — последнее окно партии, после него главное меню.</summary>
@@ -599,7 +544,7 @@ public partial class MapScreen
 
     /// <summary>Окно очереди, которое шаг «ok» закрывает.</summary>
     private bool Dismissable(UiScreenView view) =>
-        view.Hosted is "DLG_EVENT_POPUP" or "DLG_HOTSEAT_POPUP" || view.Logic is BeginTurnLogic
+        view.Hosted is "DLG_EVENT_POPUP" || view.Logic is BeginTurnLogic
         || (_resumeLogic is not null && view.Logic == _resumeLogic);
 
     /// <summary>Шаг проверки «end»: окно начала хода открыто — «ОК» (оно теперь каждый день, а прогоны «end;end;…» его не ждут).</summary>

@@ -203,6 +203,20 @@ public class MenuLogicTests
     public void OtherScreens_HaveNoLogic()
     {
         var context = new MenuContext(Content.Catalog, Strings, new NewGameSetup(), "Игрок");
-        Assert.Null(MenuLogic.For("DLG_MAIN_MENU", context));
+        Assert.Null(MenuLogic.For("DLG_MULTI", context));
+        Assert.Null(MenuLogic.For("DLG_HOTSEAT_LOBBY", context));   // «горячий стул» вырезан (Р33)
+    }
+
+    /// <summary>Главное меню: «Мультиплеер» погашен и не ведёт никуда — «горячий стул» вырезан (Р33), сеть — Э7.</summary>
+    [SkippableFact]
+    public void MainMenu_MultiplayerOff()
+    {
+        var context = new MenuContext(Content.Catalog, Strings, new NewGameSetup(), "Игрок");
+        var logic = MenuLogic.For("DLG_MAIN_MENU", context)!;
+        var ui = new UiScreenState(Content.Screens.Single(s => s.Id == "DLG_MAIN_MENU"));
+        logic.Open(ui);
+        Assert.False(ui.IsEnabled(MainMenuLogic.Multiplayer));
+        Assert.False(logic.Allows(MainMenuLogic.Multiplayer, ui));
+        Assert.True(logic.Allows("BTN_SINGLE", ui));
     }
 }

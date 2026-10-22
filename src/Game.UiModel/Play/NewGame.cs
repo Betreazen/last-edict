@@ -64,10 +64,10 @@ public static class NewGame
         ArgumentNullException.ThrowIfNull(setup);
         ArgumentNullException.ThrowIfNull(catalog);
         var map = scenario.Map;
-        // Люди: одиночная игра — выбор меню, «горячий стул» — ячейки лобби (CMenusReqRaceMsg / CMenusReqLordMsg на каждого).
-        IReadOnlyList<HotseatSeat> seats = setup.Hotseat.Count > 0 ? setup.Hotseat
-            : [new HotseatSeat(setup.Race, setup.LordName ?? "", setup.Face, setup.LordCategory, setup.ImportedLeader)];
-        var chosen = new Dictionary<string, (string Lord, HotseatSeat Seat)>(StringComparer.OrdinalIgnoreCase);
+        // Люди: одиночная игра — выбор меню, партия нескольких людей — места лобби (CMenusReqRaceMsg / CMenusReqLordMsg на каждого).
+        IReadOnlyList<PlayerSeat> seats = setup.Seats.Count > 0 ? setup.Seats
+            : [new PlayerSeat(setup.Race, setup.LordName ?? "", setup.Face, setup.LordCategory, setup.ImportedLeader)];
+        var chosen = new Dictionary<string, (string Lord, PlayerSeat Seat)>(StringComparer.OrdinalIgnoreCase);
         // Места со своим игроком — первыми, затем прочие — первому свободному игроку своей расы по id (двое одной расы — два места, Э4).
         foreach (var seat in seats.Where(s => s.PlayerId is not null).Concat(seats.Where(s => s.PlayerId is null)))
         {

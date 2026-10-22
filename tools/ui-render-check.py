@@ -142,24 +142,10 @@ FLOW_CASES = [
         ("key 13", "DLG_CHOOSE_LORD"),
         ("key 13", "DLG_SCENARIO_BRIEFING"),
     ]),
-    # Лобби «горячего стула» (docs/day-cycle.md §8, §11): «Далее» без двух людей — окно X006TA0032, без имени — X005TA0344;
-    # затем партия.
-    ("лобби горячего стула", None, [
-        ("click BTN_MULTI", "DLG_PROTOCOL"),
-        ("click BTN_CONTINUE", "DLG_HOTSEAT"),
-        ("click BTN_NEW_SKIRMISH", "DLG_HOTSEAT_NEW"),
-        ("click BTN_LOAD", "DLG_HOTSEAT_LOBBY"),
-        ("click BTN_OK", "DLG_HOTSEAT_LOBBY>DLG_MESSAGE_BOX"),
-        ("click BTN_OK", "DLG_HOTSEAT_LOBBY"),
-        ("click TOG_PLAYERTYPE_1", "DLG_HOTSEAT_LOBBY"),
-        ("type A", "DLG_HOTSEAT_LOBBY"),
-        ("click TOG_PLAYERTYPE_2", "DLG_HOTSEAT_LOBBY"),
-        ("click BTN_OK", "DLG_HOTSEAT_LOBBY>DLG_MESSAGE_BOX"),
-        ("click BTN_OK", "DLG_HOTSEAT_LOBBY"),
-        ("click EDT_NAME_2", "DLG_HOTSEAT_LOBBY"),
-        ("type B", "DLG_HOTSEAT_LOBBY"),
-        ("click BTN_GOLD_UP", "DLG_HOTSEAT_LOBBY"),
-        ("click BTN_OK", "GAME"),
+    # «Мультиплеер» погашен (Э5, Р33): «горячий стул» вырезан, сетевая игра — Э7; щелчок никуда не ведёт.
+    ("мультиплеер погашен", None, [
+        ("click BTN_MULTI", "DLG_MAIN_MENU"),
+        ("click BTN_SINGLE", "DLG_SINGLE_PLAYER"),
     ]),
     # Титры — пустая страница (решение пользователя 28.09), любой щелчок или клавиша — в главное меню (переход без элемента).
     ("титры", None, [
@@ -553,10 +539,10 @@ SCALED_FLOW = {"sharp": ("2133", "1200", "0.6", "area"), "integer": ("1067", "60
 
 
 def scaled_flow(repo: Path) -> tuple[bool, str]:
-    """Щелчки через показ (прогон 3, пункт 1): проход «назад и окно поверх» и лобби горячего стула при чётком и целом масштабе с окном
+    """Щелчки через показ (прогон 3, пункт 1): проход «назад и окно поверх» и до брифинга при чётком и целом масштабе с окном
     1280×720 (--window-size: у headless окно 64×64). События идут настоящим путём — в корневой вьюпорт в точках окна и обратным
     переводом показа в буфер: стек после каждого щелчка тот же, что и при прежнем масштабе."""
-    cases = [c for c in FLOW_CASES if c[0] in ("назад и окно поверх", "лобби горячего стула")]
+    cases = [c for c in FLOW_CASES if c[0] in ("назад и окно поверх", "до брифинга")]
     for mode, want in SCALED_FLOW.items():
         for name, start, steps in cases:
             extra = ["--scale", mode, "--window-size", "1280x720"]
@@ -951,7 +937,8 @@ def gamepad(repo: Path) -> tuple[bool, str]:
     focus = [(m[2], m[3]) for m in PAD_FOCUS.finditer(out)]
     stick = re.search(r"^flow step=4 do=stick at=pointer (\d+),(\d+) ", out, re.M)
     stacks = re.findall(r"^flow step=\d+ .* stack=(\S+) ", out, re.M)
-    want = [("down", "BTN_SINGLE"), ("down", "BTN_MULTI"), ("up", "BTN_SINGLE"), ("down", "BTN_MULTI"), ("up", "BTN_SINGLE")]
+    # «Мультиплеер» погашен (Р33) — крестовина его пропускает: «Одиночная игра» → «Обучение».
+    want = [("down", "BTN_SINGLE"), ("down", "BTN_TUTORIAL"), ("up", "BTN_SINGLE"), ("down", "BTN_TUTORIAL"), ("up", "BTN_SINGLE")]
     first = PAD_FOCUS.search(out)
     moved = stick is not None and first is not None and int(first[4]) - int(stick[1]) == 360 and stick[2] == first[5]
     if code != 0 or focus != want or not moved or stacks[-2:] != ["DLG_SINGLE_PLAYER", "DLG_MAIN_MENU"]:
@@ -1384,7 +1371,7 @@ def battle(repo: Path) -> tuple[bool, str]:
     # Варианты сцены независимы — разом (godot_all), проверки — по порядку.
     variants = [["--check"], ["--check", "--item"], ["--check", "--marks"], ["--check", "--hover"], ["--check", "--refusal"],
                 ["--check", "--cursor"], ["--check", "--cursor", "--still", "--speed", "4"], ["--check", "--resolve"],
-                ["--check", "--resolve", "--hotseat"], ["--check", "--d1"]]
+                ["--check", "--d1"]]
     outs = dict(zip(map(str, variants), godot_all(repo, [(v, "res://scenes/battle/BattleScreen.tscn") for v in variants])))
     code, out = outs[str(["--check"])]
     match = BATTLE.search(out)
@@ -1448,17 +1435,11 @@ def battle(repo: Path) -> tuple[bool, str]:
     done = BATTLE.search(out)
     if code != 0 or still is None or still[1].endswith("A") or done is None or done["missing"] != "0":
         return False, f"экран боя, без анимации: код {code}\n{out.strip()}"
-    # «Быстрый поединок» (docs/battle-screen.md §5.2): против ИИ — вопрос X005TA0922, «Да» досчитывает бой; бой двух людей — сообщение
-    # X005TA0926, бой идёт дальше. Автобой двух людей — у стороны ходящего: следующий ход другой стороны ждёт игрока.
+    # «Быстрый поединок» (docs/battle-screen.md §5.2): вопрос X005TA0922, «Да» досчитывает бой (бой двух людей вырезан, Р33).
     code, out = outs[str(["--check", "--resolve"])]
     if (code != 0 or "battle message X005TA0922" not in out or "battle resolve окно=вопрос" not in out
             or "battle resolve closed окно=- конец=1" not in out):
         return False, f"экран боя, быстрый поединок: код {code}\n{out.strip()}"
-    code, out = outs[str(["--check", "--resolve", "--hotseat"])]
-    auto = re.search(r"battle auto сторона=(\S+) нап=(\d) защ=(\d) ходит=(\S+) ждёт_игрока=(\d)", out)
-    if (code != 0 or "battle message X005TA0926" not in out or "battle resolve closed окно=- конец=0" not in out
-            or auto is None or auto[4] == auto[1] or auto[5] != "1" or (auto[2], auto[3]) not in (("1", "0"), ("0", "1"))):
-        return False, f"экран боя, два человека: код {code}\n{out.strip()}"
     # Интерфейс боя (прогон 11.10, пункты 14–30): у подложек разметки подсказок нет (движок снимает картинки с диалога, 0x62e017), у кнопки —
     # есть; подпись крупного портрета — две строки (имя MedBold, «ОЗ» Small); предметы — только у ходящего лидера (0x649775); портрет панели —
     # цель (основная панель, своя после TOG_RIGHTUNITS, своя над SPOT); окно сообщения 337×367 — по середине 800×600 на слое окон над
@@ -1659,9 +1640,9 @@ def event_battle(repo: Path) -> tuple[bool, str]:
 
 
 def leader_import(repo: Path) -> tuple[bool, str]:
-    """Импорт героя в лобби «горячего стула» (docs/day-cycle.md §12): герои игры (.ldr из Exports копии с экспортом) переводятся в
-    каталог героев порта; «Импорт» ячейки → DLG_IMPORT_LEADER → просмотр DLG_VIEW_EXPLEAD → «ОК» → вопрос → «Да» → имя героя
-    в ячейке → партия."""
+    """Импорт героя в одиночной игре (docs/day-cycle.md §12; лобби «горячего стула» вырезано, Р33): герои игры (.ldr из Exports копии
+    с экспортом) переводятся в каталог героев порта; выбор лорда → «Импорт героя» → DLG_IMPORT_LEADER → просмотр DLG_VIEW_EXPLEAD →
+    «ОК» → вопрос → «Да» → имя героя у лорда → брифинг → партия."""
     exports = repo.parent / "disciples-modding" / "game-dev" / "Exports"
     if not any(exports.glob("*.ldr")):
         return True, "импорт героя: нет образцов .ldr — пропуск"
@@ -1669,51 +1650,16 @@ def leader_import(repo: Path) -> tuple[bool, str]:
     if leaders.exists():
         for f in leaders.iterdir():
             f.unlink()
-    steps = ["click BTN_MULTI", "click BTN_CONTINUE", "click BTN_NEW_SKIRMISH", "click BTN_LOAD", "click TOG_PLAYERTYPE_1",
-             "click BTN_IMPORT_LEADER_1", "key 40", "click BTN_VIEW_LEADER", "click BTN_CLOSE", "click BTN_OK", "click BTN_YES",
-             "type A", "click TOG_PLAYERTYPE_2", "type B", "click BTN_OK"]
-    code, out = godot(repo, ["--check", "--leaders", str(leaders), "--ldr", str(exports), "--probe", "TXT_IMPORT_NAME_1",
+    steps = ["click BTN_SINGLE", "click BTN_NEW_SKIRMISH", "key 13", "key 13", "click BTN_IMPORT_LEADER", "key 40", "click BTN_VIEW_LEADER",
+             "click BTN_CLOSE", "click BTN_OK", "click BTN_YES", "key 13", "key 13"]
+    code, out = godot(repo, ["--check", "--leaders", str(leaders), "--ldr", str(exports), "--probe", "TXT_IMPORT_NAME",
                              "--input", "; ".join(steps)], "res://scenes/ui/UiFlow.tscn")
     windows = re.findall(r"flow window (\S+)", out)
-    named = re.search(r"id=TXT_IMPORT_NAME_1 text=(\S+)", out)
+    named = re.search(r"id=TXT_IMPORT_NAME text=(\S+)", out)
     if (code != 0 or "leaders imported=" not in out or windows != ["DLG_IMPORT_LEADER", "DLG_VIEW_EXPLEAD", "DLG_MESSAGE_BOX"]
             or named is None or GAME.search(out) is None):
         return False, f"импорт героя: код {code}, окна {windows}\n{out.strip()}"
-    return True, f"импорт героя: .ldr → герои порта, окно выбора → просмотр → вопрос → «{named.group(1)}» в ячейке → партия"
-
-
-def hotseat(repo: Path) -> tuple[bool, str]:
-    """«Горячий стул» (docs/scenario-events.md §3б): Кланы и Легионы — люди на «Power to Corrupt»; ход Кланов, ход Легионов
-    того же дня, день +1 — снова Кланы; окно передачи хода DLG_HOTSEAT_POPUP — раньше окон событий начала хода."""
-    code, out = godot(repo, ["--check", "--scenario", "Power to Corrupt", "--player", "S073PL000a",
-                             "--humans", "S073PL000a,S073PL000b", "--clicks", "ok;end;ok;end;ok"], "res://scenes/map/MapScreen.tscn")
-    turns = [line.strip() for line in out.splitlines() if line.strip().startswith("hotseat turn ")]
-    expected = ["hotseat turn human=S073PL000a day=0", "hotseat turn human=S073PL000b day=0", "hotseat turn human=S073PL000a day=1"]
-    lines = out.splitlines()
-    last_turn = max((i for i, line in enumerate(lines) if expected[-1] in line), default=-1)
-    popup = next((i for i, line in enumerate(lines) if i > last_turn and "overlay DLG_HOTSEAT_POPUP" in line), -1)
-    event = next((i for i, line in enumerate(lines) if i > last_turn and "overlay DLG_EVENT_POPUP" in line), len(lines))
-    if code != 0 or [t for t in turns if t in expected] != expected or popup < 0 or popup > event:
-        return False, f"горячий стул: код {code}, ходы {turns}\n{out.strip()}"
-    return True, "горячий стул: Кланы → Легионы → день +1 → Кланы, окно передачи хода раньше окон событий"
-
-
-def courier(repo: Path) -> tuple[bool, str]:
-    """Гонец «горячего стула» (docs/ui-windows.md §15): Кланы предлагают союз Легионам-людям — сразу, в свой ход: вопрос → гонец
-    DLG_HOTSEAT_POPUP → «ОК» — окно ответа адресата DLG_DIPLO_BOX поверх карты Кланов → «Принять» — итог Кланам (сообщение)."""
-    steps = [("ok", None), ("panel click BTN_DIPLOMACY", "панель=DLG_DIPLOMACY"), ("diplo 3", "выбран=S073PL000b"),
-             ("panel click BTN_PROPOSE_ALLIANCE", "окна=DLG_MESSAGE_BOX сообщение=вопрос"),
-             ("ui click BTN_YES", "окна=DLG_HOTSEAT_POPUP гонец ответ=DLG_DIPLO_BOX"),
-             ("ui click BTN_OK", "окна=DLG_DIPLO_BOX союз предлагает=S073PL000a кому=S073PL000b"),
-             ("ui click BTN_OK", "окна=DLG_MESSAGE_BOX сообщение=ОК"), ("ui click BTN_OK", "окна=- ")]
-    code, out = godot(repo, ["--check", "--scenario", "Power to Corrupt", "--player", "S073PL000a", "--humans", "S073PL000a,S073PL000b",
-                             "--clicks", ";".join(s for s, _ in steps)], "res://scenes/map/MapScreen.tscn")
-    lines = [l for l in out.splitlines() if l.startswith(("ui ", "panel ", "diplo "))]
-    wants = [w for _, w in steps if w is not None]
-    if (code != 0 or len(lines) != len(wants) or any(w not in l + " " for w, l in zip(wants, lines))
-            or "courier from=S073PL000a to=S073PL000b" not in out):
-        return False, f"гонец: код {code}\n" + "\n".join(lines or [out.strip()])
-    return True, "гонец: союз человеку — вопрос → гонец → окно ответа адресата → итог предложившему, в его ход"
+    return True, f"импорт героя: .ldr → герои порта, выбор лорда → окно выбора → просмотр → вопрос → «{named.group(1)}» → партия"
 
 
 AITURN = re.compile(r"aiturn игроков=(?P<players>\d+) ходов=(?P<moves>\d+) показано=(?P<shown>\d+) под_туманом=(?P<hidden>\d+) "
@@ -2751,7 +2697,7 @@ def steps(repo: Path, screens: list[str], window: bool) -> list[tuple[str, Calla
         ("игровой цикл", gameloop), ("автосохранение", autosave),
         ("быстрое сохранение", quicksave), ("предложение союза", alliance_offer), ("журнал команд", command_journal), ("прокрутка стрелкой", map_arrows),
         ("сага", saga), ("перевод сценариев", scenario_texts), ("конец партии", game_over), ("бой эффекта", event_battle),
-        ("импорт героя", leader_import), ("горячий стул", hotseat), ("гонец", courier), ("окна города", city_windows),
+        ("импорт героя", leader_import), ("окна города", city_windows),
         ("ход и туман по шагам, мешок", walk_steps), ("ход ИИ", ai_turn), ("плавная прокрутка", smooth_scroll),
         ("смена тумана", fog_change), ("звук", sound), ("начало боя", battle_opening), ("подсветка клетки", highlight),
         ("облака", clouds), ("снос гор", mountains), ("попап в ходе ИИ", ai_popup), ("настройки показа", map_settings), ("окно настроек", settings_window), ("переназначение клавиш", rebinding), ("геймпад", gamepad),

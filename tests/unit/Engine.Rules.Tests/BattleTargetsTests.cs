@@ -91,8 +91,8 @@ public class BattleTargetsTests
                                     int reach = 3, int dam = 25, int hp = 100) => new()
     {
         Id = id,
-        Type = new UnitType("g000uu0001", 1, hp, 0, "g000aa0001", "g000000000", false, true, 20, 80),
-        Attack = new AttackType("g000aa0001", 50, cls, 80, reach, dam, 30, false, 1, Source: 0),
+        Type = new UnitType("base:unit/squire-empire", 1, hp, 0, "base:attack/squire-empire", "g000000000", false, true, 20, 80),
+        Attack = new AttackType("base:attack/squire-empire", 50, cls, 80, reach, dam, 30, false, 1, Source: 0),
         Attacker = attacker, Slot = slot, HpMax = hp, Hp = hp,
     };
 }

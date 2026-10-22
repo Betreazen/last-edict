@@ -19,20 +19,17 @@ public sealed record GameRules(
 {
     public AttackType? AttackOf(UnitType unit) => Attacks.TryGetValue(unit.AttackId, out var a) ? a : null;
 
-    /// <summary>Реализация юнита по id, каким его называет журнал: строка <c>Gunits</c> либо
-    /// порождённая прокачкой (<c>G000UG****</c>, см. <see cref="UnitGenerator"/>). null — id не
-    /// опознан ни так, ни этак; вызывающий обязан сказать об этом вслух, а не подставить старый тип.
-    /// <para>Одним вызовом, а не тремя (<c>Units[…]</c>, <see cref="AttackOf"/>,
-    /// <see cref="Attack2Of"/>), именно потому, что у порождённой реализации растут и тип, и обе
-    /// атаки сразу: взять её тип, а атаку базовую — значит получить прокачанного юнита с уроном
-    /// новобранца.</para></summary>
-    public UnitImpl? ImplOf(string implId)
+    /// <summary>Реализация юнита: тип с обеими атаками; null — типа нет в правилах (вызывающий обязан сказать об этом вслух, а не
+    /// подставить другой тип).
+    /// <para>Одним вызовом, а не тремя (<c>Units[…]</c>, <see cref="AttackOf"/>, <see cref="Attack2Of"/>), потому что у выросшего уровнем
+    /// юнита растут и тип, и обе атаки сразу: взять его тип, а атаку базовую — значит получить прокачанного юнита с уроном новобранца.</para>
+    /// <para><paramref name="level"/> выше уровня типа — реализация, выращенная до него (<see cref="UnitGenerator.Grow"/>); без генератора
+    /// (правила собраны в тесте) — тип как есть.</para></summary>
+    public UnitImpl? ImplOf(string typeId, int level = 0)
     {
-        if (Units.TryGetValue(implId, out var type))
-            return new UnitImpl(type, AttackOf(type), Attack2Of(type));
-        if (Generator is null || !Generator.TryDecode(implId, out var globalId, out int level)) return null;
-        if (!Units.TryGetValue(globalId, out var baseType)) return null;
-        return Generator.Grow(implId, baseType, AttackOf(baseType), Attack2Of(baseType), level);
+        if (!Units.TryGetValue(typeId, out var type)) return null;
+        if (level <= type.Level || Generator is null) return new UnitImpl(type, AttackOf(type), Attack2Of(type));
+        return Generator.Grow(type, AttackOf(type), Attack2Of(type), level);
     }
 
     /// <summary>Вторая атака; null — её нет ("g000000000") или id не найден в Gattacks.</summary>

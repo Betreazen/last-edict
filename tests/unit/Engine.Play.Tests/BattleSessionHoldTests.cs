@@ -13,15 +13,15 @@ public class BattleSessionHoldTests
 {
     private static string Data => Path.Combine(AppContext.BaseDirectory, "data");
 
-    private static readonly AttackType Strike = new("g000aa0019", 90, AttackClass.Damage, 100, 2, 10, 0, false, 1);
-    private static readonly AttackType Slow = new("g000aa0020", 50, AttackClass.Damage, 100, 2, 10, 0, false, 1);
-    private static readonly AttackType Middle = new("g000aa0022", 70, AttackClass.Damage, 100, 2, 10, 0, false, 1);
-    private static readonly AttackType Heal = new("g000aa0021", 40, AttackClass.Heal, 100, 2, 0, 50, false, 1);
+    private static readonly AttackType Strike = new("base:attack/pegasus-knight", 90, AttackClass.Damage, 100, 2, 10, 0, false, 1);
+    private static readonly AttackType Slow = new("base:attack/ranger", 50, AttackClass.Damage, 100, 2, 10, 0, false, 1);
+    private static readonly AttackType Middle = new("base:attack/arch-angel", 70, AttackClass.Damage, 100, 2, 10, 0, false, 1);
+    private static readonly AttackType Heal = new("base:attack/archmage", 40, AttackClass.Heal, 100, 2, 0, 50, false, 1);
 
     private static BattleUnit Unit(string id, bool attacker, int slot, AttackType attack, bool twice = false) => new()
     {
         Id = id, Attacker = attacker, Slot = slot, Hp = 1000, HpMax = 1000, Attack = attack,
-        Type = new UnitType("g000uu0019", 1, 1000, 0, attack.Id, "g000000000", twice, true, 10, 100),
+        Type = new UnitType("base:unit/pegasus-knight", 1, 1000, 0, attack.Id, "g000000000", twice, true, 10, 100),
     };
 
     private static BattleSession Session(BattleState state, bool hold)
@@ -255,9 +255,9 @@ public class BattleSessionHoldTests
     public void IsElf_OnRealTables()
     {
         var book = GameBook.Load(ImportedData.PathOf("rules"));
-        Assert.True(book.IsElf("G000UU8033"));
-        Assert.True(book.IsElf("g000uu8033"));
-        Assert.False(book.IsElf("G000UU0017"));
+        Assert.True(book.IsElf("base:unit/grovemaiden-elves"));
+        Assert.True(book.IsElf("base:unit/grovemaiden-elves"));
+        Assert.False(book.IsElf("base:unit/matriarch"));
         Assert.False(book.IsElf("G000UU9999"));
         Assert.False(book.IsElf(""));
     }

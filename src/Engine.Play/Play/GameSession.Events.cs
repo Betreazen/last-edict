@@ -395,10 +395,10 @@ public sealed partial class GameSession
         if (!Map.Players.TryGetValue(playerId, out var player) || player.KnownSpells.Contains(spellId, StringComparer.OrdinalIgnoreCase)
             || !RequireBook().Spells.ContainsKey(spellId)) return;
         var players = Map.Players.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase);
-        players[playerId] = player with { KnownSpells = [.. player.KnownSpells, spellId.ToUpperInvariant()] };
+        players[playerId] = player with { KnownSpells = [.. player.KnownSpells, spellId] };
         State = State with { Looks = Retold(Looks, With(Map, players: players), Looks.Stacks) };
         var capital = Map.Sites.FirstOrDefault(s => s.Kind == SiteKind.Capital && Same(s.Owner, playerId));
-        Given(TurnSightKind.SpellsGiven, playerId, capital?.X ?? 0, capital?.Y ?? 0, eventId, [spellId.ToUpperInvariant()]);
+        Given(TurnSightKind.SpellsGiven, playerId, capital?.X ?? 0, capital?.Y ?? 0, eventId, [spellId]);
     }
 
     /// <summary>Уничтоженные отряды карты — <paramref name="destroyed"/> (прежние и новые). Помощники новых погибших отпускаются

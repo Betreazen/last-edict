@@ -67,7 +67,7 @@ public sealed class QuestLogLogic(WindowContext context) : IWindowLogic
         ui.SetText("TXT_TEXT", popup?.Text ?? "");
         if (popup is not { Image.Length: > 0 }) return;
         // Справа — отражённой: загрузка картинки 0x5ae260 получает «не слева» (0x4bd55b; снимки «Задания» 28.09).
-        string frame = EventPopupLogic.GfxFrame("Events", popup.Image);
+        string frame = EventPopupLogic.GfxFrame("Events", ArtNames.Of(popup.Image));
         if (popup.LeftSide) ui.SetImage("IMG_LEFTSIDE", frame, UiImageAlign.Center);
         else ui.SetImage("IMG_RIGHTSIDE", UiFrameRef.Mirrored(frame), UiImageAlign.Center);
     }

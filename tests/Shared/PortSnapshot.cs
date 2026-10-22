@@ -39,6 +39,8 @@ internal static class PortSnapshot
     public static IReadOnlyList<string> AiDays(GameSession session, int days, bool hashesOnly = false, string trace = "")
     {
         ArgumentNullException.ThrowIfNull(session);
+        if (TraceDir is { } dir && trace.Length > 0)
+            session.AiTrace = new AiTraceWriter(Path.Combine(Directory.CreateDirectory(Path.Combine(dir, trace)).FullName, "ai.txt"));
         Trace(trace, 0, session);
         var start = new JsonObject { ["start"] = StateHash.Of(session) };
         if (!hashesOnly) start["players"] = Players(session.Map);
@@ -92,7 +94,7 @@ internal static class PortSnapshot
             };
             battle.PlayOut();
             var units = state.Units.OrderBy(u => u.Id, StringComparer.Ordinal)
-                .Select(u => $"{u.Id}:{u.Type.Id}:{u.Hp}:{u.Xp}:{u.Retreated}:{u.Summoned}:{u.Transformed}");
+                .Select(u => $"{u.Id}:{u.Type.Id}{(u.Type.GrownLevel > 0 ? $"@{u.Type.GrownLevel}" : "")}:{u.Hp}:{u.Xp}:{u.Retreated}:{u.Summoned}:{u.Transformed}");
             string record = JsonSerializer.Serialize(battle.Log) + "\n" + string.Join("\n", units);
             if (TraceDir is { } dir && trace.Length > 0)
                 File.WriteAllText(Path.Combine(Directory.CreateDirectory(Path.Combine(dir, trace)).FullName, $"battle-{lines.Count + 1:D2}.txt"), record);
@@ -140,6 +142,19 @@ internal static class PortSnapshot
         if (TraceDir is not { } dir || name.Length == 0) return;
         var save = GameSave.ToJson(session.SnapshotWithoutSummaries() with { Summaries = new Dictionary<string, PendingSummary>() }, "", DateTime.UnixEpoch);
         File.WriteAllText(Path.Combine(Directory.CreateDirectory(Path.Combine(dir, name)).FullName, $"day-{day:D2}.json"), save);
+    }
+
+    /// <summary>Решения ИИ в трассу (<c>ai.txt</c>): выборы тактики и шаги стратегии по порядку — по ним ищется первое расходящееся решение.</summary>
+    private sealed class AiTraceWriter(string path) : IAiTrace
+    {
+        public void Picked(string playerId, int day, AiTacticOption action, double score, int candidates) =>
+            File.AppendAllText(path, $"{day} {playerId} pick {action} {score:R} {candidates}\n");
+
+        public void Stepped(string playerId, int day, AiExecuted step, int number) =>
+            File.AppendAllText(path, $"{day} {playerId} step {number} {step}\n");
+
+        public void TurnEnded(string playerId, int day, long ms, int steps, int picks) =>
+            File.AppendAllText(path, $"{day} {playerId} end {steps} {picks}\n");
     }
 
     private static string Json(JsonNode node) => node.ToJsonString(Line);

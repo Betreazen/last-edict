@@ -18,15 +18,15 @@ public class ImmunityTests(ITestOutputHelper output)
     private static readonly Lazy<ModifierTables> Mods = new(() => ModifierLoader.Load(ImportedData.Content));
 
     // Ванильные участники, названные поимённо (см. отчёт задачи 3):
-    private const string RedDragon = "g000uu5019";     // Gimmu: Fire (4) Always
-    private const string FlameCaster = "g000uu0028";   // Gimmu: Fire (4) Once; атака g000aa0028 — Fire
-    private const string LivingArmor = "g000uu0024";   // GimmuC: Poison (12) Always; Gimmu: Mind (1) Always
-    private const string Squire = "g000uu0001";        // ни одной строки ни в Gimmu, ни в GimmuC
-    private const string FireBolt = "g000aa0028";      // Damage, SOURCE 4 (Fire), QTY_DAM 35, POWER 80
-    private const string PoisonBite = "g000aa9019";    // Poison, SOURCE 3 (Death), QTY_DAM 20, INFINITE
-    private const string MindParalyze = "g000aa0078";  // Paralyze, SOURCE 1 (Mind)
-    private const string WardsAttack = "g000aa8133";   // BestowWards, QTY_WARDS 4
-    private const string FireWard = "g000um0016";      // TYPE 12: IMMUNITY 4 (Fire), IMMUNECAT 2 (Once)
+    private const string RedDragon = "base:unit/red-dragon-neutral";     // Gimmu: Fire (4) Always
+    private const string FlameCaster = "base:unit/flame-caster";   // Gimmu: Fire (4) Once; атака g000aa0028 — Fire
+    private const string LivingArmor = "base:unit/living-armor";   // GimmuC: Poison (12) Always; Gimmu: Mind (1) Always
+    private const string Squire = "base:unit/squire-empire";        // ни одной строки ни в Gimmu, ни в GimmuC
+    private const string FireBolt = "base:attack/flame-caster";      // Damage, SOURCE 4 (Fire), QTY_DAM 35, POWER 80
+    private const string PoisonBite = "base:attack/thanatos-blade-artifact";    // Poison, SOURCE 3 (Death), QTY_DAM 20, INFINITE
+    private const string MindParalyze = "base:attack/ghost";  // Paralyze, SOURCE 1 (Mind)
+    private const string WardsAttack = "base:attack/grovemaiden-elves";   // BestowWards, QTY_WARDS 4
+    private const string FireWard = "base:modifier/fire-ward";      // TYPE 12: IMMUNITY 4 (Fire), IMMUNECAT 2 (Once)
 
     private static RulesConstants C => Rules.Value.Constants;
 
@@ -61,7 +61,7 @@ public class ImmunityTests(ITestOutputHelper output)
                          $"вардов всего {withWards.Sum(a => a.Wards!.Count)}");
         Assert.Equal(3, withWards.Count);                                  // ровно те же три, что у LoadExtras
         Assert.Equal(6, withWards.Sum(a => a.Wards!.Count));
-        Assert.Equal(new[] { "g000um0001", "g000um0016", "g000um0010", "g000um0005" },
+        Assert.Equal(new[] { "base:modifier/air-ward", "base:modifier/fire-ward", "base:modifier/earth-ward", "base:modifier/water-ward" },
                      Attack(WardsAttack).Wards!.ToArray());
     }
 
@@ -154,18 +154,18 @@ public class ImmunityTests(ITestOutputHelper output)
         ImportedData.RequireRules();
         (string Unit, AttackClass Class)[] expected =
         [
-            ("g000uu0024", AttackClass.Poison),   // Living Armor
-            ("g000uu0025", AttackClass.Poison),   // Golem
-            ("g000uu0051", AttackClass.Poison),   // Stone Ancestor
-            ("g000uu0055", AttackClass.Poison),   // Gargoyle
-            ("g000uu0056", AttackClass.Poison),   // Marble Gargoyle
-            ("g000uu0104", AttackClass.Poison),   // Thanatos
-            ("g000uu0167", AttackClass.Poison),   // Onyx Gargoyle
-            ("g000uu3001", AttackClass.Shatter),  // Myzrael
-            ("g000uu3002", AttackClass.Shatter),  // Vithar
-            ("g000uu3003", AttackClass.Shatter),  // Ashkael
-            ("g000uu3004", AttackClass.Shatter),  // Ashgan
-            ("g000uu8040", AttackClass.Shatter),  // Illumielle
+            ("base:unit/living-armor", AttackClass.Poison),   // Living Armor
+            ("base:unit/golem", AttackClass.Poison),   // Golem
+            ("base:unit/stone-ancestor", AttackClass.Poison),   // Stone Ancestor
+            ("base:unit/gargoyle", AttackClass.Poison),   // Gargoyle
+            ("base:unit/marble-gargoyle", AttackClass.Poison),   // Marble Gargoyle
+            ("base:unit/thanatos", AttackClass.Poison),   // Thanatos
+            ("base:unit/onyx-gargoyle-legions", AttackClass.Poison),   // Onyx Gargoyle
+            ("base:unit/myzrael", AttackClass.Shatter),  // Myzrael
+            ("base:unit/vithar", AttackClass.Shatter),  // Vithar
+            ("base:unit/ashkael", AttackClass.Shatter),  // Ashkael
+            ("base:unit/ashgan", AttackClass.Shatter),  // Ashgan
+            ("base:unit/illumielle", AttackClass.Shatter),  // Illumielle
             // тринадцатая строка — g000uu5167, юнит из Gunits удалён (висячая ссылка задачи 1),
             // поэтому в правила она не попадает: строк 13, живых носителей 12.
         ];
@@ -306,7 +306,7 @@ public class ImmunityTests(ITestOutputHelper output)
         ImportedData.RequireRules();
         var armor = Of(LivingArmor);
         Immunity.Bestow(armor, [Rules.Value.Modifiers![FireWard]]);
-        var firePoison = new AttackType("g000aa0001", 0, AttackClass.Poison, 0, 0, 0, 0, false, 0, Source: 4);
+        var firePoison = new AttackType("base:attack/squire-empire", 0, AttackClass.Poison, 0, 0, 0, 0, false, 0, Source: 4);
         Assert.True(Immunity.Blocks(armor, firePoison));
         Assert.Equal(1 << 4, armor.SourceImmunityUsed);
         Assert.True(Immunity.Blocks(armor, firePoison));   // Always класса держит и дальше
@@ -320,7 +320,7 @@ public class ImmunityTests(ITestOutputHelper output)
     {
         ImportedData.RequireRules();
         var dragon = Of(RedDragon);
-        var synthetic = new AttackType("g000aa0001", 50, AttackClass.Damage, 80, 3, 25, 0, false, 0);
+        var synthetic = new AttackType("base:attack/squire-empire", 50, AttackClass.Damage, 80, 3, 25, 0, false, 0);
         Assert.Equal(AttackType.SourceUnset, synthetic.Source);
         Assert.Equal(ImmunityLevel.NotImmune, Immunity.LevelOf(dragon, synthetic));
         Assert.False(Immunity.Blocks(dragon, synthetic));

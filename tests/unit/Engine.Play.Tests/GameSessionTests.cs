@@ -27,7 +27,7 @@ public class GameSessionTests(ITestOutputHelper output)
         Skip.IfNot(File.Exists(Path.Combine(GamePaths.Exports, "Power to Corrupt.sg")), "нет копии игры");
         var session = Session("Power to Corrupt");
         var before = session.Map;
-        var dwarf = before.Players.Values.First(p => p.RaceId.Equals("G000RR0001", StringComparison.OrdinalIgnoreCase));
+        var dwarf = before.Players.Values.First(p => p.RaceId.Equals("base:race/mountain-clans", StringComparison.OrdinalIgnoreCase));
         int ownBefore = Own(before, 2);
 
         session.EndTurn();                       // день 0 → 1 и 1 → 2: в первый день земля ещё не растёт

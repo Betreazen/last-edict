@@ -29,7 +29,8 @@ public sealed class UnitFaces(IReadOnlyDictionary<string, string> baseUnits)
 
     public static UnitFaces Load(string rulesDir) => Load(rulesDir, null);
 
-    public string Base(string type) => (baseUnits.TryGetValue(type, out var b) ? b : type).ToUpperInvariant();
+    /// <summary>Имя графики базового типа (<see cref="ArtNames"/>: id оригинала заглавными).</summary>
+    public string Base(string type) => ArtNames.Of(baseUnits.TryGetValue(type, out var b) ? b : type);
 
     /// <summary>Имя малого портрета в <c>Faces.ff</c> без архива — <c>{база}FACE</c> (панели берут <see cref="PanelName"/>). Движок берёт картинку у <c>0x5b1e6a</c> (вызов из <c>0x48da55</c> панели отряда <c>0x48d8f3</c>): у типа —
     /// базовый (<c>vtable+0x2c</c>), пустой базовый (<c>[0x8372f4]</c>) — сам тип. Лидер, выданный сценарием, бывает обычным воином с

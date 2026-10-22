@@ -1,3 +1,4 @@
+using LastEdict.Data.Content;
 using LastEdict.Data.Map;
 using LastEdict.Rules.Battle;
 using LastEdict.Rules.Map;
@@ -1287,7 +1288,7 @@ public sealed partial class GameSession(GameState state, MapArtData art, GameBoo
             {
                 if (types.ContainsKey(item)) { gained.Add(item); continue; }
                 string instance = NewId(ref ids, types.Keys, map.Units.Keys.FirstOrDefault() ?? "S000", "IM");
-                types[instance] = item.ToUpperInvariant();
+                types[instance] = item;
                 gained.Add(instance);
                 created.Add(instance);
             }
@@ -1361,7 +1362,7 @@ public sealed partial class GameSession(GameState state, MapArtData art, GameBoo
     public static MapState KnownSpellsSorted(MapState map)
     {
         ArgumentNullException.ThrowIfNull(map);
-        var players = map.Players.ToDictionary(p => p.Key, p => p.Value with { KnownSpells = KnownSpellOrder.Sort(p.Value.KnownSpells) },
+        var players = map.Players.ToDictionary(p => p.Key, p => p.Value with { KnownSpells = KnownSpellOrder.Sort(p.Value.KnownSpells, LegacyIds.Base.LegacyOf) },
                                                StringComparer.OrdinalIgnoreCase);
         return With(map, players: players);
     }

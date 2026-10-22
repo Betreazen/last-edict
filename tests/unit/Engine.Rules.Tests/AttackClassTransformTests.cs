@@ -24,23 +24,23 @@ public class AttackClassTransformTests(ITestOutputHelper output)
     private static readonly Lazy<GameRules> Rules = new(() => RulesLoader.Load(ImportedData.Content));
 
     // Вани́льные носители: перебор Gunits × Gattacks по классу атаки даёт ровно шесть типов.
-    private const string Alchemist = "g000uu0161";     // L3 GiveAttack, hp 120
-    private const string GiveAttackTouch = "g000aa0161";  // GiveAttack, POWER 100, REACH 2, SOURCE 2
-    private const string Doppel = "g000uu0171";        // L3 Doppelganger, hp 120
-    private const string DoppelTouch = "g000aa0171";   // Doppelganger, REACH 2, ALT_ATTACK g000aa1171
-    private const string WolfLord = "g000uu0164";      // L4 TransformSelf, hp 225
-    private const string WolfChange = "g000aa0164";    // TransformSelf, POWER 100, ALT g000aa1164
-    private const string WolfForm = "g000uu0190";      // во что превращается Волчий лорд, hp 275
-    private const string Witch = "g000uu0067";         // L2 TransformOther, hp 75
-    private const string WitchCurse = "g000aa0067";    // TransformOther, POWER 80, SOURCE 1, INFINITE
-    private const string Toad = "g000uu5034";          // малый кандидат Gtransf, hp 50
-    private const string BigForm = "g000uu6104";       // большой кандидат Gtransf, hp 100
-    private const string Squire = "g000uu0001";        // L1, hp 100, ARMOR 0, иммунитетов нет
-    private const string Knight = "g000uu0002";        // L2, hp 150
-    private const string Occultist = "g000uu6013";     // L1 Summon — для проверки отката призыва
-    private const string SummonOne = "g000aa6013";     // Summon: один кандидат, g000uu0087
-    private const string DrainDwarf = "g000uu0178";    // вторая атака — DrainLevel (карта 17, 19.10)
-    private const string DrainTouch = "g000aa1178";    // DrainLevel
+    private const string Alchemist = "base:unit/alchemist";     // L3 GiveAttack, hp 120
+    private const string GiveAttackTouch = "base:attack/alchemist";  // GiveAttack, POWER 100, REACH 2, SOURCE 2
+    private const string Doppel = "base:unit/doppelganger";        // L3 Doppelganger, hp 120
+    private const string DoppelTouch = "base:attack/doppelganger";   // Doppelganger, REACH 2, ALT_ATTACK g000aa1171
+    private const string WolfLord = "base:unit/wolf-lord";      // L4 TransformSelf, hp 225
+    private const string WolfChange = "base:attack/wolf-lord";    // TransformSelf, POWER 100, ALT g000aa1164
+    private const string WolfForm = "base:unit/spirit-of-fenrir";      // во что превращается Волчий лорд, hp 275
+    private const string Witch = "base:unit/witch";         // L2 TransformOther, hp 75
+    private const string WitchCurse = "base:attack/witch";    // TransformOther, POWER 80, SOURCE 1, INFINITE
+    private const string Toad = "base:unit/imp";          // малый кандидат Gtransf, hp 50
+    private const string BigForm = "base:unit/fat-imp-neutral-2";       // большой кандидат Gtransf, hp 100
+    private const string Squire = "base:unit/squire-empire";        // L1, hp 100, ARMOR 0, иммунитетов нет
+    private const string Knight = "base:unit/knight";        // L2, hp 150
+    private const string Occultist = "base:unit/occultist-neutral";     // L1 Summon — для проверки отката призыва
+    private const string SummonOne = "base:attack/occultist-neutral";     // Summon: один кандидат, g000uu0087
+    private const string DrainDwarf = "base:unit/wight";    // вторая атака — DrainLevel (карта 17, 19.10)
+    private const string DrainTouch = "base:attack/wight-2nd";    // DrainLevel
 
     private static RulesConstants C => Rules.Value.Constants;
 
@@ -96,9 +96,9 @@ public class AttackClassTransformTests(ITestOutputHelper output)
     [SkippableFact] public void Gtransf_LeavesExactlyOneCandidateForEveryVanillaTransform()
     {
         ImportedData.RequireRules();
-        string[] transforms = ["g000aa0164", "g000aa9022",                       // TransformSelf
-                               "g000aa0067", "g000aa0068", "g000aa0173",         // TransformOther
-                               "g000aa9021", "g000aa9140"];
+        string[] transforms = ["base:attack/wolf-lord", "base:attack/polymorph-self",                       // TransformSelf
+                               "base:attack/witch", "base:attack/hag", "base:attack/succubus",         // TransformOther
+                               "base:attack/hag-s-ring-artifact", "base:attack/orb-of-witches"];
         int checkedCount = 0;
         foreach (var id in transforms)
             foreach (bool small in new[] { true, false })
@@ -348,7 +348,7 @@ public class AttackClassTransformTests(ITestOutputHelper output)
         Assert.Equal(60, enemy.Hp);                        // 100 − 40
         Assert.Equal(3, rng.Used);
         Assert.Equal(WolfLord, wolf.Type.Id);              // превращения не было
-        Assert.Equal("g000aa1164", Attack(WolfChange).AltAttackId);
+        Assert.Equal("base:attack/wolf-lord-alt", Attack(WolfChange).AltAttackId);
         output.WriteLine($"TransformSelf по врагу ушёл к {Attack(WolfChange).AltAttackId}: " +
                          $"урон {r.Damage}, бросков {rng.Used}");
     }

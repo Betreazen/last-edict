@@ -92,8 +92,7 @@ public sealed partial class GameSession
         if (Rng.Next(100) < RequireBook().Vars.GainSpell && map.Players.TryGetValue(loserId, out var loser)
             && map.Players.TryGetValue(stack.Owner, out var captor))
         {
-            spells = [.. loser.KnownSpells.Where(s => !captor.KnownSpells.Contains(s, StringComparer.OrdinalIgnoreCase))
-                                          .Select(s => s.ToUpperInvariant()).Distinct(StringComparer.OrdinalIgnoreCase)];
+            spells = [.. loser.KnownSpells.Where(s => !captor.KnownSpells.Contains(s, StringComparer.OrdinalIgnoreCase)).Distinct(StringComparer.OrdinalIgnoreCase)];
             if (spells.Count > 0)
             {
                 var players = map.Players.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase);

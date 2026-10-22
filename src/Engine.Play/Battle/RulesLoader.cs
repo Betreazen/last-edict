@@ -8,8 +8,8 @@ using LastEdict.Rules.Units;
 namespace LastEdict.Data.Battle;
 
 /// <summary>Содержимое (<see cref="ContentSet"/>: юниты, атаки, рост, модификаторы, глобальные величины) → <see cref="GameRules"/>.
-/// Каталог — база содержимого или таблицы оригинала (<see cref="ContentSource.Open"/>). Ключи правил регистронезависимы и пока —
-/// id оригинала (<see cref="ContentDef.Key"/>): в таблицах нижний регистр, в корпусе и сохранениях — верхний.</summary>
+/// Каталог — база содержимого или таблицы оригинала (<see cref="ContentSource.Open"/>). Ключи правил — id содержимого
+/// (<c>base:unit/knight</c>, <see cref="ContentDef.Key"/>), словари регистронезависимы.</summary>
 public static class RulesLoader
 {
     public static GameRules Load(string globalsDir) => Load(ContentSource.Open(globalsDir));
@@ -34,8 +34,7 @@ public static class RulesLoader
         }
 
         var units = new Dictionary<string, UnitType>(StringComparer.OrdinalIgnoreCase);
-        // Рост по уровню — и здесь, а не только в LoadExtras: без него не собрать порождённые прокачкой реализации
-        // (UnitGenerator), а их кладёт в бой сам движок.
+        // Рост по уровню — и здесь, а не только в LoadExtras: без него не вырастить юнита уровнем выше своего типа (UnitGenerator).
         var growth = new Dictionary<string, GrowthRef>(StringComparer.OrdinalIgnoreCase);
         foreach (var u in content.Units)
         {
@@ -51,6 +50,9 @@ public static class RulesLoader
                 Category = (int)u.Role,
                 Branch = (int)u.Branch,
                 IsLeader = u.LeaderCategory is not null,
+                MageLeader = u.MageLeader ?? LegacyUnits.IsMageLeader(u.LegacyId),
+                DamageBonus = u.DamageBonus ?? LegacyUnits.HasDamageBonus(u.LegacyId),
+                Copyable = u.Copyable ?? LegacyUnits.IsCopyable(u.LegacyId),
             };
         }
 
@@ -64,9 +66,7 @@ public static class RulesLoader
                                                                 BatLowerIni: battle.LowerInitiativePercent, BatRound: battle.Rounds),
                              Summons(content),
                              tables.Modifiers,
-                             // CUnitGenerator: журнал зовёт прокачанного юнита порождённым id (G000UG****), которого среди
-                             // типов нет вовсе. Без генератора такой бой не грузится целиком.
-                             new UnitGenerator(units.Keys, growth, DynUpgrades(content)),
+                             new UnitGenerator(growth, DynUpgrades(content)),
                              // Что из цепочки выдаётся уровнем, а что надевается руками — без этого различия нельзя понять,
                              // какой снимок .sg описывает бой.
                              tables.LeaderUpgrades.Select(u => u.ModifId).ToHashSet(StringComparer.OrdinalIgnoreCase));
@@ -127,7 +127,7 @@ public static class RulesLoader
         foreach (var u in content.Units)
             units[u.Key] = new UnitExtra(u.Key, content.KeyOf(u.UpgradeBuilding), content.KeyOf(u.Growth.Early), u.Growth.SwitchLevel,
                 content.KeyOf(u.Growth.Late), u.Leadership ?? 0, u.Scout ?? 0, u.Move ?? 0, u.Regeneration, (int)u.Role,
-                (int?)u.LeaderCategory ?? 0, u.Negotiate ?? 0, (int)u.Subrace, content.KeyOf(u.Race).ToUpperInvariant(),
+                (int?)u.LeaderCategory ?? 0, u.Negotiate ?? 0, (int)u.Subrace, content.KeyOf(u.Race),
                 u.WaterOnly ?? false, u.LifetimeDays ?? 0);
 
         return new RulesExtras(attacks, units, DynUpgrades(content));

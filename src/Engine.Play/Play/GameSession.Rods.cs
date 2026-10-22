@@ -48,7 +48,7 @@ public sealed partial class GameSession
             for (int y = 0; y < map.Size; y++)
                 if (map.Tiles[x, y].Terrain == terrain) owned.Add((x, y));
         var source = new LandSource(rod.Id, (rod.X, rod.Y), book.Land.RodRange, [(rod.X, rod.Y)]);
-        var cells = LandModel.AcquisitionLand(map, owned, source, book.Land, LandModel.BlockedCells(map, map.Sites, book.MountainLandmarks));
+        var cells = LandModel.AcquisitionLand(map, owned, source, book.Land, LandModel.BlockedCells(map, map.Sites, book.MountainLandmarks, book.Economy.NeutralRaces));
         if (cells.Count == 0) return;
         State = State with { Looks = Retold(Looks, Recolor(map, cells.ToHashSet(), terrain), Looks.Stacks) };
     }

@@ -14,11 +14,13 @@ public static class KnownSpellOrder
 {
     /// <summary>Id по возрастанию числа <c>CMidgardID</c>: категория (<c>G</c> 0, <c>C</c> 1, <c>S</c> 2, <c>E</c> 3; биты 30–31), номер
     /// категории (биты 22–29), тип (биты 16–21; у заклинаний один — <c>SS</c>), номер (биты 0–15). Нечитаемый id — после читаемых,
-    /// по тексту.</summary>
-    public static IReadOnlyList<string> Sort(IReadOnlyList<string> ids)
+    /// по тексту. Ключ — id содержимого: число <c>CMidgardID</c> берётся из id оригинала заклинания (<paramref name="legacyOf"/>), у нового
+    /// заклинания мода его нет — оно после заклинаний оригинала, по id.</summary>
+    public static IReadOnlyList<string> Sort(IReadOnlyList<string> ids, Func<string, string?> legacyOf)
     {
         ArgumentNullException.ThrowIfNull(ids);
-        return [.. ids.OrderBy(Key).ThenBy(id => id, StringComparer.OrdinalIgnoreCase)];
+        ArgumentNullException.ThrowIfNull(legacyOf);
+        return [.. ids.OrderBy(id => Key(legacyOf(id))).ThenBy(id => legacyOf(id) ?? id, StringComparer.OrdinalIgnoreCase)];
     }
 
     private static (int Bad, int Category, int Index, int Type, int Number) Key(string? id)

@@ -158,7 +158,7 @@ public sealed class TradeSpellLogic(WindowContext context, string targetId, IRea
         }
         string capital = C.Map.Sites.FirstOrDefault(s => s.Kind == SiteKind.Capital && s.Owner.Equals(C.Viewer, StringComparison.OrdinalIgnoreCase))?.Id ?? "";
         Requests.Add(new UiOpen(TradePriceLogic.Screen, new TradePriceLogic(C, targetId, new AiTradeOffer(AiGiftKind.Spell, spellId, capital, 0),
-            $"IconSpel:{spellId.ToUpperInvariant()}", Name(spellId), spell.BuyCost.Gold)));
+            $"IconSpel:{ArtNames.Of(spellId)}", Name(spellId), spell.BuyCost.Gold)));
     }
 }
 

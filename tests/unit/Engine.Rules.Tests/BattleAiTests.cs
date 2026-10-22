@@ -211,10 +211,10 @@ public class BattleAiTests
                                  AttackClass? second = null, int secondSource = 0) => new()
     {
         Id = id,
-        Type = new UnitType("g000uu0001", 1, hp, armor, "g000aa0001", second is null ? "g000000000" : "g000aa0002",
+        Type = new UnitType("base:unit/squire-empire", 1, hp, armor, "base:attack/squire-empire", second is null ? "g000000000" : "base:attack/knight",
                             false, small, xpk, 80, bySource ?? None, None),
-        Attack = new AttackType("g000aa0001", 50, cls, 80, reach, dam, 30, false, 1, Source: 0),
-        Attack2 = second is { } s ? new AttackType("g000aa0002", 50, s, 80, reach, 10, 0, false, 1, true, Source: secondSource) : null,
+        Attack = new AttackType("base:attack/squire-empire", 50, cls, 80, reach, dam, 30, false, 1, Source: 0),
+        Attack2 = second is { } s ? new AttackType("base:attack/knight", 50, s, 80, reach, 10, 0, false, 1, true, Source: secondSource) : null,
         Attacker = attacker, Slot = slot, HpMax = hp, Hp = hp,
     };
 }

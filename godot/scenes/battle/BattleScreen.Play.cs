@@ -200,12 +200,12 @@ public partial class BattleScreen
         {
             if (_session.State.Unit(action[0].Unit) is not { } actor) continue;
             foreach (var sprite in _scene.UnitSprites(actor, BattleAction.Hit, actor.Type.SizeSmall)) yield return sprite;
-            foreach (var sprite in _scene.CasterEffects(actor.Type.GlobalId, TargetsAttackers(actor, action))) yield return sprite;
+            foreach (var sprite in _scene.CasterEffects(actor.Type.Id, TargetsAttackers(actor, action))) yield return sprite;
             foreach (var record in action.DistinctBy(r => (r.Target.ToUpperInvariant(), r.Attack)))
             {
                 if (_session.State.Unit(record.Target) is not { } target) continue;
                 var cls = ClassOf(actor, record);
-                if (_scene.Touch(actor.Type.GlobalId, cls, record.Attack != 2, target) is { } touch) yield return touch;
+                if (_scene.Touch(actor.Type.Id, cls, record.Attack != 2, target) is { } touch) yield return touch;
                 if (target.Attacker != actor.Attacker)
                     foreach (var sprite in _scene.UnitSprites(target, BattleAction.Hurt, target.Type.SizeSmall)) yield return sprite;
                 if (!target.Alive && _scene.Death(target) is { } death) yield return death;
@@ -223,10 +223,10 @@ public partial class BattleScreen
         var sprites = new List<BattleSprite>();
         sprites.AddRange(_scene.UnitSprites(next, BattleAction.Hit, next.Type.SizeSmall));
         IReadOnlyList<BattleUnit> targets = _session.WaitsPlayer ? _session.Targets() : [];
-        sprites.AddRange(_scene.CasterEffects(next.Type.GlobalId, targets.FirstOrDefault()?.Attacker ?? !next.Attacker));
+        sprites.AddRange(_scene.CasterEffects(next.Type.Id, targets.FirstOrDefault()?.Attacker ?? !next.Attacker));
         foreach (var target in targets)
         {
-            if (_scene.Effect(next.Type.GlobalId, target) is { } touch) sprites.Add(touch);
+            if (_scene.Effect(next.Type.Id, target) is { } touch) sprites.Add(touch);
             if (target.Attacker != next.Attacker) sprites.AddRange(_scene.UnitSprites(target, BattleAction.Hurt, target.Type.SizeSmall));
         }
         _field.Warm(sprites);
@@ -266,7 +266,7 @@ public partial class BattleScreen
         bool main = first.Attack != 2;
         bool swing = (main || leading) && used is not (AttackClass.TransformSelf or AttackClass.Doppelganger);
         int swingFrames = swing ? _field.Length(_scene.UnitSprites(actor, BattleAction.Hit, actor.Type.SizeSmall)) : 0;
-        var info = GameSound.Units.Of(actor.Type.GlobalId);
+        var info = GameSound.Units.Of(actor.Type.Id);
         int hitFrame = info is { HitFrame: > 0 } ? info.HitFrame : swingFrames / 2;
         double hitAt = start + (swing ? hitFrame * AnimFrameMs : 0), end = start + (swingFrames * AnimFrameMs);
         if (swing) Later(start, () => _field.Show(actor, BattleAction.Hit));
@@ -276,7 +276,7 @@ public partial class BattleScreen
         if (numbers is not null) Later(notesAt, numbers);
         // Следующее действие ждёт и снятия надписей на портретах (счётчик анимаций +0x14d8, 0x637473; сессия Б).
         if (numbers is not null) end = Math.Max(end, notesAt + NoteMs);
-        var cast = main || leading ? _scene.CasterEffects(actor.Type.GlobalId, TargetsAttackers(actor, action)) : [];
+        var cast = main || leading ? _scene.CasterEffects(actor.Type.Id, TargetsAttackers(actor, action)) : [];
         double touchAt = hitAt;
         if (cast.Count > 0)
         {
@@ -345,7 +345,7 @@ public partial class BattleScreen
         // TUCH (0x63513a): у основной атаки — свой у юнита, у второй — только по классу (BattleScene.Touch, ранг 1). Промах и иммунитет —
         // без него (ранг 2).
         var touch = miss ? null
-            : item is null ? _scene.Touch(actor.Type.GlobalId, cls, main, target)
+            : item is null ? _scene.Touch(actor.Type.Id, cls, main, target)
             : item.Item.UnitId is { Length: > 0 } itemUnit ? _scene.Effect(itemUnit, target) : null;
         double reactAt = touchAt + (touch is null ? 0 : TouchReactFrame * AnimFrameMs);
         bool hurt = HurtShown && !miss && cls is { } c && Strikes(c) && (killed || !IsDot(c)) && target.Attacker != actor.Attacker;
@@ -376,7 +376,7 @@ public partial class BattleScreen
         {
             if (hurt) _field.Show(target, BattleAction.Hurt);
             if (effect is not null) _field.PlayOnce(effect, "EFFECT", holder);
-            else if (pause > 0) PortProbe.Av?.BattleAnim(holder.Id, holder.Type.GlobalId, "EFFECT", pause);   // как bat_anim EFFECT паузы призыва
+            else if (pause > 0) PortProbe.Av?.BattleAnim(holder.Id, holder.Type.Id, "EFFECT", pause);   // как bat_anim EFFECT паузы призыва
         });
         // Облик (новый тип, воскрешённый на поле, призванный) — на половине эффекта или паузы призыва; без них — сразу (0x6529ab). Призыв без
         // призванного (цель — сам ходящий) замах не обрывает.

@@ -3,7 +3,6 @@
  "landmarks": [
   {
    "id": "test:landmark/stone",
-   "legacyId": "t000mga001",
    "width": 1,
    "height": 1,
    "mountain": false,
@@ -11,7 +10,6 @@
   },
   {
    "id": "test:landmark/ridge",
-   "legacyId": "t000mga002",
    "width": 2,
    "height": 2,
    "mountain": true,

@@ -3,7 +3,6 @@
  "spells": [
   {
    "id": "test:spell/sun-bolt",
-   "legacyId": "t000ssa001",
    "category": "attack",
    "level": 1,
    "castCost": {
@@ -19,7 +18,6 @@
   },
   {
    "id": "test:spell/sun-ward",
-   "legacyId": "t000ssa002",
    "category": "boost",
    "level": 1,
    "castCost": {
@@ -34,7 +32,6 @@
   },
   {
    "id": "test:spell/moon-bolt",
-   "legacyId": "t000ssa003",
    "category": "attack",
    "level": 1,
    "castCost": {
@@ -50,7 +47,6 @@
   },
   {
    "id": "test:spell/moon-ward",
-   "legacyId": "t000ssa004",
    "category": "boost",
    "level": 1,
    "castCost": {

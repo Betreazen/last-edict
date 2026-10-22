@@ -188,8 +188,8 @@ public class LandTests
             Fog = baseMap.Fog, Turn = 1, Objects = baseMap.Objects,
             Players = new Dictionary<string, MapPlayer>
             {
-                ["S001PL0001"] = Player("S001PL0001", "G000RR0000"),
-                ["S001PL0009"] = Player("S001PL0009", "G000RR0004"),
+                ["S001PL0001"] = Player("S001PL0001", "base:race/empire"),
+                ["S001PL0009"] = Player("S001PL0009", "base:race/neutral"),
             },
             Plan = new Dictionary<(int X, int Y), IReadOnlyList<string>>
             {
@@ -245,10 +245,10 @@ public class LandTests
     {
         var landmarks = new (string Id, string Type, int X, int Y)[]
         {
-            ("S143MM0007", "G000MG0133", 1, 1),   // Кладбище: T, категория 0
-            ("S143MM0009", "G000MG0006", 3, 1),   // Плато: T, категория 3
-            ("S143MM0008", "G000MG0073", 5, 1),   // Водоворот: F, категория 3
-            ("S143MM0057", "G000MG0022", 7, 1),   // Лавовая яма: F, категория 3
+            ("S143MM0007", "base:landmark/cemetery-3x3-4", 1, 1),   // Кладбище: T, категория 0
+            ("S143MM0009", "base:landmark/fall-3x3", 3, 1),   // Плато: T, категория 3
+            ("S143MM0008", "base:landmark/whirlpool", 5, 1),   // Водоворот: F, категория 3
+            ("S143MM0057", "base:landmark/lava-pit-1x1", 7, 1),   // Лавовая яма: F, категория 3
         };
         var baseMap = Map(9, capital: 1);
         var map = new MapState
@@ -259,7 +259,7 @@ public class LandTests
                 l => new MapObject { Id = l.Id, Kind = "MM", TypeId = l.Type, X = l.X, Y = l.Y }),
             Plan = landmarks.ToDictionary(l => (l.X, l.Y), l => (IReadOnlyList<string>)[l.Id]),
         };
-        var mountains = new HashSet<string>(["g000mg0133", "g000mg0006"], StringComparer.OrdinalIgnoreCase);
+        var mountains = new HashSet<string>(["base:landmark/cemetery-3x3-4", "base:landmark/fall-3x3"], StringComparer.OrdinalIgnoreCase);
 
         var blocked = LandModel.BlockedCells(map, [], mountains);
 

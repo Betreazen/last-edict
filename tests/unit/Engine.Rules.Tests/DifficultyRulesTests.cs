@@ -30,7 +30,7 @@ public class DifficultyRulesTests
     {
         ImportedData.RequireRules();
         var rules = RulesLoader.Load(ImportedData.Content);
-        var type = rules.Units["g000uu0001"];
+        var type = rules.Units["base:unit/squire-empire"];
         var attack = rules.AttackOf(type)!;
         BattleUnit Unit(string id, bool attacker) => new()
         {

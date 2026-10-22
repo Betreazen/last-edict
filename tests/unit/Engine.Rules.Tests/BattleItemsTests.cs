@@ -22,11 +22,11 @@ public class BattleItemsAfterBattleTests(ITestOutputHelper output)
     private static readonly Lazy<IReadOnlyDictionary<string, Item>> Items =
         new(() => LastEdict.Data.Magic.ItemLoader.Load(ImportedData.Content));
 
-    private const string Orb = "G000IG9001";        // «Squire Orb», категория 11
-    private const string Talisman = "G000IG9101";   // «Squire Talisman», категория 12
-    private const string HealPotion = "G000IG0005"; // «Potion of Healing», 50 HP, категория 5
-    private const string LifePotion = "G000IG0001"; // «Life Potion», воскрешение, категория 6
-    private const string Squire = "g000uu0001";     // носитель: L1, hp 100
+    private const string Orb = "base:item/squire-orb";        // «Squire Orb», категория 11
+    private const string Talisman = "base:item/squire-talisman";   // «Squire Talisman», категория 12
+    private const string HealPotion = "base:item/potion-of-healing"; // «Potion of Healing», 50 HP, категория 5
+    private const string LifePotion = "base:item/life-potion"; // «Life Potion», воскрешение, категория 6
+    private const string Squire = "base:unit/squire-empire";     // носитель: L1, hp 100
 
     private static Item Item(string id) => Items.Value[id];
 

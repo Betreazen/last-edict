@@ -19,11 +19,11 @@ public sealed record UpgradeOutcome(UnitProgress Unit, IReadOnlyList<string> Mis
 /// </summary>
 public static class UnitUpgrade
 {
-    /// <summary>Наследники типа — строки <c>Gunits</c> с <c>PREV_ID == typeId</c>, в порядке таблицы. Ранг 1:
-    /// у Archer один (Marksman), у Squire два (Knight, Witch-Hunter) — run3 §3.2, run4 §7.2.</summary>
+    /// <summary>Наследники типа — юниты содержимого с <c>PREV_ID == typeId</c>, в порядке содержимого (у базы — порядок
+    /// таблицы <c>Gunits</c>; правила берут только их число и открытость, порядок — для окон). Ранг 1: у Archer один (Marksman),
+    /// у Squire два (Knight, Witch-Hunter) — run3 §3.2, run4 §7.2.</summary>
     public static IReadOnlyList<UnitType> Successors(IReadOnlyDictionary<string, UnitType> units, string typeId) =>
-        units.Values.Where(u => u.PrevId.Equals(typeId, StringComparison.OrdinalIgnoreCase))
-             .OrderBy(u => u.Id, StringComparer.OrdinalIgnoreCase).ToList();
+        units.Values.Where(u => u.PrevId.Equals(typeId, StringComparison.OrdinalIgnoreCase)).ToList();
 
     /// <summary>Наследники юнита уровня <paramref name="level"/>: у выросшего на месте (<see cref="IsGrown"/>) их нет. Ранг 1 —
     /// листинг (capstone, 16.10): поиск наследников <c>0x5d7e07</c> сравнивает <c>PREV_ID</c> строк <c>Gunits</c> с id

@@ -253,22 +253,6 @@ FILES = {
 MOD_JSON = {"id": MOD, "name": "Test pack (CC0)"}
 
 
-# Ключ правил ядра пока — id движка из 10 символов (UnitGenerator.TypeIndex кодирует в нём уровни юнитов, docs/content-schema.md §2):
-# сущности test-pack получают legacyId того же вида со своей приставкой t000 и номерами от 0xA001 — выше всех номеров оригинала.
-LEGACY = {"units": "uu", "attacks": "aa", "buildings": "bb", "growth": "DU", "items": "IG", "landmarks": "mg", "lords": "LR",
-          "modifiers": "um", "races": "rr", "spells": "ss", "thiefActions": "NA"}
-
-
-def with_legacy_ids(kinds: dict[str, list[dict]]) -> dict[str, list[dict]]:
-    out = {}
-    for key, entities in kinds.items():
-        code = LEGACY.get(key)
-        out[key] = entities if code is None else [
-            {"id": e["id"], "legacyId": f"t000{code}{0xA001 + i:04x}", **{k: v for k, v in e.items() if k != "id"}}
-            for i, e in enumerate(entities)]
-    return out
-
-
 # ---- карты ---------------------------------------------------------------------------------------------------------------------------
 # Сценарий в формате порта (d2-port-scenario, src/Engine.Play/Play/ScenarioFile.cs): клетки, игроки, столицы с героем и стражем, деревни
 # нейтралов с охраной, нейтральные отряды. Раскладка — от зерна генератора (random.Random), файл лежит в репозитории готовым.
@@ -287,8 +271,8 @@ ZERO_BANK = {"Gold": 0, "Infernal": 0, "Life": 0, "Death": 0, "Runic": 0, "Grove
 
 
 class MapBuilder:
-    def __init__(self, num: int, size: int, legacy: dict[str, str], hp: dict[str, int]) -> None:
-        self.p, self.size, self.legacy, self.hp = f"S{num}", size, legacy, hp
+    def __init__(self, num: int, size: int, hp: dict[str, int]) -> None:
+        self.p, self.size, self.hp = f"S{num}", size, hp
         self.units: dict[str, dict] = {}
         self.stacks: dict[str, dict] = {}
         self.objects: dict[str, dict] = {}
@@ -305,7 +289,7 @@ class MapBuilder:
 
     def unit(self, name: str) -> str:
         uid = self.new_id("UN")
-        self.units[uid] = {"Id": uid, "TypeId": self.legacy[ref("unit", name)].upper(), "Level": 1, "Hp": self.hp[name], "Xp": 0,
+        self.units[uid] = {"Id": uid, "TypeId": ref("unit", name), "Level": 1, "Hp": self.hp[name], "Xp": 0,
                            "Modifiers": [], "DynLevel": False}
         return uid
 
@@ -365,10 +349,10 @@ def grid(size: int, value: int | bytes) -> dict:
     return {"w": size, "h": size, "data": base64.b64encode(data).decode("ascii")}
 
 
-def scenario(name: str, num: int, size: int, seed: int, villages: int, neutrals: int, legacy: dict[str, str]) -> dict:
+def scenario(name: str, num: int, size: int, seed: int, villages: int, neutrals: int) -> dict:
     rnd = random.Random(seed)
     hp = {u["id"].split("/", 1)[1]: u["hitPoints"] for u in build()["units"]}
-    b = MapBuilder(num, size, legacy, hp)
+    b = MapBuilder(num, size, hp)
     players = {"wild": f"S{num}PL0000", "sun": f"S{num}PL0001", "moon": f"S{num}PL0002"}
     tiles = bytearray([LAND["wild"]] * (size * size))
 
@@ -420,8 +404,7 @@ def scenario(name: str, num: int, size: int, seed: int, villages: int, neutrals:
         gold = 0 if race == "wild" else 600
         mana = {"sun": "Life", "moon": "Death"}.get(race)
         bank = dict(ZERO_BANK, Gold=gold, **({mana: 150} if mana else {}))
-        return {"Id": pid, "RaceId": legacy[ref("race", race)].upper(), "LordId": legacy[ref("lord", f"{race}-lord")].upper()
-                if race != "wild" else legacy[ref("lord", "sun-lord")].upper(), "Name": race.title(), "Face": 0, "IsHuman": False,
+        return {"Id": pid, "RaceId": ref("race", race), "LordId": ref("lord", f"{race}-lord") if race != "wild" else ref("lord", "sun-lord"), "Name": race.title(), "Face": 0, "IsHuman": False,
                 "Bank": bank, "FogId": f"S{num}FG{num_:04x}", "BuildingsId": f"S{num}PB{num_:04x}", "Buildings": [],
                 "SpellBank": ZERO_BANK, "QtyBreaks": 0, "Attitude": 1, "CapturedBy": "", "ConstructionTurn": 0, "ResearchTurn": 0,
                 "KnownSpells": [], "Spied": []}
@@ -445,19 +428,18 @@ def scenario(name: str, num: int, size: int, seed: int, villages: int, neutrals:
              "Stacks": b.looks_stacks, "Banners": {sr: i for i, sr in enumerate(subraces)}}
     events = {"Events": [], "Zones": {}, "Variables": {}, "Templates": {},
               "SubraceOwners": {b.subrace(r): players[r] for r in SUBRACE}}
-    return {"Format": "d2-port-scenario", "Version": 5, "Id": name, "Looks": looks, "Events": events}
+    return {"Format": "d2-port-scenario", "Version": 6, "Id": name, "Looks": looks, "Events": events}
 
 
 def render() -> dict[Path, str]:
     out = {OUT / "mod.json": json.dumps(MOD_JSON, ensure_ascii=False, indent=1) + "\n"}
-    kinds = with_legacy_ids(build())
+    kinds = build()
     for key, entities in kinds.items():
         stem = FILES[key]
         doc = {"$schema": SCHEMA.format(stem), key: entities}
         out[OUT / f"{stem}.json"] = json.dumps(doc, ensure_ascii=False, indent=1) + "\n"
-    legacy = {e["id"]: e["legacyId"] for entities in kinds.values() for e in entities if "legacyId" in e}
     for name, num, size, seed, villages, neutrals in MAPS:
-        doc = scenario(name, num, size, seed, villages, neutrals, legacy)
+        doc = scenario(name, num, size, seed, villages, neutrals)
         out[OUT / "scenarios" / f"{name}.json"] = json.dumps(doc, ensure_ascii=False, indent=1) + "\n"
     return out
 

@@ -75,7 +75,7 @@ public static class NewGame
                          ?? throw new InvalidOperationException($"в сценарии нет игрока расы {race.Id}");
             var lord = race.Lords.FirstOrDefault(l => l.Category == seat.LordCategory)
                        ?? throw new InvalidOperationException($"у расы {race.Id} нет лорда типа {seat.LordCategory}");
-            chosen[player.Id] = (lord.Id.ToUpperInvariant(), seat);
+            chosen[player.Id] = (lord.Id, seat);
         }
         // Стартовая казна лобби (0x42b343 — 0…2000, 0x42b74f): оба 0 — ничего; иначе каждому игроку карты, и нейтралу, к казне
         // сценария прибавляется золото G и по M каждого вида маны (Currency::Add 0x586642, поле — в пределах 0…9999).
@@ -155,7 +155,7 @@ public static class NewGame
             : looks.Stacks.FirstOrDefault(s => s.Id.Equals(stack.Id, StringComparison.OrdinalIgnoreCase))?.LeaderName ?? "";
         var units = map.Units.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase);
         units.Remove(old.Id);
-        units[id] = new MapUnit { Id = id, TypeId = type.ToUpperInvariant(), Level = grown.Level, Hp = grown.Type.HitPoints };
+        units[id] = new MapUnit { Id = id, TypeId = type, Level = grown.Level, Hp = grown.Type.HitPoints };
         int pending = Math.Min(level, book.Vars.LeaderMaxAbilities) - 1;
         var stacks = map.Stacks.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase);
         // Счётчик пишется только при n > 0 (0x5e8513 за проверкой): при SUGG_LVL 1 у отряда остаётся свой.
@@ -165,7 +165,7 @@ public static class NewGame
             CreationLevel = level,   // 0x422423: уровень сценария (ранг 2)
         };
         var stackLooks = looks.Stacks.Select(s => s.Id.Equals(stack.Id, StringComparison.OrdinalIgnoreCase)
-            ? s with { LeaderType = type.ToUpperInvariant(), LeaderAlive = true, AnyAlive = true, LeaderName = name } : s).ToList();
+            ? s with { LeaderType = type, LeaderAlive = true, AnyAlive = true, LeaderName = name } : s).ToList();
         return GameSession.Retold(looks, GameSession.With(map, stacks: stacks, units: units, idNext: ids), stackLooks);
     }
 
@@ -183,7 +183,7 @@ public static class NewGame
         var map = looks.Map;
         var capital = map.Sites.FirstOrDefault(s => s.Kind == SiteKind.Capital && s.Owner.Equals(playerId, StringComparison.OrdinalIgnoreCase));
         if (capital is null || book.Grown(leader.UnitType, Math.Max(1, leader.Level)) is not { } grown) return looks;
-        string type = leader.UnitType.ToUpperInvariant();
+        string type = leader.UnitType;
         if (capital.StackId.Length == 0 || !map.Stacks.ContainsKey(capital.StackId)) looks = StackInside(looks, capital, type, grown.Type, book);
         else looks = FitToLeadership(looks, capital, leader.Leadership);
         map = looks.Map;
@@ -192,7 +192,7 @@ public static class NewGame
         units[stack.LeaderId] = new MapUnit
         {
             Id = stack.LeaderId, TypeId = type, Level = grown.Level, Hp = grown.Type.HitPoints, Xp = leader.Xp,
-            Modifiers = [.. leader.Modifiers.Select(m => m.ToUpperInvariant())],
+            Modifiers = [.. leader.Modifiers],
         };
         var itemTypes = map.ItemTypes.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase);
         var charges = map.TalismanCharges.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase);
@@ -200,10 +200,10 @@ public static class NewGame
         var ids = map.IdNext;
         // Предмет, которого нет в правилах (файл мода или другой версии), не берётся — как у боевых слотов (MapBattle.BattleSlots).
         foreach (var item in leader.Equipment.Where(i => i.ItemType.Length > 0 && i.Slot >= 0 && i.Slot < equipment.Count
-                                                         && book.Items.ContainsKey(i.ItemType.ToUpperInvariant())))
+                                                         && book.Items.ContainsKey(i.ItemType)))
         {
             string instance = GameSession.NewId(ref ids, itemTypes.Keys, stack.Id, "IM");
-            itemTypes[instance] = item.ItemType.ToUpperInvariant();
+            itemTypes[instance] = item.ItemType;
             if (item.Charges > 0) charges[instance] = item.Charges;
             equipment[item.Slot] = instance;
         }
@@ -233,12 +233,12 @@ public static class NewGame
         var charges = map.TalismanCharges.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase);
         var stored = capital.Items.ToList();
         var ids = map.IdNext;
-        foreach (string type in carry.ItemTypes.Where(t => book.Items.ContainsKey(t.ToUpperInvariant())).Take(CarryOver.MaxItems))
+        foreach (string type in carry.ItemTypes.Where(t => book.Items.ContainsKey(t)).Take(CarryOver.MaxItems))
         {
             string instance = GameSession.NewId(ref ids, itemTypes.Keys, capital.Id, "IM");
-            itemTypes[instance] = type.ToUpperInvariant();
+            itemTypes[instance] = type;
             // Новый талисман — с записью зарядов TALIS_CHRG, как при любом создании (GameSession.ChargeNewTalismans).
-            if (book.Items[type.ToUpperInvariant()].Category == LastEdict.Rules.Magic.ItemCategory.Talisman) charges[instance] = book.Vars.TalismanCharges;
+            if (book.Items[type].Category == LastEdict.Rules.Magic.ItemCategory.Talisman) charges[instance] = book.Vars.TalismanCharges;
             stored.Add(instance);
         }
         var sites = map.Sites.Select(s => s.Id == capital.Id ? s with { Items = stored } : s).ToList();
@@ -249,7 +249,7 @@ public static class NewGame
         capital = map.Sites.First(s => s.Id == capital.Id);
         if (capital.StackId.Length == 0 || !map.Stacks.ContainsKey(capital.StackId))
         {
-            looks = StackInside(looks, capital, hero.TypeId.ToUpperInvariant(), grown.Type, book);
+            looks = StackInside(looks, capital, hero.TypeId, grown.Type, book);
             map = looks.Map;
         }
         var stack = map.Stacks[map.Sites.First(s => s.Id == capital.Id).StackId];
@@ -259,7 +259,7 @@ public static class NewGame
         stacks[stack.Id] = stack with { LeaderAlive = true, UpgradeCount = carry.UpgradeCount, BattlesWon = carry.BattlesWon };
         var carried = GameSession.With(map, stacks: stacks, units: units);
         var stackLooks = looks.Stacks.Select(s => s.Id.Equals(stack.Id, StringComparison.OrdinalIgnoreCase)
-            ? s with { LeaderType = hero.TypeId.ToUpperInvariant(), LeaderAlive = true, AnyAlive = true, LeaderName = carry.HeroName.Trim() } : s).ToList();
+            ? s with { LeaderType = hero.TypeId, LeaderAlive = true, AnyAlive = true, LeaderName = carry.HeroName.Trim() } : s).ToList();
         return GameSession.Retold(looks, carried, stackLooks);
     }
 
@@ -381,7 +381,7 @@ public static class NewGame
         IReadOnlyList<string> buildings = [];
         if (category is { } wanted && book.LordBuildings.GetValueOrDefault(player.LordId)?
                 .FirstOrDefault(b => book.Economy.Buildings.TryGetValue(b, out var t) && t.Category == wanted) is { } free)
-            buildings = [free.ToUpperInvariant()];
+            buildings = [free];
         if (buildings.SequenceEqual(player.Buildings, StringComparer.OrdinalIgnoreCase)) return looks;
         var players = map.Players.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase);
         players[playerId] = With(player, player.IsHuman, buildings: buildings);

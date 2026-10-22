@@ -115,7 +115,7 @@ public static class BattleAftermath
             int category = book.CategoryOf(unit.TypeId) ?? 0;
             if (!Experience.GainsXp(category)) continue;
             var owner = map.Players.GetValueOrDefault(stack.Owner);
-            bool neutral = owner is null || owner.RaceId.EndsWith("RR0004", StringComparison.OrdinalIgnoreCase);
+            bool neutral = owner is null || book.Economy.NeutralRaces.Contains(owner.RaceId);
             var built = owner?.Buildings.ToHashSet(StringComparer.OrdinalIgnoreCase) ?? [];
             var successors = UnitUpgrade.Successors(book.Rules.Units, unit.TypeId, unit.Level);
             bool open = successors.Any(s => book.UpgradeBuilding.GetValueOrDefault(s.Id, "") is var b && (b.Length == 0 || built.Contains(b)));
@@ -177,7 +177,7 @@ public static class BattleAftermath
         ArgumentNullException.ThrowIfNull(book);
         int category = book.CategoryOf(unit.TypeId) ?? 0;
         var owner = map.Players.GetValueOrDefault(stack.Owner);
-        bool neutral = owner is null || owner.RaceId.EndsWith("RR0004", StringComparison.OrdinalIgnoreCase);
+        bool neutral = owner is null || book.Economy.NeutralRaces.Contains(owner.RaceId);
         var built = owner?.Buildings.ToHashSet(StringComparer.OrdinalIgnoreCase) ?? [];
         var successors = UnitUpgrade.Successors(book.Rules.Units, unit.TypeId, unit.Level);
         bool open = successors.Any(s => book.UpgradeBuilding.GetValueOrDefault(s.Id, "") is var b && (b.Length == 0 || built.Contains(b)));

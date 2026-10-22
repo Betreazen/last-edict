@@ -37,7 +37,7 @@ public partial class BattleScreen
             string[] parts = piece.Split(':');
             string[] typed = parts[0].Split('@');
             int level = typed.Length > 1 ? int.Parse(typed[1], CultureInfo.InvariantCulture) : 0;
-            string type = typed[0].ToUpperInvariant();
+            string type = LastEdict.Data.Content.LegacyIds.Base.IdOf(typed[0]) ?? typed[0];   // --squad принимает и id оригинала
             if (level == 0) level = book.Rules.Units.TryGetValue(type, out var known) ? known.Level : 1;
             var unit = new MapUnit { Id = $"CHECK{n++:X2}", TypeId = type, Level = level, Hp = 10000 };
             state.Units.Add(MapBattle.Unit(unit, int.Parse(parts[1], CultureInfo.InvariantCulture), book.Rules, isAttacker: true));

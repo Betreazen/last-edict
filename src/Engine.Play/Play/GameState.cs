@@ -1,4 +1,6 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
+using LastEdict.Data.Content;
 using LastEdict.Data.Map;
 
 namespace LastEdict.Data.Play;
@@ -145,8 +147,13 @@ public static class GameSave
     /// старые — без них.</para>
     /// <para>10 — память обмена картами у игрока (<c>MapPlayer.MapExchanges</c>, <c>EXMAPID/EXMAPTURN</c>) и приоритет редактора для ИИ
     /// (<c>MapStack.AiPriority</c>, <c>MapSite.AiPriority</c>, <c>AIPRIORITY</c>), прежние хозяева деревни (<c>MapSite.PreviousOwners</c>,
-    /// <c>P_O_*</c>); старые — без памяти обмена и прежних хозяев, приоритет 3 (без поправки).</para></summary>
-    public const int Version = 10;
+    /// <c>P_O_*</c>); старые — без памяти обмена и прежних хозяев, приоритет 3 (без поправки).</para>
+    /// <para>11 — ссылки на содержимое — id содержимого (<c>base:unit/knight</c>), а не id оригинала (Р18: перенос между версиями Last
+    /// Edict); старые переводятся при чтении (<see cref="LegacyRefs"/>).</para></summary>
+    public const int Version = 11;
+
+    /// <summary>Первая версия со ссылками по id содержимого.</summary>
+    private const int ContentIdsVersion = 11;
 
     /// <summary>Файл сохранения: сначала то, что показывает список сохранений (имя, день, когда), потом партия.</summary>
     private sealed record Envelope(string Format, int Version, string Title, int Day, DateTime SavedAt, GameInfo Info,
@@ -172,9 +179,11 @@ public static class GameSave
         Envelope? e;
         try
         {
-            e = JsonSerializer.Deserialize<Envelope>(json, SaveJson.Options);
+            var node = JsonNode.Parse(json);
+            if (node?["Version"]?.GetValue<int>() < ContentIdsVersion) LegacyRefs.ToContentIds(node, LegacyIds.Base);
+            e = node.Deserialize<Envelope>(SaveJson.Options);
         }
-        catch (JsonException ex)
+        catch (Exception ex) when (ex is JsonException or InvalidOperationException or FormatException)
         {
             throw new InvalidDataException($"сохранение не читается: {ex.Message}", ex);
         }

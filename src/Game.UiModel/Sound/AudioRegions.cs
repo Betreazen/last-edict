@@ -78,7 +78,8 @@ public static class AudioRegions
             sources.Add(new AudioSource("GOLDMINE", crystal.X, crystal.Y, 1, 1));
         foreach (var mark in looks.Landmarks)
         {
-            if (mark.Type.Length < 10 || !int.TryParse(mark.Type.AsSpan(6, 4), out int number)
+            string art = Ui.ArtNames.Of(mark.Type);   // номер ориентира — по id оригинала
+            if (art.Length < 10 || !int.TryParse(art.AsSpan(6, 4), out int number)
                 || !Landmarks.TryGetValue(number, out var name)) continue;
             var (w, h) = landmarkSize(mark.Type);
             sources.Add(new AudioSource(name, mark.X, mark.Y, w, h));

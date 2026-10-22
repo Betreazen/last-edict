@@ -189,7 +189,7 @@ public class PortJournalWatcherTests(ITestOutputHelper output)
                     {
                         Map = GameSession.With(session.Map, units: new Dictionary<string, MapUnit>(session.Map.Units, StringComparer.OrdinalIgnoreCase)
                         {
-                            ["S073UN0fff"] = new() { Id = "S073UN0fff", TypeId = "G000UU0001", Level = 1, Hp = 100 },
+                            ["S073UN0fff"] = new() { Id = "S073UN0fff", TypeId = "base:unit/squire-empire", Level = 1, Hp = 100 },
                         }),
                     },
                 }, session.Art, session.Book);

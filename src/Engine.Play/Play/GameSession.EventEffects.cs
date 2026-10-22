@@ -33,7 +33,7 @@ public sealed partial class GameSession
         {
             string id = NewId(ref idNext, units.Keys, prefix, "UN");
             var grown = book.Grown(type, level);
-            var unit = new MapUnit { Id = id, TypeId = type.ToUpperInvariant(), Level = grown?.Level ?? level, Hp = grown?.Type.HitPoints ?? 1 };
+            var unit = new MapUnit { Id = id, TypeId = type, Level = grown?.Level ?? level, Hp = grown?.Type.HitPoints ?? 1 };
             units[id] = unit;
             return unit;
         }
@@ -65,7 +65,7 @@ public sealed partial class GameSession
         // Модификаторы шаблона по клеткам — юниту в клетке, здоровье до полного с ними.
         foreach (var m in t.Modifiers)
             if (m.Cell is >= 0 and < 6 && slots[m.Cell] >= 0 && units.TryGetValue(ids[slots[m.Cell]], out var u))
-                units[u.Id] = u with { Modifiers = [.. u.Modifiers, m.ModifierId.ToUpperInvariant()] };
+                units[u.Id] = u with { Modifiers = [.. u.Modifiers, m.ModifierId] };
         foreach (string id in ids) units[id] = units[id] with { Hp = HpMax(units[id]) };
 
         var stack = new MapStack
@@ -91,7 +91,7 @@ public sealed partial class GameSession
         stacks[stackId] = stack;
         var plan = map.Plan.ToDictionary(p => p.Key, p => p.Value);
         plan[at] = [.. plan.GetValueOrDefault(at) ?? [], stackId];
-        var look = new StackLook(stackId, at.X, at.Y, t.Owner, t.Subrace, leaderType.Id.ToUpperInvariant(), LeaderAlive: true, AnyAlive: true,
+        var look = new StackLook(stackId, at.X, at.Y, t.Owner, t.Subrace, leaderType.Id, LeaderAlive: true, AnyAlive: true,
                                  Facing: t.UseFacing ? t.Facing : 0, Inside: "", Invisible: false, LeaderName: t.Name.Trim());
         State = State with { Looks = Retold(Looks, With(map, units: units, stacks: stacks, plan: plan, idNext: idNext), [.. Looks.Stacks, look]) };
         Observer?.Happened(new TurnSight(TurnSightKind.Created, t.Owner, at.X, at.Y, stackId));   // показ (сессия Г)
@@ -215,13 +215,13 @@ public sealed partial class GameSession
         if (!Map.Objects.TryGetValue(c.LandmarkId, out var obj) || !Art.HasLandmark(c.LandmarkType)) return true;
         if (Art.LandmarkFootprint(obj.TypeId) != Art.LandmarkFootprint(c.LandmarkType)) return true;
         var objects = Map.Objects.ToDictionary(o => o.Key, o => o.Value, StringComparer.OrdinalIgnoreCase);
-        objects[obj.Id] = new MapObject { Id = obj.Id, Kind = obj.Kind, X = obj.X, Y = obj.Y, Resource = obj.Resource, TypeId = c.LandmarkType.ToUpperInvariant() };
+        objects[obj.Id] = new MapObject { Id = obj.Id, Kind = obj.Kind, X = obj.X, Y = obj.Y, Resource = obj.Resource, TypeId = c.LandmarkType };
         var map = WithObjects(Map, objects);
         State = State with
         {
             Looks = Retold(Looks, map, Looks.Stacks) with
             {
-                Landmarks = [.. Looks.Landmarks.Select(l => Same(l.Id, obj.Id) ? l with { Type = c.LandmarkType.ToUpperInvariant() } : l)],
+                Landmarks = [.. Looks.Landmarks.Select(l => Same(l.Id, obj.Id) ? l with { Type = c.LandmarkType } : l)],
             },
         };
         return true;
@@ -403,7 +403,7 @@ public sealed partial class GameSession
         var ids = Map.IdNext;
         string instance = NewId(ref ids, Map.ItemTypes.Keys, Map.Stacks.Keys.FirstOrDefault() ?? "S000", "IM");
         var types = Map.ItemTypes.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase);
-        types[instance] = g.ItemType.ToUpperInvariant();
+        types[instance] = g.ItemType;
         if (capital is null && recipient is { } triggerer)
         {
             var stacks = Map.Stacks.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase);

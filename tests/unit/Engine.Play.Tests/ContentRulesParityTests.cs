@@ -121,17 +121,17 @@ public class ContentRulesParityTests(ITestOutputHelper output)
 
         // Закрытое — через открытые вопросы к книге, по всем ключам таблиц.
         foreach (var lord in Rows("Glord", r => r))
-            Assert.Equal(lord.GetInt("CATEGORY"), book.LordCategory(lord.GetString("LORD_ID")));
+            Assert.Equal(lord.GetInt("CATEGORY"), book.LordCategory(Key(lord.GetString("LORD_ID"))));
         foreach (var race in Rows("Grace", r => r))
         {
-            string id = race.GetString("RACE_ID");
+            string legacyId = race.GetString("RACE_ID"), id = Key(legacyId);
             var sideshow = Rows("Gunits", rows => rows.FirstOrDefault(u => u.GetInt("UNIT_CAT") == 0 && u.GetInt("BRANCH") == 4
-                && u.GetString("RACE_ID").Equals(id, StringComparison.OrdinalIgnoreCase)
+                && u.GetString("RACE_ID").Equals(legacyId, StringComparison.OrdinalIgnoreCase)
                 && (u.GetString("PREV_ID").Length == 0 || u.GetString("PREV_ID").Equals(empty, StringComparison.OrdinalIgnoreCase))
                 && u.GetString("ENROLL_B").Length > 0 && !u.GetString("ENROLL_B").Equals(empty, StringComparison.OrdinalIgnoreCase)));
-            Assert.Equal(sideshow?.GetString("ENROLL_B") ?? "", book.SideshowBuilding(id), StringComparer.OrdinalIgnoreCase);
+            Assert.Equal(Key(sideshow?.GetString("ENROLL_B") ?? ""), book.SideshowBuilding(id), StringComparer.OrdinalIgnoreCase);
             foreach (var kind in Enum.GetValues<AiMessage>())
-                Assert.Equal(Rows("TAiMsg", rows => rows.Where(m => m.GetString("RACE_ID").Equals(id, StringComparison.OrdinalIgnoreCase)
+                Assert.Equal(Rows("TAiMsg", rows => rows.Where(m => m.GetString("RACE_ID").Equals(legacyId, StringComparison.OrdinalIgnoreCase)
                                                                    && m.GetInt("MSG_CAT") == (int)kind).Select(m => m.GetString("TEXT").Trim()).ToList()),
                              book.AiMessages(id, kind));
         }
@@ -144,7 +144,7 @@ public class ContentRulesParityTests(ITestOutputHelper output)
                 foreach (string spell in spells) spellRace.TryAdd(spell, type);
         foreach (var item in book.Items.Values.Where(i => i.Category == LastEdict.Rules.Magic.ItemCategory.Scroll))
         {
-            int t = spellRace.TryGetValue(item.SpellId, out int found) ? found : 0;
+            int t = spellRace.TryGetValue(LastEdict.Data.Content.LegacyIds.Base.LegacyOf(item.SpellId) ?? item.SpellId, out int found) ? found : 0;
             Assert.Equal(t switch { 0 => "SCROLLHU", 1 => "SCROLLUN", 2 => "SCROLLHE", 3 => "SCROLLDW", 5 => "SCROLLEL", _ => "" },
                          book.ItemIcon(item.Id));
         }
@@ -170,9 +170,16 @@ public class ContentRulesParityTests(ITestOutputHelper output)
         return node;
     }
 
+    /// <summary>Id содержимого по id оригинала таблиц.</summary>
+    private static string Key(string legacyId) => LastEdict.Data.Content.LegacyIds.Base.IdOf(legacyId) ?? legacyId;
+
+    /// <summary>Прежние загрузчики дают модель с id оригинала, содержимое — с id содержимого (ключ правил, Э4): старая модель сравнивается
+    /// после перевода id (<see cref="LegacyRefs"/>) — так «старая модель = новая» проверяет и сам перевод.</summary>
     private void Same(string name, object old, object now)
     {
-        string a = Normal(old), b = Normal(now);
+        var translated = old as JsonNode ?? JsonSerializer.SerializeToNode(old, old.GetType(), Json);
+        LegacyRefs.ToContentIds(translated, LastEdict.Data.Content.LegacyIds.Base);
+        string a = Normal(translated!), b = Normal(now);
         if (string.Equals(a, b, StringComparison.OrdinalIgnoreCase)) return;
         var la = a.Split('\n');
         var lb = b.Split('\n');

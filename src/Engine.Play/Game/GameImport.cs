@@ -162,7 +162,8 @@ public static class GameImport
         var objects = sg.Raw.Objects.Select(o => o.Data).ToList();
         var info = objects.OfType<KSg.ScenarioInfo>().Single();
         var races = objects.OfType<KSg.MidPlayer>()
-            .Select(p => typeById.TryGetValue(p.RaceId.String, out int t) ? t
+            .Select(p => typeById.TryGetValue(p.RaceId.String, out int t)
+                         || typeById.TryGetValue(LastEdict.Data.Content.LegacyIds.Base.IdOf(p.RaceId.String) ?? "", out t) ? t   // каталог — по id содержимого
                          : throw new InvalidDataException($"{path}: неизвестная раса {p.RaceId.String}"))
             .Where(t => t != Neutral)
             .Distinct()

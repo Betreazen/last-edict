@@ -37,7 +37,7 @@ public static class AiTargets
     {
         if (attack is null || !attack.Effect.IsDamaging) return 0;
         var effective = EffectiveStats.OfAttack(attack, unit.Chain).Attack;
-        return Formulas.DamageWithBuffs(effective, Formulas.DamageMax(c, unit.Type.GlobalId),
+        return Formulas.DamageWithBuffs(effective, Formulas.DamageMax(c, unit.Type),
                                         c.BoostDamagePercent(unit.BoostDamageLevel),
                                         c.LowerDamagePercent(unit.LowerDamageLevel), false, NoRolls, c);
     }
@@ -278,7 +278,7 @@ public static class AiTargets
     internal static BattleUnit? FindDirect(AiContext ctx, BattleUnit unit, AttackType attack, IReadOnlyList<BattleUnit> targets)
     {
         if (attack.Reach == AttackReach.All) return targets.FirstOrDefault();
-        int raw = Math.Min(Formulas.DamageMax(ctx.Constants, unit.Type.GlobalId), attack.QtyDamage);
+        int raw = Math.Min(Formulas.DamageMax(ctx.Constants, unit.Type), attack.QtyDamage);
         return FindNonAll(ctx, attack, raw, targets);
     }
 

@@ -11,8 +11,8 @@ public class LandmarkTests
     {
         Skip.IfNot(GamePaths.IsAvailable);
         var mountains = EconomyLoader.LoadMountainLandmarks(GamePaths.Globals);
-        Assert.Contains("G000MG0133", mountains);          // Кладбище: T, категория 0
-        Assert.DoesNotContain("G000MG0073", mountains);    // Водоворот: F, категория 3
+        Assert.Contains("base:landmark/cemetery-3x3-4", mountains);          // Кладбище: T, категория 0
+        Assert.DoesNotContain("base:landmark/whirlpool", mountains);    // Водоворот: F, категория 3
 
         var map = MapLoader.Load(Path.Combine(GamePaths.Exports, "Arrival of the Pilgrims.sg"));
         var plateau = map.Objects["S143MM0009"];

@@ -320,7 +320,7 @@ public sealed class LandModel
     /// владельца или с владельцем вне списка игроков, дальше решает <c>0x5e53a6</c> по категории расы
     /// (не дочитана); на корпусе «отвергнуть, если раса не нейтральная» объяснило 2654 отказа из 2654
     /// опознанных.</summary>
-    private const string NeutralRace = "G000RR0004";
+    private static readonly IReadOnlySet<string> DefaultNeutrals = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { LegacyRaces.NeutralId };
 
     private readonly MapState _map;
     private readonly HashSet<(int X, int Y)> _start;
@@ -411,7 +411,7 @@ public sealed class LandModel
             .Select(r => new LandSource(r.Id, (r.X, r.Y), q.RodRange, [(r.X, r.Y)]));
         List<LandSource> others = [.. forts.Where(f => !f.Capital).Select(f => f.Source), .. rods];
         var capital = forts.Where(f => f.Capital).Select(f => f.Source).FirstOrDefault();
-        var blocked = BlockedCells(map, map.Sites, mountainLandmarks);
+        var blocked = BlockedCells(map, map.Sites, mountainLandmarks, rules.NeutralRaces);
         return capital is not null
             ? BuildSources(map, terrain, [capital, .. others], q, playerId, blocked)
             : Build(map, terrain, others, q, playerId, blocked);
@@ -547,8 +547,10 @@ public sealed class LandModel
     /// <param name="mountainLandmarks">Типы ландмарков с <c>MOUNTAIN = T</c>
     /// (<c>LastEdict.Data.Map.EconomyLoader.LoadMountainLandmarks</c>, регистр не важен — набор с
     /// <see cref="StringComparer.OrdinalIgnoreCase"/>). <c>null</c> — ландмарки не проверяются.</param>
+    /// <param name="neutralRaces">Расы нейтралов (<see cref="EconomyRules.NeutralRaces"/>); null — нейтралы базы.</param>
     public static IReadOnlySet<(int X, int Y)> BlockedCells(MapState map, IReadOnlyList<MapSite> sites,
-                                                            IReadOnlySet<string>? mountainLandmarks = null)
+                                                            IReadOnlySet<string>? mountainLandmarks = null,
+                                                            IReadOnlySet<string>? neutralRaces = null)
     {
         ArgumentNullException.ThrowIfNull(map);
         ArgumentNullException.ThrowIfNull(sites);
@@ -561,19 +563,19 @@ public sealed class LandModel
         foreach (var s in sites)
         {
             if (s.Kind is not (SiteKind.Capital or SiteKind.Village)) continue;
-            if (Neutral(map, s.Owner)) continue;
+            if (Neutral(map, s.Owner, neutralRaces ?? DefaultNeutrals)) continue;
             blocked.UnionWith(PlanCells(map, s.Id));
         }
         return blocked;
     }
 
     /// <summary><c>0x5e5358</c>: владелец пуст, не найден среди игроков или нейтрал.</summary>
-    private static bool Neutral(MapState map, string owner)
+    private static bool Neutral(MapState map, string owner, IReadOnlySet<string> neutralRaces)
     {
         if (owner.Length == 0) return true;
         var player = map.Players.TryGetValue(owner, out var p) ? p
             : map.Players.Values.FirstOrDefault(x => x.Id.Equals(owner, StringComparison.OrdinalIgnoreCase));
-        return player is null || player.RaceId.Equals(NeutralRace, StringComparison.OrdinalIgnoreCase);
+        return player is null || neutralRaces.Contains(player.RaceId);
     }
 
     /// <summary>Клетки объекта по занятости карты (<c>CMidgardPlan</c>): 25 у столицы, 16 у

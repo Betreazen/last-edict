@@ -17,8 +17,8 @@ public class EconomyTests
 
     public EconomyTests(ITestOutputHelper output) => _out = output;
 
-    private const string Empire = "g000rr0000";      // Grace.RACE_TYPE 0 -> земля L_HU (1)
-    private const string Neutral = "g000rr0004";     // PLAYABLE = F
+    private const string Empire = "base:race/empire";      // Grace.RACE_TYPE 0 -> земля L_HU (1)
+    private const string Neutral = "base:race/neutral";     // PLAYABLE = F
 
     // ---------------------------------------------------------------- справочники
 
@@ -41,11 +41,11 @@ public class EconomyTests
         Assert.Equal(5, size3.Scout);
         Assert.Equal(500, size3.Growth.Gold);
 
-        var knight2 = rules.Buildings["g000bb0002"];
+        var knight2 = rules.Buildings["base:building/imperial-stable"];
         Assert.Equal(500, knight2.Cost.Gold);
-        Assert.Equal("g000bb0001", knight2.RequiredId);
+        Assert.Equal("base:building/stable", knight2.RequiredId);
         Assert.Equal(Economy.UnitBuildingCategory, knight2.Category);
-        Assert.Equal("", rules.Buildings["g000bb0001"].RequiredId);   // корневая: g000000000 -> ""
+        Assert.Equal("", rules.Buildings["base:building/stable"].RequiredId);   // корневая: g000000000 -> ""
 
         // GVars, ранг 1 (прочитано): надбавка к доходу по сложности и выработка жилы.
         Assert.Equal(new[] { 30, 0, 0, 0 }, rules.IncomeBonusPercent);
@@ -53,9 +53,9 @@ public class EconomyTests
         Assert.Equal(20, rules.SellRatio);
 
         // Найм: цена рекрута Империи из Gunits.ENROLL_C.
-        Assert.Equal(50, Economy.HireCost("g000uu0001", rules).Gold);
-        Assert.Equal("", rules.Hire["g000uu0001"].BuildingId);
-        Assert.Equal("g000bb0022", rules.Hire["g000uu0018"].BuildingId);   // Титан — из постройки
+        Assert.Equal(50, Economy.HireCost("base:unit/squire-empire", rules).Gold);
+        Assert.Equal("", rules.Hire["base:unit/squire-empire"].BuildingId);
+        Assert.Equal("base:building/ruined-temple", rules.Hire["base:unit/titan-empire"].BuildingId);   // Титан — из постройки
     }
 
     // ---------------------------------------------------------------- дневной доход

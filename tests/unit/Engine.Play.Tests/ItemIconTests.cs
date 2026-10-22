@@ -17,7 +17,8 @@ public class ItemIconTests
     [InlineData("G000IG5061", "SCROLLUN")]   // g000ss0061 — g000rr0003 (RACE_TYPE 1, L_UNDEAD)
     [InlineData("G000IG5097", "SCROLLEL")]   // g000ss0097 — g000rr0005 (RACE_TYPE 5, L_ELF)
     [InlineData("g000ig0006", "G000IG0006")] // не свиток — свой id
-    public void Scroll_TakesRaceIconOfItsSpell(string item, string icon) => Assert.Equal(icon, Book.Value.ItemIcon(item));
+    public void Scroll_TakesRaceIconOfItsSpell(string item, string icon) =>
+        Assert.Equal(icon, Book.Value.ItemIcon(LastEdict.Data.Content.LegacyIds.Base.IdOf(item)!));   // ключ — id содержимого, значок — имя графики
 
     [SkippableFact]
     public void EveryScroll_HasOneOfFiveRaceIcons()

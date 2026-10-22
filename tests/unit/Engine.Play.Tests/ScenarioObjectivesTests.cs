@@ -81,7 +81,7 @@ public class ScenarioObjectivesTests
     {
         var session = Mercantile([new ScenarioEvent("S135EV9000", true, false, 100, 0, Empire,
             [new StackExistsCondition("S135KC0021", 0), new LeaderToZoneCondition("S135KC000d", Zone),
-             new OwnItemCondition("G000IG0001"), new AllianceCondition(ElfPlayer, EmpirePlayer)],
+             new OwnItemCondition("base:item/life-potion"), new AllianceCondition(ElfPlayer, EmpirePlayer)],
             [new WinEffect(true, EmpirePlayer)])]);
 
         var got = session.Objectives(EmpirePlayer);
@@ -99,7 +99,7 @@ public class ScenarioObjectivesTests
     {
         var session = Mercantile([new ScenarioEvent("S135EV9000", true, false, 100, 0, Empire,
             [new StackExistsCondition("S135KC0021", 0), new LeaderToZoneCondition("S135KC000d", Zone),
-             new OwnItemCondition("G000IG0001"), new AllianceCondition(ElfPlayer, EmpirePlayer)],
+             new OwnItemCondition("base:item/life-potion"), new AllianceCondition(ElfPlayer, EmpirePlayer)],
             [new WinEffect(true, EmpirePlayer)])]);
         var book = Shared.Value.Book;
 

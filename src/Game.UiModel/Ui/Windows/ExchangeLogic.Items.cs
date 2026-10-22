@@ -75,7 +75,7 @@ public sealed partial class ExchangeLogic
             string id = SlotImage(side, s);
             ui.SetHidden(id, !Paperdoll);
             ui.SetImage(id, Paperdoll && s < worn.Count && worn[s].Length > 0 && _c.Map.ItemTypes.TryGetValue(worn[s], out var type)
-                ? $"{ItemArchive}:{type}" : null);
+                ? $"{ItemArchive}:{ArtNames.Of(type)}" : null);
         }
         ui.SetCards(BagList(side), [.. BagCells(side).Select(c => ItemCells.Card(c, _c, ItemCells.Spec(ui, BagList(side))))]);
     }

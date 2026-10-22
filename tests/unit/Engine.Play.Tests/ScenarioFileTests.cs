@@ -27,7 +27,7 @@ public class ScenarioFileTests
             {
                 // S001TM0000: гоблин-лидер и два юнита, клетки POS_0…5 = 2,2,−1,0,1,−1 (большой юнит в колонке 0–1).
                 var t = back.Events.Templates["S001TM0000"];
-                Assert.Equal(("G000UU0098", 3, 10), (t.LeaderType, t.Units.Count, t.Order));
+                Assert.Equal(("base:unit/lich-queen", 3, 10), (t.LeaderType, t.Units.Count, t.Order));
                 Assert.Equal([2, 2, -1, 0, 1, -1], t.Slots);
             }
             files++;

@@ -203,7 +203,7 @@ public static class MapLoader
                 QtyBreaks = (int)p.QtyBreaks.Value,
                 Attitude = (int)p.Attitude.Value,
                 CapturedBy = Ref(p.CaptBy),
-                KnownSpells = KnownSpellOrder.Sort(known.GetValueOrDefault(p.KnownId.String, [])),
+                KnownSpells = KnownSpellOrder.Sort(known.GetValueOrDefault(p.KnownId.String, []), id => id),
                 Spied = [.. p.Spies.Select(Ref).Where(id => id.Length > 0)],
                 MapExchanges = Exchanges(p),
                 ConstructionTurn = (int)p.ConstrT.Value,

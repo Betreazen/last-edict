@@ -113,7 +113,7 @@ public static class AiRareTargets
         int pxp = 0, sxp = 0;
         foreach (var x in targets)
         {
-            var global = ctx.State.Rules?.Units.GetValueOrDefault(x.Type.GlobalId) ?? x.Type;
+            var global = ctx.State.Rules?.Units.GetValueOrDefault(x.Type.Id) ?? x.Type;
             var a = ctx.State.Rules?.AttackOf(global) ?? x.Attack;
             if (!EffectiveAgainst(a, foes)) continue;
             int xp = global.XpKilled;

@@ -138,7 +138,7 @@ public partial class BattleScreen
         BattleUnit Unit(string id, bool attacker, int slot, int hp, int hpMax, AttackType attack) => new()
         {
             Id = id, Attacker = attacker, Slot = slot, Hp = hp, HpMax = hpMax, Attack = attack,
-            Type = new UnitType("g000uu0019", 1, hpMax, 0, attack.Id, "g000000000", false, true, 10, 100),
+            Type = new UnitType("base:unit/pegasus-knight", 1, hpMax, 0, attack.Id, "g000000000", false, true, 10, 100),
         };
         var fighter = Unit("F", true, 0, 50, 100, new AttackType("g000aa0019", 90, AttackClass.Damage, 100, 2, 100, 0, false, 1));
         var healer = Unit("H", true, 1, 60, 60, new AttackType("g000aa0011", 10, AttackClass.Heal, 100, 2, 0, 20, false, 1));

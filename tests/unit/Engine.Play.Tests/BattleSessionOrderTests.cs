@@ -11,13 +11,13 @@ public class BattleSessionOrderTests
 {
     private static string Rules => ImportedData.PathOf("rules");
 
-    private static readonly AttackType Strike = new("g000aa0019", 90, AttackClass.Damage, 100, 2, 10, 0, false, 1);
-    private static readonly AttackType Slow = new("g000aa0020", 50, AttackClass.Damage, 100, 2, 10, 0, false, 1);
+    private static readonly AttackType Strike = new("base:attack/pegasus-knight", 90, AttackClass.Damage, 100, 2, 10, 0, false, 1);
+    private static readonly AttackType Slow = new("base:attack/ranger", 50, AttackClass.Damage, 100, 2, 10, 0, false, 1);
 
     private static BattleUnit Unit(string id, bool attacker, int slot, AttackType attack, bool twice = false) => new()
     {
         Id = id, Attacker = attacker, Slot = slot, Hp = 1000, HpMax = 1000, Attack = attack,
-        Type = new UnitType("g000uu0019", 1, 1000, 0, attack.Id, "g000000000", twice, true, 10, 100),
+        Type = new UnitType("base:unit/pegasus-knight", 1, 1000, 0, attack.Id, "g000000000", twice, true, 10, 100),
     };
 
     private static BattleSession Session(BattleState state, bool hold, bool playerIsAttacker = true)

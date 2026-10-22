@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using LastEdict.Data.Content;
 
 namespace LastEdict.Data.Game;
 
@@ -156,10 +157,11 @@ public sealed record GameCatalog
     public static IReadOnlyList<T> FromJson<T>(string json) =>
         JsonSerializer.Deserialize<List<T>>(json, Json) ?? throw new FormatException($"пустой список {typeof(T).Name}");
 
-    /// <summary>Каталог из <paramref name="dir"/> (<c>races.json</c>, <c>scenarios.json</c>, <c>campaigns.json</c>); нет файла — пусто.</summary>
+    /// <summary>Каталог из <paramref name="dir"/> (<c>races.json</c>, <c>scenarios.json</c>, <c>campaigns.json</c>); нет файла — пусто. Расы и
+    /// лорды — по id содержимого: файлы импорта пишут id оригинала, они переводятся здесь (<see cref="LegacyIds.Base"/>).</summary>
     public static GameCatalog Load(string dir) => new()
     {
-        Races = Read<RaceInfo>(Path.Combine(dir, "races.json")),
+        Races = [.. Read<RaceInfo>(Path.Combine(dir, "races.json")).Select(WithContentIds)],
         Scenarios = Read<ScenarioInfo>(Path.Combine(dir, "scenarios.json")),
         Campaigns = Read<CampaignInfo>(Path.Combine(dir, "campaigns.json")),
     };
@@ -177,6 +179,12 @@ public sealed record GameCatalog
             Campaigns = Overlay(baseSet.Campaigns, overlay.Campaigns, c => c.Id),
         };
     }
+
+    private static RaceInfo WithContentIds(RaceInfo race) => race with
+    {
+        Id = LegacyIds.Base.IdOf(race.Id) ?? race.Id,
+        Lords = [.. race.Lords.Select(l => l with { Id = LegacyIds.Base.IdOf(l.Id) ?? l.Id })],
+    };
 
     private static IReadOnlyList<T> Read<T>(string path) => File.Exists(path) ? FromJson<T>(File.ReadAllText(path)) : [];
 

@@ -13,8 +13,8 @@ public class AllyLogTests
     private static BattleUnit Unit(string id, bool attacker, AttackClass cls, int hp = 100) => new()
     {
         Id = id,
-        Type = new UnitType("g000uu0001", 1, 100, 0, "g000aa0001", "g000000000", false, true, 20, 80),
-        Attack = new AttackType("g000aa0001", 50, cls, 80, 3, 25, 0, false, 1, false),
+        Type = new UnitType("base:unit/squire-empire", 1, 100, 0, "base:attack/squire-empire", "g000000000", false, true, 20, 80),
+        Attack = new AttackType("base:attack/squire-empire", 50, cls, 80, 3, 25, 0, false, 1, false),
         Attacker = attacker, Slot = 0, HpMax = 100, Hp = hp,
     };
 
@@ -45,8 +45,8 @@ public class AllyLogTests
     {
         var healer = new BattleUnit
         {
-            Id = "H", Type = new UnitType("g000uu0001", 1, 100, 0, "g000aa0001", "g000000000", false, true, 20, 80),
-            Attack = new AttackType("g000aa0001", 50, AttackClass.Heal, 80, 3, 0, 30, false, 0, false), Attacker = true, Slot = 0, HpMax = 100, Hp = 100,
+            Id = "H", Type = new UnitType("base:unit/squire-empire", 1, 100, 0, "base:attack/squire-empire", "g000000000", false, true, 20, 80),
+            Attack = new AttackType("base:attack/squire-empire", 50, AttackClass.Heal, 80, 3, 0, 30, false, 0, false), Attacker = true, Slot = 0, HpMax = 100, Hp = 100,
         };
         var hurt = Unit("W", true, AttackClass.Damage, hp: 50);
         var state = new BattleState { AttackerGroup = "G1", DefenderGroup = "G2", Round = 1, Units = [healer, hurt, Unit("E", false, AttackClass.Damage)] };

@@ -12,11 +12,11 @@ public class BattleEndAndTurnRulesTests
     private static readonly Lazy<GameRules> Rules = new(() => RulesLoader.Load(ImportedData.Content));
     private static RulesConstants C => Rules.Value.Constants;
 
-    private const string Squire = "g000uu0001";        // L1, hp 100, Damage
-    private const string OracleElf = "g000uu5006";     // L1 площадной лекарь (Heal), hp 125
-    private const string Occultist = "g000uu6013";     // L1 Summon
-    private const string Alchemist = "g000uu0161";     // L3 GiveAttack
-    private const string RuneBlade = "g000um2301";     // MOD_EQUIP «Рунный клинок»: +10 % урона
+    private const string Squire = "base:unit/squire-empire";        // L1, hp 100, Damage
+    private const string OracleElf = "base:unit/oracle-elf";     // L1 площадной лекарь (Heal), hp 125
+    private const string Occultist = "base:unit/occultist-neutral";     // L1 Summon
+    private const string Alchemist = "base:unit/alchemist";     // L3 GiveAttack
+    private const string RuneBlade = "base:modifier/dwarven-bracer-artifact";     // MOD_EQUIP «Рунный клинок»: +10 % урона
 
     private static BattleUnit Of(string typeId, string id, bool attacker, int slot)
     {

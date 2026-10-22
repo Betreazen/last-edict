@@ -66,6 +66,16 @@ public sealed record UnitDef : ContentDef
     public UnitGrowthRef Growth { get; init; } = new();
 
     [Legacy("WATER_ONLY")] public bool? WaterOnly { get; init; }
+
+    // Признаки, которые движок оригинала держит списками id в коде (LastEdict.Rules.Units.LegacyUnits): импорт выписывает их явно.
+    [Description("Маг-лидер: точность площадной атаки падает на 10 с каждой следующей целью. Нет — по id оригинала (список движка).")]
+    public bool? MageLeader { get; init; }
+
+    [Description("Прибавка к потолку урона (LeaderBonusMaxDamage). Нет — по id оригинала (список движка).")]
+    public bool? DamageBonus { get; init; }
+
+    [Description("Двойник может скопировать юнит. Нет — по id оригинала (список движка; у прочих — да).")]
+    public bool? Copyable { get; init; }
     [Legacy("DEATH_ANIM")] public DeathAnimation? DeathAnimation { get; init; }
 
     [Description("Иммунитеты к источникам атак (Gimmu).")]

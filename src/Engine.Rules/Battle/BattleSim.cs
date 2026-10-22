@@ -708,7 +708,7 @@ public sealed class BattleSim(BattleState state, IRng rng, RulesConstants consta
         foreach (var t in targets)
         {
             int place = Math.Max(0, places.FindIndex(p => ReferenceEquals(p, t)));   // одиночная цель — 0
-            int reduction = Formulas.MageLeaderPowerReduction(unit.Type.GlobalId, place);
+            int reduction = Formulas.MageLeaderPowerReduction(unit.Type, place);
             var r = Attacks.Apply(unit, attack, t, rng, constants, round, state, reduction, sureHit: sure);
             state.Actions.Add(new ActionNote(round, unit.Id, t.Id, 1, attack.Class));
             bool landed = !r.Immune && (!r.Miss || sure);

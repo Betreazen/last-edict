@@ -337,7 +337,7 @@ public sealed class ManageStackLogic : IWindowLogic
         var slots = Equipment.Slots(stack);
         for (int s = 0; s < SlotImages.Length; s++)
             if (ui.Screen.Elements.Any(e => e.Id == SlotImages[s]))
-                ui.SetImage(SlotImages[s], slots[s].Length > 0 && map.ItemTypes.TryGetValue(slots[s], out var type) ? $"{ItemArchive}:{type}" : null);
+                ui.SetImage(SlotImages[s], slots[s].Length > 0 && map.ItemTypes.TryGetValue(slots[s], out var type) ? $"{ItemArchive}:{ArtNames.Of(type)}" : null);
         int top = ui.ListTop(Bag);
         var bag = BagCells;
         ui.SetCards(Bag, [.. bag.Select(c => ItemCells.Card(c, _c, _bagSpec))]);

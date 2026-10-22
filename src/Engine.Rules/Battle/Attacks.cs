@@ -168,7 +168,7 @@ public static class Attacks
     internal static AttackOutcome ApplyDamage(BattleUnit attacker, AttackType attack, BattleUnit target,
                                              int drainPercent, IRng rng, RulesConstants c, BattleState? state)
     {
-        int dwb = Formulas.DamageWithBuffs(attack, Formulas.DamageMax(c, attacker.Type.GlobalId),
+        int dwb = Formulas.DamageWithBuffs(attack, Formulas.DamageMax(c, attacker.Type),
                                            c.BoostDamagePercent(attacker.BoostDamageLevel),
                                            c.LowerDamagePercent(attacker.LowerDamageLevel), true, rng, c,
                                            state?.HumanOnEasy(attacker) == true);

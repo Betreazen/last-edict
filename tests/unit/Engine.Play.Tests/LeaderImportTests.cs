@@ -91,7 +91,9 @@ public class LeaderImportTests
             var list = LeaderStore.List(dir);
             Assert.Equal(files, list.Count);
             var merlot = list.Single(l => l.FileName == "Merlot");
-            Assert.Equal(LdrFile.Read(File.ReadAllBytes(Path.Combine(exports, "Merlot.ldr"))) with { }, merlot.Leader with { },
+            // Файл героя Last Edict — с id содержимого: .ldr оригинала переводится при переносе.
+            Assert.Equal(LegacyRefs.ToContentIds(LdrFile.Read(File.ReadAllBytes(Path.Combine(exports, "Merlot.ldr"))), LastEdict.Data.Content.LegacyIds.Base),
+                         merlot.Leader with { },
                          new LeaderComparer());
             LeaderStore.Delete(merlot);
             Assert.DoesNotContain(LeaderStore.List(dir), l => l.FileName == "Merlot");
@@ -131,8 +133,8 @@ public class LeaderImportTests
 
             var hero = new ExportedLeader
             {
-                Name = "Мерло", Race = 0, UnitType = "G000UU0021", Level = 1,
-                Attack = new LeaderAttack("G000AA0021", 1, "Молния", 80, 0, 30, 7, 40, 1),
+                Name = "Мерло", Race = 0, UnitType = "base:unit/archmage", Level = 1,
+                Attack = new LeaderAttack("base:attack/archmage", 1, "Молния", 80, 0, 30, 7, 40, 1),
             };
             LeaderFile.Write(Path.Combine(dir, "Merlot.json"), hero);
             var setup = new NewGameSetup { Scenario = content.Catalog.Scenarios[0], Race = 0 };
@@ -185,9 +187,9 @@ public class LeaderImportTests
         };
         var hero = new ExportedLeader
         {
-            Name = "Мерло", Race = 0, UnitType = "G000UU0021", Level = 1, Leadership = 4, Xp = 17, XpNext = 150, BattlesWon = 4,
-            HitPoints = 65, Attack = new LeaderAttack("G000AA0021", 1, "Lightning", 80, 0, 30, 7, 40, 1), Move = 20, Scout = 5,
-            Abilities = [14, 7], Equipment = [new LeaderItem(2, "G000IG0001", 0)],
+            Name = "Мерло", Race = 0, UnitType = "base:unit/archmage", Level = 1, Leadership = 4, Xp = 17, XpNext = 150, BattlesWon = 4,
+            HitPoints = 65, Attack = new LeaderAttack("base:attack/archmage", 1, "Lightning", 80, 0, 30, 7, 40, 1), Move = 20, Scout = 5,
+            Abilities = [14, 7], Equipment = [new LeaderItem(2, "base:item/life-potion", 0)],
         };
         var logic = new ViewLeaderLogic(context, hero);
         var screen = content.Screens.Single(s => s.Id == "DLG_VIEW_EXPLEAD");
@@ -231,8 +233,8 @@ public class LeaderImportTests
         var looks = ScenarioFile.Read(path).Looks;
         var leader = new ExportedLeader
         {
-            Name = "Мерло", Race = 3, UnitType = "G000UU0021", Level = 1, Leadership = 1,
-            Attack = new LeaderAttack("G000AA0021", 1, "Lightning", 80, 0, 30, 7, 40, 1),
+            Name = "Мерло", Race = 3, UnitType = "base:unit/archmage", Level = 1, Leadership = 1,
+            Attack = new LeaderAttack("base:attack/archmage", 1, "Lightning", 80, 0, 30, 7, 40, 1),
         };
         var map = looks.Map;
         var capital = map.Sites.Single(s => s.Kind == LastEdict.Rules.Map.SiteKind.Capital && s.Owner.Equals("S073PL000a", StringComparison.OrdinalIgnoreCase));
@@ -245,11 +247,10 @@ public class LeaderImportTests
         var inside = created.Stacks[created.Sites.Single(s => s.Id == capital.Id).StackId];
         Assert.Equal((capital.Owner, capital.Subrace, capital.Id, (int)LastEdict.Rules.Battle.StackOrder.Normal, 1),
                      (inside.Owner, inside.Subrace, inside.Inside, inside.Order, inside.CreationLevel));
-        Assert.Equal("G000UU0021", created.Units[inside.LeaderId].TypeId);
+        Assert.Equal("base:unit/archmage", created.Units[inside.LeaderId].TypeId);
 
         // Большой герой — обе клетки колонки (2 и 3).
-        var bigType = book.Rules.Units.Values.First(u => !u.SizeSmall && book.CategoryOf(u.Id) == LastEdict.Rules.Battle.UnitCategory.Leader
-                                                         && u.Id.Substring(4, 2).Equals("UU", StringComparison.OrdinalIgnoreCase));
+        var bigType = book.Rules.Units.Values.First(u => !u.SizeSmall && book.CategoryOf(u.Id) == LastEdict.Rules.Battle.UnitCategory.Leader);
         var bigMap = NewGame.ImportLeader(empty, "S073PL000a", leader with { UnitType = bigType.Id }, book).Map;
         var bigStack = bigMap.Stacks[bigMap.Sites.Single(s => s.Id == capital.Id).StackId];
         Assert.Equal((0, 0), (bigStack.Slots[2], bigStack.Slots[3]));
@@ -282,9 +283,9 @@ public class LeaderImportTests
         var book = GameBook.Load(ImportedData.PathOf("rules"));
         var leader = new ExportedLeader
         {
-            Name = "Мерло", Race = 3, UnitType = "G000UU0021", Level = 3, Xp = 17, BattlesWon = 4, UpgradeCount = 2,
-            Attack = new LeaderAttack("G000AA0021", 1, "Lightning", 80, 0, 30, 7, 40, 1),
-            Modifiers = ["G000UM9031"], Equipment = [new LeaderItem(2, "G000IG0001", 0)],
+            Name = "Мерло", Race = 3, UnitType = "base:unit/archmage", Level = 3, Xp = 17, BattlesWon = 4, UpgradeCount = 2,
+            Attack = new LeaderAttack("base:attack/archmage", 1, "Lightning", 80, 0, 30, 7, 40, 1),
+            Modifiers = ["base:modifier/1-leadership"], Equipment = [new LeaderItem(2, "base:item/life-potion", 0)],
         };
         var setup = new NewGameSetup
         {
@@ -296,16 +297,16 @@ public class LeaderImportTests
         var capital = map.Sites.Single(s => s.Kind == LastEdict.Rules.Map.SiteKind.Capital && s.Owner.Equals("S073PL000a", StringComparison.OrdinalIgnoreCase));
         var stack = map.Stacks[capital.StackId];
         var hero = map.Units[stack.LeaderId];
-        var grown = book.Grown("G000UU0021", 3)!;
-        Assert.Equal(("G000UU0021", grown.Level, 17), (hero.TypeId, hero.Level, hero.Xp));
-        Assert.Contains("G000UM9031", hero.Modifiers);
-        Assert.Equal(("G000IG0001", 4, 2), (map.ItemTypes[stack.Equipment[2]], stack.BattlesWon, stack.UpgradeCount));
+        var grown = book.Grown("base:unit/archmage", 3)!;
+        Assert.Equal(("base:unit/archmage", grown.Level, 17), (hero.TypeId, hero.Level, hero.Xp));
+        Assert.Contains("base:modifier/1-leadership", hero.Modifiers);
+        Assert.Equal(("base:item/life-potion", 4, 2), (map.ItemTypes[stack.Equipment[2]], stack.BattlesWon, stack.UpgradeCount));
         Assert.Equal("Мерло", state.Looks.Stacks.Single(s => s.Id == stack.Id).LeaderName);
 
         // Герой чужой расы (Империя в ячейке Кланов) не встаёт: лидер — стартовый.
         setup.Hotseat = [new HotseatSeat(3, "Гимли", 0, 1, leader with { Race = 0 }), new HotseatSeat(2, "Б", 0, 1)];
         var foreign = NewGame.Start(ScenarioFile.Read(path), setup, content.Catalog, book, new Random(1)).Looks.Map;
         var foreignStack = foreign.Stacks[foreign.Sites.Single(s => s.Id == capital.Id).StackId];
-        Assert.NotEqual("G000UU0021", foreign.Units[foreignStack.LeaderId].TypeId);
+        Assert.NotEqual("base:unit/archmage", foreign.Units[foreignStack.LeaderId].TypeId);
     }
 }

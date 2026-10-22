@@ -90,7 +90,7 @@ public class AiSpellRulesTests
     [Fact]
     public void Pay_ShortfallFromSpellBank_ZeroesTreasury()
     {
-        var spell = new Spell("g000ss0070", SpellCategory.Attack, 2, new Bank(0, 0, 0, 200, 0, 0), Bank.Zero, 1, "", "", 0, 3, 30, 0, 0, []);
+        var spell = new Spell("base:spell/stone-rain", SpellCategory.Attack, 2, new Bank(0, 0, 0, 200, 0, 0), Bank.Zero, 1, "", "", 0, 3, 30, 0, 0, []);
         var (bank, spellBank) = SpellCast.Pay(new Bank(153, 0, 100, 149, 0, 0), new Bank(200, 870, 745, 2267, 445, 0), spell, useSpellBank: true);
         Assert.Equal(Bank.Zero, bank);
         Assert.Equal(new Bank(200, 870, 745, 2216, 445, 0), spellBank);

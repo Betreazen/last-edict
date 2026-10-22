@@ -264,7 +264,7 @@ public sealed class MageLogic(WindowContext context, string stackId, string site
     /// (<c>0x4fcf00</c>): <c>\vC;</c> + имя (<c>0x5a5b5c</c>, без жирного) + перевод строки + <c>X005TA0249</c> с ценой + перевод строки +
     /// <c>X005TA0495</c> «Щелкните правой кнопкой для получения информации.»; купленное (<c>0x4fd81d</c>): <c>\hC;\vC;</c> + имя. Снимки
     /// оригинала 19.10 (башня LUTE): у товара три строки, купленное — по центру; у порта были имя жирным, цена и рамка с x = 80.</summary>
-    private UiCard Row(string spell, long price, bool withPrice) => new($"IconSpel:{spell.ToUpperInvariant()}", new UiPoint(0, 0),
+    private UiCard Row(string spell, long price, bool withPrice) => new($"IconSpel:{ArtNames.Of(spell)}", new UiPoint(0, 0),
         withPrice
             ? @"\vC;" + Name(spell) + @"\n" + UiTemplate.Fill(C.Text("X005TA0249"), ("PRICE", price)) + @"\n" + C.Text("X005TA0495")
             : @"\hC;\vC;" + Name(spell),
@@ -305,7 +305,7 @@ public sealed class MageLogic(WindowContext context, string stackId, string site
 
     /// <summary>Кадр тащимого заклинания — его значок <c>IconSpel</c> (как в строке списка); воин — портрет.</summary>
     public override string? DragImage =>
-        _drag is { } d ? d < Offered.Count ? $"IconSpel:{Offered[d].ToUpperInvariant()}" : null : base.DragImage;
+        _drag is { } d ? d < Offered.Count ? $"IconSpel:{ArtNames.Of(Offered[d])}" : null : base.DragImage;
 
     private string Name(string spell) => texts.TryGetValue(spell, out var t) ? C.Text(t.NameTxt) : spell;
 }

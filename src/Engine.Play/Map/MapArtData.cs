@@ -1,6 +1,7 @@
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using LastEdict.Data.Content;
 using LastEdict.Data.Dbf;
 
 namespace LastEdict.Data.Map;
@@ -26,7 +27,8 @@ public sealed record UnitLook(string Unit, string NameTxt, int Move, int Scout);
 public sealed record MountainImages(string Terrain, int Size, int Count);
 
 /// <summary>Данные отрисовки карты (<c>data/map/*.json</c>, импорт <c>tools/GameImport</c>). Мод кладёт свои файлы в
-/// <c>data/map</c>: запись с тем же ключом заменяет базовую, новая добавляется.</summary>
+/// <c>data/map</c>: запись с тем же ключом заменяет базовую, новая добавляется. Юниты и ориентиры — по id содержимого
+/// (<c>base:unit/knight</c>): файлы импорта пишут id оригинала, и они переводятся при сборке набора (<see cref="LegacyIds.Base"/>).</summary>
 public sealed class MapArtData
 {
     public static MapArtData Empty { get; } = new([], [], [], []);
@@ -35,6 +37,11 @@ public sealed class MapArtData
                       IReadOnlyList<MoveBonus> moveBonus, IReadOnlyList<UnitLook>? units = null,
                       IReadOnlyList<MountainImages>? mountains = null)
     {
+        // Ключи правил — id содержимого; файлы импорта и моды оригинала пишут id оригинала.
+        static string Key(string id) => LegacyIds.Base.IdOf(id) ?? id;
+        landmarks = [.. landmarks.Select(l => l with { Id = Key(l.Id) })];
+        moveBonus = [.. moveBonus.Select(b => b with { Unit = Key(b.Unit) })];
+        units = units is null ? null : [.. units.Select(u => u with { Unit = Key(u.Unit) })];
         Mountains = mountains ?? [];
         _mountains = Mountains.ToDictionary(m => (m.Terrain.ToUpperInvariant(), m.Size), m => m.Count);
         Layers = layers;

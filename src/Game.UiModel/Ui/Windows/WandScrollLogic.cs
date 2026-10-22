@@ -101,7 +101,7 @@ public sealed class WandScrollLogic(WindowContext context, string stackId, IRead
             return;
         }
         var (_, def, spell) = entries[_selected];
-        ui.SetImage("IMG_SPELL", $"IconSpel:{spell.Id.ToUpperInvariant()}");
+        ui.SetImage("IMG_SPELL", $"IconSpel:{ArtNames.Of(spell.Id)}");
         ui.SetText("TXT_LABEL1", ItemName(def.Id));
         ui.SetText("TXT_SPELL_INFO_2", SpellName(spell.Id));
         string stats = UiTemplate.Fill(context.Text("X005TA0438"), ("LEVEL", spell.Level));

@@ -36,7 +36,7 @@ public sealed partial class GameSession
                                           Taken(book, leader), modifId, book.Vars.LeaderMaxAbilities,
                                           LastEdict.Rules.Units.LeaderAbilities.Innate(leader.TypeId, book.InnateAbilities), book.Rules.Modifiers);
         if (chosen.Refusal != SkillRefusal.None) return chosen.Refusal;
-        string modif = chosen.Upgrade!.ModifId.ToUpperInvariant();
+        string modif = chosen.Upgrade!.ModifId;
         var units = map.Units.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase);
         var upgraded = leader with { Modifiers = [.. leader.Modifiers, modif] };
         // Сервер после visitorLeaderUpgrade (0x5d6e21: 0x5e84c2, затем hasElement модификатора, слот +0x1c): обзор — туман вокруг

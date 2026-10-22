@@ -36,7 +36,7 @@ public sealed partial class GameSession
         bool free = ai && AiStrategicRules.IgnoresCost(building);
         SetPlayer(map, player with
         {
-            Bank = free ? player.Bank : Treasury.Pay(player.Bank, building.Cost), Buildings = [.. player.Buildings, building.Id.ToUpperInvariant()],
+            Bank = free ? player.Bank : Treasury.Pay(player.Bank, building.Cost), Buildings = [.. player.Buildings, building.Id],
             ConstructionTurn = map.Turn,
         });
         Observer?.Happened(new TurnSight(TurnSightKind.Built, playerId, 0, 0, building.Id));   // звук окна (сессия Г)
@@ -72,7 +72,7 @@ public sealed partial class GameSession
         cells[at] = index;
         if (big) cells[at + 1] = index;
         var units = map.Units.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase);
-        units[id] = new MapUnit { Id = id, TypeId = type.Id.ToUpperInvariant(), Level = grown.Level, Hp = grown.Type.HitPoints };
+        units[id] = new MapUnit { Id = id, TypeId = type.Id, Level = grown.Level, Hp = grown.Type.HitPoints };
         var sites = map.Sites.Select(s => ReferenceEquals(s, fort) ? s with { Guards = [.. s.Guards, id], GuardSlots = cells } : s).ToList();
         var players = map.Players.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase);
         players[player.Id] = player with { Bank = Treasury.Pay(player.Bank, cost) };
@@ -136,7 +136,7 @@ public sealed partial class GameSession
         string stackId = NewId(ref ids, map.Stacks.Keys, fortId, "KC");
         int[] slots = LeaderSlots(grown.Type, book.Rules);
         var units = map.Units.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase);
-        units[unitId] = new MapUnit { Id = unitId, TypeId = type.Id.ToUpperInvariant(), Level = grown.Level, Hp = grown.Type.HitPoints };
+        units[unitId] = new MapUnit { Id = unitId, TypeId = type.Id, Level = grown.Level, Hp = grown.Type.HitPoints };
         var stacks = map.Stacks.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase);
         stacks[stackId] = new MapStack
         {
@@ -151,7 +151,7 @@ public sealed partial class GameSession
         plan[(fort.X, fort.Y)] = [.. plan.GetValueOrDefault((fort.X, fort.Y)) ?? [], stackId];
         var players = map.Players.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase);
         players[player.Id] = player with { Bank = Treasury.Pay(player.Bank, cost) };
-        var look = new LastEdict.Data.Map.StackLook(stackId, fort.X, fort.Y, player.Id, fort.Subrace, type.Id.ToUpperInvariant(),
+        var look = new LastEdict.Data.Map.StackLook(stackId, fort.X, fort.Y, player.Id, fort.Subrace, type.Id,
                                              LeaderAlive: true, AnyAlive: true, Facing: 4, Inside: fort.Id, Invisible: false, LeaderName: name);
         State = State with
         {
@@ -248,7 +248,7 @@ public sealed partial class GameSession
         players[player.Id] = player with
         {
             Bank = Treasury.Pay(player.Bank, price), ResearchTurn = map.Turn,
-            KnownSpells = [.. player.KnownSpells, spellId.ToUpperInvariant()],
+            KnownSpells = [.. player.KnownSpells, spellId],
         };
         State = State with { Looks = Retold(Looks, With(map, players: players), Looks.Stacks) };
         Observer?.Happened(new TurnSight(TurnSightKind.Researched, playerId, 0, 0, spellId));   // звук окна (сессия Г)

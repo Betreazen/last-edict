@@ -60,7 +60,7 @@ public static class ItemCells
     {
         ArgumentNullException.ThrowIfNull(itemType);
         ArgumentNullException.ThrowIfNull(c);
-        return $"{ItemArchive}:{c.Session.Book?.ItemIcon(itemType) ?? itemType.ToUpperInvariant()}";
+        return $"{ItemArchive}:{c.Session.Book?.ItemIcon(itemType) ?? ArtNames.Of(itemType)}";
     }
 
     /// <summary>Портрет воина-экземпляра — для курсора тащения; воина нет — null.</summary>

@@ -137,6 +137,6 @@ public static class ScenarioObjectives
         : world.Site(id) is { } site ? !site.Gone && site.Kind != SiteKind.Other
         : world.Zone(id) is not null;
 
-    /// <summary>Тип предмета — класс <c>IG</c> в позиции 4–5 (<c>G000IG0001</c>).</summary>
-    private static bool IsItemType(string id) => id.Length >= 6 && id.AsSpan(4, 2).Equals("IG", StringComparison.OrdinalIgnoreCase);
+    /// <summary>Тип предмета — id содержимого вида <c>item</c> (<c>base:item/…</c>, формат «мод:вид/имя»); у объектов карты id иные.</summary>
+    private static bool IsItemType(string id) => id.Contains(":item/", StringComparison.OrdinalIgnoreCase);
 }

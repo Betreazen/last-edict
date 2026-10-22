@@ -124,7 +124,7 @@ public sealed class StratSpellLogic(WindowContext context, string spellId, IRead
     public void Refresh(UiScreenState ui)
     {
         ArgumentNullException.ThrowIfNull(ui);
-        ui.SetImage("IMG_SPELL_ICON", $"IconSpel:{spellId.ToUpperInvariant()}");
+        ui.SetImage("IMG_SPELL_ICON", $"IconSpel:{ArtNames.Of(spellId)}");
         string name = texts.TryGetValue(spellId, out var t) ? context.Text(t.NameTxt) : spellId;
         ui.SetText("TXT_SPELL_INFO", UiTemplate.Fill(context.Text("X005TA0617"), ("NAME", name)));
         var bank = context.Player.Bank;

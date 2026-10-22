@@ -8,8 +8,11 @@ namespace LastEdict.Data.Content;
 /// <summary>
 /// Целостность набора содержимого — то, чего не видит схема JSON одной сущности:
 /// <list type="bullet">
-/// <item>ключ правил (<see cref="ContentDef.Key"/>) уникален внутри вида без учёта регистра — словари правил регистронезависимы, и второй
-/// ключ молча перекрыл бы первый (прежние загрузчики на повторе <c>GDynUpgr</c>, <c>Gmodif</c>, <c>Gspells</c>… падали);</item>
+/// <item>ключ правил (<see cref="ContentDef.Key"/>, id содержимого) уникален внутри вида без учёта регистра — словари правил
+/// регистронезависимы, и второй ключ молча перекрыл бы первый (прежние загрузчики на повторе <c>GDynUpgr</c>, <c>Gmodif</c>, <c>Gspells</c>…
+/// падали);</item>
+/// <item>id оригинала (<see cref="ContentDef.LegacyId"/>) уникален во всём наборе без учёта регистра — по нему сценарии, сохранения и
+/// <c>.sg</c> прежних версий переводятся на id содержимого (<see cref="LegacyIds"/>);</item>
 /// <item>ссылка (<see cref="RefAttribute"/>) ведёт к существующей сущности нужного вида (или к объекту оригинала вне содержимого —
 /// <c>legacy:…</c>);</item>
 /// <item>отношение ИИ — одна сущность на отношение; списки глобальных величин фиксированной длины — той длины, которую ждут правила
@@ -22,13 +25,16 @@ internal static class ContentChecks
     public static void Validate(ContentSet set, Func<string, string?>? origin)
     {
         string Where(ContentDef def) => origin?.Invoke(def.Id) is { } from ? $"«{def.Id}» ({from})" : $"«{def.Id}»";
+        var legacy = new Dictionary<string, ContentDef>(StringComparer.OrdinalIgnoreCase);
         foreach (var kind in ContentSet.Kinds)
         {
             var keys = new Dictionary<string, ContentDef>(StringComparer.OrdinalIgnoreCase);
             foreach (var def in set.Of(kind.Type))
             {
                 if (!keys.TryAdd(def.Key, def))
-                    throw new InvalidDataException($"{Where(def)} и {Where(keys[def.Key])}: один ключ правил «{def.Key}» (legacyId или id)");
+                    throw new InvalidDataException($"{Where(def)} и {Where(keys[def.Key])}: один ключ правил «{def.Key}» (id без учёта регистра)");
+                if (def.LegacyId is { Length: > 0 } old && !legacy.TryAdd(old, def))
+                    throw new InvalidDataException($"{Where(def)} и {Where(legacy[old])}: один id оригинала «{old}»");
                 foreach (var (path, refKind, value) in References(def))
                 {
                     if (value.StartsWith(ContentSet.LegacyPrefix, StringComparison.Ordinal)) continue;

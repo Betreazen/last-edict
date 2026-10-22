@@ -92,7 +92,7 @@ internal sealed class ImportLeaderLogic(MenuContext context, LeaderPick pick) : 
         ui.SetCards(List,
         [
             new UiCard(null, new UiPoint(0, 0), context.Text("X005TA0734"), text),
-            .. _leaders.Select(l => new UiCard($"Faces:{l.Leader.UnitType.ToUpperInvariant()}FACE", new UiPoint(0, (CellHeight - FaceHeight) / 2),
+            .. _leaders.Select(l => new UiCard($"Faces:{ArtNames.Of(l.Leader.UnitType)}FACE", new UiPoint(0, (CellHeight - FaceHeight) / 2),
                 UiTemplate.Fill(context.Text("X005TA0735"), ("NAME", l.Leader.Name), ("LEVEL", l.Leader.Level)), text,
                 Dimmed: l.Leader.Race != pick.Race)),
         ]);
@@ -139,11 +139,11 @@ internal sealed class ViewLeaderLogic(MenuContext context, ExportedLeader leader
         ui.SetText("TXT_LEADER_ABILITY", context.Text("X005TA0185"));
         ui.SetCards(Abilities, [.. LeaderAbilities.Rows(leader).Select(r => new UiCard(r.Icon.Length > 0 ? $"Icons:{r.Icon}" : null,
             new UiPoint(0, 0), UiTemplate.Fill(context.Text("X005TA0940"), ("ABIL", context.Text(r.Name))), new UiRect(36, 0, 158 - 36, 36)))]);
-        string type = leader.UnitType.ToUpperInvariant();
+        string type = ArtNames.Of(leader.UnitType);
         ui.SetImage("IMG_SLOTLEADER", $"Faces:{type}FACE");
         ui.SetImage("IMG_LEADER_FACE", $"Faces:{type}FACEB");
         foreach (var item in leader.Equipment.Where(i => i.Slot >= 0 && i.Slot < Slots.Length && i.ItemType.Length > 0))
-            ui.SetImage(Slots[item.Slot], $"IconItem:{item.ItemType.ToUpperInvariant()}");
+            ui.SetImage(Slots[item.Slot], $"IconItem:{ArtNames.Of(item.ItemType)}");
     }
 
     public void Handle(UiEvent e, UiScreenState ui)
@@ -179,7 +179,7 @@ internal sealed class ViewLeaderLogic(MenuContext context, ExportedLeader leader
             var r = ui.Screen.Elements.FirstOrDefault(e => e.Id == Slots[slot])?.Rect;
             if (r is not { } rect || x < rect.X || x >= rect.Right || y < rect.Y || y >= rect.Bottom) continue;
             var worn = leader.Equipment.FirstOrDefault(i => i.Slot == slot);
-            if (worn is null || !book.Items.TryGetValue(worn.ItemType.ToUpperInvariant(), out var item)) return;
+            if (worn is null || !book.Items.TryGetValue(worn.ItemType, out var item)) return;
             var texts = context.ItemTexts;
             // Цены и зарядов нет (CEncParamID с флагами 0: цена только при флаге 2, 0x578848).
             _requests.Add(new UiOpen(ItemCardLogic.Screen, new ItemCardLogic(context.Text, item,

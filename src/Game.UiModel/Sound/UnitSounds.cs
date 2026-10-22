@@ -30,9 +30,9 @@ public sealed class UnitSounds
     public static UnitSounds Load(string path) =>
         File.Exists(path) ? JsonSerializer.Deserialize<UnitSounds>(File.ReadAllText(path)) ?? new UnitSounds() : new UnitSounds();
 
-    /// <summary>Звуки юнита (регистр id не значим); нет — null.</summary>
+    /// <summary>Звуки юнита по ключу типа (таблица импорта — по id оригинала, <see cref="Ui.ArtNames"/>); нет — null.</summary>
     public UnitSoundInfo? Of(string unitId) =>
-        Units.TryGetValue(unitId.ToUpperInvariant(), out var info) ? info : null;
+        Units.TryGetValue(Ui.ArtNames.Of(unitId), out var info) ? info : null;
 
     /// <summary>Имя звука из поля: пусто — null; <c>X.LST</c> — вариант списка <c>X</c> (<paramref name="random"/>: <c>rand() % n</c>);
     /// иначе — само имя.</summary>

@@ -118,13 +118,9 @@ public static class BattleTargets
         unit.Transformed || unit.TransformedLong || unit.TransformedSelf || unit.TransformedDoppelganger || unit.LevelDrained
             ? [] : Copies(state, unit, attack, human);
 
-    /// <summary>Не копируются никогда — прошитый список <c>0x661bdc</c> (строки <c>0x6f34f4</c>–<c>0x6f3524</c>).</summary>
-    private static readonly HashSet<string> NotCopyable = new(StringComparer.OrdinalIgnoreCase)
-        { "g000uu8003", "g000uu8006", "g000uu8103", "g000uu8106", "g000uu8150" };
-
     /// <summary>Кого может скопировать Doppelganger — <c>0x661a7a</c> (ранг 1). Свои и враги на поле, годные по
     /// <c>canPerform</c> <c>0x661e73</c>: малый, первая атака не Doppelganger (значит, и не сам ходящий), категория
-    /// не Illusion/Guardian (<c>0x838170</c>/<c>0x8381a0</c>); минус прошитый <see cref="NotCopyable"/>; минус
+    /// не Illusion/Guardian (<c>0x838170</c>/<c>0x8381a0</c>); минус прошитый список оригинала (<see cref="UnitType.Copyable"/>, <see cref="Units.LegacyUnits"/>); минус
     /// <c>Always</c> к атаке двойника (<c>0x65a1a5</c> → <c>0x65a528</c>, у ИИ и в автобое). Список движка —
     /// <c>std::set&lt;int&gt;</c>, враги в нём — <c>-(позиция+1)</c>, поэтому порядок обхода: враги по УБЫВАНИЮ
     /// слота, затем свои по возрастанию. Журнал: map-001 [1281528] копия — S143UN0002 (xp 15), а не S143UN000a
@@ -134,7 +130,7 @@ public static class BattleTargets
              .Concat(state.Allies(unit).OrderBy(u => u.Slot))
              .Where(u => u.OnField && u.Type.SizeSmall && u.Attack.Class != AttackClass.Doppelganger
                          && u.Type.Category is not (UnitCategory.Illusion or UnitCategory.Guardian)
-                         && !NotCopyable.Contains(u.Type.Id)
+                         && u.Type.Copyable
                          && (human || !AiTargets.AlwaysImmune(u, attack.Source, attack.Class)))
              .ToList();
 }

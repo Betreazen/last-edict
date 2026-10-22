@@ -24,11 +24,11 @@ public class EffectiveStatsTests(ITestOutputHelper output)
         ids.Select(id => Tables.Value.Modifiers[id]).ToList();
 
     private static UnitType Unit(int hp, int armor) =>
-        new("g000uu5130", 1, hp, armor, "g000aa0001", "g000000000", false, true, 10, 100);
+        new("base:unit/thug-neutral-2", 1, hp, armor, "base:attack/squire-empire", "g000000000", false, true, 10, 100);
 
     private static AttackType Attack(int power = 80, int damage = 25, int initiative = 50,
                                      AttackClass cls = AttackClass.Damage) =>
-        new("g000aa0001", initiative, cls, power, 3, damage, 0, false, 0);
+        new("base:attack/squire-empire", initiative, cls, power, 3, damage, 0, false, 0);
 
     // ---- свойство, на котором держатся Ф4 и Ф5 -----------------------------------------------
 
@@ -85,14 +85,14 @@ public class EffectiveStatsTests(ITestOutputHelper output)
     {
         ImportedData.RequireRules();
 
-        Assert.Equal(55, EffectiveStats.OfAttack(Attack(initiative: 50), Chain("g000um0002")).Attack.Initiative);
+        Assert.Equal(55, EffectiveStats.OfAttack(Attack(initiative: 50), Chain("base:modifier/celerity")).Attack.Initiative);
         // база 60, а не обычная 80: 80 + 33 % = 106 упёрлось бы в потолок точности 100 и
         // перестало бы показывать само число модификатора — потолок проверяет AttackCaps_*
-        Assert.Equal(79, EffectiveStats.OfAttack(Attack(power: 60), Chain("g000um0036")).Attack.Power);
-        Assert.Equal(40, EffectiveStats.Of(Unit(65, 20), Chain("g000um0012")).Armor);
-        Assert.Equal([3], EffectiveStats.Of(Unit(65, 0), Chain("g000um0027")).MoveAbilities);
+        Assert.Equal(79, EffectiveStats.OfAttack(Attack(power: 60), Chain("base:modifier/wotan-s-blessing")).Attack.Power);
+        Assert.Equal(40, EffectiveStats.Of(Unit(65, 20), Chain("base:modifier/holy-armor")).Armor);
+        Assert.Equal([3], EffectiveStats.Of(Unit(65, 0), Chain("base:modifier/seafaring")).MoveAbilities);
         Assert.Equal([new ImmunityGrant(7, ImmunityLevel.Once)],
-                     EffectiveStats.Of(Unit(65, 0), Chain("g000um0001")).Immunities);
+                     EffectiveStats.Of(Unit(65, 0), Chain("base:modifier/air-ward")).Immunities);
     }
 
     /// <summary>Процент считается целочисленно с усечением к нулю — как <c>Percent::of</c> движка
@@ -104,9 +104,9 @@ public class EffectiveStatsTests(ITestOutputHelper output)
     public void Percent_TruncatesTowardsZero()
     {
         ImportedData.RequireRules();
-        Assert.Equal(66, EffectiveStats.OfAttack(Attack(power: 50), Chain("g000um0036")).Attack.Power);
-        Assert.NotEqual(67, EffectiveStats.OfAttack(Attack(power: 50), Chain("g000um0036")).Attack.Power);
-        Assert.Equal(52, EffectiveStats.Of(Unit(65, 0), Chain("g000um9002")).HitPoints);   // −20 %
+        Assert.Equal(66, EffectiveStats.OfAttack(Attack(power: 50), Chain("base:modifier/wotan-s-blessing")).Attack.Power);
+        Assert.NotEqual(67, EffectiveStats.OfAttack(Attack(power: 50), Chain("base:modifier/wotan-s-blessing")).Attack.Power);
+        Assert.Equal(52, EffectiveStats.Of(Unit(65, 0), Chain("base:modifier/20-hit-points-2")).HitPoints);   // −20 %
     }
 
     /// <summary>Долг ревью задачи 2: отрицательный процент проверялся только там, где деление
@@ -122,7 +122,7 @@ public class EffectiveStatsTests(ITestOutputHelper output)
     public void NegativePercent_TruncatesTowardsZero_NotFloor()
     {
         ImportedData.RequireRules();
-        var hypnosis = Chain("g000um0055");
+        var hypnosis = Chain("base:modifier/tortio-menta");
         Assert.Equal(54, EffectiveStats.OfAttack(Attack(power: 80), hypnosis).Attack.Power);
         Assert.NotEqual(53, EffectiveStats.OfAttack(Attack(power: 80), hypnosis).Attack.Power);
         // тот же −33 % на другой некруглой базе: 65 · (−33) / 100 = −21,45 → −21, floor дал бы −22
@@ -147,13 +147,13 @@ public class EffectiveStatsTests(ITestOutputHelper output)
         ImportedData.RequireRules();
 
         // 1 — процент: 100 → 120, и на некруглой базе 65 → 78
-        Assert.Equal(120, EffectiveStats.Of(Unit(100, 0), Chain("g000um9001")).HitPoints);
-        Assert.Equal(78, EffectiveStats.Of(Unit(65, 0), Chain("g000um9001")).HitPoints);
+        Assert.Equal(120, EffectiveStats.Of(Unit(100, 0), Chain("base:modifier/20-hit-points")).HitPoints);
+        Assert.Equal(78, EffectiveStats.Of(Unit(65, 0), Chain("base:modifier/20-hit-points")).HitPoints);
         // 2 — число: +50 к максимуму независимо от базы
-        Assert.Equal(150, EffectiveStats.Of(Unit(100, 0), Chain("g000um7545")).HitPoints);
-        Assert.Equal(115, EffectiveStats.Of(Unit(65, 0), Chain("g000um7545")).HitPoints);
+        Assert.Equal(150, EffectiveStats.Of(Unit(100, 0), Chain("base:modifier/gallean-s-boon")).HitPoints);
+        Assert.Equal(115, EffectiveStats.Of(Unit(65, 0), Chain("base:modifier/gallean-s-boon")).HitPoints);
         // если бы применялись оба поля («процент, затем число»), вышло бы 122 и 152
-        Assert.NotEqual(122, EffectiveStats.Of(Unit(100, 0), Chain("g000um9001")).HitPoints);
+        Assert.NotEqual(122, EffectiveStats.Of(Unit(100, 0), Chain("base:modifier/20-hit-points")).HitPoints);
 
         var six = Tables.Value.Modifiers.Values.SelectMany(m => m.Elements)
             .Where(e => e.Type == ModifierElementType.Hp).ToList();
@@ -173,7 +173,7 @@ public class EffectiveStatsTests(ITestOutputHelper output)
     public void Chain_EachLayerSeesPrevious()
     {
         ImportedData.RequireRules();
-        var e = EffectiveStats.OfAttack(Attack(damage: 25, initiative: 50), Chain("g000um0002", "g000um2307"));
+        var e = EffectiveStats.OfAttack(Attack(damage: 25, initiative: 50), Chain("base:modifier/celerity", "base:modifier/bethrezen-s-claw-artifact"));
         Assert.Equal(82, e.Attack.Initiative);       // 55 + 55·50/100 = 55 + 27
         Assert.NotEqual(80, e.Attack.Initiative);    // 50 + 5 + 25 — «проценты от базы»
         Assert.Equal(35, e.Attack.QtyDamage);        // 25 + 25·40/100
@@ -186,7 +186,7 @@ public class EffectiveStatsTests(ITestOutputHelper output)
     public void UnitAndAttackElements_DoNotLeakIntoEachOther()
     {
         ImportedData.RequireRules();
-        var chain = Chain("g000um0012", "g000um2307");           // Armor +20, QtyDamage/Initiative %
+        var chain = Chain("base:modifier/holy-armor", "base:modifier/bethrezen-s-claw-artifact");           // Armor +20, QtyDamage/Initiative %
         var stats = EffectiveStats.Of(Unit(65, 20), chain);
         var attack = EffectiveStats.OfAttack(Attack(damage: 25, initiative: 50), chain);
         Assert.Equal(40, stats.Armor);
@@ -202,7 +202,7 @@ public class EffectiveStatsTests(ITestOutputHelper output)
     {
         ImportedData.RequireRules();
         var e = EffectiveStats.OfAttack(Attack(damage: 25, initiative: 50, cls: AttackClass.Poison),
-                                        Chain("g000um2307"));
+                                        Chain("base:modifier/bethrezen-s-claw-artifact"));
         Assert.Equal(25, e.Attack.QtyDamage);
         Assert.Equal(75, e.Attack.Initiative);
     }
@@ -214,7 +214,7 @@ public class EffectiveStatsTests(ITestOutputHelper output)
     public void AttackDrain_AccumulatesPercentPoints()
     {
         ImportedData.RequireRules();
-        Assert.Equal(25, EffectiveStats.OfAttack(Attack(), Chain("g000um2317")).DrainPercent);
+        Assert.Equal(25, EffectiveStats.OfAttack(Attack(), Chain("base:modifier/unholy-dagger-artifact")).DrainPercent);
     }
 
     /// <summary>Отряд и карта: <c>g000um4015</c> «Keen-Sight» (NUMBER 3), <c>g000um9031</c>
@@ -228,7 +228,7 @@ public class EffectiveStatsTests(ITestOutputHelper output)
     {
         ImportedData.RequireRules();
         var s = EffectiveStats.Of(Unit(65, 0),
-            Chain("g000um4015", "g000um9031", "g000um2503", "g000um7546", "g000um7548", "g000um9035"),
+            Chain("base:modifier/skill-keen-sight", "base:modifier/1-leadership", "base:modifier/boots-of-speed", "base:modifier/rusted-shackles-artifact", "base:modifier/lute-of-charming-artifact", "base:modifier/banner-of-health"),
             regeneration: 10, moveAllowance: 20, scoutingRange: 4, leadership: 1);
         Assert.Equal(7, s.ScoutingRange);        // 4 + 3
         Assert.Equal(2, s.Leadership);           // 1 + 1
@@ -256,8 +256,8 @@ public class EffectiveStatsTests(ITestOutputHelper output)
     public void PowerCeiling_MatchesProbe_80Plus30Percent_Gives100()
     {
         ImportedData.RequireRules();
-        var accuracy = Chain("g000um2009");     // «Зелье меткости», Power +30 %
-        var strength = Chain("g000um2015");     // «Зелье силы», QtyDamage +30 %
+        var accuracy = Chain("base:modifier/potion-of-accuracy-potion");     // «Зелье меткости», Power +30 %
+        var strength = Chain("base:modifier/potion-of-strength-potion");     // «Зелье силы», QtyDamage +30 %
 
         Assert.Equal(100, EffectiveStats.OfAttack(Attack(power: 80), accuracy).Attack.Power);
         Assert.NotEqual(104, EffectiveStats.OfAttack(Attack(power: 80), accuracy).Attack.Power);
@@ -276,8 +276,8 @@ public class EffectiveStatsTests(ITestOutputHelper output)
     public void InitiativeCeiling_ClampsAt150()
     {
         ImportedData.RequireRules();
-        var two = Chain("g000um2019", "g000um4022");
-        Assert.Equal(144, EffectiveStats.OfAttack(Attack(initiative: 90), Chain("g000um2019")).Attack.Initiative);
+        var two = Chain("base:modifier/potion-of-celerity-potion", "base:modifier/skill-first-strike");
+        Assert.Equal(144, EffectiveStats.OfAttack(Attack(initiative: 90), Chain("base:modifier/potion-of-celerity-potion")).Attack.Initiative);
         Assert.Equal(150, EffectiveStats.OfAttack(Attack(initiative: 90), two).Attack.Initiative);
         Assert.NotEqual(216, EffectiveStats.OfAttack(Attack(initiative: 90), two).Attack.Initiative);
     }
@@ -315,9 +315,9 @@ public class EffectiveStatsTests(ITestOutputHelper output)
     {
         ImportedData.RequireRules();
         var c = new RulesConstants(10, 6);
-        Assert.Equal(20, EffectiveStats.Of(Unit(65, 30), Chain("g000um7543", "g000um0012")).Armor);
+        Assert.Equal(20, EffectiveStats.Of(Unit(65, 30), Chain("base:modifier/mold", "base:modifier/holy-armor")).Armor);
         var type = Unit(65, 80);
-        int effective = EffectiveStats.Of(type, Chain("g000um0012")).Armor;
+        int effective = EffectiveStats.Of(type, Chain("base:modifier/holy-armor")).Armor;
         Assert.Equal(EffectiveStats.ArmorMax, effective);
 
         var unit = new BattleUnit
@@ -335,9 +335,9 @@ public class EffectiveStatsTests(ITestOutputHelper output)
     {
         ImportedData.RequireRules();
         var c = new RulesConstants(10, 6);
-        var boosted = EffectiveStats.OfAttack(Attack(damage: 250), Chain("g000um2307")).Attack;
+        var boosted = EffectiveStats.OfAttack(Attack(damage: 250), Chain("base:modifier/bethrezen-s-claw-artifact")).Attack;
         Assert.Equal(350, boosted.QtyDamage);
-        int max = Formulas.DamageMax(c, "g000uu5130");
+        int max = Formulas.DamageMax(c, new UnitType("thug", 1, 100, 0, "", "", false, true, 0, 0));
         Assert.Equal(c.MaxDamage, Formulas.DamageWithBuffs(boosted, max, 0, 0, false, new ScriptedRng([]), c));
     }
 

@@ -15,13 +15,13 @@ public class SummonBigUnitTests(ITestOutputHelper output)
 {
     private static readonly Lazy<GameRules> Rules = new(() => RulesLoader.Load(ImportedData.Content));
 
-    private const string Lif = "g000uu6007";          // Тёмный эльф Лиф, малый, призыв g000aa6007 (REACH «все»)
-    private const string LifSummon = "g000aa6007";    // кандидаты: Гигантский чёрный паук (большой), Злой дух, Скелет-воин, Зомби
-    private const string Spider = "g000uu5035";       // Гигантский чёрный паук — единственный большой кандидат
-    private const string Troll = "g000uu5016";        // Тролль, большой
-    private const string Orc = "g000uu5012";          // Орк-багатур, малый
-    private const string Occultist = "g000uu6013";    // призыв g000aa6013 — один кандидат, малый
-    private const string Squire = "g000uu0001";
+    private const string Lif = "base:unit/dark-elf-lyf-neutral";          // Тёмный эльф Лиф, малый, призыв g000aa6007 (REACH «все»)
+    private const string LifSummon = "base:attack/dark-elf-lyf-neutral";    // кандидаты: Гигантский чёрный паук (большой), Злой дух, Скелет-воин, Зомби
+    private const string Spider = "base:unit/giant-black-spider-neutral";       // Гигантский чёрный паук — единственный большой кандидат
+    private const string Troll = "base:unit/troll-neutral";        // Тролль, большой
+    private const string Orc = "base:unit/orc-champion-neutral";          // Орк-багатур, малый
+    private const string Occultist = "base:unit/occultist-neutral";    // призыв g000aa6013 — один кандидат, малый
+    private const string Squire = "base:unit/squire-empire";
 
     private static RulesConstants C => Rules.Value.Constants;
 

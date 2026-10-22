@@ -79,15 +79,6 @@ public static class Formulas
     /// <c>add eax, 0xa</c> по GOG <c>0x625264</c> (тулсет: <c>restrictions.cpp</c>, GOG <c>0x625266</c>).</summary>
     public const int MageLeaderPowerStep = 10;
 
-    /// <summary>Глобальные реализации «магов-лидеров» — список ЗАШИТ в код (GOG <c>0x627db1</c>,
-    /// прочитан до <c>ret 8</c>): глобальный impl-id юнита (слот 4 vftable, <c>call [edx+0x10]</c>)
-    /// сравнивается с шестью строками — <c>0x6f1f30</c> G000UU8010, <c>0x6d95e8</c> G000UU0021,
-    /// <c>0x6f1f24</c> G000UU0046, <c>0x6f1f18</c> G000UU0098, <c>0x6f1f0c</c> G000UU0097,
-    /// <c>0x6f1f00</c> G000UU0072. Ни UNIT_CAT, ни LEADER_CAT не читаются: нейтральный лидер
-    /// G000UU5262 (UNIT_CAT 2, площадной огонь) штрафа не получает — корпус это подтверждает.</summary>
-    private static readonly HashSet<string> MageLeaders = new(StringComparer.OrdinalIgnoreCase)
-        { "G000UU8010", "G000UU0021", "G000UU0046", "G000UU0098", "G000UU0097", "G000UU0072" };
-
     /// <summary>Штраф точности площадной атаки мага-лидера по цели, стоящей на месте
     /// <paramref name="place"/> перемешанной группы (<see cref="Attacks.Shuffle"/>, мёртвые включительно).
     /// <para><b>Ранг 1.</b> Движок: в цикле по целям <c>battleTurn</c> после каждой цели
@@ -98,8 +89,8 @@ public static class Formulas
     /// каждое действие и не хранит его. Корпус: лестница у 22 ходов магов-лидеров из 22 — точность =
     /// база − 10 · место цели в ВСЕЙ перемешанной группе (80/60/50/40/30 у вампира при мёртвом на
     /// втором месте); счёт среди живых сходится лишь у 15 из 22.</para></summary>
-    public static int MageLeaderPowerReduction(string globalUnitId, int place) =>
-        MageLeaders.Contains(globalUnitId) ? MageLeaderPowerStep * place : 0;
+    public static int MageLeaderPowerReduction(UnitType unit, int place) =>
+        unit.MageLeader ? MageLeaderPowerStep * place : 0;
 
     /// <summary>Промах = среднее двух бросков rng(100) СТРОГО больше точности. Два броска — факт
     /// корпуса (rng_after - rng_before == 2 у каждого miss). Порог измерен 06.09.2026 на корпусе
@@ -109,33 +100,14 @@ public static class Formulas
     /// только там). Счётчик miss_boundary в C1HarnessTests считает пограничные случаи.</summary>
     public static bool ShouldMiss(int power, int roll1, int roll2) => (roll1 + roll2) / 2 > power;
 
-    /// <summary>typeIndex (младшие 16 бит id) десяти глобальных реализаций лидеров, которым движок
-    /// даёт +LeaderBonusMaxDamage. Список зашит в код getUnitImplDamageMax (GOG 0x61dc4a-0x61dc7b),
-    /// это не свойство Gunits.dbf: docs/re-damage-max.md. Pegasus Knight, Ranger, King's Guard,
-    /// Engineer, Dwarf Champion, Duke, Counselor, Death Knight, Forest Liege, Guardian.</summary>
-    private static readonly HashSet<int> LeaderBonusTypeIndices =
-        [0x0019, 0x0020, 0x0044, 0x0045, 0x0047, 0x0070, 0x0071, 0x0096, 0x8009, 0x8011];
-
     /// <summary>getUnitImplDamageMax (GOG 0x61dbe3, вызывается из computeDamageMax 0x61db98):
     /// потолок урона = MaxDamage (300, attackDamage.max из .rdata) + LeaderBonusMaxDamage (100,
-    /// fighterExplorerLeaderBonusMaxDamage) для десяти прошитых typeIndex глобального impl-id;
-    /// категория, LEADER_CAT, BASE_UNIT, уровень не читаются. Ранг 1: дизассемблирование до ret
-    /// плюс два юнита живого боя (g000uu0019 -> 400, g000uu5130 -> 300), docs/re-damage-max.md.
-    /// <paramref name="unitTypeId"/> — глобальный id вида g000uu0019. Прокачанный лидер (UG) в движке
-    /// сводится к базовому UU через CUnitGenerator::getGlobalUnitImplId; у нас типы приходят только
-    /// из Gunits (UU), поэтому UG не поддержан и бросает, а не молчит.</summary>
-    public static int DamageMax(RulesConstants c, string unitTypeId)
-    {
-        if (unitTypeId.Length != 10)
-            throw new ArgumentException($"id типа юнита не 10 символов: '{unitTypeId}'", nameof(unitTypeId));
-        var kind = unitTypeId.Substring(4, 2).ToLowerInvariant();
-        if (kind == "ug")
-            throw new NotSupportedException($"{unitTypeId}: UG-id прокачанного лидера нужно свести к базовому UU " +
-                                            "(getGlobalUnitImplId), в правилах этого сведения нет");
-        if (kind != "uu") return c.MaxDamage;   // движок: не UU/UG -> base
-        int typeIndex = Convert.ToInt32(unitTypeId.Substring(6, 4), 16);
-        return c.MaxDamage + (LeaderBonusTypeIndices.Contains(typeIndex) ? c.LeaderBonusMaxDamage : 0);
-    }
+    /// fighterExplorerLeaderBonusMaxDamage) у десяти лидеров, прошитых в код (<see cref="UnitType.DamageBonus"/>,
+    /// <see cref="Units.LegacyUnits"/>). Ранг 1: дизассемблирование до ret плюс два юнита живого боя (Pegasus Knight -> 400,
+    /// g000uu5130 -> 300). Выросший уровнем лидер — тот же тип (движок сводил порождённую реализацию к базовой,
+    /// getGlobalUnitImplId): прибавка у него остаётся.</summary>
+    public static int DamageMax(RulesConstants c, UnitType unit) =>
+        c.MaxDamage + (unit.DamageBonus ? c.LeaderBonusMaxDamage : 0);
 
     /// <summary>computeDamageWithBuffs (GOG <c>0x5d2db1</c>, прочитан до <c>ret 0x18</c>):
     /// <code>

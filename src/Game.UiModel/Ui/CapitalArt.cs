@@ -1,4 +1,5 @@
 using System.Text.Json;
+using LastEdict.Data.Content;
 
 namespace LastEdict.Data.Ui;
 
@@ -23,9 +24,11 @@ public sealed class CapitalArt(IReadOnlyList<CapitalRace> races)
 
     public IReadOnlyList<CapitalRace> Races { get; } = races;
 
+    /// <summary>Слои из <c>data/ui/capital.json</c>. Постройки там — id оригинала (разметка импорта), правила — id содержимого: переводятся
+    /// здесь (<see cref="LegacyIds.Base"/>).</summary>
     public static CapitalArt Load(string path) =>
-        new(JsonSerializer.Deserialize<File>(System.IO.File.ReadAllText(path))?.Races
-            ?? throw new FormatException($"{path}: нет рас"));
+        new([.. (JsonSerializer.Deserialize<File>(System.IO.File.ReadAllText(path))?.Races ?? throw new FormatException($"{path}: нет рас"))
+            .Select(r => r with { Layers = [.. r.Layers.Select(l => l.Building is { } b ? l with { Building = LegacyIds.Base.IdOf(b) ?? b } : l)] })]);
 
     /// <summary>Видимые слои столицы расы <paramref name="raceType"/> при постройках <paramref name="buildings"/>, снизу
     /// вверх. Нет такой расы — пусто.</summary>

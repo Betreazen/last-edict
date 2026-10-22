@@ -99,7 +99,8 @@ public partial class UiScreenView : Node2D
             var found = content.Screens.FirstOrDefault(s => s.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
             if (found is null) { Fail($"нет экрана {id} (в наборе {content.Screens.Count})"); return null; }
             // Окно игры может достроить экран своими элементами (ячейки групп юнитов — их нет в разметке).
-            screen = Logic?.Shape(found) ?? found;
+            // Холст формы окна (ui/layout.json, UiLayout): экран Anchors раскладывается до состояния — щелчки и узлы идут по разложенному.
+            screen = PlaceOnCanvas(Logic?.Shape(found) ?? found);
             assets = content.AssetsByName;
             _fonts = GameData.Fonts;
             _strings = GameData.Strings(language);
@@ -156,6 +157,7 @@ public partial class UiScreenView : Node2D
                  $"textids={text.Ids} strings={text.Resolved} nostring={text.Ids - text.Resolved} " +
                  $"captions={text.Drawn} missing={List(text.Missing)} unknown={List(text.Unknown)}");
         if (skipped.Count > 0) GD.PrintErr($"нет кадров: {string.Join(", ", skipped)}");
+        if (args.Contains("--fit")) GD.Print(FitLine());   // вписывание в окно (UiScreenView.Layout.cs)
 
         if (skipped.Count > 0 || magenta > 0) { GetTree().Quit(1); return; }
         string? input = ArgValue(args, "--input");
@@ -221,8 +223,9 @@ public partial class UiScreenView : Node2D
     private void Collect(UiScreen screen, List<Frame> frames, List<string> skipped)
     {
         Vector2I origin = Origin(screen);
-        Add(UnderlayId, _state.Underlay, origin);
-        Add("BACKGROUND", _state.Background, origin);
+        Vector2I shift = BackgroundShift(screen, _shaped);   // фон и подложка — по центру холста
+        Add(UnderlayId, _state.Underlay, origin + shift);
+        Add("BACKGROUND", _state.Background, origin + shift);
         foreach (var element in screen.Elements)
             Add(element.Id, _state.Frame(element.Id), new Vector2I(element.Rect.X, element.Rect.Y), element);
 
@@ -440,12 +443,14 @@ public partial class UiScreenView : Node2D
     {
         var root = new Node2D { Name = "Design" };
         AddChild(root);
+        BuildBorder(root, screen);   // паспарту экрана во всё окно (UiScreenView.Layout.cs)
         BuildSprites(root, screen, frames);
         BuildTexts(root, screen);
         BuildCards(root, screen);
 
         _root = root;
         RefreshContent();
+        if (_sizeHooked) return;   // перестройка на новом холсте (Relayout): размер окна уже отслеживается
         Rescale();
         GetViewport().SizeChanged += Rescale;
         _sizeHooked = true;
@@ -527,12 +532,15 @@ public partial class UiScreenView : Node2D
     private void Rescale()
     {
         if (_root is null) return;
+        Relayout();   // экран Anchors на холсте новой формы — заново (UiScreenView.Layout.cs)
+        if (_root is null) return;
         Vector2 view = GetViewportRect().Size;
         if (SlotAt is { } at)
         {
             float h = Mathf.Min(view.X / SlotHost.X, view.Y / SlotHost.Y);
             _root.Scale = new Vector2(h, h);
-            _root.Position = ((view - (SlotHost * h)) / 2f) + (at * h);
+            _root.Position = ((view - (SlotHost * h)) / 2f) + ((at + SlotInset()) * h);
+            SlotAmbient();
             return;
         }
         var (origin, k) = Letterbox(view, _design);

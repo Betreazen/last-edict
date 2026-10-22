@@ -63,9 +63,10 @@ public partial class UiScreenView
         // Frame — структура: GetValueOrDefault дал бы пустой кадр вместо «нет фона» (у DLG_BATTLE_A фона нет).
         Frame? background = byId.TryGetValue("BACKGROUND", out var bg) ? bg : null;
         Frame? underlay = byId.TryGetValue(UnderlayId, out var under) ? under : null;
-        _underlaySprite = Sprite(root, UnderlayId, underlay, Vector2I.Zero);
+        Vector2I shift = BackgroundShift(screen, _shaped);   // фон, которого ещё нет (ставит логика), — тоже по центру холста
+        _underlaySprite = Sprite(root, UnderlayId, underlay, shift);
         _underlayFrame = _state.Underlay;
-        _backgroundSprite = Sprite(root, "BACKGROUND", background, Vector2I.Zero);
+        _backgroundSprite = Sprite(root, "BACKGROUND", background, shift);
         _backgroundFrame = screen.Background;
         Vector2I origin = Origin(screen);
         var pictures = screen.Elements.Where(e => e.Kind is UiKind.Image or UiKind.Button or UiKind.Toggle).ToList();

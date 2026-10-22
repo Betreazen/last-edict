@@ -23,6 +23,9 @@ public partial class CapitalView : Node2D
     private const int BlinkSteps = 4;
     private static readonly Vector2 Size = new(640, 600);
 
+    /// <summary>Размер картинки столицы (точки разметки).</summary>
+    public static Vector2 PictureSize => Size;
+
     private readonly List<(CapitalLayer Layer, Sprite2D Sprite, IReadOnlyList<string> Frames)> _layers = [];
     private readonly Dictionary<string, Texture2D> _cache = [];
     private HashSet<string>? _buildings;
@@ -48,6 +51,33 @@ public partial class CapitalView : Node2D
 
     /// <summary>Правая кнопка по постройке — её энциклопедия (<c>0x4afa89</c>).</summary>
     public event Action<string>? RightClicked;
+
+    private Vector2 _area = Size;
+    private Sprite2D? _ambient;
+
+    /// <summary>Место картинки на экране карты (место карты <c>IMG_MAIN</c> на холсте формы окна, Э5): картинка 640×600 — по его середине
+    /// (позицию ставит хозяин), поля вокруг — растяжкой самой картинки (<see cref="AmbientFill"/>).</summary>
+    public Vector2 Area
+    {
+        get => _area;
+        set
+        {
+            if (value == _area) return;
+            _area = value;
+            Ambient();
+        }
+    }
+
+    /// <summary>Поля вокруг картинки: растяжка нижнего слоя (сама картинка столицы) на всё место; место — размер картинки — полей нет.</summary>
+    private void Ambient()
+    {
+        _ambient?.QueueFree();
+        _ambient = null;
+        if ((_area.X <= Size.X && _area.Y <= Size.Y) || _layers.Count == 0 || _layers[0].Sprite.Texture is not { } texture) return;
+        _ambient = AmbientFill.Create(texture, new Rect2(Vector2.Zero, texture.GetSize()), Size / 2f, _area, -1);
+        AddChild(_ambient);
+        MoveChild(_ambient, 0);
+    }
 
     /// <summary>Слои заново; постройка, которой не было при прошлом показе, мигает.</summary>
     public void Show(IReadOnlyList<CapitalLayer> layers, GfxAssets gfx, string root)
@@ -80,6 +110,8 @@ public partial class CapitalView : Node2D
             drawn++;
         }
         Counts = (drawn, missing);
+        _ambient = null;   // снята вместе со слоями
+        Ambient();
         var buildings = layers.Where(l => l.Building is not null).Select(l => l.Building!).ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (_buildings is not null && buildings.FirstOrDefault(b => !_buildings.Contains(b)) is { } added)
         {

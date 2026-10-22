@@ -15,6 +15,12 @@ public partial class MiniMapView : SubViewportContainer
     /// <summary>Рамка вида при ширине экрана 640/800 (<c>0x5cb1a2</c>).</summary>
     private static readonly Vector2 FrameSize = new(40, 34);
 
+    /// <summary>Место карты оригинала, которому соответствует <see cref="FrameSize"/>.</summary>
+    private static readonly Vector2 FrameView = new(640, 600);
+
+    /// <summary>Размер места карты на холсте формы окна (Э5): рамка вида растёт с ним; ставится сценой.</summary>
+    public Vector2 ViewSize { get; set; } = FrameView;
+
     private readonly Dictionary<string, RgbaImage?> _art = new(StringComparer.OrdinalIgnoreCase);
     private SubViewport _viewport = null!;
     private Sprite2D _raster = null!;
@@ -58,7 +64,7 @@ public partial class MiniMapView : SubViewportContainer
         if (_raster is null) return;
         var (px, py) = _mini.PointOf(Centre.X, Centre.Y);
         _raster.Position = new Vector2((_window.X / 2) - px, (_window.Y / 2) - py);
-        var half = FrameSize / 2;
+        var half = (FrameSize * ViewSize / FrameView).Round() / 2;
         var centre = _window / 2;
         _frame.Points = [centre - half, new Vector2(centre.X + half.X, centre.Y - half.Y),
                          centre + half, new Vector2(centre.X - half.X, centre.Y + half.Y), centre - half];

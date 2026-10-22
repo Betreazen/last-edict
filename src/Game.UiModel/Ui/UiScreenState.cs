@@ -75,8 +75,8 @@ public sealed class UiScreenState
         public int Selected;
     }
 
-    private readonly UiScreen _screen;
-    private readonly Dictionary<string, UiElement> _byId;
+    private UiScreen _screen;
+    private Dictionary<string, UiElement> _byId;
     private readonly HashSet<string> _disabled = new(StringComparer.Ordinal);
     private readonly HashSet<string> _hidden = new(StringComparer.Ordinal);
     private readonly HashSet<string> _checked = new(StringComparer.Ordinal);
@@ -142,6 +142,19 @@ public sealed class UiScreenState
     }
 
     public UiScreen Screen => _screen;
+
+    /// <summary>Тот же экран, разложенный на другом холсте (<see cref="UiLayout.Place"/>: окно сменило форму) — прямоугольники элементов
+    /// новые, всё остальное (выбор, отметки, тексты, прокрутка, наведение) остаётся: элементы те же по имени.</summary>
+    /// <exception cref="ArgumentException">Набор элементов другой.</exception>
+    public void Place(UiScreen placed)
+    {
+        ArgumentNullException.ThrowIfNull(placed);
+        if (placed.Id != _screen.Id || placed.Elements.Count != _screen.Elements.Count
+            || placed.Elements.Where((e, i) => e.Id != _screen.Elements[i].Id).Any())
+            throw new ArgumentException($"{placed.Id}: не тот же экран, что {_screen.Id}", nameof(placed));
+        _screen = placed;
+        _byId = placed.Elements.ToDictionary(e => e.Id, StringComparer.Ordinal);
+    }
 
     /// <summary>Элемент под мышью (кнопка, переключатель, список, поле ввода); <c>null</c> — ни одного.</summary>
     public string? Hovered => _hover;

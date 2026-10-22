@@ -87,6 +87,7 @@ public partial class MapScreen
         _diploField = new UiScreenView
         {
             Hosted = DiplomacyFieldLogic.Screen, Name = DiplomacyFieldLogic.Screen, SlotAt = _mapRect.Position, SlotHost = _host,
+            SlotSize = new Vector2I((int)_mapRect.Size.X, (int)_mapRect.Size.Y),   // поле — по середине места карты (UiScreenView.SlotInset)
             Logic = new DiplomacyFieldLogic(_diplo),
         };
         var field = _diploField;

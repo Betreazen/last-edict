@@ -31,10 +31,6 @@
       "Kind": "fullscreen"
     },
     {
-      "Id": "CMenuHotseatLobbyLoaderInterf",
-      "Kind": "fullscreen"
-    },
-    {
       "Id": "CMenuLoadSendMessageInterf",
       "Kind": "fullscreen"
     },
@@ -1105,115 +1101,6 @@
       ]
     },
     {
-      "Id": "DLG_HOTSEAT",
-      "Phases": [
-        "Menu"
-      ],
-      "Edges": [
-        {
-          "Element": "BTN_LOAD_SKIRMISH",
-          "Action": "Goto",
-          "Target": "DLG_LOAD",
-          "Via": "DLG_MENU_TRANS",
-          "Seen": 2
-        },
-        {
-          "Element": "BTN_NEW_SKIRMISH",
-          "Action": "Goto",
-          "Target": "DLG_HOTSEAT_NEW",
-          "Via": "DLG_MENU_TRANS",
-          "Seen": 3
-        }
-      ]
-    },
-    {
-      "Id": "DLG_HOTSEAT_LOBBY",
-      "Phases": [
-        "Menu"
-      ],
-      "Edges": [
-        {
-          "Element": "BTN_CANCEL",
-          "Action": "Goto",
-          "Target": "DLG_MAIN_MENU",
-          "Via": "DLG_MENU_TRANS",
-          "Seen": 1
-        },
-        {
-          "Element": "BTN_OK",
-          "Action": "Goto",
-          "Target": "CMenuHotseatLobbyLoaderInterf",
-          "Via": "DLG_WAIT",
-          "Phase": "Game",
-          "Seen": 1
-        }
-      ]
-    },
-    {
-      "Id": "DLG_HOTSEAT_LOBBY_RACE",
-      "Phases": [
-        "Menu"
-      ],
-      "Edges": [
-        {
-          "Element": "BTN_LORD",
-          "Action": "None",
-          "Seen": 1
-        },
-        {
-          "Element": "TOG_PLAYERTYPE",
-          "Action": "None",
-          "Seen": 2
-        }
-      ]
-    },
-    {
-      "Id": "DLG_HOTSEAT_NEW",
-      "Phases": [
-        "Menu"
-      ],
-      "Edges": [
-        {
-          "Element": "BTN_BACK",
-          "Action": "Goto",
-          "Target": "DLG_MAIN_MENU",
-          "Via": "DLG_MENU_TRANS",
-          "Seen": 1
-        },
-        {
-          "Element": "BTN_GAME_LIST_DOWN",
-          "Action": "None",
-          "Seen": 38
-        },
-        {
-          "Element": "BTN_LOAD",
-          "Action": "Goto",
-          "Target": "DLG_HOTSEAT_LOBBY",
-          "Via": "DLG_MENU_TRANS",
-          "Seen": 2
-        },
-        {
-          "Element": "TLBOX_GAME_SLOT",
-          "Action": "None",
-          "Seen": 39
-        }
-      ]
-    },
-    {
-      "Id": "DLG_HOTSEAT_POPUP",
-      "Phases": [
-        "Game"
-      ],
-      "Edges": [
-        {
-          "Element": "BTN_OK",
-          "Action": "Goto",
-          "Target": "DLG_BEGIN_TURN",
-          "Seen": 8
-        }
-      ]
-    },
-    {
       "Id": "DLG_IMPORT_LEADER",
       "Phases": [
         "Menu"
@@ -2006,13 +1893,6 @@
           "Target": "DLG_MAIN_MENU",
           "Via": "DLG_MENU_TRANS",
           "Seen": 2
-        },
-        {
-          "Element": "BTN_CONTINUE",
-          "Action": "Goto",
-          "Target": "DLG_HOTSEAT",
-          "Via": "DLG_MENU_TRANS",
-          "Seen": 5
         },
         {
           "Element": "BTN_CONTINUE",

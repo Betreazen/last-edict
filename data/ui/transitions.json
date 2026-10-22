@@ -15,11 +15,7 @@
     { "From": "DLG_SINGLE_PLAYER", "To": "DLG_LOAD_CUSTOM_TOURNEMENT", "Video": "TRANS_SINGLE2LOAD" },
     { "From": "DLG_CHOOSE_SKIRMISH", "To": "DLG_CHOOSE_RACE", "Video": "TRANS_NEWQUEST2GOD" },
     { "From": "DLG_CHOOSE_RACE", "To": "DLG_CHOOSE_LORD", "Video": "TRANS_GOD2LORD_{RACE}" },
-    { "From": "DLG_PROTOCOL", "To": "DLG_HOTSEAT", "Video": "TRANS_PROTO2HOTSEAT" },
     { "From": "DLG_PROTOCOL", "To": "DLG_LOAD_NEW_MULTI", "Video": "TRANS_PROTO2MULTI" },
-    { "From": "DLG_HOTSEAT", "To": "DLG_LOAD", "Video": "TRANS_HOTSEAT2LOAD" },
-    { "From": "DLG_HOTSEAT", "To": "DLG_HOTSEAT_NEW", "Video": "TRANS_HOTSEAT2NEW" },
-    { "From": "DLG_HOTSEAT_NEW", "To": "DLG_HOTSEAT_LOBBY", "Video": "TRANS_NEW2HSLOBBY" },
     { "From": "DLG_LOAD_NEW_MULTI", "To": "DLG_SESSION", "Video": "TRANS_MULTI2JOIN" }
   ]
 }

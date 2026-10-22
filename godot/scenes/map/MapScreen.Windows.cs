@@ -174,7 +174,6 @@ public partial class MapScreen
             Drain(_dialogViews[^1]);
             if (_dialogsStale) Callable.From(SyncDialogs).CallDeferred();
         }
-        CourierOffers();   // предложение человека человеку — гонцом сразу (MapScreen.Courier.cs)
         if (!closed) return;
         _map.Reload();
         SyncPanels();

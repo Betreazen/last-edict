@@ -45,14 +45,14 @@ public class CampaignTests
     public void SagaMenu_RaceChoosesCampaign()
     {
         var content = Shared.Value.Content;
-        var setup = new NewGameSetup { Hotseat = [new HotseatSeat(3, "", 0, 0), new HotseatSeat(2, "", 0, 1)] };   // осталось от хотсита
+        var setup = new NewGameSetup { Seats = [new PlayerSeat(3, "", 0, 0), new PlayerSeat(2, "", 0, 1)] };   // осталось от лобби
         var context = new MenuContext(content.Catalog, Strings, setup, "Игрок") { Screens = content.Screens };
         var single = MenuLogic.For("DLG_SINGLE_PLAYER", context)!;
         var sui = new UiScreenState(content.Screens.Single(s => s.Id == "DLG_SINGLE_PLAYER"));
         single.Open(sui);
         single.Handle(new UiClicked("BTN_NEW_TOURNEMENT"), sui);
         Assert.True(setup.Saga);
-        Assert.Empty(setup.Hotseat);
+        Assert.Empty(setup.Seats);
 
         var race = MenuLogic.For("DLG_CHOOSE_RACE", context)!;
         var ui = new UiScreenState(content.Screens.Single(s => s.Id == "DLG_CHOOSE_RACE"));

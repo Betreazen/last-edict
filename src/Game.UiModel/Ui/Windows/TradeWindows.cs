@@ -254,7 +254,7 @@ public sealed class TradePriceLogic(WindowContext context, string targetId, AiTr
             _requests.Add(new UiTell(refused));
             return;
         }
-        // Ждёт ответа человека («горячий стул»): сразу гонец и окно адресата (HotseatCourierLogic), итог — после его ответа.
+        // Адресат — человек (партия нескольких людей, сеть — Э7): итог — после его ответа.
         if (result.Accepted is not { } yes) return;
         var target = context.Map.Players[targetId];
         context.Announce(yes ? TurnSightKind.Traded : TurnSightKind.TradeRefused, TradedType(draft));   // звук — показ (сессия Г)

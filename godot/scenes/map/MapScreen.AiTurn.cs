@@ -228,19 +228,13 @@ public partial class MapScreen
     }
 
     /// <summary>Бой ИИ с человеком: состояние уже собрано ядром (<see cref="GameSession.StartBattle"/>), экран боя играет его
-    /// на генераторе партии, человек — защита. Закрытие отдаёт журнал ходу ИИ, а итог в карту вносит ядро. «Горячий стул» — сначала
-    /// окно режима 2 защитнику (<see cref="CallDefender"/>, <c>CTaskBattle</c> <c>0x4d79c8</c>: и в ход ИИ), бой — после «ОК».</summary>
+    /// на генераторе партии, человек — защита. Закрытие отдаёт журнал ходу ИИ, а итог в карту вносит ядро.</summary>
     private void OpenAiBattle(MapView.AiBattle request)
     {
         var session = _map.Session;
         if (_battle is not null || session.Book is null)
         {
             request.Done(AutoLog(request));
-            return;
-        }
-        if (CallDefender(request.State.DefenderGroup, () => OpenAiBattleNow(request)))
-        {
-            ShowAiPanels();   // окно — поверх панели ожидания хода ИИ
             return;
         }
         OpenAiBattleNow(request);
@@ -334,7 +328,7 @@ public partial class MapScreen
         // Ход ИИ кончился — или ждёт ответа человека на предложение (окно открыто, дальше отвечает шаг «ui»).
         while (_map.AiRunning && !_map.AiOfferShowing && (DateTime.UtcNow - began).TotalSeconds < MapView.CheckAiSeconds)
         {
-            if (_overlay is { Hosted: "DLG_EVENT_POPUP" or "DLG_HOTSEAT_POPUP" } popup)
+            if (_overlay is { Hosted: "DLG_EVENT_POPUP" } popup)
             {
                 GameLog.Verbose($"aipopup ok {popup.Hosted}");
                 DismissPopups();

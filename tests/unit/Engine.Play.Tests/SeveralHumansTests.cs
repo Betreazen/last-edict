@@ -4,9 +4,9 @@ using LastEdict.Data.Play;
 
 namespace LastEdict.Data.Tests;
 
-/// <summary>«Горячий стул» (<c>docs/day-cycle.md</c> §5): люди ходят по очереди в одном дне (<c>NextPlayer 0x420929</c>),
-/// начало хода человека — в момент его хода, день растёт после ИИ.</summary>
-public class HotseatTests
+/// <summary>Партия нескольких людей (<c>docs/day-cycle.md</c> §5; «горячий стул» вырезан, Р33 — правила остаются для сетевой игры, Э7):
+/// люди ходят по очереди в одном дне (<c>NextPlayer 0x420929</c>), начало хода человека — в момент его хода, день растёт после ИИ.</summary>
+public class SeveralHumansTests
 {
     private static string Data => Path.Combine(AppContext.BaseDirectory, "data");
 
@@ -23,12 +23,12 @@ public class HotseatTests
         var setup = new NewGameSetup
         {
             Scenario = content.Catalog.Scenarios.Single(s => s.Id == "Power to Corrupt"), Difficulty = 1,
-            Hotseat = [new HotseatSeat(3, "", 0, 0), new HotseatSeat(2, "", 0, 1)],
+            Seats = [new PlayerSeat(3, "", 0, 0), new PlayerSeat(2, "", 0, 1)],
         };
         var state = NewGame.Start(data, setup, content.Catalog, book, new Random(1));
         Assert.Equal(["S073PL000A", "S073PL000B"], state.Info.Humans.Select(h => h.ToUpperInvariant()));
         var session = new GameSession(state, content.MapArt, book);
-        Assert.True(session.Hotseat);
+        Assert.True(session.SeveralHumans);
         Assert.Equal("S073PL000A", session.ActiveHuman.ToUpperInvariant());
         var legionsBank = session.Map.Players["S073PL000b"].Bank;
         // Ни множителя, ни дохода до своего хода; SPELL_BANK файла влит при занятии места (CVisitorChangePlayerType, у каждого человека).
@@ -69,7 +69,7 @@ public class HotseatTests
         var setup = new NewGameSetup
         {
             Scenario = content.Catalog.Scenarios.Single(s => s.Id == "Power to Corrupt"), Difficulty = 1,
-            Hotseat = [new HotseatSeat(3, "", 0, 0), new HotseatSeat(2, "", 0, 1)],
+            Seats = [new PlayerSeat(3, "", 0, 0), new PlayerSeat(2, "", 0, 1)],
         };
         bool[] heretic = [false, false, false, true, false, false];   // HUMAN, DWARF, UNDEAD, HERETIC, NEUTRAL, ELF
         var legions = new LastEdict.Rules.Map.ScenarioEvent("S999EV0000", true, false, 100, -1, heretic,
@@ -103,7 +103,7 @@ public class HotseatTests
         var setup = new NewGameSetup
         {
             Scenario = content.Catalog.Scenarios.Single(s => s.Id == "Power to Corrupt"), Difficulty = 1,
-            Hotseat = [new HotseatSeat(3, "", 0, 0), new HotseatSeat(2, "", 0, 1)],
+            Seats = [new PlayerSeat(3, "", 0, 0), new PlayerSeat(2, "", 0, 1)],
         };
         var state = NewGame.Start(ScenarioFile.Read(scenario), setup, content.Catalog, book, new Random(1));
         var map = state.Looks.Map;
@@ -139,112 +139,6 @@ public class HotseatTests
         Assert.Equal(0, session.Map.Players["S073PL000b"].Bank.Gold);
     }
 
-    /// <summary>Окно передачи хода: «%NAME%, %RACE% … Начинается Ваш ход!» с именем и расой игрока и портрет лобби по расе и
-    /// лицу.</summary>
-    [SkippableFact]
-    public void TurnPopup_NameRaceFace()
-    {
-        ImportedData.Require("ui/strings.ru.json");   // русский текст окна — только в импорте с русификацией
-        string scenario = ScenarioFile.PathOf(Path.Combine(Data, "scenarios"), "Power to Corrupt");
-        Skip.IfNot(File.Exists(scenario), "нет сценария порта");
-        var content = SharedContent.Load(Data);
-        var strings = LastEdict.Data.Ui.UiStrings.Load(Path.Combine(Data, "ui"), "ru");
-        var player = ScenarioFile.Read(scenario).Looks.Map.Players["S073PL000a"] with { Name = "Гимли", Face = 2 };
-        var ui = new LastEdict.Data.Ui.UiScreenState(content.Screens.Single(s => s.Id == "DLG_HOTSEAT_POPUP"));
-        new HotseatTurnLogic(player, content.Catalog, id => strings.GetValueOrDefault(id) ?? id).Open(ui);
-        string text = ui.TextOf("TXT_TEXT")!;
-        Assert.Contains("Гимли", text);
-        Assert.Contains("Начинается Ваш ход", text);
-        Assert.DoesNotContain("%RACE%", text);
-        Assert.Equal("DLG_HOTSEAT_LOBBY_RACE_FACEDW3N", ui.Frame("IMG_FACE"));
-    }
-
-    /// <summary>Окно «горячего стула» в режимах 1 и 2 (<c>0x4bdef3</c>, <c>0x4bdfae</c>): предложение — имя и раса предлагающего,
-    /// <c>%TARGETNAME%</c> — имя адресата; нападение — имя и раса защитника, <c>%TARGETNAME%</c> — имя его группы; портрет — всегда того,
-    /// кого зовут.</summary>
-    [SkippableFact]
-    public void CallPopups_MessageAndDefend()
-    {
-        string scenario = ScenarioFile.PathOf(Path.Combine(Data, "scenarios"), "Power to Corrupt");
-        Skip.IfNot(File.Exists(scenario), "нет сценария порта");
-        var content = SharedContent.Load(Data);
-        var strings = LastEdict.Data.Ui.UiStrings.Load(Path.Combine(Data, "ui"), "en");
-        var players = ScenarioFile.Read(scenario).Looks.Map.Players;
-        var clans = players["S073PL000a"] with { Name = "Gimli", Face = 2 };
-        var legions = players["S073PL000b"] with { Name = "Bethrezen", Face = 0 };
-        string legionsFace = $"DLG_HOTSEAT_LOBBY_RACE_FACE{content.Catalog.Races.Single(r => r.Id.Equals(legions.RaceId, StringComparison.OrdinalIgnoreCase)).Code}1N";
-        string Text(string id) => strings.GetValueOrDefault(id) ?? id;
-        var ui = new LastEdict.Data.Ui.UiScreenState(content.Screens.Single(s => s.Id == "DLG_HOTSEAT_POPUP"));
-
-        new HotseatTurnLogic(legions, content.Catalog, Text, HotseatCall.Message, sender: clans).Open(ui);
-        string message = ui.TextOf("TXT_TEXT")!;
-        Assert.Contains("from \\fMedBold;Gimli", message);
-        Assert.Contains("message for  \\fMedBold;Bethrezen", message);
-        Assert.Equal(legionsFace, ui.Frame("IMG_FACE"));
-
-        new HotseatTurnLogic(legions, content.Catalog, Text, HotseatCall.Defend, target: "Tower").Open(ui);
-        string defend = ui.TextOf("TXT_TEXT")!;
-        Assert.Contains("Tower is under attack!", defend);
-        Assert.Contains("Bethrezen", defend);
-        Assert.DoesNotContain("%", defend);
-        Assert.Equal(legionsFace, ui.Frame("IMG_FACE"));
-    }
-
-    /// <summary>Кого звать к бою (<c>CTaskBattle</c> <c>0x4d79c8</c>): защитник — человек партии «горячего стула» (отряд — имя лидера,
-    /// крепость — её имя), в том числе тот, кто сейчас ходит; ИИ и одиночная игра — никого. Обе стороны — люди: каждый ведёт свою.</summary>
-    [SkippableFact]
-    public void Defender_HumanOfHotseat_BothSidesHuman()
-    {
-        string scenario = ScenarioFile.PathOf(Path.Combine(Data, "scenarios"), "Power to Corrupt");
-        Skip.IfNot(File.Exists(scenario), "нет сценария порта");
-        var content = SharedContent.Load(Data);
-        var book = GameBook.Load(Path.Combine(Data, "rules"));
-        var data = ScenarioFile.Read(scenario);
-        var setup = new NewGameSetup
-        {
-            Scenario = content.Catalog.Scenarios.Single(s => s.Id == "Power to Corrupt"), Difficulty = 1,
-            Hotseat = [new HotseatSeat(3, "Gimli", 0, 0), new HotseatSeat(2, "Bethrezen", 0, 1)],
-        };
-        var session = new GameSession(NewGame.Start(data, setup, content.Catalog, book, new Random(1)), content.MapArt, book);
-        var map = session.Map;
-        var clansStack = map.Stacks.Values.First(s => s.Owner.Equals("S073PL000a", StringComparison.OrdinalIgnoreCase));
-        var legionsStack = map.Stacks.Values.First(s => s.Owner.Equals("S073PL000b", StringComparison.OrdinalIgnoreCase));
-        var aiStack = map.Stacks.Values.First(s => s.Owner.Equals("S073PL0009", StringComparison.OrdinalIgnoreCase));
-        var legionsCapital = map.Sites.Single(s => s.Kind == LastEdict.Rules.Map.SiteKind.Capital && s.Owner.Equals("S073PL000b", StringComparison.OrdinalIgnoreCase));
-        string leaderName = session.Looks.Stacks.Single(s => s.Id == legionsStack.Id).LeaderName;
-
-        var call = HotseatCalls.Defender(session, legionsStack.Id, id => id);
-        Assert.Equal("S073PL000b", call?.Player.Id, ignoreCase: true);
-        if (leaderName.Length > 0) Assert.Equal(leaderName, call?.Target);
-        else Assert.False(string.IsNullOrEmpty(call?.Target));
-        Assert.Equal(legionsCapital.Name, HotseatCalls.Defender(session, legionsCapital.Id, id => id)?.Target);
-        Assert.Equal("S073PL000a", HotseatCalls.Defender(session, clansStack.Id, id => id)?.Player.Id, ignoreCase: true);
-        Assert.Null(HotseatCalls.Defender(session, aiStack.Id, id => id));
-        Assert.True(HotseatCalls.BothHuman(session, clansStack.Id, legionsStack.Id));
-        Assert.True(HotseatCalls.BothHuman(session, clansStack.Id, legionsCapital.Id));
-        Assert.False(HotseatCalls.BothHuman(session, clansStack.Id, aiStack.Id));
-
-        var single = new GameSession(session.State with { Info = session.State.Info with { Humans = ["S073PL000a"] } }, content.MapArt, book);
-        Assert.Null(HotseatCalls.Defender(single, legionsStack.Id, id => id));
-
-        // Бой двух людей: команду ждёт юнит любой стороны; без флага — только сторона нападающего.
-        var state = session.StartBattle(clansStack.Id, legionsStack.Id);
-        var both = new LastEdict.Data.Battle.BattleSession(state, new LastEdict.Rules.Battle.BattleSim(state, new LastEdict.Rules.Rng.EngineRng(), book.Rules.Constants),
-                                                    book.Rules.Constants) { BothHuman = true };
-        var sides = new HashSet<bool>();
-        for (int i = 0; i < 40 && !both.Finished; i++)
-        {
-            Assert.True(both.WaitsPlayer);
-            sides.Add(both.Current!.Attacker);
-            both.Defend();
-        }
-        Assert.Equal([false, true], sides.Order());
-        var one = new LastEdict.Data.Battle.BattleSession(state, new LastEdict.Rules.Battle.BattleSim(state, new LastEdict.Rules.Rng.EngineRng(), book.Rules.Constants),
-                                                   book.Rules.Constants);
-        Assert.False(one.IsPlayers(state.Units.First(u => !u.Attacker)));
-        Assert.True(both.IsPlayers(state.Units.First(u => !u.Attacker)));
-    }
-
     /// <summary>Окно имени героя первого хода (<c>CChangeFirstLeaderNameInterf</c>, <c>docs/day-cycle.md</c> §17) — каждому человеку:
     /// по умолчанию имя его расы, ещё не носимое на карте; кнопка переименовывает героя столицы, пустое имя — отказ; имя едет в сохранение.</summary>
     [SkippableFact]
@@ -257,7 +151,7 @@ public class HotseatTests
         var setup = new NewGameSetup
         {
             Scenario = content.Catalog.Scenarios.Single(s => s.Id == "Power to Corrupt"), Difficulty = 1,
-            Hotseat = [new HotseatSeat(3, "", 0, 0), new HotseatSeat(2, "", 0, 1)],
+            Seats = [new PlayerSeat(3, "", 0, 0), new PlayerSeat(2, "", 0, 1)],
         };
         var session = new GameSession(NewGame.Start(ScenarioFile.Read(scenario), setup, content.Catalog, book, new Random(1)), content.MapArt, book);
         foreach (string human in session.State.Info.Humans)

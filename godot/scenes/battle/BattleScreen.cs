@@ -46,8 +46,6 @@ public partial class BattleScreen : Node
     /// <summary>Игрок за нападающих (иначе за защитников).</summary>
     public bool PlayerIsAttacker { get; set; } = true;
 
-    /// <summary>Обе стороны — люди «горячего стула» (<see cref="BattleSession.BothHuman"/>): каждый ведёт свою сторону на этом экране.</summary>
-    public bool BothHuman { get; set; }
 
     /// <summary>Нападающие — отряд того, кто за ПК (<c>CTaskBattle</c> <c>+0x2c</c>, <see cref="LastEdict.Data.Play.MapBattle.OwnsAttackerStack"/>):
     /// только тогда в конце боя есть «Меню героя» (<see cref="LastEdict.Data.Play.MapBattle.PaperdollOffered"/>). Без хозяина — да.</summary>
@@ -112,13 +110,12 @@ public partial class BattleScreen : Node
             var rules = Rules ?? RulesLoader.Load(GameData.Rules);
             var state = Prepared ?? Load(args, rules);
             _place = PlaceName ?? Place(args);
-            BothHuman |= Standalone && args.Contains("--hotseat");   // проверка боя двух людей без хозяина
             if (Standalone && int.TryParse(MapSource.Arg(args, "--speed"), out int speed)) Speed = speed;
             if (Standalone && args.Contains("--still")) BattleAnim = false;
             _checks = MapSource.Arg(args, "--synth") is not null;
             // Начало хода следующего юнита — после показа прежнего действия (NextStep): действие → его анимации и надписи → тики → ход.
             _session = new BattleSession(state, new BattleSim(state, Rng ?? new EngineRng(), rules.Constants), rules.Constants,
-                                         PlayerIsAttacker) { BothHuman = BothHuman, HoldTurnStart = true };
+                                         PlayerIsAttacker) { HoldTurnStart = true };
             _scene = new BattleScene(screen, GameData.Content.Gfx, BaseUnit(), DeathRace())
             {
                 Layout = new BattleLayout(PlayerIsAttacker, Flipped || (Standalone && args.Contains("--flip"))),
@@ -832,17 +829,12 @@ public partial class BattleScreen : Node
         }
     }
 
-    /// <summary>«Быстрый поединок» (<c>BTN_RESOLVE</c>, <c>0x634244</c>, <c>docs/battle-screen.md</c> §5.2): бой двух людей — сообщение
-    /// <c>X005TA0926</c> с одной кнопкой; против ИИ — вопрос <c>X005TA0922</c>, «да» — обрывает показ действия и досчитывает бой
+    /// <summary>«Быстрый поединок» (<c>BTN_RESOLVE</c>, <c>0x634244</c>, <c>docs/battle-screen.md</c> §5.2): вопрос <c>X005TA0922</c>, «да» —
+    /// обрывает показ действия и досчитывает бой (бой двух людей с сообщением <c>X005TA0926</c> вырезан с «горячим стулом», Р33)
     /// (<see cref="BattleSession.Resolve"/>; у движка ответ на чужом ходу ждёт ближайшего <c>update</c>, <c>0x6344aa</c>, — итог тот же).</summary>
     private void AskResolve()
     {
         if (_session.Finished) return;
-        if (_session.BothHuman)
-        {
-            Message(ResolveRefused);
-            return;
-        }
         Message(ResolveAsk, () =>
         {
             StopPlaying();
@@ -852,24 +844,10 @@ public partial class BattleScreen : Node
         });
     }
 
-    public const string ResolveAsk = "X005TA0922", ResolveRefused = "X005TA0926";
+    public const string ResolveAsk = "X005TA0922";
 
-    /// <summary>Чей автобой показывает и переключает <c>TOG_AUTOBATTLE</c> (<c>data2+0x3a</c>): в бою двух людей — сторона ходящего юнита
-    /// (<c>0x62f939…0x62fafc</c>, <c>docs/day-cycle.md</c> §19), иначе — сторона игрока. Сторону переставляет только начало хода
-    /// (<c>update</c>): пока показывается действие и следующий ход ещё не начат (<see cref="BattleSession.TurnStartPending"/>), переключатель —
-    /// за сторону прежнего ходящего, как у движка, а не за сторону игрока.</summary>
-    private bool AutoSide
-    {
-        get
-        {
-            if (!_session.BothHuman) return PlayerIsAttacker;
-            if (_session.Current is { } unit) _autoSide = unit.Attacker;
-            return _autoSide ?? PlayerIsAttacker;
-        }
-    }
-
-    /// <summary>Сторона, которую показывал переключатель автобоя в бою двух людей (<c>data2+0x3a</c>); null — ещё ни одного хода.</summary>
-    private bool? _autoSide;
+    /// <summary>Чей автобой показывает и переключает <c>TOG_AUTOBATTLE</c> (<c>data2+0x3a</c>): сторона игрока.</summary>
+    private bool AutoSide => PlayerIsAttacker;
 
     /// <summary>Доиграть бой автобоем и закрыть его — для проверок хозяина без окна; <paramref name="paperdoll"/> — закрыть «Меню героя»,
     /// если оно есть (<see cref="PaperdollShown"/>), иначе «Закрыть».</summary>
@@ -1227,18 +1205,10 @@ public partial class BattleScreen : Node
         for (int i = 0; i < 3; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
     }
 
-    /// <summary>Проверка «--resolve» (с <c>--hotseat</c> — бой двух людей): автобой стороны ходящего — переключателем, следующий ход
-    /// другой стороны ждёт игрока; «Быстрый поединок» — вопрос и «Да» против ИИ (бой досчитан), сообщение и «ОК» у двух людей.</summary>
+    /// <summary>Проверка «--resolve»: «Быстрый поединок» — вопрос и «Да» (бой досчитан).</summary>
     private async System.Threading.Tasks.Task CheckResolve()
     {
         while (!_session.Finished && !_session.WaitsPlayer) _session.AiStep();
-        if (_session.Current is { } first && _session.BothHuman)
-        {
-            _panel.Step("click TOG_AUTOBATTLE", out _);
-            for (int i = 0; i < 3; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-            GD.Print($"battle auto сторона={(first.Attacker ? "нап" : "защ")} нап={(_session.AutoAttackers ? 1 : 0)} защ={(_session.AutoDefenders ? 1 : 0)} " +
-                     $"ходит={(_session.Current is { } now ? now.Attacker ? "нап" : "защ" : "-")} ждёт_игрока={(_session.WaitsPlayer ? 1 : 0)}");
-        }
         _panel.Step("click BTN_RESOLVE", out _);
         for (int i = 0; i < 3; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
         bool question = _message?.Logic is LastEdict.Data.Ui.Windows.MessageBoxLogic { Question: true };

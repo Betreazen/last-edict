@@ -334,6 +334,10 @@ public sealed record MapPlayer
     [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
     public int? Party { get; init; }
 
+    /// <summary>Команда (Р15, Э4): игроки одной команды — вечные союзники с общей победой (<see cref="Teams"/>); null — без команды.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string? Team { get; init; }
+
     public required Bank Bank { get; init; }
 
     /// <summary>Id объекта тумана этого игрока; ключ в <see cref="MapState.Fog"/>.</summary>

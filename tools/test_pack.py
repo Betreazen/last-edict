@@ -270,16 +270,23 @@ LAND = {"sun": 1, "moon": 4, "ember": 3, "wild": 5}
 SUBRACE = {"wild": 5, "sun": 1, "moon": 2, "ember": 3}   # подраса отряда (перечень Subrace)
 KIND = {"sun": 0, "moon": 1, "ember": 2, "wild": 4}       # род расы в отношениях (RaceKind)
 
-# Место карты: раса, угол столицы (у нейтралов — нет), сторона дипломатии (нет — род расы, как у карт оригинала). Игрок — по номеру места.
+# Место карты: раса, угол столицы (у нейтралов — нет), сторона дипломатии (нет — род расы, как у карт оригинала), команда (нет — без
+# команды). Игрок — по номеру места.
 def seats(size: int, *extra: tuple) -> list[tuple]:
-    return [("wild", None, None), ("sun", (4, 4), None), ("moon", (size - 9, size - 9), None), *extra]
+    return [("wild", None, None, None), ("sun", (4, 4), None, None), ("moon", (size - 9, size - 9), None, None), *extra]
 
 
 def crowns(size: int) -> list[tuple]:
-    """Шесть игроков трёх рас — по двое одной расы, у каждого своя сторона; нейтралы — сторона 4, как род нейтралов."""
+    """Шесть игроков трёх рас — по двое одной расы, у каждого своя сторона; три команды по двое соседей, игроки одной расы — в разных
+    командах. Нейтралы — сторона 4, как род нейтралов."""
     mid = size // 2 - 2
-    return [("wild", None, 4), ("sun", (4, 4), 10), ("moon", (size - 9, size - 9), 11), ("ember", (size - 9, 4), 12),
-            ("sun", (4, size - 9), 13), ("moon", (mid, 4), 14), ("ember", (mid, size - 9), 15)]
+    return [("wild", None, 4, None), ("sun", (4, 4), 10, "north"), ("moon", (size - 9, size - 9), 11, "east"),
+            ("ember", (size - 9, 4), 12, "east"), ("sun", (4, size - 9), 13, "south"), ("moon", (mid, 4), 14, "north"),
+            ("ember", (mid, size - 9), 15, "south")]
+
+
+# Слово отношений союзников команды (LastEdict.Rules.Map.Teams.TeamRaw): союз, мир 100, «ИИ не разорвёт».
+TEAM_RAW = 1 | (100 << 1) | (1 << 31)
 
 
 MAPS = [
@@ -395,14 +402,14 @@ def scenario(name: str, num: int, size: int, seed: int, villages: int, neutrals:
     for i in range(0, size, 7):
         put(i, 0, 4)
         put(size - 1, i, 4)
-    for seat, (race, corner, _party) in enumerate(places):
+    for seat, (race, corner, _party, _team) in enumerate(places):
         if corner is None:
             continue
         x, y = corner
         for yy in range(y - 2, y + 7):
             for xx in range(x - 2, x + 7):
                 put(xx, yy, 0, LAND[race])
-        keep = f"{race.title()} Keep" if sum(1 for r, c, _ in places if r == race and c) == 1 else f"{race.title()} Keep {seat}"
+        keep = f"{race.title()} Keep" if sum(1 for r, c, _, _t in places if r == race and c) == 1 else f"{race.title()} Keep {seat}"
         b.fort(players[seat], seat, x, y, True, keep, [f"{race}-colossus"], [f"{race}-captain", f"{race}-footman", f"{race}-bowman"])
     taken = {(x, y) for (x, y) in b.plan}
     for i in range(villages):
@@ -425,33 +432,39 @@ def scenario(name: str, num: int, size: int, seed: int, villages: int, neutrals:
         b.stack(players[0], 0, [f"wild-{u}" for u in group], x, y)
 
     def player(seat: int) -> dict:
-        race, _corner, party = places[seat]
+        race, _corner, party, team = places[seat]
         gold = 0 if race == "wild" else 600
         mana = MANA.get(race)
         bank = dict(ZERO_BANK, Gold=gold, **({mana: 150} if mana else {}))
-        same = sum(1 for r, c, _ in places if r == race and c)
-        title = race.title() if same <= 1 else f"{race.title()} {sum(1 for r, c, _ in places[:seat + 1] if r == race and c)}"
+        same = sum(1 for r, c, _, _t in places if r == race and c)
+        title = race.title() if same <= 1 else f"{race.title()} {sum(1 for r, c, _, _t in places[:seat + 1] if r == race and c)}"
         p = {"Id": players[seat], "RaceId": ref("race", race),
              "LordId": ref("lord", f"{race}-lord") if race != "wild" else ref("lord", "sun-lord"), "Name": title, "Face": 0,
              "IsHuman": False}
         if party is not None:
             p["Party"] = party
+        if team is not None:
+            p["Team"] = team
         p.update({"Bank": bank, "FogId": f"S{num}FG{seat:04x}", "BuildingsId": f"S{num}PB{seat:04x}", "Buildings": [],
                   "SpellBank": ZERO_BANK, "QtyBreaks": 0, "Attitude": 1, "CapturedBy": "", "ConstructionTurn": 0, "ResearchTurn": 0,
                   "KnownSpells": [], "Spied": []})
         return p
 
     def side(seat: int) -> int:
-        race, _corner, party = places[seat]
+        race, _corner, party, _team = places[seat]
         return KIND[race] if party is None else party
 
-    subraces = {b.subrace(i): SUBRACE[race] for i, (race, _c, _p) in enumerate(places)}
+    def raw(i: int, j: int) -> int:
+        team_i, team_j = places[i][3], places[j][3]
+        return TEAM_RAW if team_i is not None and team_i == team_j else 0
+
+    subraces = {b.subrace(i): SUBRACE[race] for i, (race, _c, _p, _t) in enumerate(places)}
     the_map = {
         "Size": size, "Tiles": grid(size, bytes(tiles)), "Stacks": b.stacks, "Units": b.units,
         "Players": {players[i]: player(i) for i in range(len(places))}, "Objects": b.objects,
         "Plan": [{"X": x, "Y": y, "Ids": ids} for (x, y), ids in sorted(b.plan.items(), key=lambda kv: (kv[0][1], kv[0][0]))],
         "Fog": {f"S{num}FG{i:04x}": grid(size, 0) for i in range(len(places))}, "Turn": 0, "Rods": {}, "Sites": b.sites,
-        "Relations": [{"Race1": side(i), "Race2": side(j), "Raw": 0} for i in range(len(places)) for j in range(i + 1, len(places))],
+        "Relations": [{"Race1": side(i), "Race2": side(j), "Raw": raw(i, j)} for i in range(len(places)) for j in range(i + 1, len(places))],
         "TalismanCharges": {}, "SpellCasts": [], "ItemCasts": [], "SpellEffects": [], "ItemTypes": {},
         "Limits": {"MaxUnit": 3, "MaxSpell": 3, "MaxLeader": 10, "MaxCity": 5, "DifficultyScenario": 2, "DifficultyGame": 1,
                    "SuggestedLevel": 1},

@@ -58,7 +58,11 @@ public sealed class NewGameSetup
 
 /// <summary>Человек в лобби «горячего стула»: тип расы, имя лорда, лицо (0…3) и категория лорда (<c>Llord</c>).</summary>
 /// <param name="Leader">Импортированный герой (<c>BTN_IMPORT_LEADER</c>); null — стартовый герой сценария.</param>
-public sealed record HotseatSeat(int Race, string Name, int Face, int LordCategory, Leaders.ExportedLeader? Leader = null);
+/// <param name="PlayerId">Игрок сценария этого места; null — первый ещё не занятый игрок расы <paramref name="Race"/> (у сценария бывает
+/// несколько игроков одной расы, Э4).</param>
+/// <param name="Team">Команда игрока (<see cref="LastEdict.Rules.Map.Teams"/>); null — как в сценарии.</param>
+public sealed record HotseatSeat(int Race, string Name, int Face, int LordCategory, Leaders.ExportedLeader? Leader = null,
+                                 string? PlayerId = null, string? Team = null);
 
 /// <summary>Что нужно логике экранов: каталог, строки языка, выбор игрока и системное имя (им игра заполняет поле
 /// имени лорда).</summary>

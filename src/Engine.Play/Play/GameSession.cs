@@ -434,8 +434,9 @@ public sealed partial class GameSession(GameState state, MapArtData art, GameBoo
     /// <summary>Партия кончилась: есть победитель (<see cref="GameInfo.Winner"/>).</summary>
     public bool Over => State.Info.Winner.Length > 0;
 
-    /// <summary>Итог партии для игрока: победа, поражение или партия идёт (<c>null</c>).</summary>
-    public bool? Won(string playerId) => Over ? State.Info.Winner.Equals(playerId, StringComparison.OrdinalIgnoreCase) : null;
+    /// <summary>Итог партии для игрока: победа, поражение или партия идёт (<c>null</c>). Победа команды — победа каждого её игрока
+    /// (<see cref="Teams"/>).</summary>
+    public bool? Won(string playerId) => Over ? Teams.SameTeam(Map, State.Info.Winner, playerId) : null;
 
     /// <summary>Человек, чей сейчас ход (<see cref="GameState.ActiveHuman"/>; пусто — первый из людей).</summary>
     public string ActiveHuman => State.ActiveHuman.Length > 0 ? State.ActiveHuman : State.Info.Humans.FirstOrDefault() ?? "";

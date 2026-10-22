@@ -71,8 +71,11 @@ public static class NewGame
         foreach (var seat in seats)
         {
             var race = catalog.Race(seat.Race);
-            var player = map.Players.Values.FirstOrDefault(p => p.RaceId.Equals(race.Id, StringComparison.OrdinalIgnoreCase))
-                         ?? throw new InvalidOperationException($"в сценарии нет игрока расы {race.Id}");
+            // Место — своему игроку; без него — первому свободному игроку расы по id (двое одной расы — два места, Э4).
+            var player = (seat.PlayerId is { } id ? map.Players.GetValueOrDefault(id)
+                          : map.Players.Values.OrderBy(p => p.Id, StringComparer.Ordinal)
+                                .FirstOrDefault(p => p.RaceId.Equals(race.Id, StringComparison.OrdinalIgnoreCase) && !chosen.ContainsKey(p.Id)))
+                         ?? throw new InvalidOperationException($"в сценарии нет свободного игрока расы {race.Id}");
             var lord = race.Lords.FirstOrDefault(l => l.Category == seat.LordCategory)
                        ?? throw new InvalidOperationException($"у расы {race.Id} нет лорда типа {seat.LordCategory}");
             chosen[player.Id] = (lord.Id, seat);
@@ -86,7 +89,10 @@ public static class NewGame
             var player = cash is null ? p.Value : GameSession.WithBank(p.Value, Economy.Clamp(p.Value.Bank + cash));
             return chosen.TryGetValue(player.Id, out var c)
                 ? With(player, isHuman: true, lordId: c.Lord,
-                       name: string.IsNullOrWhiteSpace(c.Seat.Name) ? player.Name : c.Seat.Name.Trim(), face: c.Seat.Face)
+                       name: string.IsNullOrWhiteSpace(c.Seat.Name) ? player.Name : c.Seat.Name.Trim(), face: c.Seat.Face) with
+                {
+                    Team = c.Seat.Team ?? player.Team,
+                }
                 : With(player, isHuman: false);
         }, StringComparer.OrdinalIgnoreCase);
         // Люди ходят в порядке игроков (NetPlayerInfo; журнал хотсита 20260920-ui, S135: PL0001 → PL0002, ранг 2 — по id).
@@ -100,6 +106,11 @@ public static class NewGame
             Campaign = setup.Campaign,
         };
         if (book is null) return new GameState(info, looks);
+        // Стороны и отношения (Э4): у игроков одной расы — свои стороны, у каждой пары сторон — запись отношений, команды — вечный союз.
+        var sided = Sides(looks.Map, book);
+        looks = GameSession.Retold(looks, GameSession.With(sided, relations: Teams.Bound(sided, book.Economy)), looks.Stacks);
+        started = looks.Map;
+        players = new Dictionary<string, MapPlayer>(started.Players, StringComparer.OrdinalIgnoreCase);
 
         // Цикл по NetPlayerInfo (0x421667: 0x42923b — число, 0x42927f — i-й; список сервера +4 → +0x30) — тот же список, что
         // переставлен при старте по ключу расы с хозяином первым (0x42b8ab → 0x42b8e8 → 0x432165 по +0x30), то есть очередь дня
@@ -129,6 +140,35 @@ public static class NewGame
         foreach (var player in order) session.ResetFog(player.Id);
         session.BeginFirstDay(humans[0]);
         return session.SnapshotWithoutSummaries();
+    }
+
+    /// <summary>Первая сторона дипломатии, которую отдаёт <see cref="Sides"/>: выше родов рас оригинала (0…5), чтобы не совпасть с
+    /// игроком без своей стороны.</summary>
+    public const int FirstOwnParty = 10;
+
+    /// <summary>Своя сторона второму и следующим играбельным игрокам одной стороны (обычно — одной расы без <see cref="MapPlayer.Party"/>):
+    /// у движка сторона — род расы, и двое одной расы делили бы отношения. Первый (по id) остаётся на своей; новые — с
+    /// <see cref="FirstOwnParty"/>, мимо занятых. Нечего делить — та же карта.</summary>
+    public static MapState Sides(MapState map, GameBook book)
+    {
+        ArgumentNullException.ThrowIfNull(map);
+        ArgumentNullException.ThrowIfNull(book);
+        var races = book.Economy.Races;
+        var playable = map.Players.Values.Where(p => races.TryGetValue(p.RaceId, out var r) && r.Playable).OrderBy(p => p.Id, StringComparer.Ordinal).ToList();
+        var taken = playable.Select(p => Diplomacy.PartyOf(p, races)!.Value).ToHashSet();
+        var used = new HashSet<int>();
+        int next = FirstOwnParty;
+        Dictionary<string, MapPlayer>? players = null;
+        foreach (var p in playable)
+        {
+            int party = Diplomacy.PartyOf(p, races)!.Value;
+            if (used.Add(party)) continue;
+            while (taken.Contains(next) || used.Contains(next)) next++;
+            used.Add(next);
+            players ??= new Dictionary<string, MapPlayer>(map.Players, StringComparer.OrdinalIgnoreCase);
+            players[p.Id] = p with { Party = next };
+        }
+        return players is null ? map : GameSession.With(map, players: players);
     }
 
     /// <summary>Замена стартового героя (<c>0x4220eb</c>): отряд в столице игрока, и только если в нём один юнит.

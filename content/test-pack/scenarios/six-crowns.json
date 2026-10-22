@@ -1834,6 +1834,7 @@
      "Face": 0,
      "IsHuman": false,
      "Party": 10,
+     "Team": "north",
      "Bank": {
       "Gold": 600,
       "Infernal": 0,
@@ -1869,6 +1870,7 @@
      "Face": 0,
      "IsHuman": false,
      "Party": 11,
+     "Team": "east",
      "Bank": {
       "Gold": 600,
       "Infernal": 0,
@@ -1904,6 +1906,7 @@
      "Face": 0,
      "IsHuman": false,
      "Party": 12,
+     "Team": "east",
      "Bank": {
       "Gold": 600,
       "Infernal": 150,
@@ -1939,6 +1942,7 @@
      "Face": 0,
      "IsHuman": false,
      "Party": 13,
+     "Team": "south",
      "Bank": {
       "Gold": 600,
       "Infernal": 0,
@@ -1974,6 +1978,7 @@
      "Face": 0,
      "IsHuman": false,
      "Party": 14,
+     "Team": "north",
      "Bank": {
       "Gold": 600,
       "Infernal": 0,
@@ -2009,6 +2014,7 @@
      "Face": 0,
      "IsHuman": false,
      "Party": 15,
+     "Team": "south",
      "Bank": {
       "Gold": 600,
       "Infernal": 150,
@@ -4879,7 +4885,7 @@
     {
      "Race1": 10,
      "Race2": 14,
-     "Raw": 0
+     "Raw": 2147483849
     },
     {
      "Race1": 10,
@@ -4889,7 +4895,7 @@
     {
      "Race1": 11,
      "Race2": 12,
-     "Raw": 0
+     "Raw": 2147483849
     },
     {
      "Race1": 11,
@@ -4929,7 +4935,7 @@
     {
      "Race1": 13,
      "Race2": 15,
-     "Raw": 0
+     "Raw": 2147483849
     },
     {
      "Race1": 14,

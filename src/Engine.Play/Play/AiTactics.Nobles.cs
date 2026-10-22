@@ -36,7 +36,7 @@ public static partial class AiTactics
         bool waterOnly = session.WaterOnly(stack);
         foreach (var s in map.Stacks.Values.OrderBy(s => s.Id, StringComparer.OrdinalIgnoreCase))
         {
-            if (LeaderRaceType(session, s) == ownRace || Same(s.Subrace, stack.Subrace)) continue;
+            if (LeaderRaceType(session, s) == ownRace && SameParty(session, stack.Owner, s.Owner) || Same(s.Subrace, stack.Subrace)) continue;
             if (waterOnly && !session.IsWater(s.X, s.Y)) continue;   // 0x45dcfa
             var at = Position(map, s);
             string leaderType = map.Units.TryGetValue(s.LeaderId, out var leader) ? leader.TypeId : "";

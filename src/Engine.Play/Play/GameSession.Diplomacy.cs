@@ -128,7 +128,7 @@ public sealed partial class GameSession
         var book = Book!;
         var map = Map;
         int a = PartyOf(playerId)!.Value, b = PartyOf(targetId)!.Value;
-        if (!Diplomacy.AreAllies(map.Relations, a, b)) return false;
+        if (!Diplomacy.AreAllies(map.Relations, a, b) || Teams.Unbreakable(map, playerId, targetId)) return false;
         var player = map.Players[playerId];
         var broken = Diplomacy.BreakAlliance(map.Relations, Diplomacy.PlayerParties(map, book.Economy), book.Diplomacy, a, b,
                                              map.Turn, player.QtyBreaks);
@@ -197,7 +197,7 @@ public sealed partial class GameSession
 
     /// <summary>Сторона дипломатии игрока играбельной расы (<see cref="Diplomacy.PartyOf(MapPlayer, IReadOnlyDictionary{string, RaceInfo})"/>:
     /// у движка — <c>Grace.RACE_TYPE</c>); нейтралы и неизвестная раса — <c>null</c>.</summary>
-    private int? PartyOf(string playerId) =>
+    internal int? PartyOf(string playerId) =>
         Map.Players.TryGetValue(playerId, out var p) && Book!.Economy.Races.TryGetValue(p.RaceId, out var race) && race.Playable
             ? Diplomacy.PartyOf(p, Book.Economy.Races) : null;
 

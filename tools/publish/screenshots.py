@@ -72,6 +72,7 @@ class Shot:
     hold_ms: int = 800
     extra: tuple[str, ...] = ()   # свои ключи сцены (--queue-strip — полоса очереди Last Edict, под --check она выключена)
     size: tuple[int, int] = (WIDTH, HEIGHT)   # окно; не 800×600 — показ «чёткий» и без увеличения (широкий экран, Э5)
+    min_luma: int = 25   # порог средней яркости: ниже — «чёрный экран»; тёмные окна (настройки в стиле «B») — ниже
 
     @property
     def wide(self) -> bool:
@@ -91,9 +92,9 @@ SHOTS = (
     Shot("diplomacy", SAVE_LATE, "панель=DLG_DIPLOMACY", clicks="panel click BTN_DIPLOMACY;diplo 3"),
     # Э5: широкий экран, окно настроек, вкладка «Управление», подсказки геймпада.
     Shot("wide-map", SAVE_LATE, "ground_ready=True", at="60,55", hold_ms=1500, size=WIDE),
-    Shot("settings", SAVE_LATE, "окна=LE_SETTINGS", clicks="ui click BTN_OPTIONS", size=WIDE),
+    Shot("settings", SAVE_LATE, "окна=LE_SETTINGS", clicks="ui click BTN_OPTIONS", size=WIDE, min_luma=15),
     Shot("options-old", SAVE_LATE, "окна=DLG_OPTIONS", clicks="ui click BTN_OPTIONS", size=WIDE),   # «было»: окно оригинала (--repo)
-    Shot("controls", SAVE_LATE, "окна=LE_SETTINGS", clicks="ui click BTN_OPTIONS;ui tab Controls", size=WIDE),
+    Shot("controls", SAVE_LATE, "окна=LE_SETTINGS", clicks="ui click BTN_OPTIONS;ui tab Controls", size=WIDE, min_luma=15),
     Shot("gamepad", SAVE_LATE, "ground_ready=True", clicks="select S073KC0001;ui pad DpadDown", at="60,55", hold_ms=1500, size=WIDE,
          extra=("--shot-window",)),   # полоса подсказок — верхний слой окна, не буфер стенда
 )
@@ -171,7 +172,7 @@ def capture(shot: Shot, raw: Path, menu_dirs: Path, corpus: Path, env: dict[str,
     return None
 
 
-def verify(image: Image.Image, size: tuple[int, int] = (WIDTH, HEIGHT)) -> tuple[str | None, str]:
+def verify(image: Image.Image, size: tuple[int, int] = (WIDTH, HEIGHT), min_luma: int = 25) -> tuple[str | None, str]:
     """Числа снимка: (причина отказа или None, строка чисел)."""
     rgb = np.asarray(image.convert("RGB")).astype(np.int32)
     luma = rgb @ np.array([299, 587, 114]) // 1000
@@ -182,7 +183,7 @@ def verify(image: Image.Image, size: tuple[int, int] = (WIDTH, HEIGHT)) -> tuple
         return f"размер {image.size}, ожидался {size[0]}x{size[1]}", line
     if luma.std() < 20:
         return "почти однотонный — пустой экран?", line
-    if luma.mean() < 25 or dark > 0.5:
+    if luma.mean() < min_luma or dark > 0.5:
         return "слишком тёмный — чёрный экран или туман", line
     if magenta > 0:
         return "точки мадженты — ключ прозрачности не выбит", line
@@ -256,7 +257,7 @@ def main(argv: list[str]) -> int:
                 # Широкий кадр снимается из буфера показа (экраны ×2, «чёткий»): окно показывает его уменьшенным — так же и здесь.
                 if shot.wide and image.size != shot.size and abs(image.width / image.height - shot.size[0] / shot.size[1]) < 0.01:
                     image = image.resize(shot.size, Image.Resampling.LANCZOS)
-                reason, numbers = verify(image, shot.size)
+                reason, numbers = verify(image, shot.size, shot.min_luma)
             small_size = None
             if reason is None:
                 full_image = image if shot.wide else image.resize((WIDTH * FULL_SCALE, HEIGHT * FULL_SCALE), Image.Resampling.NEAREST)

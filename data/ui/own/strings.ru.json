@@ -73,5 +73,22 @@
   "LE_IN_RIGHT": "Вправо",
   "LE_IN_PAGE_UP": "Страница вверх",
   "LE_IN_PAGE_DOWN": "Страница вниз",
-  "LE_IN_QUICKSAVE": "Быстрое сохранение"
+  "LE_IN_QUICKSAVE": "Быстрое сохранение",
+  "LE_IN_POINTER_CLICK": "Щелчок указателем",
+  "LE_IN_POINTER_ALT": "Правый щелчок указателем",
+  "LE_IN_POINTER_LEFT": "Указатель влево",
+  "LE_IN_POINTER_RIGHT": "Указатель вправо",
+  "LE_IN_POINTER_UP": "Указатель вверх",
+  "LE_IN_POINTER_DOWN": "Указатель вниз",
+  "LE_IN_SCROLL_LEFT": "Прокрутка карты влево",
+  "LE_IN_SCROLL_RIGHT": "Прокрутка карты вправо",
+  "LE_IN_SCROLL_UP": "Прокрутка карты вверх",
+  "LE_IN_SCROLL_DOWN": "Прокрутка карты вниз",
+  "LE_IN_HINT_BUTTONS": "Кнопки",
+  "LE_IN_HINT_SCROLL": "Прокрутка",
+  "LE_SET_LARGE_UI": "Крупный интерфейс",
+  "LE_SET_LARGE_UI_HELP": "Крупнее курсор и подсказки кнопок геймпада — для маленького экрана (Steam Deck). «Сам» включает его на Steam Deck.",
+  "LE_SET_LARGE_AUTO": "Сам",
+  "LE_SET_LARGE_ON": "Включён",
+  "LE_SET_LARGE_OFF": "Выключен"
 }

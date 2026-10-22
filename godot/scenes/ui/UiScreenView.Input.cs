@@ -32,6 +32,11 @@ public partial class UiScreenView
     public override void _UnhandledInput(InputEvent @event)
     {
         if (_root is null) return;
+        if (Navigate(@event))
+        {
+            GetViewport().SetInputAsHandled();
+            return;
+        }
         if (@event is InputEventMouseButton) HideTip();   // любое нажатие и отпускание прячет подсказку (0x53cfd3)
         IReadOnlyList<UiEvent> events = @event switch
         {
@@ -342,6 +347,19 @@ public partial class UiScreenView
             if (!int.TryParse(arg, out int vk) || KeyOf(vk) is not Key key) return false;
             Push(new InputEventKey { Keycode = key, Pressed = true });
             Push(new InputEventKey { Keycode = key, Pressed = false });
+            return true;
+        }
+
+        if (verb == "stick")
+        {
+            // Левый стик: «stick 1,0 500» — отклонение и сколько мс держать; указатель геймпада сдвигается, как за это время в игре.
+            string[] stick = arg.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            string[] xy = stick.Length == 2 ? stick[0].Split(',') : [];
+            if (xy.Length != 2 || !float.TryParse(xy[0], System.Globalization.CultureInfo.InvariantCulture, out float sx)
+                || !float.TryParse(xy[1], System.Globalization.CultureInfo.InvariantCulture, out float sy)
+                || !int.TryParse(stick[1], out int held) || GamepadPointer.Current is not { } pointer) return false;
+            pointer.Move(new Vector2(sx, sy), held / 1000.0);
+            at = pointer.Line();
             return true;
         }
 

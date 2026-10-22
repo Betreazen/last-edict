@@ -9,6 +9,7 @@ config/features=PackedStringArray("4.7", "C#")
 
 [autoload]
 GameData="*res://autoload/GameData.cs"
+GamepadPointer="*res://autoload/GamepadPointer.cs"
 
 [display]
 window/size/viewport_width=1280

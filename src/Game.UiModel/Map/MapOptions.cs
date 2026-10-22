@@ -44,7 +44,8 @@ namespace LastEdict.Data.Map;
 /// <para><paramref name="Language"/> — язык строк (Р14, Э5: окно настроек, вкладка «Язык»): <c>ru</c>, <c>en</c> или пусто — по умолчанию (русский,
 /// если импортирован, иначе английский); ключ <c>--lang</c> главнее.</para>
 /// <para><paramref name="Bindings"/> — переназначенные клавиши и кнопки геймпада (Р12, Э5: вкладка «Управление»,
-/// <see cref="LastEdict.Data.Input.InputActions"/>); null — все по умолчанию.</para>
+/// <see cref="LastEdict.Data.Input.InputActions"/>); null — все по умолчанию. <paramref name="LargeUi"/> — крупный интерфейс (Р11, Steam Deck):
+/// <see cref="LargeUiAuto"/> — на Steam Deck, <see cref="LargeUiOn"/>, <see cref="LargeUiOff"/>; крупнее курсор и подсказки кнопок.</para>
 /// </summary>
 public sealed record MapSettings(int PlayerSpeed = 1, int OpponentSpeed = 1, bool PlayAiMoves = true,
                                  int FxVolume = 83, int MusicVolume = 80, int Acknowledgements = 66, int AudioRegions = 3,
@@ -58,7 +59,8 @@ public sealed record MapSettings(int PlayerSpeed = 1, int OpponentSpeed = 1, boo
                                  bool InversedPalMap = false, int ScrollSpeed = 0, bool Intro = true,
                                  bool QueueStrip = true,
                                  int MasterVolume = 100, int AmbientVolume = 100, string WindowMode = "windowed", bool VSync = true,
-                                 int MaxFps = 0, string Language = "", LastEdict.Data.Input.KeyBindings? Bindings = null)
+                                 int MaxFps = 0, string Language = "", LastEdict.Data.Input.KeyBindings? Bindings = null,
+                                 int LargeUi = MapSettings.LargeUiAuto)
 {
     /// <summary>Режим вписывания экрана в окно; неизвестное имя в файле — чёткий (<see cref="LastEdict.Data.Ui.ScreenScaling.Sharp"/>).</summary>
     [System.Text.Json.Serialization.JsonIgnore]
@@ -70,6 +72,9 @@ public sealed record MapSettings(int PlayerSpeed = 1, int OpponentSpeed = 1, boo
 
     /// <summary>Потолок общей громкости и громкости фонов мест (проценты); предел кадров: 0 — без предела, иначе от 30 до 360.</summary>
     public const int MaxBusVolume = 100, MinFps = 30, MaxFpsLimit = 360;
+
+    /// <summary>Крупный интерфейс: сам (на Steam Deck), включён, выключен.</summary>
+    public const int LargeUiAuto = 0, LargeUiOn = 1, LargeUiOff = 2;
 
     // IsoClouds — облака над картой (TOG_ISOCLOUDS, ключ ini IsoBirds, settings+0x190, по умолчанию 1: 0x619427, кнопка 0x4c1f54 → 0x61a8f0).
     // IsoHighlight — подсветка клетки под курсором TILE_HIGHLIGHT (TOG_ISOHIGHLIGHT, ini IsoHighlight, поставляемый — 1; settings+0x189,
@@ -130,6 +135,7 @@ public sealed record MapSettings(int PlayerSpeed = 1, int OpponentSpeed = 1, boo
         MaxFps = MaxFps <= 0 ? 0 : Math.Clamp(MaxFps, MinFps, MaxFpsLimit),
         Language = (Language ?? "").Trim().ToLowerInvariant(),
         Bindings = Bindings is { Count: > 0 } ? Bindings : null,
+        LargeUi = Math.Clamp(LargeUi, LargeUiAuto, LargeUiOff),
     };
 
     /// <summary>Быстрые настройки «для слабых» и «для мощных систем» (<c>BTN_LOWEND</c>/<c>BTN_HIGHEND</c>, ответ «Да» на вопрос

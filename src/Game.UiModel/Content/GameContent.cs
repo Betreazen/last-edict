@@ -23,9 +23,10 @@ public sealed class GameContent
     private GameContent(IReadOnlyList<UiScreen> screens, IReadOnlyList<UiAsset> assets, UiFlow flow,
         UiDefaults defaults, GameCatalog catalog, UiTransitions transitions, IReadOnlyList<UiVideo> videos,
         GfxAssets gfx, MapArtData mapArt, IReadOnlyList<ModInfo> mods, string dataDir, string gameDataDir,
-        IReadOnlyList<LastEdict.Data.Input.InputAction> input)
+        LastEdict.Data.Input.InputConfig inputSetup)
     {
-        Input = input;
+        InputSetup = inputSetup;
+        Input = LastEdict.Data.Input.InputActions.Build(inputSetup, screens);
         _dataDir = dataDir;
         _gameDir = gameDataDir;
         Gfx = gfx;
@@ -46,6 +47,9 @@ public sealed class GameContent
     /// <summary>Действия ввода (<c>ui/input.json</c> и горячие клавиши разметки экранов, <see cref="LastEdict.Data.Input.InputActions"/>):
     /// что переназначает вкладка «Управление». Нет файла — только выведенные из разметки без групп, то есть ничего.</summary>
     public IReadOnlyList<LastEdict.Data.Input.InputAction> Input { get; }
+
+    /// <summary>Данные ввода целиком (<c>ui/input.json</c> с модами): группы, экраны стрелок.</summary>
+    public LastEdict.Data.Input.InputConfig InputSetup { get; }
 
     /// <summary>Граф экранов (<c>ui/flow.json</c>, выведенный из журналов, плюс ручные дополнения
     /// <c>ui/flow.manual.json</c> — переходы, которых зонд не видел): какой элемент куда ведёт. Нет файла — граф пуст.</summary>
@@ -249,8 +253,7 @@ public sealed class GameContent
             throw new InvalidDataException($"каталог игры (data/game и моды): {string.Join("; ", problems)}");
         // Политика вписывания (ui/layout.json) — после всех слоёв: правило базы ложится и на экран, заменённый модом.
         screens = UiLayouts.Apply(screens, layout);
-        return new GameContent(screens, assets, flow, defaults, catalog, transitions, videos, gfx, mapArt, layers, dataDir, gameDir,
-                               LastEdict.Data.Input.InputActions.Build(input, screens));
+        return new GameContent(screens, assets, flow, defaults, catalog, transitions, videos, gfx, mapArt, layers, dataDir, gameDir, input);
     }
 
     private static UiFlow? LoadFlow(string path) => File.Exists(path) ? UiFlows.Load(path) : null;

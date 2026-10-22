@@ -935,6 +935,51 @@ def rebinding(repo: Path) -> tuple[bool, str]:
                   "пробел хода не кончает, E — кончает (между запусками), Y геймпада — по умолчанию")
 
 
+PAD_FOCUS = re.compile(r"^pad focus (\S+) (\S+) → (\S+) pointer (\d+),(\d+) ", re.M)
+POINTER = re.compile(r"^pointer (\d+),(\d+) геймпад=(\d) крупный=\d подсказки=(\S+) окна=(\S+)", re.M)
+
+
+def gamepad(repo: Path) -> tuple[bool, str]:
+    """Геймпад (Э5, Р12; GamepadPointer, UiNavigation, data/ui/input.json). Меню: крестовина переводит указатель по кнопкам главного меню
+    (вниз, вниз, вверх), левый стик сдвигает его (−1 по X 0,4 с — на 1,25 × 720 × 0,4 = 360 точек), крестовина возвращает на кнопку, A —
+    щелчок («Одиночная игра»), B — «Назад». Карта (день 21 стенда): указатель в середину поля карты над своим отрядом, A — отряд выделен
+    настоящим путём (кнопка геймпада → щелчок мыши → вьюпорт карты); Start — окно настроек, указатель к строке с фокусом, крестовина вниз —
+    к следующей; B — закрыто; Y — конец хода. Подсказки кнопок внизу: на карте — A, B, Y (конец хода), LB, RB и прокрутка RS; в окне
+    настроек — A, B и «✥» (крестовина по фокусу)."""
+    code, out = godot(repo, ["--input", "pad DpadDown; pad DpadDown; pad DpadUp; stick -1,0 400; pad DpadDown; pad DpadUp; pad A; pad B"],
+                      "res://scenes/ui/UiFlow.tscn")
+    focus = [(m[2], m[3]) for m in PAD_FOCUS.finditer(out)]
+    stick = re.search(r"^flow step=4 do=stick at=pointer (\d+),(\d+) ", out, re.M)
+    stacks = re.findall(r"^flow step=\d+ .* stack=(\S+) ", out, re.M)
+    want = [("down", "BTN_SINGLE"), ("down", "BTN_MULTI"), ("up", "BTN_SINGLE"), ("down", "BTN_MULTI"), ("up", "BTN_SINGLE")]
+    first = PAD_FOCUS.search(out)
+    moved = stick is not None and first is not None and int(first[4]) - int(stick[1]) == 360 and stick[2] == first[5]
+    if code != 0 or focus != want or not moved or stacks[-2:] != ["DLG_SINGLE_PLAYER", "DLG_MAIN_MENU"]:
+        return False, f"геймпад, меню: код {code}, фокус {focus}, стик {stick and stick.group(0)}, экраны {stacks}\n{out.strip()[-3000:]}"
+    save, m, why = stand(repo, 21)
+    if save is None:
+        return True, f"геймпад: меню — крестовина, стик, A, B; карта — пропуск: {why}"
+    own = m.field_stacks(STAND_PLAYER)[0]
+    code, out = godot(repo, ["--state", str(save), "--check", "--player", STAND_PLAYER, "--clicks",
+                             f"padcell {own.x},{own.y};pointer;ui pad Start;pointer;ui pad DpadDown;pointer;ui pad B;ui pad Y"],
+                      "res://scenes/map/MapScreen.tscn")
+    picked = re.search(rf"^padcell {own.x},{own.y} выбран=(\S+) ", out, re.M)
+    rows = [(int(x), int(y), pad, hints, windows) for x, y, pad, hints, windows in POINTER.findall(out)]
+    turns = len(re.findall(r"^aiturn ", out, re.M))
+    points = rows[1:]
+    follows = (len(points) == 2 and all(w == "LE_SETTINGS" and pad == "1" for _, _, pad, _, w in points)
+               and points[1][1] > points[0][1])
+    map_hints = rows[0][3].split("___") if rows else []
+    hinted = ([h.split("_")[0] for h in map_hints[:2]] == ["A", "B"] and {"Y", "LB", "RB"} <= {h.split("_")[0] for h in map_hints}
+              and map_hints[-1].startswith("RS_") and len(points) == 2 and points[0][3].split("___")[-1].startswith("✥_"))
+    if code != 0 or picked is None or picked[1] != own.id or not follows or turns != 1 or not hinted:
+        return False, (f"геймпад, карта: код {code}, выбран {picked and picked[1]} (ждали {own.id}), указатель {rows}, концов хода {turns}"
+                       f"\n{out.strip()[-3000:]}")
+    return True, (f"геймпад: меню — крестовина по кнопкам, стик −360 точек, A — «Одиночная игра», B — назад; карта — A выделил {own.id}, "
+                  f"Start — настройки, указатель за фокусом {points[0][:2]} → {points[1][:2]}, B — закрыто, Y — конец хода; подсказки "
+                  f"{len(map_hints)} на карте, «✥» в окне")
+
+
 # Окна города (docs/ui-windows.md): шаги проверки сцены карты и что должна содержать строка каждого шага. Клетки групп —
 # «x» воин, «b» большой, «.» пусто; позиции 0…5, чётные — передний ряд.
 def city_cases(repo: Path) -> list[tuple[Path, str, list[tuple[str, list[str]]]]] | str:
@@ -2709,7 +2754,7 @@ def steps(repo: Path, screens: list[str], window: bool) -> list[tuple[str, Calla
         ("импорт героя", leader_import), ("горячий стул", hotseat), ("гонец", courier), ("окна города", city_windows),
         ("ход и туман по шагам, мешок", walk_steps), ("ход ИИ", ai_turn), ("плавная прокрутка", smooth_scroll),
         ("смена тумана", fog_change), ("звук", sound), ("начало боя", battle_opening), ("подсветка клетки", highlight),
-        ("облака", clouds), ("снос гор", mountains), ("попап в ходе ИИ", ai_popup), ("настройки показа", map_settings), ("окно настроек", settings_window), ("переназначение клавиш", rebinding),
+        ("облака", clouds), ("снос гор", mountains), ("попап в ходе ИИ", ai_popup), ("настройки показа", map_settings), ("окно настроек", settings_window), ("переназначение клавиш", rebinding), ("геймпад", gamepad),
         ("литьё на карте", spell_anim), ("предметы в бою", battle_items), ("гибель отряда", stack_death),
         ("курсоры карты", map_cursors), ("курсор меню", menu_cursors), ("карточки карты", map_cards),
         ("вписывание экранов", screen_fit), ("рамка и слои карты", map_frame), ("палитра карты", map_palette), ("вор у цели", noble), ("выбор навыка лидера", upgrade_leader)]]

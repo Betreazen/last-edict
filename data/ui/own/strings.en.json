@@ -73,5 +73,22 @@
   "LE_IN_RIGHT": "Right",
   "LE_IN_PAGE_UP": "Page up",
   "LE_IN_PAGE_DOWN": "Page down",
-  "LE_IN_QUICKSAVE": "Quick save"
+  "LE_IN_QUICKSAVE": "Quick save",
+  "LE_IN_POINTER_CLICK": "Pointer click",
+  "LE_IN_POINTER_ALT": "Pointer right click",
+  "LE_IN_POINTER_LEFT": "Pointer left",
+  "LE_IN_POINTER_RIGHT": "Pointer right",
+  "LE_IN_POINTER_UP": "Pointer up",
+  "LE_IN_POINTER_DOWN": "Pointer down",
+  "LE_IN_SCROLL_LEFT": "Scroll map left",
+  "LE_IN_SCROLL_RIGHT": "Scroll map right",
+  "LE_IN_SCROLL_UP": "Scroll map up",
+  "LE_IN_SCROLL_DOWN": "Scroll map down",
+  "LE_IN_HINT_BUTTONS": "Buttons",
+  "LE_IN_HINT_SCROLL": "Scroll",
+  "LE_SET_LARGE_UI": "Large interface",
+  "LE_SET_LARGE_UI_HELP": "Larger cursor and gamepad button hints for small screens (Steam Deck). \"Auto\" turns it on on Steam Deck.",
+  "LE_SET_LARGE_AUTO": "Auto",
+  "LE_SET_LARGE_ON": "On",
+  "LE_SET_LARGE_OFF": "Off"
 }

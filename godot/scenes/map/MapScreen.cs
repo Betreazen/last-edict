@@ -762,6 +762,30 @@ public partial class MapScreen : Node
                 }
                 continue;
             }
+            if (step.StartsWith("padcell ", StringComparison.Ordinal) && GamepadPointer.Current is { } pointer)
+            {
+                // Геймпад над картой (Э5, Р12): вид на клетку, указатель геймпада в середину поля карты, A — нажатие и отпускание кнопки
+                // геймпада настоящим путём (GamepadPointer → щелчок мыши → вьюпорт карты).
+                var at = ParseCell(step[8..].Trim());
+                _map.CenterOn(at);
+                await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+                var middle = _mapBox.GetGlobalRect().GetCenter();
+                pointer.MoveTo(ScreenStage.Current is { } stage && stage.Stage == GetViewport() ? stage.ToRoot * middle : middle);
+                var root = GetTree().Root;
+                root.PushInput(new InputEventJoypadButton { ButtonIndex = JoyButton.A, Pressed = true });
+                root.PushInput(new InputEventJoypadButton { ButtonIndex = JoyButton.A, Pressed = false });
+                for (int i = 0; i < 3; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+                SyncPanels();
+                GD.Print($"padcell {at.X},{at.Y} выбран={_map.Selected ?? "-"} {pointer.Line()} {WindowLine()}");
+                continue;
+            }
+            if (step == "pointer" && GamepadPointer.Current is { } padPointer)   // где указатель геймпада (после кадра: шаг к фокусу окна)
+            {
+                await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+                PadHints.Current?.Refresh();
+                GD.Print($"{padPointer.Line()} подсказки={(PadHints.Current?.Shown ?? "-").Replace(' ', '_')} {WindowLine()}");
+                continue;
+            }
             if (step.StartsWith("cursor ", StringComparison.Ordinal))   // курсор карты над клеткой (MapScreen.Cursor.cs)
             {
                 var at = ParseCell(step[7..].Trim());

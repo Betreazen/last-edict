@@ -462,6 +462,7 @@ public partial class UiScreenView : Node2D
     /// <summary>Экран, снятый хозяином и поставленный снова (панель команд под панелью столицы), опять следит за окном.</summary>
     public override void _EnterTree()
     {
+        Live.Add(this);
         if (_root is null || _sizeHooked) return;
         GetViewport().SizeChanged += Rescale;
         _sizeHooked = true;
@@ -471,6 +472,7 @@ public partial class UiScreenView : Node2D
     /// <summary>Экран, снятый хозяином, больше не следит за размером окна.</summary>
     public override void _ExitTree()
     {
+        Live.Remove(this);
         if (!_sizeHooked) return;
         GetViewport().SizeChanged -= Rescale;
         _sizeHooked = false;

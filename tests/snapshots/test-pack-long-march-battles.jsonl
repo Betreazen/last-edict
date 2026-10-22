@@ -1,8 +1,8 @@
-{"battle":1,"attacker":"S902KC0002","defender":"S902KC0003","winner":"defender","turns":5,"hash":"138ff9f17330d748abf8db67805a3afd"}
-{"battle":2,"attacker":"S902KC0004","defender":"S902KC0005","winner":"defender","turns":5,"hash":"cdc3552e0019b4d88a8c165d37f40e51"}
-{"battle":3,"attacker":"S902KC0006","defender":"S902KC0007","winner":"attacker","turns":11,"hash":"450d6c120f279a60b028329ff8bfc30a"}
-{"battle":4,"attacker":"S902KC0008","defender":"S902KC0009","winner":"defender","turns":13,"hash":"bff25553663e72f12d1ba646a4221cb1"}
-{"battle":5,"attacker":"S902KC000a","defender":"S902KC000b","winner":"attacker","turns":12,"hash":"ca422d701528c0d8c22536cba3dde477"}
-{"battle":6,"attacker":"S902KC000c","defender":"S902KC000d","winner":"defender","turns":12,"hash":"ac72fbf726d55fca26728e41ce5ff225"}
-{"battle":7,"attacker":"S902KC000e","defender":"S902KC000f","winner":"defender","turns":13,"hash":"f80bf46fbe05d14169bb384c6d65c89a"}
-{"battle":8,"attacker":"S902KC0010","defender":"S902KC0011","winner":"attacker","turns":18,"hash":"d2bb24a1b9e1bcf485c24acd1d44b91e"}
+{"battle":1,"attacker":"S902KC0002","defender":"S902KC0003","winner":"defender","turns":6,"hash":"8c7fdfde6738145f32f0ee9a1f170a44"}
+{"battle":2,"attacker":"S902KC0004","defender":"S902KC0005","winner":"defender","turns":4,"hash":"183fc08cf793800b742ca20c7ed5c07a"}
+{"battle":3,"attacker":"S902KC0006","defender":"S902KC0007","winner":"attacker","turns":11,"hash":"555906bcc5816f5f0a2f5743a576c1ec"}
+{"battle":4,"attacker":"S902KC0008","defender":"S902KC0009","winner":"defender","turns":12,"hash":"b7b3a10b9402e7edf0be97b1645bb82f"}
+{"battle":5,"attacker":"S902KC000a","defender":"S902KC000b","winner":"defender","turns":19,"hash":"b85661aab51d00020adb86cfbf641bc6"}
+{"battle":6,"attacker":"S902KC000c","defender":"S902KC000d","winner":"defender","turns":11,"hash":"338558c1b0e581563105c4c709089a3d"}
+{"battle":7,"attacker":"S902KC000e","defender":"S902KC000f","winner":"defender","turns":13,"hash":"152e3da8de6b80d3e9a57ebd456e6b0d"}
+{"battle":8,"attacker":"S902KC0010","defender":"S902KC0011","winner":"defender","turns":18,"hash":"7337f0864521549e765f704448d834db"}

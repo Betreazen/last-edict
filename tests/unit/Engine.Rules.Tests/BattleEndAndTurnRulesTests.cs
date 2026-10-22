@@ -48,12 +48,12 @@ public class BattleEndAndTurnRulesTests
         var queue = sim.BeginRound(2);
 
         Assert.Equal(["o"], queue.Select(u => u.Id));
-        Assert.Equal(2, rng.Used);                 // броски очереди — на обоих живых
+        Assert.Equal(4, rng.Used);                 // броски очереди — на обоих живых, и раунда вперёд (Р4) — тоже на обоих
         Assert.Empty(squire.Dots);                 // 0x627142: яды сняты
         Assert.False(sim.Finished);
         sim.BeginRound(3);
         Assert.True(sim.Finished);
-        Assert.Equal(4, rng.Used);
+        Assert.Equal(4, rng.Used);                 // раунд 3 брошен заранее, бой кончился — следующий не бросается
     }
 
     /// <summary>Раненых нет — лекарям ходить незачем: броски нового раунда потрачены, бой окончен (20260909-arena2 [313563]).</summary>
@@ -101,12 +101,12 @@ public class BattleEndAndTurnRulesTests
         var summoned = Of(Squire, "x", attacker: false, slot: 0);
         summoned.Summoned = true;
         summoned.SummonerId = "sum";
-        var rng = new ScriptedRng([0, 0]);
+        var rng = new ScriptedRng([0, 0, 0, 0]);
         var sim = new BattleSim(State(Of(Squire, "a", true, 0), summoner, summoned), rng, C);
 
         var queue = sim.BeginRound(3);
         Assert.Contains(summoned, queue);
-        Assert.Equal(2, rng.Used);
+        Assert.Equal(4, rng.Used);                 // раунд 3 и раунд вперёд (Р4) — на обоих на поле
         Assert.Null(sim.Winner);
 
         Assert.False(sim.BeginTurn(summoned));

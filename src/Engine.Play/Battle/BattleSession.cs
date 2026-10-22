@@ -46,8 +46,9 @@ public enum QueueMark
     Waits,
 }
 
-/// <summary>Место в очереди ходов раунда: юнит и пометка. Неизменяемое — снимок на миг чтения.</summary>
-public sealed record QueueEntry(BattleUnit Unit, QueueMark Mark);
+/// <summary>Место в очереди ходов: юнит и пометка; <paramref name="NextRound"/> — место следующего раунда (<see cref="BattleSession.UpcomingNext"/>).
+/// Неизменяемое — снимок на миг чтения.</summary>
+public sealed record QueueEntry(BattleUnit Unit, QueueMark Mark, bool NextRound = false);
 
 /// <summary>
 /// Бой по шагам для экрана: ведёт <see cref="BattleSim"/> в том же порядке, что <see cref="BattleSim.Run"/>
@@ -111,7 +112,7 @@ public sealed class BattleSession
     /// ходящий (<see cref="QueueMark.Current"/>); между ходами (<see cref="TurnStartPending"/>) ходящего нет, и первым стоит тот, чьё начало хода
     /// следующее. Павшие, ушедшие с поля, спрятанные и изгнанные не показываются: в свой черёд они не ходят (<see cref="Advance"/> пропускает
     /// юнита не на поле), а воскрешённый до своего черёда — снова на поле и снова в полосе. Ходы раунда после «Ждать» и внеочередные (дар атаки)
-    /// — отдельными местами, как в очереди. Следующий раунд не показывается: его инициатива бросается в его начале. Бой кончился — пусто.
+    /// — отдельными местами, как в очереди. Следующий раунд — <see cref="UpcomingNext"/>. Бой кончился — пусто.
     /// <para>Пометки предсказывают начало хода (<c>BattleSim.BeginTurn</c>) без бросков и без изменения состояния: <see cref="QueueMark.Skips"/>
     /// — паралич или окаменение без «Исцеления» (оно снимает их в начале любого хода раньше) или бегство, если начала хода в этом раунде у юнита
     /// ещё не было (после него модель отвечает «ходит», что бы ни случилось); гибель от яда в начале хода заранее не видна.
@@ -133,18 +134,30 @@ public sealed class BattleSession
         }
     }
 
-    /// <summary>Очередь ходов (<see cref="Upcoming"/>) изменилась: новый раунд, конец хода, «Ждать», дар атаки, гибель, бегство, воскрешение,
-    /// паралич, очередь лекарей после боя. Зовётся в конце команды сессии, только если <see cref="Upcoming"/> стал другим.</summary>
+    /// <summary>
+    /// Очередь следующего раунда (Р4, Р17): его случайная часть инициативы брошена в начале текущего раунда (<see cref="BattleSim.NextRound"/>),
+    /// порядок — по характеристикам на этот миг, поэтому замедление, превращение, гибель, призыв и воскрешение двигают её сразу; если до конца
+    /// раунда ничего не изменится, раунд пойдёт ровно так (ходы «Ждать» и дар атаки следующего раунда — ещё не известны). Места —
+    /// <see cref="QueueMark.Next"/> с <see cref="QueueEntry.NextRound"/>. Сторона пала (дальше — лекари победителя или конец) — пусто.
+    /// </summary>
+    public IReadOnlyList<QueueEntry> UpcomingNext =>
+        Finished || _healers || _sim.Winner is not null ? [] : [.. _sim.NextRound().Select(u => new QueueEntry(u, QueueMark.Next, NextRound: true))];
+
+    /// <summary>Полоса очереди на два раунда: остаток текущего (<see cref="Upcoming"/>) и следующий (<see cref="UpcomingNext"/>).</summary>
+    public IReadOnlyList<QueueEntry> TwoRounds => [.. Upcoming, .. UpcomingNext];
+
+    /// <summary>Очередь ходов (<see cref="TwoRounds"/>) изменилась: новый раунд, конец хода, «Ждать», дар атаки, гибель, бегство, воскрешение,
+    /// паралич, замедление, очередь лекарей после боя. Зовётся в конце команды сессии, только если очередь стала другой.</summary>
     public event Action? QueueChanged;
 
-    /// <summary><see cref="Upcoming"/> на миг последнего <see cref="QueueChanged"/>.</summary>
+    /// <summary><see cref="TwoRounds"/> на миг последнего <see cref="QueueChanged"/>.</summary>
     private IReadOnlyList<QueueEntry>? _shownQueue;
 
     /// <summary>Сообщить об изменении очереди, если оно есть (без подписчиков — ничего не считается).</summary>
     private void NotifyQueue()
     {
         if (QueueChanged is null) return;
-        var now = Upcoming;
+        var now = TwoRounds;
         if (_shownQueue is not null && _shownQueue.SequenceEqual(now)) return;
         _shownQueue = now;
         QueueChanged();

@@ -10,11 +10,12 @@ namespace LastEdict.Godot;
 
 /// <summary>
 /// Полоса очереди ходов над полем боя (своя для Last Edict, <c>docs/own-version-roadmap.md</c> §3.3): портреты <c>Faces</c> тех, кто ходит
-/// сейчас и дальше в текущем раунде (<see cref="BattleSession.Upcoming"/>), слева направо. Место — полоса фона между боковыми панелями
+/// сейчас и дальше в текущем раунде, а за ним — весь следующий раунд (<see cref="BattleSession.TwoRounds"/>, Р4: его инициатива брошена
+/// заранее), слева направо. Место — полоса фона между боковыми панелями
 /// (<c>IMG_LUNITGROUPBG</c> кончается на x 174, <c>IMG_RUNITGROUPBG</c> начинается на 627), y 0–85 холста 800×600; портрет 70×85 уменьшен
 /// до 43 px в ширину, их до 10; отражён, как в боковой панели (<see cref="Mirrored"/>). Ходящий — в золотой рамке, наведённый — в белой; «пропустит ход» — серым и надписью «Пас»
 /// (<c>X008TA0010</c>), «ждёт» — синеватым и надписью «Ждать» (<c>X008TA0020</c>); полоска под портретом — сторона (свои зелёные, чужие
-/// красные). Пересобирается только по <see cref="Fill"/> (экран зовёт его по событию сессии <see cref="BattleSession.QueueChanged"/>), не
+/// красные); следующий раунд — чуть темнее, перед ним золотая черта. Пересобирается только по <see cref="Fill"/> (экран зовёт его по событию сессии <see cref="BattleSession.QueueChanged"/>), не
 /// каждый кадр.
 /// </summary>
 public partial class BattleQueueStrip : Node2D
@@ -67,7 +68,8 @@ public partial class BattleQueueStrip : Node2D
     private Node2D _frames = null!;
 
     private static readonly Color Backing = new(0, 0, 0, 0.45f), CurrentFrame = new(1f, 0.82f, 0.25f), HoverFrame = new(1f, 1f, 1f, 0.9f),
-        Ours = new(0.35f, 0.75f, 0.3f), Theirs = new(0.85f, 0.25f, 0.2f), Skipping = new(0.45f, 0.45f, 0.45f), Waiting = new(0.72f, 0.78f, 1f);
+        Ours = new(0.35f, 0.75f, 0.3f), Theirs = new(0.85f, 0.25f, 0.2f), Skipping = new(0.45f, 0.45f, 0.45f), Waiting = new(0.72f, 0.78f, 1f),
+        NextRound = new(0.78f, 0.78f, 0.78f);
 
     public override void _Ready()
     {
@@ -115,7 +117,7 @@ public partial class BattleQueueStrip : Node2D
                 Texture = texture, Centered = false, RegionEnabled = true, RegionRect = new Rect2((w - regionWidth) / 2f, 0, regionWidth, h),
                 Position = cell.Position, Scale = new Vector2(cell.Size.X / regionWidth, cell.Size.Y / h),
                 FlipH = mirrored,
-                Modulate = entry.Mark switch { QueueMark.Skips => Skipping, QueueMark.Waits => Waiting, _ => Colors.White },
+                Modulate = entry.Mark switch { QueueMark.Skips => Skipping, QueueMark.Waits => Waiting, _ => entry.NextRound ? NextRound : Colors.White },
             });
         }
         // Строки игры с разметкой выравнивания (\hC;\vC;) — для полосы только текст.
@@ -136,6 +138,12 @@ public partial class BattleQueueStrip : Node2D
         DrawRect(new Rect2(_cells[0].Position.X - 2, 0, _cells[^1].End.X - _cells[0].Position.X + 4, Framed(0).End.Y + FrameWidth + 2), Backing);
         for (int i = 0; i < _cells.Count; i++) DrawRect(Bar(i), IsPlayers(_shown[i].Unit) ? Ours : Theirs);
     }
+
+    /// <summary>Место первого портрета следующего раунда; нет его в полосе — −1.</summary>
+    public int NextRoundAt => _shown.FindIndex(e => e.NextRound);
+
+    /// <summary>Черта раунда — в просвете перед первым портретом следующего раунда, во всю высоту портрета и полоски стороны.</summary>
+    private Rect2? RoundDivider() => NextRoundAt is > 0 and var i ? new Rect2(_cells[i].Position.X - Gap, 0, Gap, Framed(i).End.Y + FrameWidth) : null;
 
     /// <summary>Толщина рамки ходящего; рамка наведённого — в точку.</summary>
     private const int FrameWidth = 2;
@@ -170,6 +178,7 @@ public partial class BattleQueueStrip : Node2D
     /// <summary>Рамки ходящего и наведённого — поверх портретов.</summary>
     private void DrawFrames()
     {
+        if (RoundDivider() is { } divider) _frames.DrawRect(divider, CurrentFrame);
         foreach (var (stroke, color) in FrameStrokes()) _frames.DrawRect(stroke, color);
     }
 

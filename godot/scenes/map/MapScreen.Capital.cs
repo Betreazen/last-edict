@@ -232,7 +232,10 @@ public partial class MapScreen
     private void PlaceCapital(Vector2 size, float k)
     {
         if (_capitalView is null) return;
-        _capitalView.Position = ((size - (_host * k)) / 2f) + (_mapRect.Position * k);
+        // Картинка 640×600 — по середине места карты (на холсте шире 800 оно шире картинки), поля — растяжкой картинки (CapitalView.Area).
+        var inset = ((_mapRect.Size - CapitalView.PictureSize) / 2f).Floor();
+        _capitalView.Position = ((size - (_host * k)) / 2f) + ((_mapRect.Position + inset) * k);
         _capitalView.Scale = new Vector2(k, k);
+        _capitalView.Area = _mapRect.Size;
     }
 }

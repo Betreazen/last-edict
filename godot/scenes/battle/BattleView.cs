@@ -106,7 +106,8 @@ public partial class BattleView : Node2D
         var puts = new List<(BattleSprite Sprite, bool FromMiddle)>();
         void Put(BattleSprite sprite, bool fromMiddle = false) => puts.Add((sprite, fromMiddle));
         // Фон, тень и передний план места (BG/SHADOW/FG, 0x5b34f6 → 0x646a6f): без FG у UNDEAD_0 в фоне оставалась дыра (снимок 27 пользователя).
-        foreach (var layer in scene.PlaceLayers(place, Variant)) Put(layer);
+        var placeLayers = scene.PlaceLayers(place, Variant).ToList();
+        foreach (var layer in placeLayers) Put(layer);
         // Павшие остаются на поле трупами (отступившие — нет).
         var corpses = new List<BattleSprite>();
         foreach (var unit in state.Units.Where(u => !u.Alive && !u.Retreated))
@@ -143,6 +144,7 @@ public partial class BattleView : Node2D
         }
         Prefetch(puts.Select(p => p.Sprite));
         foreach (var (sprite, fromMiddle) in puts) this.Put(sprite, fromMiddle);
+        PlaceEdges(placeLayers);   // слои места и края на холсте шире 800 (BattleView.Edges.cs)
         CorpsesShown = corpses.Count(c => Frames(c).Length > 0);
         FieldIcons = puts.Count(p => p.Sprite.Name.StartsWith("FI", StringComparison.OrdinalIgnoreCase));
         EmptyMarks = puts.Count(p => p.Sprite.Name.StartsWith("MRKEMPTY", StringComparison.OrdinalIgnoreCase));

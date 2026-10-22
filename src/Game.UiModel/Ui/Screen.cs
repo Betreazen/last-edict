@@ -15,6 +15,25 @@ public enum UiKind { Image, Text, Button, Toggle, List, TextList, Edit, Spin, Ra
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum UiAnchor { TopLeft, Top, TopRight, Left, Center, Right, BottomLeft, Bottom, BottomRight }
 
+/// <summary>Растягивается ли элемент, когда холст экрана больше его <see cref="UiScreen.Design"/> (<see cref="UiFit.Anchors"/>): по ширине,
+/// высоте или обеим — на весь прирост холста; по растянутой оси якорь не сдвигает элемент. Место карты <c>IMG_MAIN</c> — <see cref="Both"/>.</summary>
+[JsonConverter(typeof(JsonStringEnumConverter))]
+public enum UiStretch { None, Width, Height, Both }
+
+/// <summary>Как экран вписывается в окно другой формы (Р13, Э5). Окно масштабирует экран по меньшей стороне (<c>ScreenFit</c>); по
+/// большей остаётся прирост — его отдают так:</summary>
+[JsonConverter(typeof(JsonStringEnumConverter))]
+public enum UiFit
+{
+    /// <summary>Экран размером <see cref="UiScreen.Design"/> по центру, вокруг — паспарту (<see cref="UiScreen.Border"/>) или чёрное поле.
+    /// Меню и окна.</summary>
+    Letterbox,
+
+    /// <summary>Холст — формы окна; элементы держатся своих краёв (<see cref="UiElement.Anchor"/>) и растягиваются
+    /// (<see cref="UiElement.Stretch"/>); фон — по центру. Карта, бой.</summary>
+    Anchors,
+}
+
 /// <summary>Прямоугольник в точках: левый верхний угол и размер (в `.dlg` были две противоположные точки).</summary>
 public readonly record struct UiRect(int X, int Y, int Width, int Height)
 {
@@ -99,6 +118,9 @@ public sealed record UiElement
     /// кадра, <c>0x4c6618</c>); прочие элементы — под роликами. Не задано — под роликами (в файле не пишется).</summary>
     public bool? OverVideo { get; init; }
 
+    /// <summary>Растяжение при холсте шире или выше разметки (<see cref="UiFit.Anchors"/>); в файле — только не <see cref="UiStretch.None"/>.</summary>
+    public UiStretch Stretch { get; init; }
+
     /// <summary>Кнопка с автоповтором: поле `.dlg` сразу за подсказкой (<c>"X100TA0027",1,…</c>, разбор строки <c>0x512153</c>,
     /// создание кнопки <c>0x5126c5</c> → <c>setAutorepeatTimeout(250)</c>) — у 20 кнопок: стрелки списков, листание книги, стрелки
     /// передачи ресурса и предмета. Лежит первым полем <see cref="Legacy"/>.</summary>
@@ -131,6 +153,17 @@ public sealed record UiScreen
     public string Cursor { get; init; } = "";
     public IReadOnlyList<UiElement> Elements { get; init; } = [];
     public IReadOnlyList<string> Legacy { get; init; } = [];
+
+    /// <summary>Как экран вписывается в окно другой формы (<c>ui/layout.json</c>, <see cref="UiLayouts"/>).</summary>
+    public UiFit Fit { get; init; }
+
+    /// <summary>Паспарту вокруг экрана <see cref="UiFit.Letterbox"/> — кадр описи интерфейса во всё окно (по центру, обрезан по окну); пусто —
+    /// чёрное поле.</summary>
+    public string? Border { get; init; }
+
+    /// <summary>Якорь фона на холсте шире или выше разметки (<see cref="UiFit.Anchors"/>): рамка края поля <c>ISO_OUTLINE</c> и полоса
+    /// ресурсов прижаты к правому краю места карты. null — середина.</summary>
+    public UiAnchor? BackgroundAnchor { get; init; }
 }
 
 /// <summary>Набор экранов: чтение и запись JSON. Моды кладут рядом свои файлы, <see cref="Merge"/> накладывает их
@@ -149,12 +182,14 @@ public static class UiScreens
     /// не пишутся: у большинства элементов
     /// они пусты, и без них файл вдвое короче и читается глазами. При чтении отсутствующий список даёт пустой.
     /// Своё <c>ShouldSerialize</c> отменяет <see cref="JsonIgnoreCondition.WhenWritingNull"/>, поэтому пустое
-    /// значение проверяется здесь же.</summary>
+    /// значение проверяется здесь же. Политика вписывания по умолчанию (<see cref="UiFit.Letterbox"/>, <see cref="UiStretch.None"/>) — тоже
+    /// не пишется: её задаёт свой <c>ui/layout.json</c>, а не импорт разметки.</summary>
     private static void SkipEmptyLists(JsonTypeInfo type)
     {
         foreach (var p in type.Properties)
             p.ShouldSerialize = (_, value) =>
-                value is not null && (value is not System.Collections.ICollection list || list.Count > 0);
+                value is not null and not UiFit.Letterbox and not UiStretch.None
+                && (value is not System.Collections.ICollection list || list.Count > 0);
     }
 
     public static string ToJson(IEnumerable<UiScreen> screens) => JsonSerializer.Serialize(screens, Json);

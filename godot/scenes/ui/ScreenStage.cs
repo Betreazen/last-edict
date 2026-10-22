@@ -181,17 +181,10 @@ public partial class ScreenStage : Node
         _view.Material = _fit.Filtered ? _area ??= new ShaderMaterial { Shader = new Shader { Code = AreaShader } } : null;
     }
 
-    /// <summary>Размер окна для проверки без окна (<c>--window-size 1280x720</c>): у headless окно 64×64, а раскладку и перевод щелчков
-    /// надо проверить на настоящем размере. Перевод точек от этого не зависит — он весь в <see cref="ToRoot"/>.</summary>
-    private static Vector2? WindowSize()
-    {
-        string[] args = OS.GetCmdlineUserArgs();
-        int at = Array.IndexOf(args, "--window-size");
-        if (at < 0 || at + 1 >= args.Length) return null;
-        string[] wh = args[at + 1].Split('x');
-        return wh.Length == 2 && int.TryParse(wh[0], out int w) && int.TryParse(wh[1], out int h) && w > 0 && h > 0
-            ? new Vector2(w, h) : null;
-    }
+    /// <summary>Размер окна для проверки без окна (<see cref="GameData.HeadlessWindow"/>: <c>--window-size</c>, по умолчанию 1280×720): у headless
+    /// окно 64×64, а раскладку и перевод щелчков надо проверить на настоящем размере. Перевод точек от этого не зависит — он весь в
+    /// <see cref="ToRoot"/>.</summary>
+    private static Vector2? WindowSize() => GameData.HeadlessWindow is { } window ? new Vector2(window.X, window.Y) : null;
 
     /// <summary>Точка буфера → точка корневого вьюпорта.</summary>
     public Transform2D ToRoot => new(0f, new Vector2(_fit.Scale, _fit.Scale), 0f, new Vector2(_fit.X, _fit.Y));

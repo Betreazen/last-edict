@@ -31,6 +31,7 @@ import argparse
 import inspect
 import os
 import json
+import math
 import queue
 import re
 import shutil
@@ -2337,6 +2338,48 @@ UNDER_FOG = re.compile(r"^order aim картинок=(?P<n>\d+) .*под_тум�
 FRAME = re.compile(r"^frame рамка=(?P<outline>\S+) мини_фон=(?P<mini>\S+) цели=(?P<goals>\d+) кругов=(?P<circles>\d+)$", re.MULTILINE)
 
 
+# Формы окна Э5 (Р13): основное 16:9, 16:10 (Steam Deck), 21:9, 4:3 — окно проверки без окна и холст в точках разметки 800×600.
+ASPECTS = [("16:9", "1280x720", 1067), ("16:10", "1280x800", 960), ("21:9", "2560x1080", 1422), ("4:3", "1024x768", 800)]
+FIT_LAYOUT = re.compile(r"^layout холст=(?P<w>\d+)x(?P<h>\d+) карта=(?P<map>\S+) вьюпорт=(?P<viewport>\S+) ресурсы=(?P<res>\S+) "
+                        r"панель=(?P<panel>\S+) .* панели=(?P<views>\S+)$", re.MULTILINE)
+FIT_BATTLE = re.compile(r"^battle fit поле=(?P<mx>\d+),(?P<my>\d+) холст=(?P<w>\d+)x(?P<h>\d+) края=(?P<edges>\d)$", re.MULTILINE)
+FIT_SCREEN = re.compile(r"^fit screen=(?P<id>\S+) политика=(?P<fit>\S+) холст=(?P<w>\d+)x(?P<h>\d+) масштаб=\S+ угол=\S+ паспарту=(?P<border>\S+)$",
+                        re.MULTILINE)
+
+
+def screen_fit(repo: Path) -> tuple[bool, str]:
+    """Вписывание экранов в окно любой формы (Э5, Р13; ui/layout.json, UiLayout): на 16:9, 16:10, 21:9 и 4:3 — карта на холсте формы окна
+    (место карты IMG_MAIN растёт на весь прирост, вьюпорт карты — его размера, панели IMG_RESOURCE и IMG_PALETTE и их экраны — у правого
+    края), бой (поле прироста — по половине с каждой стороны, края — растяжкой фона, на 4:3 — нет), главное меню — по центру в паспарту
+    BORDER_1280 (дыра 800×600 точка в точку). Сценарий карты — Mercantile, бой — бой-образец."""
+    runs = []
+    for _, size, _ in ASPECTS:
+        runs += [(["--scenario", "Mercantile", "--check", "--player", "S135PL0001", "--window-size", size], "res://scenes/map/MapScreen.tscn"),
+                 ([*BATTLE_SAMPLE, "--check", "--window-size", size], BATTLE_SCENE),
+                 (["--screen", "DLG_MAIN_MENU", "--fit", "--window-size", size], "res://scenes/ui/UiScreen.tscn")]
+    outs = godot_all(repo, runs)
+    results = []
+    for i, (name, size, width) in enumerate(ASPECTS):
+        (cm, om), (cb, ob), (cs, os_) = outs[3 * i:3 * i + 3]
+        lay, bat, scr = FIT_LAYOUT.search(om), FIT_BATTLE.search(ob), FIT_SCREEN.search(os_)
+        right = width - 160
+        want_map = (str(width), "600", f"0,0:{right}x600", f"{right}x600", f"{right},0:160x203", f"{right},203:160x397")
+        views = set(lay["views"].split(";")) if lay else set()
+        if (cm != 0 or lay is None
+                or (lay["w"], lay["h"], lay["map"], lay["viewport"], lay["res"], lay["panel"]) != want_map
+                or not {f"DLG_ISO_PAL@{right},0", f"DLG_STRATEGIC@{right},203", "DLG_ISO@0,0", "DLG_ISO_RESPOPUP@0,0"} <= views):
+            return False, f"вписывание {name} ({size}): карта — код {cm}, {lay and lay.group(0)}\n{om.strip()[-2000:]}"
+        vw, vh = (int(v) for v in size.split("x"))
+        margin = max(0, math.ceil((600 * vw / vh - 800) / 2 - 0.01))   # поле боя покрывает холст с запасом в точку
+        if (cb != 0 or bat is None or (int(bat["mx"]), bat["my"], bat["h"]) != (margin, "0", "600")
+                or int(bat["w"]) != 800 + 2 * margin or bat["edges"] != ("1" if margin else "0")):
+            return False, f"вписывание {name} ({size}): бой — код {cb}, {bat and bat.group(0)}\n{ob.strip()[-2000:]}"
+        if cs != 0 or scr is None or (scr["fit"], scr["w"], scr["h"], scr["border"]) != ("Letterbox", "800", "600", "BORDER_1280@-240,-212"):
+            return False, f"вписывание {name} ({size}): меню — код {cs}, {scr and scr.group(0)}\n{os_.strip()[-2000:]}"
+        results.append(f"{name} — карта {right}×600 + панели у края, поле боя ±{margin}")
+    return True, "вписывание экранов: " + "; ".join(results) + "; меню — в паспарту BORDER_1280"
+
+
 def map_frame(repo: Path) -> tuple[bool, str]:
     """Рамка и слои экрана карты (docs/ai-screen.md §11): над картой — рамка края поля ISO_OUTLINE, фон мини-карты чёрный; квадрат
     прицела обычного заклинания (base:spell/ice-spirits, оригинала g000ss0086, слой 895) на клетке под туманом лежит под туманом, туман (g000ss0052, SPLAREAFOG 1590) —
@@ -2595,7 +2638,7 @@ def steps(repo: Path, screens: list[str], window: bool) -> list[tuple[str, Calla
         ("облака", clouds), ("снос гор", mountains), ("попап в ходе ИИ", ai_popup), ("настройки показа", map_settings),
         ("литьё на карте", spell_anim), ("предметы в бою", battle_items), ("гибель отряда", stack_death),
         ("курсоры карты", map_cursors), ("курсор меню", menu_cursors), ("карточки карты", map_cards),
-        ("рамка и слои карты", map_frame), ("палитра карты", map_palette), ("вор у цели", noble), ("выбор навыка лидера", upgrade_leader)]]
+        ("вписывание экранов", screen_fit), ("рамка и слои карты", map_frame), ("палитра карты", map_palette), ("вор у цели", noble), ("выбор навыка лидера", upgrade_leader)]]
     return out
 
 

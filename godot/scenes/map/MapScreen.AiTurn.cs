@@ -168,7 +168,7 @@ public partial class MapScreen
         _waitState = AiWaitState.Empty;
         if (_waitView is null)
         {
-            var palette = Slot(GameData.Content.Screens.First(s => s.Id == View), "IMG_PALETTE");
+            var palette = HostSlot("IMG_PALETTE");
             _wait = new AiWaitLogic(() => _waitState);
             _waitView = new UiScreenView
             {

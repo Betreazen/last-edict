@@ -1,0 +1,33 @@
+{
+  // Политика вписывания экранов в окно другой формы (Э5, Р13; src/Game.UiModel/Ui/UiLayout.cs). Экран без правила — «letterbox»:
+  // разметка 800×600 по центру. «anchors» — холст формы окна: элементы держатся своих краёв (anchor) и растягиваются (stretch: width,
+  // height, both). Ключ элемента — имя или шаблон «префикс*»; «anchor» экрана — якорь прочих элементов. Моды кладут свой
+  // data/ui/layout.json — правила накладываются по полям и элементам.
+
+  // Меню и прочие экраны во всё окно — по центру в паспарту оригинала для больших разрешений (рамка вокруг 800×600, за ней — карта).
+  "*": { "border": "BORDER_1280" },
+
+  // Экран карты: место карты — во всё окно, панели — к правому краю (так делал оригинал на 1024 и 1280).
+  "DLG_ISO_VIEW": {
+    "fit": "anchors",
+    "background": "right",   // рамка края поля ISO_OUTLINE — у панелей
+    "elements": {
+      "IMG_MAIN": { "anchor": "topLeft", "stretch": "both" },
+      "IMG_RESOURCE": { "anchor": "topRight" },
+      "IMG_PALETTE": { "anchor": "bottomRight" }
+    }
+  },
+  // Поверх карты: рамка края поля — на всё место карты, строка чата — у левого нижнего угла.
+  "DLG_ISO": {
+    "fit": "anchors",
+    "elements": {
+      "IMG_ISOAREA": { "anchor": "topLeft", "stretch": "both" },
+      "IMG_SENDER": { "anchor": "bottomLeft" },
+      "TXT_CHAT_AREA": { "anchor": "bottomLeft" }
+    }
+  },
+  // Экран боя: разметка 800×600 по центру, на весь холст — поле боя и фон места с дорисованными краями (BattleView.Edges.cs); паспарту нет.
+  "DLG_BATTLE_A": {},
+  // Полоса ресурсов — в правом верхнем углу места карты, у панелей.
+  "DLG_ISO_RESPOPUP": { "fit": "anchors", "background": "topRight", "anchor": "topRight" }
+}

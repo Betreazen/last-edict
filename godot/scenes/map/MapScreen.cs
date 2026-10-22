@@ -54,8 +54,8 @@ public partial class MapScreen : Node
         {
             var screens = GameData.Content.Screens;
             var view = screens.First(s => s.Id == View);
-            _host = new Vector2(view.Design.Width, view.Design.Height);
-            var main = Slot(view, "IMG_MAIN");
+            LayoutView(view);   // холст формы окна: место карты во всё окно, панели к правому краю (MapScreen.Layout.cs)
+            var main = HostSlot("IMG_MAIN");
             _mapRect = new Rect2(main.X, main.Y, main.Width, main.Height);
 
             LoadSettings(args);   // до панелей и знамён карты: переключатель TOG_BANNERS — из настроек (MapScreen.AiTurn.cs)
@@ -93,7 +93,7 @@ public partial class MapScreen : Node
             BuildMiniMap(screens, looks, viewer);
             foreach (var (screen, slot) in Panels)
             {
-                var r = Slot(view, slot);
+                var r = HostSlot(slot);
                 var added = AddScreen(screen, new Vector2(r.X, r.Y), screen switch
                 {
                     "DLG_STRATEGIC" => _panel,
@@ -109,7 +109,7 @@ public partial class MapScreen : Node
             ApplyResources();   // в начале партии полоса видна (ответ пользователя 11.10); TOG_RESPOPUP её прячет и показывает
             var strategic = screens.First(s => s.Id == "DLG_STRATEGIC");
             var leader = Slot(strategic, "IMG_LEADER");
-            var palette = Slot(view, "IMG_PALETTE");
+            var palette = HostSlot("IMG_PALETTE");
             _faceSlot = new Rect2(palette.X + leader.X, palette.Y + leader.Y, leader.Width, leader.Height);
             if (_panelView is not null)
             {
@@ -390,10 +390,9 @@ public partial class MapScreen : Node
     private void BuildMiniMap(IReadOnlyList<UiScreen> screens, MapLooks looks, string? viewer)
     {
         var palette = screens.FirstOrDefault(s => s.Id == "DLG_ISO_PAL");
-        var host = screens.First(s => s.Id == View);
         if (palette is null) return;
         var window = Slot(palette, "IMG_PALMAP");
-        var at = Slot(host, "IMG_RESOURCE");
+        var at = HostSlot("IMG_RESOURCE");
         _miniRect = new Rect2(at.X + window.X, at.Y + window.Y, window.Width, window.Height);
         _mini = new MiniMapView { Name = "MiniMap" };
         AddChild(_mini);
@@ -411,6 +410,9 @@ public partial class MapScreen : Node
     private UiScreenView AddScreen(string id, Vector2? at, IScreenLogic? logic = null)
     {
         var screen = new UiScreenView { Hosted = id, Name = id, SlotAt = at ?? Vector2.Zero, SlotHost = _host, Logic = logic };
+        // Холст подэкрана (ui/layout.json): DLG_ISO_VIEW — весь экран карты, экраны поверх карты (рамка края поля, полоса ресурсов) — место карты.
+        if (id == View) screen.SlotSize = new Vector2I((int)_host.X, (int)_host.Y);
+        else if (id is "DLG_ISO" or "DLG_ISO_RESPOPUP") screen.SlotSize = new Vector2I((int)_mapRect.Size.X, (int)_mapRect.Size.Y);
         AddChild(screen);
         _screens.Add(screen);
         return screen;
@@ -650,6 +652,7 @@ public partial class MapScreen : Node
     /// <summary>Карта масштабируется так же, как экраны (вписывание 800×600 в окно по центру).</summary>
     private void Place()
     {
+        Relayout();   // окно сменило форму — холст, места и подэкраны заново (MapScreen.Layout.cs)
         var size = GetViewport().GetVisibleRect().Size;
         float k = Mathf.Min(size.X / _host.X, size.Y / _host.Y);
         _mapBox.Position = ((size - (_host * k)) / 2f) + (_mapRect.Position * k);
@@ -665,6 +668,7 @@ public partial class MapScreen : Node
         _mini.Position = ((size - (_host * k)) / 2f) + (_miniRect.Position * k);
         _mini.Scale = new Vector2(k, k);
         _mini.Centre = _map.CentreCell;
+        _mini.ViewSize = _mapRect.Size;   // рамка вида — по месту карты на холсте формы окна
         _mini.Place();
     }
 
@@ -1203,6 +1207,7 @@ public partial class MapScreen : Node
             foreach (var screen in FindChildren("*", "", true, false).OfType<UiScreenView>().Where(s => s.IsVisibleInTree()))
                 foreach (string line in screen.LabelLines()) GD.Print(line);
         var panel = PanelState();
+        GD.Print(LayoutLine());
         GD.Print($"mapscreen map={_map.MapName.Replace(' ', '_')} viewer={_map.Viewer ?? "none"} screens={_screens.Count} " +
                  $"ground_ready={_map.GroundReady} sprites={_map.SpriteCount} minimap={(_mini is null ? 0 : 1)} " +
                  $"лидер={(panel.LeaderName.Length == 0 ? "-" : panel.LeaderName)} ходы={panel.MoveLeft}/{panel.MoveMax} " +

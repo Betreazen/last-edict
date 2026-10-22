@@ -177,7 +177,7 @@ public sealed class GameContent
         }
     }
 
-    /// <summary>Базовый набор с наложенными поверх модами. Наш контент (<c>ui/flow.json</c>, <c>ui/flow.manual.json</c>, <c>ui/defaults.json</c>,
+    /// <summary>Базовый набор с наложенными поверх модами. Наш контент (<c>ui/flow.json</c>, <c>ui/flow.manual.json</c>, <c>ui/defaults.json</c>, <c>ui/layout.json</c>,
     /// <c>ui/transitions.json</c>, <c>ui/fonts.json</c>) — из <paramref name="dataDir"/>; выведенное из игры (<c>ui/screens.json</c>,
     /// <c>ui/assets.json</c>, строки, <c>game</c>, <c>gfx</c>, <c>map</c>, <c>video</c>, <c>scenarios</c>) — из <paramref name="gameDataDir"/>
     /// (импорт из копии игры, <c>docs/publishing.md</c>; не задан — тот же <paramref name="dataDir"/>, как в репозитории разработчика).</summary>
@@ -191,6 +191,7 @@ public sealed class GameContent
         var flow = LoadFlow(Path.Combine(dataDir, "ui", "flow.json")) ?? new UiFlow();
         if (LoadFlow(Path.Combine(dataDir, "ui", "flow.manual.json")) is { } manual) flow = UiFlows.Merge(flow, manual);
         var defaults = LoadDefaults(Path.Combine(dataDir, "ui", "defaults.json")) ?? UiDefaults.Empty;
+        var layout = UiLayouts.Load(Path.Combine(dataDir, "ui", "layout.json")) ?? new Dictionary<string, UiLayoutRule>();
         var catalog = GameCatalog.Load(Path.Combine(gameDir, "game"));
         var transitions = LoadTransitions(Path.Combine(dataDir, "ui", "transitions.json")) ?? UiTransitions.Empty;
         string videosJson = Path.Combine(gameDir, "video", "videos.json");
@@ -208,6 +209,8 @@ public sealed class GameContent
                 if (File.Exists(screensJson)) screens = UiScreens.Merge(screens, UiScreens.Load(screensJson));
                 if (LoadFlow(Path.Combine(mod.Dir, "data", "ui", "flow.json")) is { } modFlow)
                     flow = UiFlows.Merge(flow, modFlow);
+                if (UiLayouts.Load(Path.Combine(mod.Dir, "data", "ui", "layout.json")) is { } modLayout)
+                    layout = UiLayouts.Merge(layout, modLayout);
                 if (LoadDefaults(Path.Combine(mod.Dir, "data", "ui", "defaults.json")) is { } modDefaults)
                     defaults = UiDefaults.Merge(defaults, modDefaults);
                 catalog = GameCatalog.Merge(catalog, GameCatalog.Load(Path.Combine(mod.Dir, "data", "game")));
@@ -231,6 +234,8 @@ public sealed class GameContent
 
         if (catalog.Problems() is { Count: > 0 } problems)
             throw new InvalidDataException($"каталог игры (data/game и моды): {string.Join("; ", problems)}");
+        // Политика вписывания (ui/layout.json) — после всех слоёв: правило базы ложится и на экран, заменённый модом.
+        screens = UiLayouts.Apply(screens, layout);
         return new GameContent(screens, assets, flow, defaults, catalog, transitions, videos, gfx, mapArt, layers, dataDir, gameDir);
     }
 

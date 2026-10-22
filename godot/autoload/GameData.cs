@@ -201,6 +201,20 @@ public partial class GameData : Node
     public static string FromProject(string path) =>
         Path.IsPathRooted(path) ? path : Path.GetFullPath(Path.Combine(ProjectDir, path));
 
+    /// <summary>Окно проверки без окна: <c>--window-size ШxВ</c>, по умолчанию 1280×720; с окном — null.</summary>
+    public static Vector2I? HeadlessWindow
+    {
+        get
+        {
+            if (DisplayServer.GetName() != "headless") return null;
+            string[] args = OS.GetCmdlineUserArgs();
+            int at = Array.IndexOf(args, "--window-size");
+            string[] wh = at >= 0 && at + 1 < args.Length ? args[at + 1].Split('x') : [];
+            return wh.Length == 2 && int.TryParse(wh[0], out int w) && int.TryParse(wh[1], out int h) && w > 0 && h > 0
+                ? new Vector2I(w, h) : new Vector2I(1280, 720);
+        }
+    }
+
     public override void _Ready()
     {
         PortProbe.Attach(this);   // зонд порта — первым: перехват журнала движка до всего остального
@@ -211,6 +225,14 @@ public partial class GameData : Node
         RenderingServer.SetDefaultClearColor(Colors.Black);
         _dataDir = FromRoot("data");
         string[] args = OS.GetCmdlineUserArgs();
+        if (HeadlessWindow is { } window)
+        {
+            // Без окна корень у Godot 64×64 — раскладка экранов по форме окна (ui/layout.json) считалась бы на квадрате. Проверки идут на
+            // окне --window-size (по умолчанию основное 16:9, 1280×720): вьюпорт корня — ровно этого размера.
+            var root = GetTree().Root;
+            root.ContentScaleAspect = Window.ContentScaleAspectEnum.Ignore;
+            root.ContentScaleSize = window;
+        }
         UseGameRoot(ResolveGameRoot(args));
         int at = Array.IndexOf(args, "--mods");
         string[] roots =

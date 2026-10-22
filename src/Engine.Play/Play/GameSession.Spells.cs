@@ -21,7 +21,7 @@ public sealed partial class GameSession
     /// (<paramref name="forces"/>).</summary>
     private void OperationalBefore(string playerId, AiForces forces, List<string> report)
     {
-        var rng = new CountingRng(OperationalRolls ?? Rng);
+        var rng = new CountingRng(OperationalRolls ?? AiRng);
         AiSpells.Heal(this, playerId, forces, rng, report);
         OperationalOrders(playerId, report);
         AiSpells.Harass(this, playerId, forces, rng, report);
@@ -33,7 +33,7 @@ public sealed partial class GameSession
     private void OperationalAfter(string playerId, List<string> report)
     {
         if (_forces is not { } forces || !Same(_forcesOf, playerId) || !OperatesSpells(playerId)) return;
-        AiSpells.Heal(this, playerId, forces, Rng, report);
+        AiSpells.Heal(this, playerId, forces, AiRng, report);
     }
 
     /// <summary>Ведёт ли игрок оперативный слой: не нейтрал и столица не взята (<c>0x46d5b0</c>, <c>0x46d65c</c>).</summary>

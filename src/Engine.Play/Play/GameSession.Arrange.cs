@@ -461,7 +461,7 @@ public sealed partial class GameSession
             return null;
         }
         int rel = Diplomacy.Current(Map.Relations, a, b);
-        bool accept = AiDiplomacy.AnswerAlliance(Rng, rel, AiDiplomacy.PlainLandShare(Map, a, Book!.Economy));
+        bool accept = AiDiplomacy.AnswerAlliance(AiRng, rel, AiDiplomacy.PlainLandShare(Map, a, Book!.Economy));
         SettleAlliance(playerId, targetId, accept, report);
         return accept;
     }

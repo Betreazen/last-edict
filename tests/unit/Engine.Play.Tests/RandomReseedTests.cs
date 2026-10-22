@@ -1,15 +1,16 @@
 using LastEdict.Data.Map;
 using LastEdict.Data.Play;
+using LastEdict.Rules.Rng;
 
 namespace LastEdict.Data.Tests;
 
-/// <summary>Пересев генератора боя из интерфейса (<see cref="RandomReseed"/>, «Random» движка, <c>0x429dc8</c>): меняется только индекс
-/// (<c>seed % 250</c>), таблица — прежняя; у новой партии таблица — исходная. CRT — поток игры: у загрузки новый (<c>srand(1)</c>,
-/// состояние 1), у новой партии (<c>keepCrt</c>) — её шаг <c>0x42af9b</c> сохраняется.</summary>
+/// <summary>Пересев генераторов партии (<see cref="RandomReseed"/>, Э4): зерно задаёт все потоки сразу (<see cref="RandomStreams.FromSeed"/>),
+/// у каждой системы — свой. CRT — поток игры: у загрузки новый (<c>srand(1)</c>, состояние 1), у новой партии (<c>keepCrt</c>) — её шаг
+/// <c>0x42af9b</c> сохраняется.</summary>
 public class RandomReseedTests
 {
     [Fact]
-    public void Reseed_ChangesOnlyIndex()
+    public void Reseed_DerivesEveryStreamFromTheSeed()
     {
         var map = new LastEdict.Rules.Map.MapState
         {
@@ -22,15 +23,31 @@ public class RandomReseedTests
         var fresh = new GameState(new GameInfo("t", "t", [], 1, 1), looks);
 
         var a = fresh.Reseeded(1003);
-        Assert.Equal(1003 % 250, a.Random!.Index);
-        Assert.Equal(new LastEdict.Rules.Rng.EngineRng().TableSnapshot(), a.Random.Table);
+        Assert.Equal(RngStreams.All.Count, a.Random!.Streams.Count);
         Assert.Equal(1u, a.Random.Crt);
+        // То же зерно — те же потоки; у потоков разные таблицы.
+        Assert.Equal(a.Random.Of(RngStream.Ai)!.Table, fresh.Reseeded(1003).Random!.Of(RngStream.Ai)!.Table);
+        Assert.Equal(RngStreams.All.Count, a.Random.Streams.Values.Select(v => string.Join(",", v.Table)).Distinct().Count());
+        Assert.NotEqual(a.Random.Of(RngStream.Battle)!.Table, fresh.Reseeded(1004).Random!.Of(RngStream.Battle)!.Table);
 
-        var saved = a with { Random = a.Random with { Table = [.. a.Random.Table.Select(v => (ushort)(v ^ 1))], Crt = 77 } };
-        var b = saved.Reseeded(7);
-        Assert.Equal(7, b.Random!.Index);
-        Assert.Equal(saved.Random!.Table, b.Random.Table);
-        Assert.Equal(1u, b.Random.Crt);
+        var saved = a with { Random = a.Random with { Crt = 77 } };
+        Assert.Equal(1u, saved.Reseeded(7).Random!.Crt);
         Assert.Equal(77u, saved.Reseeded(7, keepCrt: true).Random!.Crt);
+    }
+
+    /// <summary>Броски одного потока не сдвигают другой: сколько бы ни взял ИИ, бой идёт теми же числами — основа A/B баланса.</summary>
+    [Fact]
+    public void Streams_AreIndependent()
+    {
+        var battle1 = RngStreams.Derive(5, RngStream.Battle);
+        var battle2 = RngStreams.Derive(5, RngStream.Battle);
+        var ai = RngStreams.Derive(5, RngStream.Ai);
+        for (int i = 0; i < 1000; i++) ai.Next(100);
+        Assert.Equal(Enumerable.Range(0, 200).Select(_ => battle1.Next(100)), Enumerable.Range(0, 200).Select(_ => battle2.Next(100)));
+        // Поток годен для бросков: значения покрывают весь диапазон и близки к равномерным.
+        var counts = new int[10];
+        var rng = RngStreams.Derive(5, RngStream.Loot);
+        for (int i = 0; i < 100_000; i++) counts[rng.Next(10)]++;
+        Assert.All(counts, c => Assert.InRange(c, 9_500, 10_500));
     }
 }

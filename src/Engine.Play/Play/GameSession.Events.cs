@@ -67,7 +67,7 @@ public sealed partial class GameSession
         var fired = new List<string>();
         while (true)
         {
-            var firings = ScenarioEvents.Next(State.Events, State.EventProgress, Map, rules, turnPlayer, triggererId, Rng, executed);
+            var firings = ScenarioEvents.Next(State.Events, State.EventProgress, Map, rules, turnPlayer, triggererId, MapRng, executed);
             if (firings.Count == 0) break;
             _stop = false;
             // Результаты эффектов движок создаёт до применения (0x4422e1): клетка триггерера для L_MOVE_BESIDE и L_BATTLE — его

@@ -43,7 +43,7 @@ public class TurnObserverTests(ITestOutputHelper output)
         }
         Assert.Equal(Positions(plain.Map), Positions(watched.Map));
         Assert.Equal(plain.Map.Players.Values.Select(p => p.Bank), watched.Map.Players.Values.Select(p => p.Bank));
-        Assert.Equal(plain.Rng.Index, watched.Rng.Index);
+        Assert.Equal(plain.AiRng.Index, watched.AiRng.Index);
 
         output.WriteLine($"дней {Days}: игроков-ходов {recorder.Turns}, ходов отрядов {recorder.Moves} (клеток {recorder.Cells}), " +
                          $"боёв {recorder.Battles}; без хода: {string.Join(", ", recorder.Sights.Select(p => $"{p.Key} {p.Value}"))}; " +
@@ -105,7 +105,7 @@ public class TurnObserverTests(ITestOutputHelper output)
             Settle();
             Battles++;
             var rules = session.Book!.Rules;
-            var battle = new BattleSession(state, new BattleSim(state, session.Rng, rules.Constants), rules.Constants,
+            var battle = new BattleSession(state, new BattleSim(state, session.BattleRng, rules.Constants), rules.Constants,
                                            attackerIsPlayer: false) { Auto = true };
             battle.Resolve();
             return battle.Log;

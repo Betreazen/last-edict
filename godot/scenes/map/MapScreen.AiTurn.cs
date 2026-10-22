@@ -270,7 +270,7 @@ public partial class MapScreen
         // Как у боя человека (OpenBattle): зеркало из настроек, фон — два rand() CRT при открытии экрана, собственные имена лидеров.
         _battle = new BattleScreen
         {
-            Name = "Battle", Standalone = false, Prepared = state, Rules = session.Book!.Rules, Rng = session.Rng,   // Book проверен в OpenAiBattle
+            Name = "Battle", Standalone = false, Prepared = state, Rules = session.Book!.Rules, Rng = session.BattleRng,   // Book проверен в OpenAiBattle
             PlaceName = MapBattle.PlaceOf(session.Map, state.DefenderGroup), PlayerIsAttacker = false, OwnsAttackerStack = false,
             Flipped = _settings.FlippedBattle, OwnName = session.OwnName, BackgroundVariant = BackgroundDraw(session, state),
             QueueStrip = _settings.QueueStrip,

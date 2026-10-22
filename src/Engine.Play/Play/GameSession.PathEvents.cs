@@ -41,7 +41,7 @@ public sealed partial class GameSession
             var there = With(Map, stacks: stacks);
             var executed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var here = new List<EventFiring>();
-            while (ScenarioEvents.Next(State.Events, State.EventProgress, there, rules, "", stack.Id, Rng, executed) is { Count: > 0 } f)
+            while (ScenarioEvents.Next(State.Events, State.EventProgress, there, rules, "", stack.Id, MapRng, executed) is { Count: > 0 } f)
                 here.AddRange(f.Where(e => Produces(e, placed)));
             if (here.Count == 0) continue;
             // Обрыв: эффекты проверки в ход не уходят (список уничтожается) — срабатывания только для обрыва и показа невидимого.

@@ -488,7 +488,7 @@ public sealed partial class GameSession
     private void AutoBattle(BattleState state)
     {
         var rules = Book!.Rules;
-        var battle = new LastEdict.Data.Battle.BattleSession(state, new BattleSim(state, Rng, rules.Constants), rules.Constants) { Auto = true };
+        var battle = new LastEdict.Data.Battle.BattleSession(state, new BattleSim(state, BattleRng, rules.Constants), rules.Constants) { Auto = true };
         battle.PlayOut();
         FinishBattle(battle.Log);
     }

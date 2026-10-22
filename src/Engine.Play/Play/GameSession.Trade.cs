@@ -22,8 +22,8 @@ public sealed partial class GameSession
     {
         var offer = kind switch
         {
-            AiGiftKind.Item => AiGift.PickItem(Rng, GiftItems(playerId), relation),
-            AiGiftKind.Spell => AiGift.PickSpell(Rng, GiftSpells(playerId, targetId), relation),
+            AiGiftKind.Item => AiGift.PickItem(AiRng, GiftItems(playerId), relation),
+            AiGiftKind.Spell => AiGift.PickSpell(AiRng, GiftSpells(playerId, targetId), relation),
             _ => AiGift.Gold(Diplomacy.AreAllies(Map.Relations, PartyOf(playerId)!.Value, PartyOf(targetId)!.Value),
                              relation, (int)Map.Players[playerId].Bank.Gold),
         };
@@ -96,7 +96,7 @@ public sealed partial class GameSession
         }
         var payer = Map.Players[target];
         bool known = offer.Kind == AiGiftKind.Spell && payer.KnownSpells.Contains(offer.Object, StringComparer.OrdinalIgnoreCase);
-        bool accept = AiDiplomacy.AnswerTrade(Rng, offer.Gold, TradePrice(offer), (int)payer.Bank.Gold, known);
+        bool accept = AiDiplomacy.AnswerTrade(AiRng, offer.Gold, TradePrice(offer), (int)payer.Bank.Gold, known);
         return SettleTrade(proposer, target, offer, accept, report);
     }
 
@@ -151,7 +151,7 @@ public sealed partial class GameSession
                 OfferToHuman(new AllianceOffer(playerId, targetId, Map.Turn, Exchange: true));
             return new(null, null);
         }
-        bool accept = AiDiplomacy.AnswerExchangeMap(Rng);
+        bool accept = AiDiplomacy.AnswerExchangeMap(AiRng);
         SettleExchange(playerId, targetId, accept, report);
         return new(accept, null);
     }

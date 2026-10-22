@@ -21,7 +21,7 @@ public partial class SettingsWindow
         foreach (var group in actions.GroupBy(a => a.Group ?? ""))
         {
             string label = group.First().GroupLabel ?? (group.Key.Length == 0 ? "LE_IN_GROUP_GENERAL" : group.Key);
-            rows.AddChild(new Label { Text = T(label), ThemeTypeVariation = SettingsTheme.Title, Name = $"group_{group.Key}" });
+            rows.AddChild(new Label { Text = T(label), ThemeTypeVariation = SettingsTheme.GroupLabel, Name = $"group_{group.Key}" });
             foreach (var action in group) rows.AddChild(BindingRow(action));
         }
         var reset = Command("LE_SET_BIND_RESET", () =>

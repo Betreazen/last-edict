@@ -41,6 +41,7 @@ public partial class SettingsWindow : Control
         Size = new Vector2(800, 600);
         MouseFilter = MouseFilterEnum.Stop;   // экран под окном щелчков не получает
         Theme = SettingsTheme.Theme;
+        TextureFilter = TextureFilterEnum.Linear;   // рамка и значки темы вписываются с масштабом — сглаживанием, не «ближайшим»
     }
 
     public override void _Ready()
@@ -56,7 +57,9 @@ public partial class SettingsWindow : Control
         column.AddThemeConstantOverride("separation", 6);
         inner.AddChild(column);
         column.AddChild(new Label { Text = T("LE_SET_TITLE"), ThemeTypeVariation = SettingsTheme.Title, HorizontalAlignment = HorizontalAlignment.Center });
-        _tabs = new TabContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
+        column.AddChild(new TextureRect { Texture = SettingsTheme.Divider(), StretchMode = TextureRect.StretchModeEnum.KeepCentered,
+                                          CustomMinimumSize = new Vector2(0, 14) });
+        _tabs = new TabContainer { SizeFlagsVertical = SizeFlags.ExpandFill, TabAlignment = TabBar.AlignmentMode.Center };
         column.AddChild(_tabs);
         foreach (var tab in Enum.GetValues<SettingsTab>()) _tabs.AddChild(Page(tab));
         _tabs.CurrentTab = (int)_logic.Tab;
@@ -66,9 +69,11 @@ public partial class SettingsWindow : Control
             DropCapture();
             Refresh();
         };
+        column.AddChild(new ColorRect { Color = SettingsTheme.Gold with { A = 0.35f }, CustomMinimumSize = new Vector2(0, 1) });
         _help = new Label
         {
             AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(0, 46), VerticalAlignment = VerticalAlignment.Top,
+            ThemeTypeVariation = SettingsTheme.HelpLabel,
         };
         column.AddChild(_help);
         column.AddChild(Footer());
@@ -90,7 +95,8 @@ public partial class SettingsWindow : Control
         var rows = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
         rows.AddThemeConstantOverride("separation", 3);
         scroll.AddChild(rows);
-        foreach (var item in SettingsPages.Of(tab)) rows.AddChild(Row(item));
+        int index = 0;
+        foreach (var item in SettingsPages.Of(tab)) rows.AddChild(Row(item, index++ % 2 == 1));
         if (tab == SettingsTab.Display)
         {
             // Быстрые настройки окна оригинала: «Низкое качество» / «Высокое качество» (MapSettings.Preset).
@@ -103,9 +109,12 @@ public partial class SettingsWindow : Control
         return scroll;
     }
 
-    private Control Row(SettingItem item)
+    private Control Row(SettingItem item, bool alternate = false)
     {
-        var panel = new PanelContainer { Name = item.Id, ThemeTypeVariation = SettingsTheme.RowPanel, CustomMinimumSize = new Vector2(0, 32) };
+        var panel = new PanelContainer
+        {
+            Name = item.Id, ThemeTypeVariation = alternate ? SettingsTheme.RowPanelAlt : SettingsTheme.RowPanel, CustomMinimumSize = new Vector2(0, 34),
+        };
         var line = new HBoxContainer();
         panel.AddChild(line);
         line.AddChild(new Label
@@ -170,9 +179,12 @@ public partial class SettingsWindow : Control
     private Control Choice(SettingItem item)
     {
         var line = new HBoxContainer();
-        var left = Arrow("DLG_OPTIONS_ARROWLEFT2", "‹");
-        var right = Arrow("DLG_OPTIONS_ARROWRIGHT2", "›");
-        var value = new Button { Name = "Value", CustomMinimumSize = new Vector2(190, 26), FocusMode = FocusModeEnum.All, Disabled = !_logic.Enabled(item) };
+        var left = Arrow(right: false);
+        var right = Arrow(right: true);
+        var value = new Button
+        {
+            Name = "Value", CustomMinimumSize = new Vector2(190, 26), FocusMode = FocusModeEnum.All, Disabled = !_logic.Enabled(item), Flat = true,
+        };
         left.Pressed += () => Step(item, -1);
         right.Pressed += () => Step(item, +1);
         value.Pressed += () => Step(item, +1, wrap: true);
@@ -193,17 +205,12 @@ public partial class SettingsWindow : Control
         return line;
     }
 
-    private static Button Arrow(string frame, string fallback)
+    /// <summary>Шеврон выбора: соседний вариант влево или вправо.</summary>
+    private static Button Arrow(bool right) => new()
     {
-        var button = new Button { FocusMode = FocusModeEnum.None, CustomMinimumSize = new Vector2(26, 26) };
-        if (SettingsTheme.Frame($"{frame}_N") is { } normal)
-        {
-            button.Icon = normal;
-            button.Flat = true;
-        }
-        else button.Text = fallback;
-        return button;
-    }
+        FocusMode = FocusModeEnum.None, CustomMinimumSize = new Vector2(26, 26), Flat = true, Icon = SettingsTheme.Chevron(right),
+        IconAlignment = HorizontalAlignment.Center,
+    };
 
     private void Step(SettingItem item, int by, bool wrap = false)
     {
@@ -236,6 +243,7 @@ public partial class SettingsWindow : Control
         footer.AddChild(Command("LE_SET_DEFAULTS", () => { _logic.Defaults(); Refresh(); }));
         footer.AddChild(Command("LE_SET_CANCEL", Close));
         _apply = Command("LE_SET_APPLY", Apply);
+        _apply.ThemeTypeVariation = SettingsTheme.Primary;
         footer.AddChild(_apply);
         return footer;
     }

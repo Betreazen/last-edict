@@ -8,7 +8,7 @@ namespace LastEdict.Godot;
 public static class SideFade
 {
     /// <summary>Серый у края картинки — тон рамок интерфейса.</summary>
-    public static readonly Color Near = new(0.27f, 0.26f, 0.24f);
+    public static readonly Color Near = new(0.16f, 0.155f, 0.145f);   // ответ пользователя 22.10: прежний серый (0,27) — слишком светлый
 
     public static readonly Color Far = Colors.Black;
 

@@ -54,7 +54,7 @@ public sealed class BuildLogic : IWindowLogic
     private const int TreeWidth = 437;
 
     /// <summary>Тон фона дерева (сверху; к низу темнее на четверть).</summary>
-    private const string TreeTone = "7A7874";
+    private const string TreeTone = "4A4844";   // ответ пользователя 22.10: прежний 7A7874 — слишком светлый
 
     /// <summary>Разложенный экран последнего обновления: прямоугольники значков на холсте формы окна (раскладка по якорям сдвигает дерево).</summary>
     private UiScreen? _placed;

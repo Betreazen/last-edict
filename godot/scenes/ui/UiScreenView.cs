@@ -81,6 +81,7 @@ public partial class UiScreenView : Node2D
         if (Load(id, Language, null) is not { } loaded) return;
         if (loaded.Skipped.Count > 0) GD.PrintErr($"{id}: нет кадров: {string.Join(", ", loaded.Skipped)}");
         OpenFailed = !Guarded(() => Logic?.Open(_state), "открытие");
+        AttachOverlay();   // окно на Control поверх экрана своих данных (UiScreenView.Overlay.cs)
         Refresh();
     }
 
@@ -542,11 +543,13 @@ public partial class UiScreenView : Node2D
             _root.Scale = new Vector2(h, h);
             _root.Position = ((view - (SlotHost * h)) / 2f) + ((at + SlotInset()) * h);
             SlotAmbient();
+            PlaceOverlay();
             return;
         }
         var (origin, k) = Letterbox(view, _design);
         _root.Scale = new Vector2(k, k);
         _root.Position = origin;
+        PlaceOverlay();
     }
 
     /// <summary>Место экрана размером <paramref name="design"/> в окне <paramref name="view"/>: масштаб по меньшей стороне и левый

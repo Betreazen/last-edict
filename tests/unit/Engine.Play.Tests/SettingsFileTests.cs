@@ -87,7 +87,7 @@ public sealed class SettingsFileTests : IDisposable
         var laid = SettingsFile.Layout.Select(s => s.Field).Order().ToList();
         Assert.Equal(fields, laid);
         Assert.Equal(SettingsFile.Layout.Count, SettingsFile.Layout.Select(s => (s.Section, s.Key)).Distinct().Count());
-        Assert.Equal(["audio", "battle", "display", "game"], SettingsFile.Layout.Select(s => s.Section).Distinct().Order());
+        Assert.Equal(["audio", "battle", "display", "game", "interface"], SettingsFile.Layout.Select(s => s.Section).Distinct().Order());
         Assert.Contains(SettingsFile.Layout, s => s is { Section: "battle", Key: "queueStrip" });   // место полосы очереди ходов
     }
 
@@ -102,7 +102,7 @@ public sealed class SettingsFileTests : IDisposable
         Assert.Equal(settings, MapSettings.Load(FilePath));
         var written = JsonNode.Parse(File.ReadAllText(FilePath))!.AsObject();
         Assert.Equal(2, (int)written["version"]!);
-        Assert.Equal(["version", "display", "audio", "game", "battle"], written.Select(p => p.Key));
+        Assert.Equal(["version", "display", "audio", "game", "battle", "interface"], written.Select(p => p.Key));
         Assert.Equal(("borderless", false, 144), ((string)written["display"]!["windowMode"]!, (bool)written["display"]!["vsync"]!,
                                                   (int)written["display"]!["maxFps"]!));
         Assert.Equal((40, 0, 127), ((int)written["audio"]!["master"]!, (int)written["audio"]!["ambient"]!, (int)written["audio"]!["fx"]!));

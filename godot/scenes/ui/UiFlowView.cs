@@ -48,6 +48,43 @@ public partial class UiFlowView : Node
     /// <summary>Последний переход — <c>Goto</c>: верхний экран строится заново, даже если имя то же.</summary>
     private bool _replacedTop;
 
+    /// <summary>Каталог своих кампаний меню (каталог меню на другом языке собирается заново, <see cref="SettingsApplied"/>).</summary>
+    private string _campaignsDir = "";
+
+    /// <summary>Экраны меню строятся заново целиком (сменился язык строк).</summary>
+    private bool _rebuildAll;
+
+    /// <summary>«Применить» окна настроек меню (<see cref="LastEdict.Data.Settings.SettingsLogic"/>): звук, файл настроек (весь — окно держит все
+    /// поля), язык — строки и каталог меню заново, экраны меню строятся заново на новом языке. <c>--lang</c> главнее выбора окна.</summary>
+    private Action<LastEdict.Data.Map.MapSettings> SettingsApplied(string[] args) => settings =>
+    {
+        GameAudio.Of(this).Apply(settings);
+        if (SettingsPath(args) is { } path)
+        {
+            try
+            {
+                settings.Save(path);
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                GD.PrintErr($"UiFlowView: настройки не записаны ({path}): {e.Message}");
+            }
+        }
+        GameData.UseLanguage(Array.IndexOf(args, "--lang") >= 0 ? GameData.LanguageOf(args) : settings.Language);
+        GD.Print($"settings применено язык={GameData.Language}");
+        if (GameData.Language == _language || _menu is null) return;
+        _language = GameData.Language;
+        var content = GameData.Content;
+        var catalog = content.CatalogIn(_language);
+        _menu = _menu with
+        {
+            Catalog = catalog with { Campaigns = [.. catalog.Campaigns, .. CampaignStore.List(_campaignsDir)] }, Strings = GameData.Strings(_language),
+        };
+        _menu.Settings = settings;
+        _rebuildAll = true;
+        Callable.From(Sync).CallDeferred();
+    };
+
     /// <summary>Сколько узлов экранов построено за прогон — по нему видно, что экран пересоздан.</summary>
     private int _built;
 
@@ -125,13 +162,15 @@ public partial class UiFlowView : Node
             _menu = new MenuContext(content.CatalogIn(_language), GameData.Strings(_language), new NewGameSetup(),
                                     SystemName()) { SavesDir = SavesDir(args), Screens = content.Screens, LeadersDir = LeadersDir(args),
                                         Book = GameData.Book, ItemTexts = StackTexts.Load(GameData.Rules),
-                                        Rules = RulesTexts.Load(GameData.Rules), SettingsChanged = SettingsChanged(args) };
+                                        Rules = RulesTexts.Load(GameData.Rules), SettingsChanged = SettingsChanged(args),
+                                        SettingsPreview = settings => GameAudio.Of(this).Apply(settings, preview: true),
+                                        SettingsApplied = SettingsApplied(args) };
             if (SettingsPath(args) is { } settings) _menu.Settings = LastEdict.Data.Map.MapSettings.Load(settings);
             // Герои игры (Exports\*.ldr) — в каталог героев порта один раз; дальше меню читает только его (docs/day-cycle.md §12).
             int imported = LastEdict.Data.Leaders.LeaderStore.Import(Arg(args, "--ldr") ?? LastEdict.Data.GamePaths.Exports, _menu.LeadersDir);
             if (imported > 0) GD.Print($"leaders imported={imported}");
             // Свои кампании игры (Campaign\*.csg) — в каталог кампаний порта один раз, в каталог меню — вместе с сагами (§15).
-            string campaigns = CampaignsDir(args);
+            string campaigns = _campaignsDir = CampaignsDir(args);
             int camps = CampaignStore.Import(Arg(args, "--csg") ?? Path.Combine(LastEdict.Data.GamePaths.GameDir, "Campaign"), campaigns,
                                              content.Catalog.Races);
             if (camps > 0) GD.Print($"campaigns imported={camps}");
@@ -198,12 +237,14 @@ public partial class UiFlowView : Node
         }
         foreach (int gone in _windows.Keys.Where(k => k >= _nav.Stack.Count).ToList()) _windows.Remove(gone);
         int keep = 0;
-        while (keep < _views.Count && keep < _nav.Stack.Count && _views[keep].Hosted == _nav.Stack[keep]
+        // Сменился язык (_rebuildAll) — ни одного экрана не оставить: все строятся заново на новом языке.
+        while (!_rebuildAll && keep < _views.Count && keep < _nav.Stack.Count && _views[keep].Hosted == _nav.Stack[keep]
                && (!_windows.TryGetValue(keep, out var kept) || ReferenceEquals(_views[keep].Logic, kept))) keep++;
         // Goto заменяет верхний экран, даже если цель — он же («ОК» в окне предмета ведёт в новое окно предмета):
         // экран строится заново, с начальным состоянием, а не остаётся со старым выбором.
         if (_replacedTop) keep = Math.Max(0, Math.Min(keep, _nav.Stack.Count - 1));
         _replacedTop = false;
+        _rebuildAll = false;
         _stale = false;
         for (int i = _views.Count - 1; i >= keep; i--)
         {
@@ -612,6 +653,7 @@ public partial class UiFlowView : Node
                      $"events={List(_events.Select(UiScreenView.Describe))} go={go} stack={stack} phase={_nav.Phase} " +
                      $"quit={(_nav.Quit ? 1 : 0)} built={_built} video={video} vrect={place} cursor={_cursor.Current ?? "-"}");
             if (!_nav.Quit && _game is null) foreach (string id in _probe) Probe(id);
+            if (_views.Count > 0 && _views[^1].OverlayLine() is { } overlay) GD.Print($"flow {overlay}");   // окно настроек Last Edict
         }
         return true;
     }

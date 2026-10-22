@@ -56,7 +56,7 @@
   <ItemGroup>
     <None Include="golden/**" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../../../corpus/sample/**" Link="corpus/sample/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="../../../data/ui/**" Link="data/ui/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../../data/ui/**" Link="data/ui/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../../../data/video/**" Link="data/video/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../../../data/game/**" Link="data/game/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../../../data/gfx/**" Link="data/gfx/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />

@@ -168,6 +168,15 @@ public partial class ScreenStage : Node
         if (Current == this) Current = null;
     }
 
+    /// <summary>Сменить режим вписывания на ходу (окно настроек, «Применить»): растяжение корня и раскладка показа заново.</summary>
+    public void SetMode(ScreenScaling mode)
+    {
+        if (mode == Mode) return;
+        Mode = mode;
+        GetTree().Root.ContentScaleMode = mode == ScreenScaling.Nearest ? Window.ContentScaleModeEnum.CanvasItems : Window.ContentScaleModeEnum.Disabled;
+        Refit();
+    }
+
     /// <summary>Раскладка по размеру корневого вьюпорта: размер буфера, масштаб, угол и фильтр картинки показа.</summary>
     private void Refit()
     {

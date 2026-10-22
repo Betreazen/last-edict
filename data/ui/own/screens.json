@@ -1,0 +1,12 @@
+[
+  {
+    "Id": "LE_SETTINGS",
+    "Design": {
+      "X": 0,
+      "Y": 0,
+      "Width": 800,
+      "Height": 600
+    },
+    "Cursor": "_CUDEFAUL"
+  }
+]

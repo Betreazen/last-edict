@@ -93,7 +93,8 @@ public sealed class GameContent
         lock (_stringsLock)
         {
             if (_strings.TryGetValue(language, out var cached)) return cached;
-            var dirs = new List<string> { Path.Combine(_gameDir, "ui") };
+            // Строки игры (импорт), затем свои строки Last Edict (data/ui/own: окно настроек и прочее новое, ключи LE_*), затем моды.
+            var dirs = new List<string> { Path.Combine(_gameDir, "ui"), Path.Combine(_dataDir, "ui", "own") };
             dirs.AddRange(Mods.Select(m => Path.Combine(m.Dir, "data", "ui")));
             IReadOnlyDictionary<string, string> loaded;
             try
@@ -187,6 +188,9 @@ public sealed class GameContent
         ArgumentException.ThrowIfNullOrEmpty(dataDir);
         string gameDir = string.IsNullOrEmpty(gameDataDir) ? dataDir : gameDataDir;
         var screens = UiScreens.Load(Path.Combine(gameDir, "ui", "screens.json"));
+        // Свои экраны Last Edict (data/ui/own/screens.json: окно настроек и прочее новое) — поверх импорта, под модами.
+        string ownScreens = Path.Combine(dataDir, "ui", "own", "screens.json");
+        if (File.Exists(ownScreens)) screens = UiScreens.Merge(screens, UiScreens.Load(ownScreens));
         var assets = UiAssets.Load(Path.Combine(gameDir, "ui", "assets.json"));
         var flow = LoadFlow(Path.Combine(dataDir, "ui", "flow.json")) ?? new UiFlow();
         if (LoadFlow(Path.Combine(dataDir, "ui", "flow.manual.json")) is { } manual) flow = UiFlows.Merge(flow, manual);

@@ -2,7 +2,8 @@
   "Sources": [
     "пользователь, 19.09.2026: «Назад» с выбора лорда и из одиночной игры — в главное меню",
     "пользователь, 19.09.2026 (срез экранов): двойной щелчок по сценарию в списке начинает игру — как «Продолжить»",
-    "корпус 20260919-f7b, seq 58799 (журнала нет в источниках графа): «Назад» (BTN_CLOSE, Esc) окна загрузки в партии закрывает его — сверху снова настройки; пометка 4 прогона 14.10"
+    "корпус 20260919-f7b, seq 58799 (журнала нет в источниках графа): «Назад» (BTN_CLOSE, Esc) окна загрузки в партии закрывает его — сверху снова настройки; пометка 4 прогона 14.10",
+    "Last Edict, Э5 (22.10.2026): окно настроек LE_SETTINGS (своё, на Control) вместо DLG_OPTIONS оригинала — в меню и в партии; кнопки партии и «Закрыть» — те же переходы"
   ],
   "Screens": [
     {
@@ -44,6 +45,55 @@
           "Action": "Goto",
           "Target": "DLG_CHOOSE_RACE",
           "Via": "DLG_MENU_TRANS"
+        }
+      ]
+    },
+    {
+      "Id": "DLG_MAIN_MENU",
+      "Edges": [
+        {
+          "Element": "BTN_OPTIONS",
+          "Action": "Open",
+          "Target": "LE_SETTINGS"
+        }
+      ]
+    },
+    {
+      "Id": "DLG_ISO_PAL",
+      "Edges": [
+        {
+          "Element": "BTN_OPTIONS",
+          "Action": "Open",
+          "Target": "LE_SETTINGS"
+        }
+      ]
+    },
+    {
+      "Id": "LE_SETTINGS",
+      "Phases": [
+        "Menu",
+        "Game"
+      ],
+      "Edges": [
+        {
+          "Element": "BTN_CLOSE",
+          "Action": "Close"
+        },
+        {
+          "Element": "BTN_LOAD",
+          "Action": "Open",
+          "Target": "DLG_LOAD_GAME"
+        },
+        {
+          "Element": "BTN_QUIT",
+          "Action": "Open",
+          "Target": "DLG_MESSAGE_BOX",
+          "Message": "X005TA0089"
+        },
+        {
+          "Element": "BTN_SAVE",
+          "Action": "Open",
+          "Target": "DLG_SAVE_GAME"
         }
       ]
     }

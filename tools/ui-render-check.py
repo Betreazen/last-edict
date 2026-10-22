@@ -171,8 +171,8 @@ FLOW_CASES = [
     ("назад и окно поверх", None, [
         ("click BTN_SINGLE", "DLG_SINGLE_PLAYER"),
         ("click BTN_BACK", "DLG_MAIN_MENU"),
-        ("click BTN_OPTIONS", "DLG_MAIN_MENU>DLG_OPTIONS"),
-        ("click 637,34", "DLG_MAIN_MENU>DLG_OPTIONS"),  # кнопка главного меню под окном — ввод не доходит
+        ("click BTN_OPTIONS", "DLG_MAIN_MENU>LE_SETTINGS"),   # окно настроек Last Edict (Э5) на месте DLG_OPTIONS
+        ("click 637,34", "DLG_MAIN_MENU>LE_SETTINGS"),  # кнопка главного меню под окном — ввод не доходит
         ("key 27", "DLG_MAIN_MENU"),
         ("click BTN_QUIT", "-"),
     ]),
@@ -951,8 +951,8 @@ def city_cases(repo: Path) -> list[tuple[Path, str, list[tuple[str, list[str]]]]
         (s21, STAND_PLAYER, [
             (f"select {hero.id}", [f"выделен={hero.id}"]),
             ("wcursor", ["окна=0 ", "чей=карта"]),
-            ("ui click BTN_OPTIONS", ["окна=DLG_OPTIONS"]),
-            ("wcursor", ["верх=DLG_OPTIONS ", "курсор=ui:_CUDEFAUL ", "кадров=1 ", "точка=0,0 ", "чей=окно"]),
+            ("ui click BTN_OPTIONS", ["окна=LE_SETTINGS"]),
+            ("wcursor", ["верх=LE_SETTINGS ", "курсор=ui:_CUDEFAUL ", "кадров=1 ", "точка=0,0 ", "чей=окно"]),
             ("ui click BTN_CLOSE", ["окна=-"]),
             ("wcursor", ["окна=0 ", "чей=карта"]),
             ("panel release IMG_LEADER", ["окна=DLG_MANAGE_STACK "]),
@@ -1004,10 +1004,12 @@ def city_cases(repo: Path) -> list[tuple[Path, str, list[tuple[str, list[str]]]]
             ("ui click BTN_OK", ["окна=DLG_ITEM ", "первое=0"]),
             ("ui click BTN_OK", ["окна=-"]),
         ]),
-        # Итоги хода: флажок «Всегда показывать результаты хода» в окне настроек держится.
+        # Окно настроек Last Edict (Э5): вкладка, выбор (черновик), «Применить» — сохранено, «Закрыть». Итоги хода — флажок вкладки «Игра».
         (s21, STAND_PLAYER, [
-            ("ui click BTN_OPTIONS", ["окна=DLG_OPTIONS"]),
-            ("ui click TOG_SHOWTURNSUMMARY", ["ok=1", "окна=DLG_OPTIONS"]),
+            ("ui click BTN_OPTIONS", ["окна=LE_SETTINGS", "settings вкладка=Display изменено=0"]),
+            ("ui tab Game", ["вкладка=Game"]),
+            ("ui set turnSummary 1", ["изменено=1", "применить=1"]),
+            ("ui apply", ["изменено=0", "применить=0", "показ_подтверждения=0"]),
             ("ui click BTN_CLOSE", ["окна=-"]),
         ]),
     ]
@@ -1107,7 +1109,7 @@ def autosave(repo: Path) -> tuple[bool, str]:
     games = list(GAME.finditer(out))
     back = [l for l in out.splitlines() if l.startswith(("ui key_27 ", "ui click_BTN_CLOSE "))]
     if (code != 0 or len(files) != 1 or not files[0].endswith(" T0001.d2save") or "autosave " not in out
-            or len(back) != 2 or any(" on=DLG_LOAD_GAME " not in l or " окна=DLG_OPTIONS" not in l + " " for l in back)
+            or len(back) != 2 or any(" on=DLG_LOAD_GAME " not in l or " окна=LE_SETTINGS" not in l + " " for l in back)
             or len(games) != 2 or games[1]["from"] != "save" or games[1]["day"] != "1"):
         return False, f"автосохранение: код {code}, файлы {files}\n" + "\n".join(back) + f"\n{out.strip()}"
     ok, archives = autosave_archives(repo, saves, files[0][:-len(" T0001.d2save")], steps)
@@ -1973,8 +1975,8 @@ def highlight(repo: Path) -> tuple[bool, str]:
     if settings.exists():
         settings.unlink()
     code, out = godot(repo, ["--check", "--scenario", "Tutorial", "--settings", str(settings), "--clicks",
-                             "highlight 10,10;highlight 11,10;order highlight;ui click BTN_OPTIONS;ui click TOG_ISOHIGHLIGHT;"
-                             "ui click BTN_CLOSE;highlight 12,10"], "res://scenes/map/MapScreen.tscn")
+                             "highlight 10,10;highlight 11,10;order highlight;ui click BTN_OPTIONS;ui set cellHighlight 0;"
+                             "ui apply;ui click BTN_CLOSE;highlight 12,10"], "res://scenes/map/MapScreen.tscn")
     rows = [m.groupdict() for m in HIGHLIGHT.finditer(out)]
     order = re.search(r"^order highlight картинок=1 ", out, re.MULTILINE)
     if (code != 0 or len(rows) != 3 or order is None or rows[0]["shown"] != "10,10" or rows[1]["shown"] != "11,10"
@@ -1989,7 +1991,7 @@ def clouds(repo: Path) -> tuple[bool, str]:
     """Облака над картой (CMapClouds 0x5bd6d3, docs/ai-screen.md): на карте 48×48 — ⌊(48/48)²·10⌋ = 10 облаков в общем порядке отрисовки,
     за полсекунды сдвигаются вправо; TOG_ISOCLOUDS (IsoBirds) убирает их."""
     code, out = godot(repo, ["--check", "--scenario", "Mercantile", "--clicks",
-                             "clouds;ui click BTN_OPTIONS;ui click TOG_ISOCLOUDS;ui click BTN_CLOSE;clouds"], "res://scenes/map/MapScreen.tscn")
+                             "clouds;ui click BTN_OPTIONS;ui set clouds 0;ui apply;ui click BTN_CLOSE;clouds"], "res://scenes/map/MapScreen.tscn")
     rows = re.findall(r"^clouds облаков=(\d+) в_порядке=(\d+)/\d+ сдвиг=(-?\d+) настройка=(\d)$", out, re.MULTILINE)
     if code != 0 or len(rows) != 2 or rows[0][:2] != ("10", "10") or int(rows[0][2]) <= 0 or rows[1][0] != "0" or rows[1][3] != "0":
         return False, f"облака: код {code}\n{out.strip()}"
@@ -2019,10 +2021,48 @@ def ai_popup(repo: Path) -> tuple[bool, str]:
     return True, "попап в ходе ИИ: S095EV0000 — окно на рабочем потоке, до смены владельца S095KC0022 и конца хода"
 
 
+SETTINGS_LINE = re.compile(r"^flow settings вкладка=(?P<tab>\S+) изменено=(?P<changed>\d) экран=(?P<display>\d) подтверждение=(?P<left>\S+) "
+                           r"окно=(?P<mode>\S+) .* язык=(?P<lang>\S+) сохранено_окно=(?P<saved>\S+) показ_подтверждения=(?P<shown>\d) "
+                           r"применить=(?P<apply>\d)$", re.MULTILINE)
+
+
+def settings_window(repo: Path) -> tuple[bool, str]:
+    """Окно настроек Last Edict (Э5, roadmap §3.3) из главного меню: экран LE_SETTINGS на месте DLG_OPTIONS в графе, окно на Control.
+    Режим экрана ждёт «Применить» и подтверждения: не ответили 15 с — откат к прежнему; «Оставить» — сохранено. Язык — из меню: «Применить»
+    строит экраны меню заново на новом языке. Esc — «Закрыть» (событие графу)."""
+    script = ("click BTN_OPTIONS; set windowMode 2; apply; wait 14000; wait 1000; set windowMode 1; apply; keep; tab Language; "
+              "set language 2; apply; key 27")
+    code, out = godot(repo, ["--input", script], "res://scenes/ui/UiFlow.tscn")
+    rows = list(SETTINGS_LINE.finditer(out))
+    steps = re.findall(r"^flow step=\d+ .* stack=(\S+) .* built=(\d+) ", out, re.M)
+    want = [  # после каждого шага сценария, кроме последнего (Esc закрыл окно)
+        ("Display", "0", "-", "windowed", "windowed", "0"),
+        ("Display", "1", "-", "fullscreen", "windowed", "0"),      # выбран полный экран — ещё не применён
+        ("Display", "1", "15", "fullscreen", "windowed", "1"),     # «Применить» — подтверждение 15 с
+        ("Display", "1", "1", "fullscreen", "windowed", "1"),      # 14 с — осталась секунда
+        ("Display", "0", "-", "windowed", "windowed", "0"),        # время вышло — откат
+        ("Display", "1", "-", "borderless", "windowed", "0"),
+        ("Display", "1", "15", "borderless", "windowed", "1"),
+        ("Display", "0", "-", "borderless", "borderless", "0"),    # «Оставить»
+        ("Language", "0", "-", "borderless", "borderless", "0"),
+        ("Language", "0", "-", "borderless", "borderless", "0"),
+        ("Display", "0", "-", "borderless", "borderless", "0"),    # язык применён — экраны заново (вкладка с начала)
+    ]
+    got = [(r["tab"], r["changed"] if r["tab"] != "Language" else "0", r["left"], r["mode"], r["saved"], r["shown"]) for r in rows]
+    langs = [r["lang"] for r in rows]
+    if (code != 0 or got != want or langs[-1] != "en" or "settings применено язык=en" not in out or len(steps) != 12
+            or steps[-1][0] != "DLG_MAIN_MENU" or int(steps[10][1]) <= int(steps[9][1])):
+        return False, f"окно настроек: код {code}, строки {got}, языки {langs}, шаги {steps}\n{out.strip()[-3000:]}"
+    return True, ("окно настроек: из меню — режим экрана по «Применить» с подтверждением, через 15 с без ответа — откат, «Оставить» — "
+                  "сохранено; язык en — экраны меню заново; Esc закрыл")
+
+
 def map_settings(repo: Path) -> tuple[bool, str]:
-    """Настройки показа карты в окне DLG_OPTIONS (docs/ai-screen.md): «скорость движения противника» на шаг вверх и показ ходов ИИ
-    выключен — файл настроек (--settings) записан, и на конце хода все показанные ходы ИИ — прыжком в конечную клетку. День 21 партии
-    стенда. Нет импорта — пропуск."""
+    """Настройки в окне настроек Last Edict на карте (Э5; docs/ai-screen.md): «скорость движения противника» на шаг вверх и показ ходов ИИ
+    выключен, «Применить» — файл настроек (--settings) записан, и на конце хода все показанные ходы ИИ — прыжком в конечную клетку. Затем —
+    между запусками (пометка 5 прогона 14.10, «не сохраняются настройки»): запуск 1 меняет автосохранение, прокрутку, плавность за отрядом и
+    фоны мест и применяет; запуск 2 с тем же файлом читает их (окно открыто без изменений), «Низкое качество» оригинала (MapSettings.Preset) и
+    «Применить» — фоны 0, за отрядом и между действиями нет, слабая видеокарта. «Отмена» не пишет. День 21 партии стенда. Нет импорта — пропуск."""
     save, _, why = stand(repo, 21)
     if save is None:
         return True, f"настройки показа: пропуск — {why}"
@@ -2030,37 +2070,33 @@ def map_settings(repo: Path) -> tuple[bool, str]:
     if settings.exists():
         settings.unlink()
     code, out = godot(repo, ["--state", str(save), "--check", "--player", STAND_PLAYER, "--settings", str(settings), "--clicks",
-                             "ui click BTN_OPTIONS;ui click BTN_OPPONENT_RIGHT;ui click TOG_PLAYAIISOANIM;ui click BTN_CLOSE;end"],
+                             "ui click BTN_OPTIONS;ui tab Game;ui set opponentSpeed 2;ui set showAiMoves 0;ui apply;ui click BTN_CLOSE;end"],
                       "res://scenes/map/MapScreen.tscn")
     moves = re.findall(r"^aimove .* прыжок=(\d)$", out, re.MULTILINE)
     saved = settings_file(settings)
-    if (code != 0 or "settings скорость=1 противник=2 ходы_ИИ=0" not in out or not moves or set(moves) != {"1"}
+    if (code != 0 or "settings применено противник=2 ходы_ИИ=0" not in out or not moves or set(moves) != {"1"}
             or saved.get("version") != 2 or saved.get("game.opponentSpeed") != 2 or saved.get("game.showAiMoves") is not False):
         return False, f"настройки показа: код {code}, файл {saved}\n{out.strip()}"
-    # Пометка 5 прогона 14.10 («не сохраняются настройки»: окно не читало и не писало флажки и счётчики сверх показа карты). Запуск 1: из
-    # умолчаний (ini) — автосохранение 1 → 0, прокрутка 0 → 50 мс, плавно за отрядом 1 → 0, фоны мест 3 → 2. Запуск 2 с тем же файлом:
-    # автосохранение 0 → 1, прокрутка 50 → 0, за отрядом 0 → 1 (без чтения файла было бы снова 0, 50, 0), затем «Для слабых систем» и «Да» —
-    # фоны 0, за отрядом 0, между действиями 0, слабая видеокарта 1.
     runs = [
-        ("ui click TOG_AUTOSAVE;ui click BTN_SCROLL_LEFT;ui click TOG_STACKSMOOTHSCROLL;ui click BTN_AUDIRGN_LEFT",
-         "автосохранение=0 прокрутка=50 за_отрядом=0 между_действиями=1 фоны=2 голоса=66 слабая=0",
+        ("ui set autoSave 0;ui set scrollSpeed 50;ui set stackSmoothScroll 0;ui set ambientSources 2;ui apply",
          {"game.autoSave": False, "game.scrollSpeed": 50, "game.stackSmoothScroll": False, "audio.ambientSources": 2,
           "display.lowEndVideoCard": False}),
-        ("ui click TOG_AUTOSAVE;ui click BTN_SCROLL_RIGHT;ui click TOG_STACKSMOOTHSCROLL;ui click BTN_LOWEND;ui click BTN_YES",
-         "автосохранение=1 прокрутка=0 за_отрядом=0 между_действиями=0 фоны=0 голоса=66 слабая=1",
-         {"game.autoSave": True, "game.scrollSpeed": 0, "game.stackSmoothScroll": False, "audio.ambientSources": 0,
+        ("ui preset low;ui apply",
+         {"game.autoSave": False, "game.scrollSpeed": 50, "game.stackSmoothScroll": False, "audio.ambientSources": 0,
           "display.lowEndVideoCard": True, "game.smoothScroll": False}),
+        ("ui set autoSave 1;ui cancel",   # «Отмена» — в файл не идёт
+         {"game.autoSave": False}),
     ]
-    for clicks, line, fields in runs:
+    for clicks, fields in runs:
         code, out = godot(repo, ["--state", str(save), "--check", "--player", STAND_PLAYER, "--settings", str(settings), "--clicks",
                                  f"ui click BTN_OPTIONS;{clicks};ui click BTN_CLOSE"], "res://scenes/map/MapScreen.tscn")
         saved = settings_file(settings)
-        last = ([l for l in out.splitlines() if l.startswith("settings ")] or ["-"])[-1]
-        if (code != 0 or not last.endswith(line) or any(saved.get(k) != v for k, v in fields.items())
+        opened = re.search(r"^ui click_BTN_OPTIONS .* settings вкладка=\S+ изменено=(\d)", out, re.M)
+        if (code != 0 or opened is None or opened[1] != "0" or any(saved.get(k) != v for k, v in fields.items())
                 or saved.get("game.opponentSpeed") != 2):
-            return False, f"настройки показа: окно настроек — код {code}, ждали «{line}», последняя «{last}», файл {saved}\n{out.strip()}"
-    return True, (f"настройки показа: противник 2, ходы ИИ выключены — {len(moves)} ходов прыжком, файл записан; "
-                  "автосохранение, прокрутка, плавность за отрядом и фоны мест — между запусками, «Для слабых систем» после «Да»")
+            return False, f"настройки показа: окно настроек — код {code}, «{clicks}», файл {saved}\n{out.strip()[-3000:]}"
+    return True, (f"настройки показа: противник 2, ходы ИИ выключены — {len(moves)} ходов прыжком, файл записан по «Применить»; "
+                  "автосохранение, прокрутка, плавность за отрядом и фоны мест — между запусками, «Низкое качество», «Отмена» не пишет")
 
 
 SPELL = re.compile(r"^spell (?P<spell>\S+) в=\((?P<x>\d+),(?P<y>\d+)\) картинок=(?P<parts>\d+) кадров=(?P<frames>\d+) звук=(?P<sound>[\d.,]+)$", re.MULTILINE)
@@ -2635,7 +2671,7 @@ def steps(repo: Path, screens: list[str], window: bool) -> list[tuple[str, Calla
         ("импорт героя", leader_import), ("горячий стул", hotseat), ("гонец", courier), ("окна города", city_windows),
         ("ход и туман по шагам, мешок", walk_steps), ("ход ИИ", ai_turn), ("плавная прокрутка", smooth_scroll),
         ("смена тумана", fog_change), ("звук", sound), ("начало боя", battle_opening), ("подсветка клетки", highlight),
-        ("облака", clouds), ("снос гор", mountains), ("попап в ходе ИИ", ai_popup), ("настройки показа", map_settings),
+        ("облака", clouds), ("снос гор", mountains), ("попап в ходе ИИ", ai_popup), ("настройки показа", map_settings), ("окно настроек", settings_window),
         ("литьё на карте", spell_anim), ("предметы в бою", battle_items), ("гибель отряда", stack_death),
         ("курсоры карты", map_cursors), ("курсор меню", menu_cursors), ("карточки карты", map_cards),
         ("вписывание экранов", screen_fit), ("рамка и слои карты", map_frame), ("палитра карты", map_palette), ("вор у цели", noble), ("выбор навыка лидера", upgrade_leader)]]

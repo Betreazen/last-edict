@@ -149,8 +149,10 @@ public class GameContentTests(ITestOutputHelper output)
     public void BaseContent_StringsAndFonts_MatchFiles()
     {
         var content = GameContent.Load(ImportedData.ContentDir());
-        var direct = UiStrings.Load(ImportedData.StringsDir(), "ru");
+        // Строки импорта и поверх — свой слой Last Edict (data/ui/own: ключи LE_*, окно настроек).
+        var direct = UiStrings.LoadLayers([ImportedData.StringsDir(), Path.Combine(AppContext.BaseDirectory, "data", "ui", "own")], "ru");
         Assert.Equal(direct.OrderBy(p => p.Key, StringComparer.Ordinal), content.Strings("ru").OrderBy(p => p.Key, StringComparer.Ordinal));
+        Assert.Contains(content.Strings("ru"), p => p.Key.StartsWith("LE_", StringComparison.Ordinal));
         var fonts = UiFonts.Load(Path.Combine(Data, "ui", "fonts.json"));
         Assert.Equal(fonts.Faces.OrderBy(p => p.Key, StringComparer.Ordinal), content.Fonts.Faces.OrderBy(p => p.Key, StringComparer.Ordinal));
         Assert.Equal(fonts.Default, content.Fonts.Default);

@@ -11,7 +11,8 @@ namespace LastEdict.Data.Map;
 ///   "display": { "windowMode": "windowed", "vsync": true, "maxFps": 0, "scaling": "sharp", "animatedMap": true, … },
 ///   "audio":   { "master": 100, "music": 80, "fx": 83, "voice": 66, "ambient": 100, "ambientSources": 3 },
 ///   "game":    { "playerSpeed": 1, "opponentSpeed": 1, "showAiMoves": true, "autoSave": true, … },
-///   "battle":  { "speed": 2, "animation": true, "flipped": false, "queueStrip": true } }
+///   "battle":  { "speed": 2, "animation": true, "flipped": false, "queueStrip": true },
+///   "interface": { "language": "ru" } }
 /// </code>
 /// Разделы — будущие вкладки окна настроек (<c>docs/own-version-roadmap.md</c> §3.3): «Экран» (<c>display</c>: окно, кадры, вписывание
 /// и графика карты), «Звук» (<c>audio</c>: громкости шин 0…127 у музыки и звуков, как <c>Disciple.ini</c>, голоса 0…100, общая и фоны мест
@@ -31,7 +32,7 @@ public static class SettingsFile
     /// <summary>Версия схемы, которой файл пишется.</summary>
     public const int Version = 2;
 
-    public const string VersionKey = "version", Display = "display", Audio = "audio", Game = "game", Battle = "battle";
+    public const string VersionKey = "version", Display = "display", Audio = "audio", Game = "game", Battle = "battle", Interface = "interface";
 
     /// <summary>Место поля в файле: раздел, ключ в разделе и поле <see cref="MapSettings"/> (имя ключа схемы 1).</summary>
     public sealed record Slot(string Section, string Key, string Field);
@@ -72,6 +73,7 @@ public static class SettingsFile
         new(Battle, "animation", nameof(MapSettings.BattleAnim)),
         new(Battle, "flipped", nameof(MapSettings.FlippedBattle)),
         new(Battle, "queueStrip", nameof(MapSettings.QueueStrip)),
+        new(Interface, "language", nameof(MapSettings.Language)),
     ];
 
     private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };

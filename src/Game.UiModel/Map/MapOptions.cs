@@ -45,7 +45,9 @@ namespace LastEdict.Data.Map;
 /// если импортирован, иначе английский); ключ <c>--lang</c> главнее.</para>
 /// <para><paramref name="Bindings"/> — переназначенные клавиши и кнопки геймпада (Р12, Э5: вкладка «Управление»,
 /// <see cref="LastEdict.Data.Input.InputActions"/>); null — все по умолчанию. <paramref name="LargeUi"/> — крупный интерфейс (Р11, Steam Deck):
-/// <see cref="LargeUiAuto"/> — на Steam Deck, <see cref="LargeUiOn"/>, <see cref="LargeUiOff"/>; крупнее курсор и подсказки кнопок.</para>
+/// <see cref="LargeUiAuto"/> — на Steam Deck, <see cref="LargeUiOn"/>, <see cref="LargeUiOff"/>; крупнее курсор и подсказки кнопок.
+/// <paramref name="WindowSize"/> — размер окна, <paramref name="Resolution"/> — разрешение полного экрана (<see cref="LastEdict.Data.Ui.DisplaySizes"/>:
+/// число ширина × 10000 + высота, 0 — по умолчанию).</para>
 /// </summary>
 public sealed record MapSettings(int PlayerSpeed = 1, int OpponentSpeed = 1, bool PlayAiMoves = true,
                                  int FxVolume = 83, int MusicVolume = 80, int Acknowledgements = 66, int AudioRegions = 3,
@@ -60,7 +62,7 @@ public sealed record MapSettings(int PlayerSpeed = 1, int OpponentSpeed = 1, boo
                                  bool QueueStrip = true,
                                  int MasterVolume = 100, int AmbientVolume = 100, string WindowMode = "windowed", bool VSync = true,
                                  int MaxFps = 0, string Language = "", LastEdict.Data.Input.KeyBindings? Bindings = null,
-                                 int LargeUi = MapSettings.LargeUiAuto)
+                                 int LargeUi = MapSettings.LargeUiAuto, int WindowSize = 0, int Resolution = 0)
 {
     /// <summary>Режим вписывания экрана в окно; неизвестное имя в файле — чёткий (<see cref="LastEdict.Data.Ui.ScreenScaling.Sharp"/>).</summary>
     [System.Text.Json.Serialization.JsonIgnore]
@@ -136,6 +138,8 @@ public sealed record MapSettings(int PlayerSpeed = 1, int OpponentSpeed = 1, boo
         Language = (Language ?? "").Trim().ToLowerInvariant(),
         Bindings = Bindings is { Count: > 0 } ? Bindings : null,
         LargeUi = Math.Clamp(LargeUi, LargeUiAuto, LargeUiOff),
+        WindowSize = LastEdict.Data.Ui.DisplaySizes.Known(WindowSize),
+        Resolution = LastEdict.Data.Ui.DisplaySizes.Known(Resolution),
     };
 
     /// <summary>Быстрые настройки «для слабых» и «для мощных систем» (<c>BTN_LOWEND</c>/<c>BTN_HIGHEND</c>, ответ «Да» на вопрос

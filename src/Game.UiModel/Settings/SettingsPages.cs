@@ -50,6 +50,10 @@ public static class SettingsPages
 
     private static readonly string[] SpeedLabels = ["X005TA0114", "X005TA0115", "X005TA0116"];
 
+    /// <summary>Варианты размера: по умолчанию (<paramref name="byDefault"/>) и размеры списка <see cref="DisplaySizes.Common"/>.</summary>
+    private static SettingChoice[] Sizes(string byDefault) =>
+        [new(0, byDefault), .. DisplaySizes.Common.Select(s => new SettingChoice(DisplaySizes.Encode(s.W, s.H), DisplaySizes.Label(s)))];
+
     /// <summary>Языки окна по номеру варианта: «» — по умолчанию, затем русский и английский (Р14; новые — модом-переводом).</summary>
     public static readonly string[] Languages = ["", "ru", "en"];
 
@@ -61,6 +65,19 @@ public static class SettingsPages
         {
             Choices = [new((int)DisplayMode.Windowed, "LE_SET_WINDOWED"), new((int)DisplayMode.Borderless, "LE_SET_BORDERLESS"),
                        new((int)DisplayMode.Fullscreen, "LE_SET_FULLSCREEN")],
+            Display = true,
+        },
+        // Размер окна и разрешение полного экрана (ответ пользователя 22.10): подписи — сами размеры.
+        new("windowSize", SettingsTab.Display, SettingKind.Choice, "LE_SET_WINDOW_SIZE", "LE_SET_WINDOW_SIZE_HELP", s => s.WindowSize,
+            (s, v) => s with { WindowSize = v })
+        {
+            Choices = Sizes("LE_SET_SIZE_DEFAULT"),
+            Display = true,
+        },
+        new("resolution", SettingsTab.Display, SettingKind.Choice, "LE_SET_RESOLUTION", "LE_SET_RESOLUTION_HELP", s => s.Resolution,
+            (s, v) => s with { Resolution = v })
+        {
+            Choices = Sizes("LE_SET_RES_NATIVE"),
             Display = true,
         },
         new("vsync", SettingsTab.Display, SettingKind.Toggle, "LE_SET_VSYNC", "LE_SET_VSYNC_HELP", s => B(s.VSync), (s, v) => s with { VSync = v != 0 })

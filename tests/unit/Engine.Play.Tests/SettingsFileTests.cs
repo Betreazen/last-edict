@@ -109,6 +109,20 @@ public sealed class SettingsFileTests : IDisposable
     }
 
     [Fact]
+    public void WindowSizeAndResolution_RoundTrip_UnknownSizeGivesDefault()
+    {
+        int hd = DisplaySizes.Encode(1920, 1080), qhd = DisplaySizes.Encode(2560, 1440);
+        var settings = new MapSettings(WindowSize: hd, Resolution: qhd);
+        settings.Save(FilePath);
+        Assert.Equal(settings, MapSettings.Load(FilePath));
+        Assert.Contains("\"windowSize\"", File.ReadAllText(FilePath), StringComparison.Ordinal);
+        Assert.Equal((1920, 1080), DisplaySizes.Decode(hd));
+        Assert.Null(DisplaySizes.Decode(0));
+        // Размер не из списка (файл правили руками) — по умолчанию.
+        Assert.Equal(0, new MapSettings(WindowSize: DisplaySizes.Encode(1234, 567)).Clamped().WindowSize);
+    }
+
+    [Fact]
     public void UnknownKeysAreSkipped_BrokenFileGivesDefaults()
     {
         File.WriteAllText(FilePath, """

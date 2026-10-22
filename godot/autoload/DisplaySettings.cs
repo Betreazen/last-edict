@@ -32,6 +32,7 @@ public static class DisplaySettings
         ArgumentNullException.ThrowIfNull(settings);
         settings = settings.Clamped();
         SetMode(settings.Display);
+        SetSize(settings);
         DisplayServer.WindowSetVsyncMode(settings.VSync ? DisplayServer.VSyncMode.Enabled : DisplayServer.VSyncMode.Disabled);
         Engine.MaxFps = settings.MaxFps;
         GD.Print($"display окно={DisplayModes.Name(settings.Display)} vsync={(settings.VSync ? 1 : 0)} fps={settings.MaxFps} " +
@@ -55,6 +56,28 @@ public static class DisplaySettings
             GD.PrintErr($"DisplaySettings: режим окна не записан ({FilePath}): {e.Message}");
         }
         GD.Print($"display окно={DisplayModes.Name(next)} (Alt+Enter)");
+    }
+
+    /// <summary>Размер окна (окно, без рамки — по центру экрана, не больше его рабочей области) и разрешение полного экрана: корень рисует
+    /// кадр в выбранном размере (<c>ContentScaleMode.Viewport</c>), движок растягивает его на экран с полями по форме. По умолчанию —
+    /// окно как есть, полный экран в разрешении экрана.</summary>
+    private static void SetSize(MapSettings settings)
+    {
+        var root = ((SceneTree)Engine.GetMainLoop()).Root;
+        if (settings.Display == DisplayMode.Fullscreen && DisplaySizes.Decode(settings.Resolution) is { } res)
+        {
+            root.ContentScaleMode = Window.ContentScaleModeEnum.Viewport;
+            root.ContentScaleAspect = Window.ContentScaleAspectEnum.Keep;
+            root.ContentScaleSize = new Vector2I(res.W, res.H);
+            return;
+        }
+        root.ContentScaleMode = Window.ContentScaleModeEnum.Disabled;
+        if (settings.Display == DisplayMode.Fullscreen || DisplaySizes.Decode(settings.WindowSize) is not { } want) return;
+        int screen = DisplayServer.WindowGetCurrentScreen();
+        var usable = DisplayServer.ScreenGetUsableRect(screen);
+        var size = new Vector2I(Math.Min(want.W, usable.Size.X), Math.Min(want.H, usable.Size.Y));
+        DisplayServer.WindowSetSize(size);
+        DisplayServer.WindowSetPosition(usable.Position + ((usable.Size - size) / 2));
     }
 
     private static void SetMode(DisplayMode mode)

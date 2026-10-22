@@ -814,9 +814,14 @@ public class CityWindowTests(ITestOutputHelper output)
         var ui = new UiScreenState(logic.Shape(screens.First(s => s.Id == BuildLogic.Screen)));
         logic.Open(ui);
         Assert.Equal("TOG_FIGHTER", logic.Branch);
-        Assert.False(ui.IsHidden("IMG_PANEL_TOG_FIGHTER"));
-        Assert.True(ui.IsHidden("IMG_PANEL_TOG_MAGE"));
+        Assert.DoesNotContain(ui.Screen.Elements, e => e.Id.StartsWith("IMG_PANEL_", StringComparison.Ordinal));   // картинки веток нет
+        Assert.StartsWith("Gradient:437x600#", ui.Frame("IMG_TREE_BG"), StringComparison.Ordinal);   // фон дерева — серый градиент
         Assert.True(ui.IsHidden("IMG_37"));   // ветка магов Кланов спрятана
+        Assert.True(ui.IsHidden("PLATE_TXT_37"));
+        Assert.StartsWith("Plate:", ui.Frame("PLATE_TXT_26"), StringComparison.Ordinal);   // плашка подписи — из картинки ветки
+        // Панель «Управление городом» — к правому краю, дерево — по середине прироста ширины.
+        Assert.Equal(UiAnchor.TopRight, ui.Screen.Elements.First(e => e.Id == "BTN_BUILD").Anchor);
+        Assert.Equal(UiAnchor.Top, ui.Screen.Elements.First(e => e.Id == "IMG_26").Anchor);
 
         string b26 = LegacyIds.Base.IdOf("g000bb0026")!;
         string expected = logic.Icon(b26) switch

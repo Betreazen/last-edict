@@ -41,9 +41,23 @@ public sealed class BuildLogic : IWindowLogic
     private readonly IReadOnlyDictionary<string, BuildingText> _texts;
     private readonly UiRequests _requests = new();
 
-    /// <summary>Переключатель ветки → фон панели и постройки (id, картинка, подпись).</summary>
-    private readonly Dictionary<string, (string Background, List<(string Building, UiElement Image, string? Caption)> Items)> _branches =
-        new(StringComparer.Ordinal);
+    /// <summary>Переключатель ветки → постройки (id, значок, подпись, плашка подписи и её кадр).</summary>
+    private readonly Dictionary<string, List<BranchItem>> _branches = new(StringComparer.Ordinal);
+
+    private sealed record BranchItem(string Building, string Image, string? Caption, string? Plate, string? PlateFrame);
+
+    /// <summary>Фон дерева построек (Last Edict, ответ пользователя 22.10): вместо картинки ветки оригинала (рамки с кристаллами, связи,
+    /// развалины) — лёгкий серый градиент во всю ширину слева от панели «Управление городом».</summary>
+    private const string TreeBackground = "IMG_TREE_BG";
+
+    /// <summary>Ширина дерева в разметке 800×600 — до панели «Управление городом» (<c>IMG_FRAME_DLG</c>).</summary>
+    private const int TreeWidth = 437;
+
+    /// <summary>Тон фона дерева (сверху; к низу темнее на четверть).</summary>
+    private const string TreeTone = "7A7874";
+
+    /// <summary>Разложенный экран последнего обновления: прямоугольники значков на холсте формы окна (раскладка по якорям сдвигает дерево).</summary>
+    private UiScreen? _placed;
 
     public BuildLogic(WindowContext context, UiFlow flow, IReadOnlyList<UiScreen> screens, IReadOnlyDictionary<string, BuildingText> texts)
     {
@@ -84,14 +98,14 @@ public sealed class BuildLogic : IWindowLogic
     public UiRequest? TakeRequest() => _requests.Take();
 
     public string Summary =>
-        $"ветка={Branch} построек={(_branches.TryGetValue(Branch, out var b) ? b.Items.Count : 0)} выбрано={Selected ?? "-"} " +
+        $"ветка={Branch} построек={(_branches.TryGetValue(Branch, out var b) ? b.Count : 0)} выбрано={Selected ?? "-"} " +
         $"построено={_c.Player.Buildings.Count} золото={_c.Player.Bank.Gold} значки={Icons()} отказ={(LastRefusal ?? "-").Replace(' ', '_')} " +
         $"портрет={_faceFrame ?? "-"}";
 
     /// <summary>Значки открытой ветки для проверки: «номер@x,y:вид» — <c>+</c> можно, <c>b</c> построена, <c>r</c> нет
     /// предыдущей, <c>k</c> другой путь, <c>h</c> скрыт.</summary>
-    private string Icons() => !_branches.TryGetValue(Branch, out var branch) ? "-" : string.Join(",", branch.Items.Select(i =>
-        $"{i.Image.Id[4..]}@{i.Image.Rect.X + (i.Image.Rect.Width / 2)},{i.Image.Rect.Y + (i.Image.Rect.Height / 2)}:" +
+    private string Icons() => !_branches.TryGetValue(Branch, out var branch) ? "-" : string.Join(",", branch.Select(i => RectOf(i.Image) is not { } r ? "" :
+        $"{i.Image[4..]}@{r.X + (r.Width / 2)},{r.Y + (r.Height / 2)}:" +
         Icon(i.Building) switch
         {
             BuildIcon.Built => "b", BuildIcon.Can => "+", BuildIcon.NeedPrevious => "r", BuildIcon.OtherPath => "k", _ => "h",
@@ -105,12 +119,19 @@ public sealed class BuildLogic : IWindowLogic
         return type switch { 1 => 'U', 2 => 'E', 3 => 'M', 5 => 'F', _ => 'H' };
     }
 
+    /// <summary>Окно на холсте формы окна (<c>ui/layout.json</c>: Anchors, фон вправо): панель «Управление городом» и её кнопки — к правому
+    /// краю, дерево построек — во всю ширину слева, постройки ветки — по его середине (как стояли друг относительно друга). Значок, плашка
+    /// подписи (вырезана из картинки ветки оригинала) и подпись; картинки ветки с рамками и связями нет.</summary>
     public UiScreen Shape(UiScreen screen)
     {
         ArgumentNullException.ThrowIfNull(screen);
         var elements = screen.Elements.ToList();
         int at = elements.FindIndex(e => e.Id == "IMG_FRAME_DLG") + 1;
-        var added = new List<UiElement>();
+        var added = new List<UiElement>
+        {
+            new() { Id = TreeBackground, Kind = UiKind.Image, Rect = new UiRect(0, 0, TreeWidth, screen.Design.Height), Stretch = UiStretch.Width },
+        };
+        var tree = new HashSet<string>(StringComparer.Ordinal);
         string prefix = $"DLG_{RaceLetter()}_";
         var edges = _flow.Screens.FirstOrDefault(s => s.Id == Screen)?.Edges ?? [];
         foreach (var toggle in elements.First(e => e.Id == Group).Members)
@@ -119,23 +140,49 @@ public sealed class BuildLogic : IWindowLogic
                                                        && (e.Target ?? "").StartsWith(prefix, StringComparison.Ordinal))?.Target;
             var panel = target is null ? null : _screens.FirstOrDefault(s => s.Id == target);
             if (panel is null) continue;
-            string background = $"IMG_PANEL_{toggle}";
-            added.Add(new UiElement { Id = background, Kind = UiKind.Image, Rect = panel.Design with { X = 0, Y = 0 }, Image = panel.Background });
-            var items = new List<(string, UiElement, string?)>();
+            // Постройки ветки — по середине дерева: сдвиг всей группы, места друг относительно друга — как в разметке оригинала.
+            var bounds = panel.Elements.Where(e => e.Kind is UiKind.Image or UiKind.Text).Select(e => e.Rect).ToList();
+            int dx = bounds.Count == 0 ? 0 : ((TreeWidth - (bounds.Max(r => r.Right) - bounds.Min(r => r.X))) / 2) - bounds.Min(r => r.X);
+            var items = new List<BranchItem>();
             foreach (var e in panel.Elements)
             {
-                added.Add(e);
+                var moved = e with { Rect = e.Rect with { X = e.Rect.X + dx } };
+                if (e.Kind == UiKind.Text && panel.Background is { Length: > 0 })
+                {
+                    // Плашка подписи — вырезка картинки ветки под серединой подписи (мрамор с окантовкой), под самой подписью.
+                    var plate = new UiElement
+                    {
+                        Id = PlateOf(e.Id), Kind = UiKind.Image,
+                        Rect = new UiRect(moved.Rect.X - 20, moved.Rect.Y - 8, moved.Rect.Width + 40, moved.Rect.Height + 16),
+                    };
+                    added.Add(plate);
+                    tree.Add(plate.Id);
+                }
+                added.Add(moved);
+                tree.Add(moved.Id);
                 // Рамка выбора (0x4ac8a9, 0x4adafe): картинка + 2 по сторонам, вплотную снаружи значка.
                 if (e.Kind == UiKind.Image && e.Id.StartsWith("IMG_", StringComparison.Ordinal))
-                    added.Add(new UiElement { Id = Frame(e.Id), Kind = UiKind.Image, Rect = new UiRect(e.Rect.X - 1, e.Rect.Y - 1, e.Rect.Width + 2, e.Rect.Height + 2) });
+                {
+                    added.Add(new UiElement
+                    {
+                        Id = Frame(e.Id), Kind = UiKind.Image,
+                        Rect = new UiRect(moved.Rect.X - 1, moved.Rect.Y - 1, moved.Rect.Width + 2, moved.Rect.Height + 2),
+                    });
+                    tree.Add(Frame(e.Id));
+                }
                 // IMG_%x ↔ G000BB0%03x (0x79c7d4): номер — шестнадцатеричный, как и в id постройки.
                 if (e.Kind != UiKind.Image || !e.Id.StartsWith("IMG_", StringComparison.Ordinal)) continue;
                 string number = e.Id[4..];
                 string caption = $"TXT_{number}";
                 string legacy = $"G000BB0{number.PadLeft(3, '0').ToUpperInvariant()}";   // разметка .dlg — по номеру постройки оригинала
-                items.Add((LegacyIds.Base.IdOf(legacy) ?? legacy, e, panel.Elements.Any(x => x.Id == caption) ? caption : null));
+                var text = panel.Elements.FirstOrDefault(x => x.Id == caption);
+                string? plateFrame = text is null || panel.Background is not { Length: > 0 } source ? null
+                    : string.Create(CultureInfo.InvariantCulture,
+                        $"Plate:{source}@{text.Rect.X + (text.Rect.Width / 2)},{text.Rect.Y + (text.Rect.Height / 2)}");
+                items.Add(new BranchItem(LegacyIds.Base.IdOf(legacy) ?? legacy, e.Id, text is null ? null : caption,
+                                         text is null ? null : PlateOf(caption), plateFrame));
             }
-            _branches[toggle] = (background, items);
+            _branches[toggle] = items;
         }
         elements.InsertRange(at, added);
         // Большой воин постройки: место портрета — во всю ширину большой рамки от левого края, подпись правее на ту же величину
@@ -149,8 +196,18 @@ public sealed class BuildLogic : IWindowLogic
             });
             elements.Insert(face + 1, elements[face] with { Id = BigFace, Rect = elements[face].Rect with { Width = BigFaceWidth } });
         }
+        // Якоря: дерево — по середине прироста ширины, фон дерева — от левого края с растяжением, панель справа — к правому краю.
+        elements = [.. elements.Select(e => e with
+        {
+            Anchor = e.Id == TreeBackground || e.Id == "IMG_FRAME_DLG" ? UiAnchor.TopLeft : tree.Contains(e.Id) ? UiAnchor.Top : UiAnchor.TopRight,
+        })];
         return screen with { Elements = elements };
     }
+
+    private static string PlateOf(string caption) => $"PLATE_{caption}";
+
+    /// <summary>Прямоугольник элемента на разложенном экране (последнее обновление); не было — null.</summary>
+    private UiRect? RectOf(string id) => _placed?.Elements.FirstOrDefault(e => e.Id == id)?.Rect;
 
     /// <summary>Портрет воина постройки и подпись к нему; у большого воина — <see cref="BigFace"/>/<see cref="BigFaceInfo"/>.</summary>
     private const string Face = "IMG_FACE", FaceInfo = "TXT_UNIT_INFO", BigFace = "IMG_FACE_BIG", BigFaceInfo = "TXT_UNIT_INFO_BIG";
@@ -230,10 +287,10 @@ public sealed class BuildLogic : IWindowLogic
     private string? IconAt(int x, int y)
     {
         if (!_branches.TryGetValue(Branch, out var branch)) return null;
-        foreach (var (building, image, _) in branch.Items)
+        foreach (var item in branch)
         {
-            var r = image.Rect;
-            if (x >= r.X && x < r.Right && y >= r.Y && y < r.Bottom && Icon(building) != BuildIcon.Hidden) return building;
+            if (RectOf(item.Image) is not { } r) continue;
+            if (x >= r.X && x < r.Right && y >= r.Y && y < r.Bottom && Icon(item.Building) != BuildIcon.Hidden) return item.Building;
         }
         return null;
     }
@@ -375,12 +432,15 @@ public sealed class BuildLogic : IWindowLogic
         var player = _c.Player;
         var book = _c.Session.RequireBook();
         ui.SetText("TXT_GOLD", player.Bank.Gold.ToString(CultureInfo.InvariantCulture));
+        _placed = ui.Screen;
+        if (RectOf(TreeBackground) is { } bg)
+            ui.SetImage(TreeBackground, string.Create(CultureInfo.InvariantCulture, $"Gradient:{bg.Width}x{bg.Height}#{TreeTone}"));
         foreach (var (toggle, branch) in _branches)
         {
             bool shown = toggle == Branch;
-            ui.SetHidden(branch.Background, !shown);
-            foreach (var (building, image, caption) in branch.Items)
+            foreach (var (building, imageId, caption, plate, plateFrame) in branch)
             {
+                var image = ui.Screen.Elements.First(e => e.Id == imageId);
                 var icon = Icon(building);
                 bool visible = shown && icon != BuildIcon.Hidden;
                 ui.SetHidden(image.Id, !visible);
@@ -395,6 +455,11 @@ public sealed class BuildLogic : IWindowLogic
                 var r = image.Rect;
                 ui.SetImage(Frame(image.Id), visible && building.Equals(Selected, StringComparison.OrdinalIgnoreCase)
                     ? $"Outline:{r.Width + 2}x{r.Height + 2}#E1E100" : null);
+                if (plate is not null)
+                {
+                    ui.SetHidden(plate, !visible);
+                    ui.SetImage(plate, visible ? plateFrame : null, UiImageAlign.Center);
+                }
                 if (caption is null) continue;
                 ui.SetHidden(caption, !visible);
                 ui.SetText(caption, Name(building));

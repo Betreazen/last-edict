@@ -100,7 +100,7 @@ public partial class BattleScreen
             {
                 _session.Wait();
                 waiters.Add(mover.Id);
-                waitMarks.Add(_strip.Shown.LastOrDefault(e => ReferenceEquals(e.Unit, mover)) is { } entry ? Code(entry.Mark) : "-");
+                waitMarks.Add(_strip.Shown.LastOrDefault(e => ReferenceEquals(e.Unit, mover) && !e.NextRound) is { } entry ? Code(entry.Mark) : "-");
             }
             else if (_session.WaitsPlayer) _session.Defend();
             else _session.AiStep();

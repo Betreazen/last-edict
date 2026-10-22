@@ -45,7 +45,7 @@ public class GrowthTests(ITestOutputHelper output)
     public void Steps_SwitchToSecondUpgradeAboveDynUpgLevel()
     {
         ImportedData.RequireRules();
-        var s = Of("g000uu0001");
+        var s = Of("base:unit/squire-empire");
         Assert.Equal((1, 10), (s.Type.Level, s.Extra.DynUpgLevel));
 
         Assert.Equal(new GrowthSteps(0, 0), UnitGrowth.StepsFor(1, 10, 1));
@@ -103,7 +103,7 @@ public class GrowthTests(ITestOutputHelper output)
     public void Squire_GrowsByTheTable()
     {
         ImportedData.RequireRules();
-        var s = Of("g000uu0001");
+        var s = Of("base:unit/squire-empire");
         Assert.Equal((100, 20, 80, 5, 0), (s.Type.HitPoints, s.Type.XpKilled, s.Type.XpNext,
                                            s.Extra.Regen, s.Extra.Move));
 
@@ -134,7 +134,7 @@ public class GrowthTests(ITestOutputHelper output)
     public void OwnLevel_IsZeroGrowth()
     {
         ImportedData.RequireRules();
-        var s = Of("g000uu0017");
+        var s = Of("base:unit/matriarch");
         Assert.Equal(3, s.Type.Level);
         Assert.Equal(s.Type, Grow(s, 3).Type);
         Assert.Equal(100 + 7 * 10, Grow(s, 10).Type.HitPoints);
@@ -148,7 +148,7 @@ public class GrowthTests(ITestOutputHelper output)
     public void AttackGrowth_OnlyFromNonZeroBase()
     {
         ImportedData.RequireRules();
-        var spider = Of("g000uu5036");
+        var spider = Of("base:unit/giant-spider-neutral");
         var steps = UnitGrowth.StepsFor(spider.Type.Level, spider.Extra.DynUpgLevel, 10);
         Assert.Equal(new GrowthSteps(9, 0), steps);
         Assert.Equal(13, spider.First!.Damage);
@@ -158,7 +158,7 @@ public class GrowthTests(ITestOutputHelper output)
         var second = UnitGrowth.OfAttack(Rules.Value.Attacks[spider.Type.Attack2Id], steps, spider.First, spider.Second);
         Assert.Equal(0, second.QtyDamage);                    // без стража было бы 117
 
-        var matriarch = Of("g000uu0017");
+        var matriarch = Of("base:unit/matriarch");
         var mSteps = UnitGrowth.StepsFor(3, 10, 10);
         var heal = UnitGrowth.OfAttack(Rules.Value.Attacks[matriarch.Type.AttackId], mSteps,
                                        matriarch.First, matriarch.Second);
@@ -205,8 +205,8 @@ public class GrowthTests(ITestOutputHelper output)
     public void GrowthGoesUnderModifiers_NotOverThem()
     {
         ImportedData.RequireRules();
-        var s = Of("g000uu0001");
-        var chain = new[] { Tables.Value.Modifiers["g000um9001"] };
+        var s = Of("base:unit/squire-empire");
+        var chain = new[] { Tables.Value.Modifiers["base:modifier/20-hit-points"] };
 
         var grown = Grow(s, 10);
         Assert.Equal(228, EffectiveStats.Of(grown.Type, chain).HitPoints);
@@ -233,7 +233,7 @@ public class GrowthTests(ITestOutputHelper output)
         var withRows = all.Select(u => u.LordId).ToHashSet(StringComparer.OrdinalIgnoreCase);
         Assert.Equal(15, withRows.Count);
         var without = Tables.Value.Lords.Keys.Where(id => !withRows.Contains(id)).OrderBy(x => x).ToList();
-        Assert.Equal(new[] { "g000LR0013", "g000LR0014", "g000LR0015" }, without);
+        Assert.Equal(new[] { "base:lord/neutral-race-guildmaster", "base:lord/neutral-race-mage-lord", "base:lord/neutral-race-warrior-lord" }, without);
         output.WriteLine($"строк {all.Count}, лордов со строками {withRows.Count}, без строк: " +
                          string.Join(", ", without));
     }
@@ -261,9 +261,9 @@ public class GrowthTests(ITestOutputHelper output)
             Assert.Equal(all.Count(u => string.Equals(u.LordId, lord, StringComparison.OrdinalIgnoreCase)),
                          previous);
         }
-        Assert.Empty(LeaderUpgrades.Available(all, "g000LR0001", 1));
-        Assert.Equal(4, LeaderUpgrades.Available(all, "g000LR0001", 2).Count);
-        Assert.Equal(27, LeaderUpgrades.Available(all, "g000LR0001", 15).Count);
+        Assert.Empty(LeaderUpgrades.Available(all, "base:lord/human-warrior-lord", 1));
+        Assert.Equal(4, LeaderUpgrades.Available(all, "base:lord/human-warrior-lord", 2).Count);
+        Assert.Equal(27, LeaderUpgrades.Available(all, "base:lord/human-warrior-lord", 15).Count);
         output.WriteLine($"пятнадцать лордов, {transitions} уровней с прибавкой набора; " +
                          "g000LR0001: 0 на 1-м, 4 на 2-м, 27 на 15-м");
     }
@@ -275,8 +275,8 @@ public class GrowthTests(ITestOutputHelper output)
     public void EveryLeaderUpgrade_FoldsThroughTheModifierChain()
     {
         ImportedData.RequireRules();
-        var unit = Rules.Value.Units["g000uu0001"];
-        var attack = Rules.Value.Attacks["g000aa0001"];
+        var unit = Rules.Value.Units["base:unit/squire-empire"];
+        var attack = Rules.Value.Attacks["base:attack/squire-empire"];
         int folded = 0, changedUnit = 0, changedAttack = 0;
         foreach (var upgrade in Tables.Value.LeaderUpgrades)
         {
@@ -303,14 +303,14 @@ public class GrowthTests(ITestOutputHelper output)
     {
         ImportedData.RequireRules();
         var toughness = Tables.Value.LeaderUpgrades
-            .Where(u => u.ModifId.Equals("g000um4017", StringComparison.OrdinalIgnoreCase)).ToList();
+            .Where(u => u.ModifId.Equals("base:modifier/skill-toughness", StringComparison.OrdinalIgnoreCase)).ToList();
         Assert.NotEmpty(toughness);
         Assert.All(toughness, u => Assert.Equal(8, u.MinLevel));
 
-        var s = Of("g000uu0001");
+        var s = Of("base:unit/squire-empire");
         var grown = Grow(s, 8);                                // 7 шагов: 100 + 70
         Assert.Equal(170, grown.Type.HitPoints);
-        var chain = new[] { Tables.Value.Modifiers["g000um4017"] };
+        var chain = new[] { Tables.Value.Modifiers["base:modifier/skill-toughness"] };
         Assert.Equal(204, EffectiveStats.Of(grown.Type, chain).HitPoints);
         output.WriteLine($"Toughness с {toughness[0].MinLevel} уровня: Squire L8 170 -> 204");
     }

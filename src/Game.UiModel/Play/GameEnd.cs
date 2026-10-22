@@ -151,11 +151,11 @@ public sealed class EventPopupLogic(EventMessage message, Func<string, string>? 
         {
             string name = message.OwnName || message.LeaderName.Length > 0 ? message.LeaderName : unitName?.Invoke(message.LeaderType) ?? "";
             ui.SetText("TXT_RIGHTSIDE", name.Length > 0 || message.OwnName ? $"{name}\n{message.Popup.Text}" : message.Popup.Text);
-            Picture(GfxFrame("Events", message.LeaderType));
+            Picture(GfxFrame("Events", Ui.ArtNames.Of(message.LeaderType)));
             return;
         }
         ui.SetText("TXT_RIGHTSIDE", message.Popup.Text);
-        if (message.Popup.Image.Length > 0) Picture(GfxFrame("Events", message.Popup.Image));
+        if (message.Popup.Image.Length > 0) Picture(GfxFrame("Events", Ui.ArtNames.Of(message.Popup.Image)));
     }
 
     public void Handle(UiEvent e, UiScreenState ui)

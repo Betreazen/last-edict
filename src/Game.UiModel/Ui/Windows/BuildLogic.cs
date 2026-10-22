@@ -132,7 +132,8 @@ public sealed class BuildLogic : IWindowLogic
                 if (e.Kind != UiKind.Image || !e.Id.StartsWith("IMG_", StringComparison.Ordinal)) continue;
                 string number = e.Id[4..];
                 string caption = $"TXT_{number}";
-                items.Add(($"G000BB0{number.PadLeft(3, '0').ToUpperInvariant()}", e, panel.Elements.Any(x => x.Id == caption) ? caption : null));
+                string legacy = $"G000BB0{number.PadLeft(3, '0').ToUpperInvariant()}";   // разметка .dlg — по номеру постройки оригинала
+                items.Add((LegacyIds.Base.IdOf(legacy) ?? legacy, e, panel.Elements.Any(x => x.Id == caption) ? caption : null));
             }
             _branches[toggle] = (background, items);
         }
@@ -383,7 +384,7 @@ public sealed class BuildLogic : IWindowLogic
                 var icon = Icon(building);
                 bool visible = shown && icon != BuildIcon.Hidden;
                 ui.SetHidden(image.Id, !visible);
-                string frame = $"{IconArchive}:{building}";
+                string frame = $"{IconArchive}:{ArtNames.Of(building)}";
                 ui.SetImage(image.Id, icon switch
                 {
                     BuildIcon.Built => UiFrameRef.Tinted(frame, BuiltTint),

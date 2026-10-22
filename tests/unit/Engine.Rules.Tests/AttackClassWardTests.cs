@@ -29,20 +29,20 @@ public class AttackClassWardTests(ITestOutputHelper output)
     private static readonly Lazy<GameRules> Rules = new(() => RulesLoader.Load(ImportedData.Content));
 
     // Вани́льные носители: перебор Gunits × Gattacks по классу атаки даёт ровно семь типов.
-    private const string WardGiver = "g000uu8133";      // L1 BestowWards, hp 75
-    private const string WardsFour = "g000aa8133";      // BestowWards, REACH 2, SOURCE 2, все четыре варда
-    private const string AreaWardGiver = "g000uu8034";  // L4 BestowWards, площадной (REACH 1)
-    private const string WardsFire = "g000aa8134";      // BestowWards, REACH 1 — один вард, огонь
-    private const string Shatterer = "g000uu8028";      // L3, ATTACK2 — Shatter
-    private const string ShatterAir = "g000aa8128";     // Shatter, SOURCE 7 (Air), REACH 2, QTY_DAM 15
-    private const string ShatterWpn = "g000aa8150";     // Shatter, SOURCE 0, REACH 3, QTY_DAM 15
-    private const string Squire = "g000uu0001";         // L1, hp 100, ARMOR 0, иммунитетов нет
-    private const string Imp = "g000uu8050";            // ARMOR 20 — на нём видно нижнюю границу брони
-    private const string Myzrael = "g000uu3001";        // GimmuC: класс 25 Always — не крошится
-    private const string FlameCaster = "g000uu0028";    // Gimmu: Fire (4) Once
-    private const string FireBolt = "g000aa0028";       // Damage, SOURCE 4 (Fire), QTY_DAM 35
-    private const string FireWard = "g000um0016";       // TYPE 12: IMMUNITY 4 (Fire), IMMUNECAT 2 (Once)
-    private const string AirWard = "g000um0001";        // TYPE 12: IMMUNITY 7 (Air)
+    private const string WardGiver = "base:unit/grovemaiden-elves-2";      // L1 BestowWards, hp 75
+    private const string WardsFour = "base:attack/grovemaiden-elves";      // BestowWards, REACH 2, SOURCE 2, все четыре варда
+    private const string AreaWardGiver = "base:unit/sun-dancer";  // L4 BestowWards, площадной (REACH 1)
+    private const string WardsFire = "base:attack/sun-dancer";      // BestowWards, REACH 1 — один вард, огонь
+    private const string Shatterer = "base:unit/theurgist";      // L3, ATTACK2 — Shatter
+    private const string ShatterAir = "base:attack/theurgist-2nd";     // Shatter, SOURCE 7 (Air), REACH 2, QTY_DAM 15
+    private const string ShatterWpn = "base:attack/sir-allemon-neutral-2nd";     // Shatter, SOURCE 0, REACH 3, QTY_DAM 15
+    private const string Squire = "base:unit/squire-empire";         // L1, hp 100, ARMOR 0, иммунитетов нет
+    private const string Imp = "base:unit/sir-allemon-neutral";            // ARMOR 20 — на нём видно нижнюю границу брони
+    private const string Myzrael = "base:unit/myzrael";        // GimmuC: класс 25 Always — не крошится
+    private const string FlameCaster = "base:unit/flame-caster";    // Gimmu: Fire (4) Once
+    private const string FireBolt = "base:attack/flame-caster";       // Damage, SOURCE 4 (Fire), QTY_DAM 35
+    private const string FireWard = "base:modifier/fire-ward";       // TYPE 12: IMMUNITY 4 (Fire), IMMUNECAT 2 (Once)
+    private const string AirWard = "base:modifier/air-ward";        // TYPE 12: IMMUNITY 7 (Air)
 
     private static RulesConstants C => Rules.Value.Constants;
 
@@ -92,7 +92,7 @@ public class AttackClassWardTests(ITestOutputHelper output)
         ImportedData.RequireRules();
         var ids = Rules.Value.Attacks.Values.SelectMany(a => a.Wards ?? []).Distinct(StringComparer.OrdinalIgnoreCase)
                        .OrderBy(x => x, StringComparer.Ordinal).ToList();
-        Assert.Equal(["g000um0001", "g000um0005", "g000um0010", "g000um0016"], ids);
+        Assert.Equal(["base:modifier/air-ward", "base:modifier/earth-ward", "base:modifier/fire-ward", "base:modifier/water-ward"], ids);
 
         foreach (var m in ids.Select(id => Rules.Value.Modifiers![id]))
         {

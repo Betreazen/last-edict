@@ -272,7 +272,7 @@ public partial class MapScreen : Node
         ShowMap(false);
         _battle = new BattleScreen
         {
-            Name = "Battle", Standalone = false, Prepared = state, Rules = session.Book.Rules, Rng = session.Rng,
+            Name = "Battle", Standalone = false, Prepared = state, Rules = session.Book.Rules, Rng = session.BattleRng,
             PlaceName = MapBattle.PlaceOf(session.Map, state.DefenderGroup), PlayerIsAttacker = playerAttacks,
             OwnsAttackerStack = MapBattle.OwnsAttackerStack(session.Map, state.AttackerGroup, _map.Viewer),   // «Меню героя» (CTaskBattle +0x2c, 0x4d77b8)
             BothHuman = HotseatCalls.BothHuman(session, state.AttackerGroup, state.DefenderGroup),

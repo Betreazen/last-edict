@@ -80,22 +80,19 @@ public sealed record UnitType(string Id, int Level, int HitPoints, int Armor, st
                               IReadOnlyList<ImmunityGrant>? ImmunitiesByClass = null,
                               string PrevId = "")
 {
-    private readonly string _globalId = "";
+    /// <summary>Уровень, до которого тип вырос шагами роста (<see cref="Units.UnitGenerator"/>): юнит перерос уровень своего типа, и
+    /// улучшать его не во что. 0 — тип как в содержимом. Ключ (<see cref="Id"/>) у выросшего — ключ базового типа; оригинал звал такую
+    /// реализацию вычисляемым id <c>G000UG…</c>.</summary>
+    public int GrownLevel { get; init; }
 
-    /// <summary>Глобальный (<c>UU</c>) id этой реализации: у строки <c>Gunits</c> — она сама, у
-    /// порождённой прокачкой (<c>UG</c>, <see cref="Units.UnitGenerator"/>) — база, из которой её
-    /// вырастили. Это ровно то сведение, которое движок делает сам —
-    /// <c>CUnitGenerator::getGlobalUnitImplId</c> (слот 4 vftable, вызов <c>call [edx+0x10]</c>,
-    /// например GOG <c>0x597c61</c>), — и без которого <c>getUnitImplDamageMax</c> не узнал бы
-    /// прокачанного лидера: в прошитом списке десяти <c>typeIndex</c> лежат <c>UU</c>, а не <c>UG</c>.
-    /// <para><b>Ранг 1</b>, журнал <c>corpus/20260910-passive/passive-004.jsonl</c>: у
-    /// <c>S073UN01fa</c> (King's Guard <c>G000UU0044</c>, в бою <c>G000UG1e06</c> после повышения)
-    /// событие <c>dmg_max</c> и на первом, и на втором уровне даёт <b>400</b>, а не 300.</para></summary>
-    public string GlobalId
-    {
-        get => _globalId.Length > 0 ? _globalId : Id;
-        init => _globalId = value;
-    }
+    /// <summary>Штраф точности площадной атаки по месту цели (<see cref="Formulas.MageLeaderPowerReduction"/>) — «маг-лидер».</summary>
+    public bool MageLeader { get; init; }
+
+    /// <summary>Прибавка к потолку урона (<see cref="Formulas.DamageMax"/>, <c>LeaderBonusMaxDamage</c>).</summary>
+    public bool DamageBonus { get; init; }
+
+    /// <summary>Двойник может скопировать этот тип (<see cref="BattleTargets.CopyTargets"/>).</summary>
+    public bool Copyable { get; init; } = true;
 
     /// <summary><c>Gunits.UNIT_CAT</c> (<see cref="UnitCategory"/>). Нужна бегству ИИ: вор и призванный
     /// отряд не бегут (<c>0x431d8c</c>, <c>0x41b399</c>).</summary>

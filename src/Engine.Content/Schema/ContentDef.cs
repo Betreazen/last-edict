@@ -20,7 +20,7 @@ public abstract record ContentDef
     /// <summary>Ключ сущности в правилах: id оригинала, а у новой сущности мода — её id. Правила и сохранения пока живут на id
     /// оригинала (<c>docs/content-schema.md</c>, §2).</summary>
     [JsonIgnore]
-    public string Key => LegacyId ?? Id;
+    public string Key => Id;
 }
 
 /// <summary>Таблица оригинала, из строк которой импортируется сущность, и столбец её id.</summary>

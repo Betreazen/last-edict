@@ -122,7 +122,7 @@ public sealed class GiveItemLogic(WindowContext context, GivenEntry? entry, bool
         }
         ui.SetText("TXT_TITLE", context.Text(!entry.Spell ? "X005TA0283" : entry.Library ? "X005TA0774" : "X005TA0773"));
         ui.SetText("TXT_ITEM", UiTemplate.Fill(context.Text("X005TA0516"), ("ITEM", Name), ("QTY", entry.Count)));
-        ui.SetImage(Icon, entry.Spell ? $"IconSpel:{entry.Id.ToUpperInvariant()}" : ItemCells.IconFrame(entry.Id, context));
+        ui.SetImage(Icon, entry.Spell ? $"IconSpel:{ArtNames.Of(entry.Id)}" : ItemCells.IconFrame(entry.Id, context));
     }
 
     /// <summary>Имя: предмет — <c>GItem.NAME_TXT</c>, заклинание — <c>Gspells.NAME_TXT</c>; нет строки — id.</summary>

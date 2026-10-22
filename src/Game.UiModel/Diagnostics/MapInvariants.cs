@@ -276,13 +276,13 @@ public static class MapInvariants
     private static void RuinItem(MapSite site, GameBook? book, List<Violation> found)
     {
         if (!IsTypeId(site.ItemId))
-            found.Add(new("item", site.ItemId, $"у руины {site.Id}: экземпляр вместо типа предмета (G000IG…)"));
+            found.Add(new("item", site.ItemId, $"у руины {site.Id}: экземпляр вместо типа предмета (base:item/…)"));
         else if (book is not null && book.Items.Count > 0 && !book.Items.ContainsKey(site.ItemId))
             found.Add(new("item", site.ItemId, $"у руины {site.Id}: тип не в правилах"));
     }
 
-    /// <summary>Id типа (<c>G000IG…</c>), а не экземпляра (<c>S001IM…</c>): у руины предмет — тип.</summary>
-    private static bool IsTypeId(string id) => id.StartsWith("G", StringComparison.OrdinalIgnoreCase);
+    /// <summary>Id типа — id содержимого вида <c>item</c> (<c>base:item/…</c>), а не экземпляра (<c>S001IM…</c>): у руины предмет — тип.</summary>
+    private static bool IsTypeId(string id) => id.Contains(":item/", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Отношение пары рас — текущее и прошлое в 0…100.</summary>
     private static void Relations(MapState map, List<Violation> found)

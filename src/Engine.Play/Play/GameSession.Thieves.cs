@@ -334,14 +334,14 @@ public sealed partial class GameSession
         var types = map.ItemTypes.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase);
         var ids = map.IdNext;
         string instance = NewId(ref ids, types.Keys, thiefId, "IM");
-        types[instance] = type.ToUpperInvariant();
+        types[instance] = type;
         var stacks = map.Stacks.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase);
         stacks[thiefId] = stacks[thiefId] with { Items = [.. stacks[thiefId].Items, instance] };
         State = State with { Looks = Retold(Looks, With(map, stacks: stacks, sites: sites, itemTypes: types, idNext: ids), Looks.Stacks) };
         ChargeNewTalismans([instance]);
         var thief = stacks[thiefId];
         Given(TurnSightKind.ItemsGiven, thief.Owner, thief.X, thief.Y, siteId, [instance]);   // окно DLG_ITEM (0x41df26)
-        return type.ToUpperInvariant();
+        return type;
     }
 
     /// <summary>Кража предмета: экземпляр сумки цели (<paramref name="pick"/> — id; иначе первый) — надетый снимается — в сумку вора.</summary>
@@ -385,11 +385,11 @@ public sealed partial class GameSession
         string? spell = pick ?? stealable.FirstOrDefault();
         if (spell is null || !stealable.Contains(spell, StringComparer.OrdinalIgnoreCase)) return "";
         var players = map.Players.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase);
-        players[me.Id] = me with { KnownSpells = [.. me.KnownSpells, spell.ToUpperInvariant()] };
+        players[me.Id] = me with { KnownSpells = [.. me.KnownSpells, spell] };
         State = State with { Looks = Retold(Looks, With(map, players: players), Looks.Stacks) };
         var fort = map.Sites.First(f => Same(f.Id, fortId));
-        Given(TurnSightKind.SpellsGiven, me.Id, fort.X, fort.Y, fortId, [spell.ToUpperInvariant()]);   // окно DLG_ITEM (0x41d7e0)
-        return spell.ToUpperInvariant();
+        Given(TurnSightKind.SpellsGiven, me.Id, fort.X, fort.Y, fortId, [spell]);   // окно DLG_ITEM (0x41d7e0)
+        return spell;
     }
 
     /// <summary>
@@ -476,10 +476,10 @@ public sealed partial class GameSession
             || me.KnownSpells.Contains(spell, StringComparer.OrdinalIgnoreCase)) return "";
         var sites = map.Sites.Select(s => ReferenceEquals(s, mage) ? s with { Spells = [.. s.Spells.Where(x => !Same(x, spell))] } : s).ToList();
         var players = map.Players.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase);
-        players[me.Id] = me with { KnownSpells = [.. me.KnownSpells, spell.ToUpperInvariant()] };
+        players[me.Id] = me with { KnownSpells = [.. me.KnownSpells, spell] };
         State = State with { Looks = Retold(Looks, With(map, players: players, sites: sites), Looks.Stacks) };
-        Given(TurnSightKind.SpellsGiven, me.Id, mage.X, mage.Y, siteId, [spell.ToUpperInvariant()]);   // окно DLG_ITEM (0x41dfd6)
-        return spell.ToUpperInvariant();
+        Given(TurnSightKind.SpellsGiven, me.Id, mage.X, mage.Y, siteId, [spell]);   // окно DLG_ITEM (0x41dfd6)
+        return spell;
     }
 
     private void MoveGold(string fromPlayer, string toPlayer, int amount)

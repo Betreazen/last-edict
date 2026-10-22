@@ -27,20 +27,28 @@ internal static class PortSnapshot
     /// <summary>Переписать снимки вместо сверки — после осознанной правки правил.</summary>
     public static bool Accept => Environment.GetEnvironmentVariable("D2_SNAPSHOTS_ACCEPT") == "1";
 
+    /// <summary>Каталог трассы (<c>D2_SNAPSHOTS_TRACE</c>): рядом со строками снимка — сохранение после каждого дня и журнал каждого боя
+    /// целиком, чтобы разобрать расхождение хеша по полям (или доказать, что правка поменяла только запись, а не правила).</summary>
+    private static string? TraceDir => Environment.GetEnvironmentVariable("D2_SNAPSHOTS_TRACE") is { Length: > 0 } dir ? dir : null;
+
     private static readonly JsonSerializerOptions Line = new() { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
 
     /// <summary><paramref name="days"/> концов хода партии без людей: строка на команду — день, хеш после неё и, кроме
     /// <paramref name="hashesOnly"/>, сводка игроков. Снимки сценариев оригинала — только хеши: в публичном репозитории Last Edict ни id
     /// объектов, ни чисел его карт (Р3).</summary>
-    public static IReadOnlyList<string> AiDays(GameSession session, int days, bool hashesOnly = false)
+    public static IReadOnlyList<string> AiDays(GameSession session, int days, bool hashesOnly = false, string trace = "")
     {
         ArgumentNullException.ThrowIfNull(session);
+        if (TraceDir is { } dir && trace.Length > 0)
+            session.AiTrace = new AiTraceWriter(Path.Combine(Directory.CreateDirectory(Path.Combine(dir, trace)).FullName, "ai.txt"));
+        Trace(trace, 0, session);
         var start = new JsonObject { ["start"] = StateHash.Of(session) };
         if (!hashesOnly) start["players"] = Players(session.Map);
         var lines = new List<string> { Json(start) };
         for (int day = 1; day <= days; day++)
         {
             session.Execute(new EndTurnCommand());
+            Trace(trace, day, session);
             var line = new JsonObject { ["day"] = day, ["turn"] = session.Map.Turn, ["hash"] = StateHash.Of(session) };
             if (!hashesOnly) line["players"] = Players(session.Map);
             lines.Add(Json(line));
@@ -68,7 +76,7 @@ internal static class PortSnapshot
     /// <paramref name="seed"/> + номер боя. Строка — номер, сторона-победитель, число ходов, хеш журнала ходов и итоговых юнитов и, кроме
     /// <paramref name="hashesOnly"/>, id отрядов пары.
     /// </summary>
-    public static IReadOnlyList<string> Battles(MapState map, GameBook book, int count, int seed, bool hashesOnly = false)
+    public static IReadOnlyList<string> Battles(MapState map, GameBook book, int count, int seed, bool hashesOnly = false, string trace = "")
     {
         ArgumentNullException.ThrowIfNull(map);
         ArgumentNullException.ThrowIfNull(book);
@@ -86,8 +94,11 @@ internal static class PortSnapshot
             };
             battle.PlayOut();
             var units = state.Units.OrderBy(u => u.Id, StringComparer.Ordinal)
-                .Select(u => $"{u.Id}:{u.Type.Id}:{u.Hp}:{u.Xp}:{u.Retreated}:{u.Summoned}:{u.Transformed}");
-            string digest = Hash(JsonSerializer.Serialize(battle.Log) + "\n" + string.Join("\n", units));
+                .Select(u => $"{u.Id}:{u.Type.Id}{(u.Type.GrownLevel > 0 ? $"@{u.Type.GrownLevel}" : "")}:{u.Hp}:{u.Xp}:{u.Retreated}:{u.Summoned}:{u.Transformed}");
+            string record = JsonSerializer.Serialize(battle.Log) + "\n" + string.Join("\n", units);
+            if (TraceDir is { } dir && trace.Length > 0)
+                File.WriteAllText(Path.Combine(Directory.CreateDirectory(Path.Combine(dir, trace)).FullName, $"battle-{lines.Count + 1:D2}.txt"), record);
+            string digest = Hash(record);
             string winner = battle.Winner is not { } w ? "" : w.Equals(attacker.Id, StringComparison.OrdinalIgnoreCase) ? "attacker" : "defender";
             var line = new JsonObject { ["battle"] = lines.Count + 1 };
             if (!hashesOnly)
@@ -123,6 +134,27 @@ internal static class PortSnapshot
             Assert.True(want == got, $"снимок {name}, строка {i + 1} разошлась — правила дали другой результат. Если правка правил " +
                                      $"осознанная, перепишите снимки (D2_SNAPSHOTS_ACCEPT=1) и посмотрите diff.\nбыло:  {want}\nстало: {got}");
         }
+    }
+
+    /// <summary>Сохранение партии после дня <paramref name="day"/> в трассу <paramref name="name"/> (если она включена).</summary>
+    private static void Trace(string name, int day, GameSession session)
+    {
+        if (TraceDir is not { } dir || name.Length == 0) return;
+        var save = GameSave.ToJson(session.SnapshotWithoutSummaries() with { Summaries = new Dictionary<string, PendingSummary>() }, "", DateTime.UnixEpoch);
+        File.WriteAllText(Path.Combine(Directory.CreateDirectory(Path.Combine(dir, name)).FullName, $"day-{day:D2}.json"), save);
+    }
+
+    /// <summary>Решения ИИ в трассу (<c>ai.txt</c>): выборы тактики и шаги стратегии по порядку — по ним ищется первое расходящееся решение.</summary>
+    private sealed class AiTraceWriter(string path) : IAiTrace
+    {
+        public void Picked(string playerId, int day, AiTacticOption action, double score, int candidates) =>
+            File.AppendAllText(path, $"{day} {playerId} pick {action} {score:R} {candidates}\n");
+
+        public void Stepped(string playerId, int day, AiExecuted step, int number) =>
+            File.AppendAllText(path, $"{day} {playerId} step {number} {step}\n");
+
+        public void TurnEnded(string playerId, int day, long ms, int steps, int picks) =>
+            File.AppendAllText(path, $"{day} {playerId} end {steps} {picks}\n");
     }
 
     private static string Json(JsonNode node) => node.ToJsonString(Line);

@@ -1,4 +1,6 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
+using LastEdict.Data.Content;
 using LastEdict.Data.Map;
 using LastEdict.Rules.Map;
 
@@ -21,8 +23,13 @@ public static class ScenarioFile
     /// читается без них.
     /// 3 — выигранные сражения отряда (<c>MapStack.BattlesWon</c>, <c>NBBATTLE</c>); версии 1–2 читаются с нулём.
     /// 4 — могилы (<c>MapState.Tombs</c>) и уровень создания отряда (<c>MapStack.CreationLevel</c>); версии 1–3 — без могил, уровень 1.
-    /// 5 — приоритет редактора для ИИ (<c>MapStack.AiPriority</c>, <c>MapSite.AiPriority</c>, <c>AIPRIORITY</c>); версии 1–4 — 3.</summary>
-    public const int Version = 5;
+    /// 5 — приоритет редактора для ИИ (<c>MapStack.AiPriority</c>, <c>MapSite.AiPriority</c>, <c>AIPRIORITY</c>); версии 1–4 — 3.
+    /// 6 — ссылки на содержимое — id содержимого (<c>base:unit/knight</c>), а не id оригинала; версии 1–5 переводятся при чтении
+    /// (<see cref="LegacyRefs"/>).</summary>
+    public const int Version = 6;
+
+    /// <summary>Первая версия со ссылками по id содержимого.</summary>
+    private const int ContentIdsVersion = 6;
 
     public const string Extension = ".json";
 
@@ -30,11 +37,15 @@ public static class ScenarioFile
 
     /// <summary>Сценарий из <c>.sg</c> игры — только для импорта.</summary>
     public static ScenarioData FromSg(string sgPath) =>
-        new(Path.GetFileNameWithoutExtension(sgPath), MapLooksLoader.Load(sgPath), EventLoader.Load(sgPath));
+        WithContentIds(new(Path.GetFileNameWithoutExtension(sgPath), MapLooksLoader.Load(sgPath), EventLoader.Load(sgPath)));
 
     /// <summary>Сценарий из уже разобранного <c>.sg</c> (глава саги из таблиц <c>Scens</c>) — только для импорта.</summary>
     public static ScenarioData FromSg(string id, LastEdict.Data.Sg.SgFile file) =>
-        new(id, MapLooksLoader.Load(id, file), EventLoader.Load(id, file));
+        WithContentIds(new(id, MapLooksLoader.Load(id, file), EventLoader.Load(id, file)));
+
+    /// <summary><c>.sg</c> ссылается на содержимое id оригинала — сценарий Last Edict хранит id содержимого.</summary>
+    private static ScenarioData WithContentIds(ScenarioData raw) =>
+        raw with { Looks = LegacyRefs.ToContentIds(raw.Looks, LegacyIds.Base), Events = LegacyRefs.ToContentIds(raw.Events, LegacyIds.Base) };
 
     public static string ToJson(ScenarioData scenario)
     {
@@ -48,9 +59,15 @@ public static class ScenarioFile
         Envelope? e;
         try
         {
-            e = JsonSerializer.Deserialize<Envelope>(json, SaveJson.Options);
+            if (SaveJson.VersionOf(json) >= ContentIdsVersion) e = JsonSerializer.Deserialize<Envelope>(json, SaveJson.Options);
+            else
+            {
+                var node = JsonNode.Parse(json);
+                LegacyRefs.ToContentIds(node, LegacyIds.Base);
+                e = node.Deserialize<Envelope>(SaveJson.Options);
+            }
         }
-        catch (JsonException ex)
+        catch (Exception ex) when (ex is JsonException or InvalidOperationException or FormatException)
         {
             throw new InvalidDataException($"сценарий не читается: {ex.Message}", ex);
         }

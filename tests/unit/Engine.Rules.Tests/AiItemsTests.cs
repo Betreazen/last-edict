@@ -14,10 +14,10 @@ public class AiItemsTests
     private static Item Of(string id, ItemCategory cat, int heal = 0, string attack = "") =>
         new(id, cat, Bank.Zero, "", "", heal, "", Bank.Zero, attack, "");
 
-    private static readonly Item Heal = Of("g000ig0001", ItemCategory.PotionHeal, heal: 50);
-    private static readonly Item Revive = Of("g000ig0002", ItemCategory.PotionRevive);
-    private static readonly Item Orb = Of("g000ig0003", ItemCategory.Orb, attack: OrbAttack.Id);
-    private static readonly Item Boost = Of("g000ig0004", ItemCategory.PotionBoost);
+    private static readonly Item Heal = Of("base:item/life-potion", ItemCategory.PotionHeal, heal: 50);
+    private static readonly Item Revive = Of("base:item/potion-of-protection", ItemCategory.PotionRevive);
+    private static readonly Item Orb = Of("base:item/treebark-potion", ItemCategory.Orb, attack: OrbAttack.Id);
+    private static readonly Item Boost = Of("base:item/iron-skin-potion", ItemCategory.PotionBoost);
 
     private static BattleUnit Leader(int slot = 0)
     {

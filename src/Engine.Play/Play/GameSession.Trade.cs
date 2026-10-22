@@ -22,8 +22,8 @@ public sealed partial class GameSession
     {
         var offer = kind switch
         {
-            AiGiftKind.Item => AiGift.PickItem(Rng, GiftItems(playerId), relation),
-            AiGiftKind.Spell => AiGift.PickSpell(Rng, GiftSpells(playerId, targetId), relation),
+            AiGiftKind.Item => AiGift.PickItem(AiRng, GiftItems(playerId), relation),
+            AiGiftKind.Spell => AiGift.PickSpell(AiRng, GiftSpells(playerId, targetId), relation),
             _ => AiGift.Gold(Diplomacy.AreAllies(Map.Relations, PartyOf(playerId)!.Value, PartyOf(targetId)!.Value),
                              relation, (int)Map.Players[playerId].Bank.Gold),
         };
@@ -49,14 +49,15 @@ public sealed partial class GameSession
         return list;
     }
 
-    /// <summary>Заклинания для подарка (<c>0x5cdde7</c>): известные ИИ, кроме призыва, которых не знает цель, — по id.</summary>
+    /// <summary>Заклинания для подарка (<c>0x5cdde7</c>): известные ИИ, кроме призыва, которых не знает цель, — по id оригинала (у нового
+    /// заклинания мода — за ними, в порядке содержимого).</summary>
     internal IReadOnlyList<AiGiftSpell> GiftSpells(string playerId, string targetId)
     {
         var spells = Book!.Spells;
         var known = new HashSet<string>(Map.Players[targetId].KnownSpells, StringComparer.OrdinalIgnoreCase);
         return [.. Map.Players[playerId].KnownSpells
                    .Where(id => spells.TryGetValue(id, out var s) && s.Category != SpellCategory.Summon && !known.Contains(id))
-                   .Select(id => id.ToUpperInvariant()).Distinct().Order(StringComparer.Ordinal)
+                   .Distinct(StringComparer.OrdinalIgnoreCase).Order(Book.Legacy)
                    .Select(id => new AiGiftSpell(id, spells[id].Level, (int)spells[id].BuyCost.Gold))];
     }
 
@@ -95,7 +96,7 @@ public sealed partial class GameSession
         }
         var payer = Map.Players[target];
         bool known = offer.Kind == AiGiftKind.Spell && payer.KnownSpells.Contains(offer.Object, StringComparer.OrdinalIgnoreCase);
-        bool accept = AiDiplomacy.AnswerTrade(Rng, offer.Gold, TradePrice(offer), (int)payer.Bank.Gold, known);
+        bool accept = AiDiplomacy.AnswerTrade(AiRng, offer.Gold, TradePrice(offer), (int)payer.Bank.Gold, known);
         return SettleTrade(proposer, target, offer, accept, report);
     }
 
@@ -123,7 +124,7 @@ public sealed partial class GameSession
                 || !Book!.Spells.TryGetValue(thing, out var spell))
                 return new(null, "заклинание не известно");
             if (spell.Category == SpellCategory.Summon) return new(null, "призыв не продаётся");
-            return new(ProposeTrade(playerId, targetId, new AiTradeOffer(kind, thing.ToUpperInvariant(), "", gold), report), null);
+            return new(ProposeTrade(playerId, targetId, new AiTradeOffer(kind, thing, "", gold), report), null);
         }
         if (fort is null || !map.Sites.Any(s => s.Id.Equals(fort, StringComparison.OrdinalIgnoreCase)
                                                && s.Kind is SiteKind.Capital or SiteKind.Village
@@ -150,7 +151,7 @@ public sealed partial class GameSession
                 OfferToHuman(new AllianceOffer(playerId, targetId, Map.Turn, Exchange: true));
             return new(null, null);
         }
-        bool accept = AiDiplomacy.AnswerExchangeMap(Rng);
+        bool accept = AiDiplomacy.AnswerExchangeMap(AiRng);
         SettleExchange(playerId, targetId, accept, report);
         return new(accept, null);
     }
@@ -278,7 +279,7 @@ public sealed partial class GameSession
             if (offer.Kind == AiGiftKind.Spell)
             {
                 var payer = players[payerId];
-                players[payerId] = payer with { KnownSpells = [.. payer.KnownSpells, offer.Object.ToUpperInvariant()] };
+                players[payerId] = payer with { KnownSpells = [.. payer.KnownSpells, offer.Object] };
                 basePrice = (int)book.Spells[offer.Object].BuyCost.Gold;
             }
             else

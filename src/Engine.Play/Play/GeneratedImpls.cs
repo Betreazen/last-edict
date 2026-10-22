@@ -3,7 +3,8 @@ using LastEdict.Rules.Map;
 namespace LastEdict.Data.Play;
 
 /// <summary>
-/// Порождённые реализации юнитов (<c>G000UG…</c>, <see cref="LastEdict.Rules.Units.UnitGenerator"/>), уже созданные в этом запуске игры. От них
+/// Реализации юнитов, выросших уровнем выше своего типа (<see cref="LastEdict.Rules.Units.UnitGenerator"/>; оригинал звал их порождёнными,
+/// <c>G000UG…</c>), уже созданные в этом запуске игры: тип и уровень. От них
 /// зависит опыт лидера у порога (И230): прибавка <c>changeUnitXpCheckUpgrade 0x5d7412</c> ищет цель повышения лидера <c>0x5d89c6</c> без
 /// создания (<c>push 0</c>, <c>0x5d747d</c>) — поиск <c>0x5d7ef8</c> идёт по коллекции реализаций глобальных данных; нашлась — прибавка целиком
 /// (опыт садится на <c>XP_NEXT</c>, следом <c>0x5d8b17</c> повышает), нет — на 1 меньше (<c>0x5d749e</c>). Создаёт реализацию повышение
@@ -25,9 +26,8 @@ internal static class GeneratedImpls
     /// <summary>Юнит стал реализацией <paramref name="typeId"/> уровня <paramref name="level"/> — она теперь создана.</summary>
     public static void Add(ISet<string> created, string typeId, int level, GameBook book)
     {
-        if (book.Rules.Generator is { } g && book.Rules.Units.TryGetValue(typeId, out var type) && level > type.Level
-            && g.GeneratedId(typeId, level) is { Length: > 0 } id)
-            created.Add(id);
+        if (book.Rules.Generator is not null && book.Rules.Units.TryGetValue(typeId, out var type) && level > type.Level)
+            created.Add(Key(type.Id, level));
     }
 
     /// <summary>Юнит вырос из <paramref name="before"/> в <paramref name="after"/> — каждое повышение (<c>0x5d8b17</c>) создало реализацию
@@ -41,6 +41,9 @@ internal static class GeneratedImpls
     /// <summary>Создан ли тип следующего уровня лидера — ответ <c>0x5d89c6(…, 0)</c>: лидер ниже потолка <c>MAX_LEADER</c>
     /// (<c>0x5d8a48</c>) и реализация уровнем выше уже есть.</summary>
     public static bool NextTierCreated(ISet<string> created, string typeId, int level, int maxLeader, GameBook book) =>
-        (maxLeader <= 0 || level < maxLeader) && book.Rules.Generator is { } g
-        && g.GeneratedId(typeId, level + 1) is { Length: > 0 } id && created.Contains(id);
+        (maxLeader <= 0 || level < maxLeader) && book.Rules.Generator is not null
+        && book.Rules.Units.TryGetValue(typeId, out var type) && level + 1 > type.Level && created.Contains(Key(type.Id, level + 1));
+
+    /// <summary>Реализация в наборе: ключ типа и уровень.</summary>
+    private static string Key(string typeId, int level) => $"{typeId.ToLowerInvariant()}@{level}";
 }

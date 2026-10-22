@@ -10,7 +10,7 @@ namespace LastEdict.Rules.Tests;
 public class EquipmentTests
 {
     private static Item Of(ItemCategory category, string modifier = "") =>
-        new("G000IG0001", category, Bank.Zero, modifier, "", 0, "", Bank.Zero, "", "");
+        new("base:item/life-potion", category, Bank.Zero, modifier, "", 0, "", Bank.Zero, "", "");
 
     private static MapStack Stack(string[]? units = null, string[]? slots = null, string[]? bag = null) => new()
     {
@@ -158,22 +158,22 @@ public class EquipmentTests
     [Fact] public void Equip_BannerGoesToEveryUnit_OtherItemsToTheLeaderOnly()
     {
         var stack = Stack(["U1", "U2", "U3"], ["", "", "", "", "", "", ""]);
-        var banner = Equipment.Equip(stack, Of(ItemCategory.Banner, "g000um2107"), "S000IM0001",
+        var banner = Equipment.Equip(stack, Of(ItemCategory.Banner, "base:modifier/banner-of-strength"), "S000IM0001",
                                      Equipment.SlotBanner, Has(9), leaderAlive: true);
         Assert.True(banner.Done);
         Assert.Equal(["U1", "U2", "U3"], banner.Bearers);
         Assert.Equal("S000IM0001", banner.Slots[Equipment.SlotBanner]);
 
-        var sword = Equipment.Equip(stack, Of(ItemCategory.Weapon, "g000um2301"), "S000IM0002",
+        var sword = Equipment.Equip(stack, Of(ItemCategory.Weapon, "base:modifier/dwarven-bracer-artifact"), "S000IM0002",
                                     Equipment.SlotArtifact1, Has(8), leaderAlive: true);
         Assert.Equal(["U1"], sword.Bearers);
-        Assert.Equal("g000um2301", sword.ModifierId);
+        Assert.Equal("base:modifier/dwarven-bracer-artifact", sword.ModifierId);
     }
 
     [Fact] public void Equip_RefusedKeepsSlotsAndGivesNobodyAnything()
     {
         var stack = Stack(slots: ["", "", "", "", "", "", ""]);
-        var refused = Equipment.Equip(stack, Of(ItemCategory.Talisman, "g000um0001"), "S000IM0003",
+        var refused = Equipment.Equip(stack, Of(ItemCategory.Talisman, "base:modifier/air-ward"), "S000IM0003",
                                       Equipment.SlotBattle1, None, leaderAlive: true);
         Assert.False(refused.Done);
         Assert.Equal(EquipRefusal.NeedTalismanUse, refused.Refusal);
@@ -193,11 +193,11 @@ public class EquipmentTests
     [Fact] public void Unequip_ClearsTheSlotAndNamesTheSameBearers()
     {
         var stack = Stack(["U1", "U2"], ["S000IM0006", "", "", "", "", "", ""]);
-        var off = Equipment.Unequip(stack, Equipment.SlotBanner, Of(ItemCategory.Banner, "g000um2107"));
+        var off = Equipment.Unequip(stack, Equipment.SlotBanner, Of(ItemCategory.Banner, "base:modifier/banner-of-strength"));
         Assert.True(off.Done);
         Assert.Equal("", off.Slots[Equipment.SlotBanner]);
         Assert.Equal(["U1", "U2"], off.Bearers);
-        Assert.Equal("g000um2107", off.ModifierId);
+        Assert.Equal("base:modifier/banner-of-strength", off.ModifierId);
     }
 
     [Fact] public void Carried_SeesBothTheBagAndTheSlots()
@@ -222,19 +222,19 @@ public class EquipmentTests
 
     [Fact] public void Split_SeparatesInnateLevelsAndItems()
     {
-        var tome = Of(ItemCategory.Jewel, "g000um2407");          // Книга колдовства -> 15
+        var tome = Of(ItemCategory.Jewel, "base:modifier/tome-of-sorcery");          // Книга колдовства -> 15
         var catalogue = new Dictionary<string, Modifier>(StringComparer.OrdinalIgnoreCase)
         {
-            ["g000um2407"] = Ability("g000um2407", 15),
-            ["g000um4002"] = Ability("g000um4002", 10),           // «Тайное знание» -> 10
+            ["base:modifier/tome-of-sorcery"] = Ability("base:modifier/tome-of-sorcery", 15),
+            ["base:modifier/skill-arcane-knowledge"] = Ability("base:modifier/skill-arcane-knowledge", 10),           // «Тайное знание» -> 10
         };
         var innate = new Dictionary<string, IReadOnlyList<int>>(StringComparer.OrdinalIgnoreCase)
         {
-            ["G000UU0021"] = [7, 14],                             // Архимаг
+            ["base:unit/archmage"] = [7, 14],                             // Архимаг
         };
 
         // Цепочка сохранения несёт и уровневый навык, и MOD_EQUIP надетой книги.
-        var sources = LeaderAbilities.Split("G000UU0021", innate, ["g000um4002", "g000um2407"],
+        var sources = LeaderAbilities.Split("base:unit/archmage", innate, ["base:modifier/skill-arcane-knowledge", "base:modifier/tome-of-sorcery"],
                                             [tome], [tome], catalogue);
         Assert.Equal([7, 14], sources.Innate.Order());
         Assert.Equal([10], sources.FromLevels.Order());
@@ -246,13 +246,13 @@ public class EquipmentTests
         Assert.Equal("", sources.Where(13));
 
         // Та же цепочка, но книга — проверяемый предмет: её способности ещё нет ни в одном источнике.
-        var gate = LeaderAbilities.Split("G000UU0021", innate, ["g000um4002", "g000um2407"],
+        var gate = LeaderAbilities.Split("base:unit/archmage", innate, ["base:modifier/skill-arcane-knowledge", "base:modifier/tome-of-sorcery"],
                                          [tome], [], catalogue);
         Assert.Empty(gate.FromItems);
         Assert.Equal([10], gate.FromLevels.Order());
         Assert.Equal(EquipRefusal.Ok, Equipment.Check(tome, Equipment.SlotTome, gate.All, true));
         // Без уровневого навыка книгу надеть нельзя — источник несущий.
-        var bare = LeaderAbilities.Split("G000UU0021", innate, [], [], [], catalogue);
+        var bare = LeaderAbilities.Split("base:unit/archmage", innate, [], [], [], catalogue);
         Assert.Equal(EquipRefusal.NeedJewelryUse, Equipment.Check(tome, Equipment.SlotTome, bare.All, true));
     }
 
@@ -261,8 +261,8 @@ public class EquipmentTests
         var catalogue = new Dictionary<string, Modifier>(StringComparer.OrdinalIgnoreCase);
         var innate = new Dictionary<string, IReadOnlyList<int>>(StringComparer.OrdinalIgnoreCase);
         Assert.Throws<InvalidDataException>(() =>
-            LeaderAbilities.Split("G000UU0023", innate, ["g000um9999"], [], [], catalogue));
+            LeaderAbilities.Split("base:unit/thief-empire", innate, ["g000um9999"], [], [], catalogue));
         // Вор: врождённых нет ни одной — пустой набор, а не исключение.
-        Assert.Empty(LeaderAbilities.Split("G000UU0023", innate, [], [], [], catalogue).All);
+        Assert.Empty(LeaderAbilities.Split("base:unit/thief-empire", innate, [], [], [], catalogue).All);
     }
 }

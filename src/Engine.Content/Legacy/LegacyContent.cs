@@ -107,14 +107,7 @@ public static class LegacyContent
             return _ids.TryGetValue(kind, out var ids) && ids.TryGetValue(legacy, out var id) ? id : ContentSet.LegacyPrefix + legacy;
         }
 
-        private static readonly IReadOnlyDictionary<string, string> Known = LoadKnown();
-
-        private static Dictionary<string, string> LoadKnown()
-        {
-            using var stream = typeof(LegacyContent).Assembly.GetManifestResourceStream("LastEdict.Data.Content.Legacy.legacy-ids.json")
-                               ?? throw new InvalidOperationException("нет ресурса legacy-ids.json");
-            return JsonSerializer.Deserialize<Dictionary<string, string>>(stream) ?? [];
-        }
+        private static readonly IReadOnlyDictionary<string, string> Known = LegacyIds.LoadTable();
 
         // ---- сущности
 
@@ -142,6 +135,10 @@ public static class LegacyContent
                                                                                        EnumOf<ImmunityLevel>(i, "IMMUNECAT", $"GimmuC «{legacy}»")))],
                     LeaderAbilities = [.. abilities[legacy].Select(a => EnumOf<LeaderAbility>(a, "L_ABILITY", $"GLabi «{legacy}»"))],
                     MoveAbilities = [.. moves[legacy].Select(a => EnumOf<MoveAbility>(a, "M_ABILITY", $"GMabi «{legacy}»"))],
+                    // Списки движка (LegacyUnits) — явно, только отличие от обычного юнита.
+                    MageLeader = LegacyUnits.IsMageLeader(legacy) ? true : null,
+                    DamageBonus = LegacyUnits.HasDamageBonus(legacy) ? true : null,
+                    Copyable = LegacyUnits.IsCopyable(legacy) ? null : false,
                 });
             })];
         }

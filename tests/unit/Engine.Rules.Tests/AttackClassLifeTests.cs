@@ -27,23 +27,23 @@ public class AttackClassLifeTests(ITestOutputHelper output)
     private static readonly Lazy<GameRules> Rules = new(() => RulesLoader.Load(ImportedData.Content));
 
     // Ванильные участники, названные поимённо (перебор Gunits × Gattacks по классу атаки).
-    private const string Nosferat = "g000uu0097";      // L1 Drain, hp 90
-    private const string NosferatBite = "g000aa0097";  // Drain, POWER 80, REACH 1, SOURCE 3, QTY_DAM 10
-    private const string Vampire = "g000uu5283";       // L1, hp 185 — мишень покрупнее
-    private const string VampireBite = "g000aa0083";   // Drain, QTY_DAM 50
-    private const string ElderVampire = "g000uu0175";  // L5 DrainOverflow, hp 210, PREV_ID g000uu0083
-    private const string ElderBite = "g000aa0175";     // DrainOverflow, POWER 80, REACH 1, QTY_DAM 60
-    private const string Hierophant = "g000uu0150";    // L4, ATTACK2 — Revive
-    private const string ReviveTouch = "g000aa1150";   // Revive, POWER 100, REACH 2, SOURCE 2, QTY_HEAL 50
-    private const string Wight = "g000uu0178";         // L4, ATTACK2 — DrainLevel
-    private const string DrainLevelTouch = "g000aa1178"; // DrainLevel, POWER 80, REACH 2, SOURCE 3
-    private const string Occultist = "g000uu6013";     // L1 Summon
-    private const string SummonOne = "g000aa6013";     // Summon: один кандидат, g000uu0087
-    private const string SummonMany = "g000aa6014";    // Summon: пять малых кандидатов — rand()
-    private const string OracleElf = "g000uu5006";     // L1 площадной лекарь, hp 125
-    private const string OracleHeal = "g000aa5006";    // Heal, REACH 1, QTY_HEAL 60
-    private const string Squire = "g000uu0001";        // L1, hp 100, ARMOR 0, PREV_ID пуст, иммунитетов нет
-    private const string Knight = "g000uu0002";        // L2, hp 150, PREV_ID g000uu0001, иммунитетов нет
+    private const string Nosferat = "base:unit/nosferat";      // L1 Drain, hp 90
+    private const string NosferatBite = "base:attack/nosferat";  // Drain, POWER 80, REACH 1, SOURCE 3, QTY_DAM 10
+    private const string Vampire = "base:unit/vampire-neutral";       // L1, hp 185 — мишень покрупнее
+    private const string VampireBite = "base:attack/vampire-undead";   // Drain, QTY_DAM 50
+    private const string ElderVampire = "base:unit/elder-vampire";  // L5 DrainOverflow, hp 210, PREV_ID g000uu0083
+    private const string ElderBite = "base:attack/elder-vampire";     // DrainOverflow, POWER 80, REACH 1, QTY_DAM 60
+    private const string Hierophant = "base:unit/hierophant";    // L4, ATTACK2 — Revive
+    private const string ReviveTouch = "base:attack/hierophant-2nd";   // Revive, POWER 100, REACH 2, SOURCE 2, QTY_HEAL 50
+    private const string Wight = "base:unit/wight";         // L4, ATTACK2 — DrainLevel
+    private const string DrainLevelTouch = "base:attack/wight-2nd"; // DrainLevel, POWER 80, REACH 2, SOURCE 3
+    private const string Occultist = "base:unit/occultist-neutral";     // L1 Summon
+    private const string SummonOne = "base:attack/occultist-neutral";     // Summon: один кандидат, g000uu0087
+    private const string SummonMany = "base:attack/master-occultist-neutral";    // Summon: пять малых кандидатов — rand()
+    private const string OracleElf = "base:unit/oracle-elf";     // L1 площадной лекарь, hp 125
+    private const string OracleHeal = "base:attack/oracle-elf";    // Heal, REACH 1, QTY_HEAL 60
+    private const string Squire = "base:unit/squire-empire";        // L1, hp 100, ARMOR 0, PREV_ID пуст, иммунитетов нет
+    private const string Knight = "base:unit/knight";        // L2, hp 150, PREV_ID g000uu0001, иммунитетов нет
 
     private static RulesConstants C => Rules.Value.Constants;
 
@@ -89,7 +89,7 @@ public class AttackClassLifeTests(ITestOutputHelper output)
         Assert.Equal(0, Rules.Value.Units[Squire].Armor);
         Assert.Equal(0, Rules.Value.Units[Vampire].Armor);
         // PREV_ID: у Старшего вампира предыдущий — Вампир, у Оруженосца предыдущего нет вовсе.
-        Assert.Equal("g000uu0083", Rules.Value.Units[ElderVampire].PrevId);
+        Assert.Equal("base:unit/vampire-undead", Rules.Value.Units[ElderVampire].PrevId);
         Assert.Equal("", Rules.Value.Units[Squire].PrevId);
         // Gtransf: у одной атаки призыва кандидат один, у другой — пять малых.
         Assert.Single(Rules.Value.SummonCandidates(SummonOne, smallSlot: true));
@@ -186,7 +186,7 @@ public class AttackClassLifeTests(ITestOutputHelper output)
         {
             Id = "a", Type = Rules.Value.Units[Nosferat], Attack = Attack(NosferatBite),
             Attacker = false, Slot = 0, HpMax = 90, Hp = 1,
-            Modifiers = [new Modifier("g000um2317", [new ModifierElement(ModifierElementType.AttackDrain, Percent: 25)])],
+            Modifiers = [new Modifier("base:modifier/unholy-dagger-artifact", [new ModifierElement(ModifierElementType.AttackDrain, Percent: 25)])],
         };
         var t = Of(Squire, attacker: true);
         var r = Attacks.Apply(a, Attack(NosferatBite), t, new ScriptedRng(HitNoBonus), C, round: 1);
@@ -341,7 +341,7 @@ public class AttackClassLifeTests(ITestOutputHelper output)
         };
         var t = new BattleUnit
         {
-            Id = "t", Type = immuneType, Attack = Attack("g000aa0001"), Attacker = true, Slot = 0,
+            Id = "t", Type = immuneType, Attack = Attack("base:attack/squire-empire"), Attacker = true, Slot = 0,
             HpMax = 50, Hp = 0,
         };
         var r = Attacks.Apply(Of(Hierophant), attack, t, new ScriptedRng([]), C, round: 1);
@@ -408,7 +408,7 @@ public class AttackClassLifeTests(ITestOutputHelper output)
         Assert.True(r.Applied);
         Assert.Equal(0, rng.Used);
         var summoned = Assert.Single(state.Units, u => u.Summoned);
-        Assert.Equal("g000uu0087", summoned.Type.Id);     // единственный кандидат Gtransf
+        Assert.Equal("base:unit/zombie-undead", summoned.Type.Id);     // единственный кандидат Gtransf
         Assert.Equal(2, summoned.Slot);                   // первый свободный: 0 и 1 заняты
         Assert.False(summoned.Attacker);                  // сторона — та же, что у призывателя
         Assert.Equal(summoned.HpMax, summoned.Hp);
@@ -642,8 +642,8 @@ public class AttackClassLifeTests(ITestOutputHelper output)
     /// <para>Три строки третьего круга (GiveAttack, Doppelganger, TransformOther) убраны задачей 7,
     /// счёт их бросков — в <c>AttackClassTransformTests</c>.</para></summary>
     [SkippableTheory]
-    [InlineData("g000aa8150")]    // Shatter — canMiss заглушка
-    [InlineData("g000aa8133")]    // BestowWards — тоже заглушка
+    [InlineData("base:attack/sir-allemon-neutral-2nd")]    // Shatter — canMiss заглушка
+    [InlineData("base:attack/grovemaiden-elves")]    // BestowWards — тоже заглушка
     public void FourthCircleClasses_AreImplemented_AndSpendNoRolls(string attackId)
     {
         ImportedData.RequireRules();

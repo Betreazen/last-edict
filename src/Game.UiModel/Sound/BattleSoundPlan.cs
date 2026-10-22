@@ -44,7 +44,7 @@ public static class BattleSoundPlan
         ArgumentNullException.ThrowIfNull(sounds);
         var cues = new List<SoundCue>();
         if (records.Count == 0 || unitOf(records[0].Unit) is not { } actor) return cues;
-        var info = sounds.Of(actorType ?? actor.Type.GlobalId);
+        var info = sounds.Of(actorType ?? actor.Type.Id);
         double hitAt = info is null || itemStep ? 0 : Math.Max(0, info.HitFrame - info.AttackFrame) * FrameSeconds;
         if (info is not null)
         {
@@ -63,7 +63,7 @@ public static class BattleSoundPlan
             else if (!record.Miss)
             {
                 if (info is not null) Add(hitAt, sounds.Pick(info.Hit, random));
-                if (record.Damage > 0 && target is not null && sounds.Of(target.Type.GlobalId) is { } hurt && random(100) >= 100 - HurtChance)
+                if (record.Damage > 0 && target is not null && sounds.Of(target.Type.Id) is { } hurt && random(100) >= 100 - HurtChance)
                     Add(hitAt, sounds.Pick(hurt.Hurt, random), HurtVolume);
             }
             if (record.Damage > 0 && record.TargetHpAfter <= 0)

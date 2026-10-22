@@ -117,7 +117,7 @@ public class TreasuryTests
     [Fact]
     public void Revive_IsFlatReviveCost()
     {
-        var angel = new UnitCosts("g000uu0014", Gold(600), Gold(3), Gold(0), 1000);
+        var angel = new UnitCosts("base:unit/angel-empire", Gold(600), Gold(3), Gold(0), 1000);
         Assert.Equal(Gold(1300), Treasury.Pay(Gold(1900), Treasury.RevivePrice(angel)));   // прогон 2
     }
 
@@ -154,12 +154,12 @@ public class TreasuryTests
     {
         var growth = new[] { 150, 250, 500, 750, 750 };
         var cities = Enumerable.Range(1, 5)
-            .Select(s => new CityInfo("g000rr0000", s, 0, 0, "", Gold(growth[s - 1]), 0)).ToList();
+            .Select(s => new CityInfo("base:race/empire", s, 0, 0, "", Gold(growth[s - 1]), 0)).ToList();
         var rules = new EconomyRules(new Dictionary<string, RaceInfo>(), cities,
             new Dictionary<string, BuildingType>(), new Dictionary<string, UnitHire>(),
             IncomeBonusPercent: [0, 0, 0, 0], CrystalProfit: 50, SellRatio: 20, ConstructionUrgency: 0);
 
-        Assert.Equal(Gold(gold), Treasury.CityGrowthPrice(rules, "G000RR0000", size, lordCategory));
+        Assert.Equal(Gold(gold), Treasury.CityGrowthPrice(rules, "base:race/empire", size, lordCategory));
     }
 
     [Theory]
@@ -169,7 +169,7 @@ public class TreasuryTests
     [InlineData(1200, 240)]
     public void ItemSellPrice_IsValueTimesSellRatio(int value, int gold)
     {
-        var item = new Item("G000IG0005", ItemCategory.PotionHeal, Gold(value), "", "", 0, "", Bank.Zero, "", "");
+        var item = new Item("base:item/potion-of-healing", ItemCategory.PotionHeal, Gold(value), "", "", 0, "", Bank.Zero, "", "");
         Assert.Equal(Gold(gold), Treasury.ItemSellPrice(item, sellRatio: 20));
     }
 
@@ -189,9 +189,9 @@ public class TreasuryTests
     public void StartBuildings_MageGetsItsMagicTower()
     {
         BuildingType B(string id, int category) => new(id, "", Gold(150), 2, category, 0);
-        var empire = new[] { B("G000BB0023", 1), B("G000BB0024", 2), B("G000BB0025", 0) };
+        var empire = new[] { B("base:building/temple", 1), B("base:building/magic-tower", 2), B("base:building/guild", 0) };
 
-        Assert.Equal(["G000BB0024"], Treasury.StartBuildings(Treasury.MageCategory, empire));
+        Assert.Equal(["base:building/magic-tower"], Treasury.StartBuildings(Treasury.MageCategory, empire));
         Assert.Empty(Treasury.StartBuildings(1, empire));
         Assert.Empty(Treasury.StartBuildings(Treasury.GuildmasterCategory, empire));
     }
@@ -218,16 +218,16 @@ public class TreasuryTests
         var spells = SpellLoader.Load(ImportedData.Content);
 
         Assert.Equal(Gold(150), Treasury.RodPrice(treasury));
-        Assert.Equal(Gold(600), Treasury.RevivePrice(treasury.Units["g000uu0014"]));
-        Assert.Equal(Gold(5), treasury.Units["g000uu0002"].Training);
-        Assert.Equal(475, treasury.Units["g000uu0002"].XpNext);
-        Assert.Equal(Treasury.GuildmasterCategory, treasury.LordCategory["G000LR0002"]);
-        Assert.Equal(Treasury.MageCategory, treasury.LordCategory["G000LR0003"]);
-        Assert.Equal(Gold(150), Treasury.ItemBuyPrice(items["G000IG0005"]));
-        Assert.Equal(Gold(30), Treasury.ItemSellPrice(items["G000IG0005"], economy.SellRatio));
-        Assert.Equal(Gold(200), Treasury.SpellBuyPrice(spells["g000ss0001"]));
-        Assert.Equal(Gold(300), Treasury.BuildingPrice(economy.Buildings["g000bb0023"]));
-        Assert.Equal(Gold(75), Treasury.CityGrowthPrice(economy, "g000rr0000", 1, Treasury.GuildmasterCategory));
-        Assert.Equal(Gold(250), Treasury.CityGrowthPrice(economy, "g000rr0000", 2, lordCategory: 1));
+        Assert.Equal(Gold(600), Treasury.RevivePrice(treasury.Units["base:unit/angel-empire"]));
+        Assert.Equal(Gold(5), treasury.Units["base:unit/knight"].Training);
+        Assert.Equal(475, treasury.Units["base:unit/knight"].XpNext);
+        Assert.Equal(Treasury.GuildmasterCategory, treasury.LordCategory["base:lord/human-guildmaster"]);
+        Assert.Equal(Treasury.MageCategory, treasury.LordCategory["base:lord/human-mage-lord"]);
+        Assert.Equal(Gold(150), Treasury.ItemBuyPrice(items["base:item/potion-of-healing"]));
+        Assert.Equal(Gold(30), Treasury.ItemSellPrice(items["base:item/potion-of-healing"], economy.SellRatio));
+        Assert.Equal(Gold(200), Treasury.SpellBuyPrice(spells["base:spell/air-ward"]));
+        Assert.Equal(Gold(300), Treasury.BuildingPrice(economy.Buildings["base:building/temple"]));
+        Assert.Equal(Gold(75), Treasury.CityGrowthPrice(economy, "base:race/empire", 1, Treasury.GuildmasterCategory));
+        Assert.Equal(Gold(250), Treasury.CityGrowthPrice(economy, "base:race/empire", 2, lordCategory: 1));
     }
 }

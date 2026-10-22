@@ -19,12 +19,12 @@ public class ChargesTests(ITestOutputHelper output)
     private static readonly Lazy<IReadOnlyDictionary<string, Item>> Items =
         new(() => LastEdict.Data.Magic.ItemLoader.Load(ImportedData.Content));
 
-    private const string StaffLife = "G000IG6001";   // «Staff of Healing», CASTING 100 маны жизни
-    private const string StaffTwo = "G000IG6011";    // CASTING 150 смерти + 150 рун
-    private const string Orb = "G000IG9001";         // сфера, атака g000aa9101
-    private const string Talisman = "G000IG9101";    // талисман, та же атака
-    private const string Armour = "G000IG2001";      // надетая броня — расход её не касается
-    private const string Squire = "g000uu0001";
+    private const string StaffLife = "base:item/staff-of-thunder";   // «Staff of Healing», CASTING 100 маны жизни
+    private const string StaffTwo = "base:item/staff-of-dragon-mastering";    // CASTING 150 смерти + 150 рун
+    private const string Orb = "base:item/squire-orb";         // сфера, атака g000aa9101
+    private const string Talisman = "base:item/squire-talisman";    // талисман, та же атака
+    private const string Armour = "base:item/runestone-artifact";      // надетая броня — расход её не касается
+    private const string Squire = "base:unit/squire-empire";
 
     private static Item Item(string id) => Items.Value[id];
 
@@ -234,8 +234,8 @@ public class ChargesTests(ITestOutputHelper output)
 
     // ---- 4. зелье в бою --------------------------------------------------------------------------
 
-    private const string HealPotion = "G000IG0005";   // HP_POTION 50
-    private const string ArmorPotion = "G000IG0002";  // MOD_POTION g000um2002: броня +15
+    private const string HealPotion = "base:item/potion-of-healing";   // HP_POTION 50
+    private const string ArmorPotion = "base:item/potion-of-protection";  // MOD_POTION g000um2002: броня +15
 
     /// <summary>Лечебное зелье в бою: 83 → 100 при потолке 100 и +50 (ai-q33, seq 122535), предмет
     /// применён и после боя исчезает.</summary>

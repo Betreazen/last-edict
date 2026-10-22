@@ -20,7 +20,7 @@ public static class LordFaces
 
     /// <summary>Круглый портрет лорда 130×142 (<c>Faces</c>): <c>sprintf("%sLORD%d", RACE_ID, лицо + 1)</c> (<c>0x5c5424</c>) — слоты поля
     /// дипломатии (снимок 28.09 <c>CDiplomacyInterf</c>).</summary>
-    public static string Round(string raceId, int face) => $"Faces:{raceId}LORD{Math.Clamp(face, 0, 3) + 1}";
+    public static string Round(string raceId, int face) => $"Faces:{ArtNames.Of(raceId)}LORD{Math.Clamp(face, 0, 3) + 1}";
 }
 
 /// <summary>Названия рас (строки имён) — для <c>%RACE%</c> в окнах дипломатии.</summary>

@@ -36,9 +36,10 @@ public sealed class CastSpellLogic(WindowContext context, IReadOnlyDictionary<st
 
     protected override IReadOnlyList<string> SpellsOf(int level)
     {
-        var spells = C.Session.RequireBook().Spells;
+        var book = C.Session.RequireBook();
+        var spells = book.Spells;
         return [.. C.Player.KnownSpells.Where(s => spells.TryGetValue(s, out var spell) && spell.Level == level)
-                                       .Order(StringComparer.OrdinalIgnoreCase)];
+                                       .Order(book.Legacy)];   // порядок оригинала: по id оригинала заклинания
     }
 
     protected override int StartLevel()
@@ -124,7 +125,7 @@ public sealed class StratSpellLogic(WindowContext context, string spellId, IRead
     public void Refresh(UiScreenState ui)
     {
         ArgumentNullException.ThrowIfNull(ui);
-        ui.SetImage("IMG_SPELL_ICON", $"IconSpel:{spellId.ToUpperInvariant()}");
+        ui.SetImage("IMG_SPELL_ICON", $"IconSpel:{ArtNames.Of(spellId)}");
         string name = texts.TryGetValue(spellId, out var t) ? context.Text(t.NameTxt) : spellId;
         ui.SetText("TXT_SPELL_INFO", UiTemplate.Fill(context.Text("X005TA0617"), ("NAME", name)));
         var bank = context.Player.Bank;

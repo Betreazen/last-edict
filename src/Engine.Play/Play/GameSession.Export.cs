@@ -49,11 +49,11 @@ public sealed partial class GameSession
     /// лидера — пусто.</summary>
     private (string Name, string Type, bool Own) PopupLeader(string stackId)
     {
-        if (Book is not { } book || stackId.Length == 0 || !Map.Stacks.TryGetValue(stackId, out var stack)
+        if (Book is null || stackId.Length == 0 || !Map.Stacks.TryGetValue(stackId, out var stack)
             || !Map.Units.TryGetValue(stack.LeaderId, out var leader)) return ("", "", false);
         // 0x5e97dc: собственное имя — только у героя (IUsLeader, не вор и не призванный); прочим — имя типа (его ставит окно).
         return OwnName(leader.Id, leader.TypeId) is { } name
-            ? (name, GlobalType(book, leader.TypeId), true) : ("", GlobalType(book, leader.TypeId), false);
+            ? (name, leader.TypeId, true) : ("", leader.TypeId, false);
     }
 
     /// <summary>Собственное имя юнита для <c>CMidUnit::getName</c> (<c>0x5e97dc</c>, ранг 1 по листингу): у реализации
@@ -82,7 +82,7 @@ public sealed partial class GameSession
         var kinds = book.RaceLeaders.GetValueOrDefault(player.RaceId)?.Take(HiredLeaderKinds).ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (kinds is null) return [];
         return [.. Map.Stacks.Values.Where(s => s.Owner.Equals(playerId, StringComparison.OrdinalIgnoreCase)
-                                             && Map.Units.TryGetValue(s.LeaderId, out var u) && kinds.Contains(GlobalType(book, u.TypeId)))];
+                                             && Map.Units.TryGetValue(s.LeaderId, out var u) && kinds.Contains(u.TypeId))];
     }
 
     /// <summary>Отказ «ОК» окна вывоза (id строки) или null: герой не нанят в своём городе (<c>CREAT_LVL</c> ≠ 1) — <c>X005TA0726</c>;
@@ -93,7 +93,7 @@ public sealed partial class GameSession
         if (stack.CreationLevel != 1) return "X005TA0726";
         var book = RequireBook();
         bool playable = Map.Units.TryGetValue(stack.LeaderId, out var leader)
-                        && book.Extras.Units.TryGetValue(GlobalType(book, leader.TypeId), out var extra)
+                        && book.Extras.Units.TryGetValue(leader.TypeId, out var extra)
                         && book.Economy.Races.TryGetValue(extra.Race, out var race) && race.Playable;
         return playable ? null : "X005TA0729";
     }
@@ -111,13 +111,13 @@ public sealed partial class GameSession
         var book = RequireBook();
         var leader = Map.Units[stack.LeaderId];
         var grown = book.Grown(leader.TypeId, leader.Level) ?? throw new InvalidDataException($"нет типа {leader.TypeId}");
-        string type = GlobalType(book, leader.TypeId);
+        string type = leader.TypeId;
         var worn = WornItems(book, stack);
         var chain = leader.Modifiers.Select(m => book.Rules.Modifiers?.GetValueOrDefault(m)).OfType<Modifier>().ToList();
         var stats = EffectiveStats.Of(grown.Type, chain);
         var first = EffectiveStats.OfAttack(book.Rules.Attacks[grown.Type.AttackId], chain).Attack;
         var second = book.Rules.Attacks.TryGetValue(grown.Type.Attack2Id, out var a2) ? EffectiveStats.OfAttack(a2, chain).Attack : null;
-        int cap = Formulas.DamageMax(book.Rules.Constants, type);
+        int cap = Formulas.DamageMax(book.Rules.Constants, grown.Type);
         var move = MoveOptionsOf(stack);
         var sources = Immunities(grown.Type.ImmunitiesBySource, stats.Immunities);
         var classes = Immunities(grown.Type.ImmunitiesByClass, stats.ClassImmunities);
@@ -138,9 +138,9 @@ public sealed partial class GameSession
             BattlesWon = stack.BattlesWon,
             HitPoints = stats.HitPoints,
             Armor = stats.Armor,
-            Attack = new LeaderAttack(Up(first.Id), (int)first.Class, attackName(first.Id), first.Power, AttackLevel(first),
+            Attack = new LeaderAttack(first.Id, (int)first.Class, attackName(first.Id), first.Power, AttackLevel(first),
                                       Damage(first, cap), first.Source, first.Initiative, first.Reach),
-            Attack2 = Up(second?.Id ?? ""),
+            Attack2 = second?.Id ?? "",
             Attack2Name = second is null ? "" : attackName(second.Id),
             Attack2Power = second?.Power ?? 0,
             AttacksTwice = grown.Type.AttackTwice,
@@ -153,7 +153,7 @@ public sealed partial class GameSession
             WardSources = [.. ExportSources.Where(s => sources.GetValueOrDefault(s) == ImmunityLevel.Once)],
             WardClasses = [.. ExportClasses.Select(c => (int)c).Where(c => classes.GetValueOrDefault(c) == ImmunityLevel.Once)],
             Abilities = [.. ExportAbilities.Where(abilities.Contains)],
-            Modifiers = [.. leader.Modifiers.Where(m => !temporary.Contains(m)).Select(Up)],
+            Modifiers = [.. leader.Modifiers.Where(m => !temporary.Contains(m))],
             Equipment = worn,
             UpgradeCount = stack.UpgradeCount,
         };
@@ -180,12 +180,7 @@ public sealed partial class GameSession
     private IReadOnlyList<LeaderItem> WornItems(GameBook book, MapStack stack) =>
         [.. stack.Equipment.Select((id, slot) => (id, slot)).Where(p => p.id.Length > 0 && Map.ItemTypes.ContainsKey(p.id))
              .Select(p => (p.slot, p.id, type: Map.ItemTypes[p.id]))
-             .Select(p => new LeaderItem(p.slot, Up(p.type),
+             .Select(p => new LeaderItem(p.slot, p.type,
                  book.Items.GetValueOrDefault(p.type)?.Category == ItemCategory.Talisman ? Map.TalismanCharges.GetValueOrDefault(p.id) : 0))];
 
-    /// <summary>Глобальный тип юнита, id заглавными — как в файле героя движка (<c>G000UU0019</c>).</summary>
-    private static string GlobalType(GameBook book, string typeId) =>
-        Up(book.TryGlobal(typeId, out var id, out _) ? id : typeId);
-
-    private static string Up(string id) => id.ToUpperInvariant();
 }

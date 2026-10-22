@@ -1,3 +1,4 @@
+using LastEdict.Data.Content;
 using LastEdict.Data.Map;
 using LastEdict.Rules.Battle;
 using LastEdict.Rules.Map;
@@ -26,9 +27,35 @@ public sealed partial class GameSession(GameState state, MapArtData art, GameBoo
     /// <summary>Правила боя и опыта; без них партия ходит, но воевать не может.</summary>
     public GameBook? Book { get; } = book;
 
-    /// <summary>Генератор случайных чисел боёв: один поток на всю партию, как у движка (R250 над таблицей,
-    /// <see cref="EngineRng"/>). Продолжается с сохранённого места (<see cref="GameState.Random"/>).</summary>
-    public EngineRng Rng { get; } = state.Random is { } r ? EngineRng.FromSeed(r.Table, r.Index) : new();
+    /// <summary>Потоки случайных чисел партии по системам (<see cref="RngStream"/>, Э4): у оригинала один R250 на всё, и лишний бросок ИИ
+    /// сдвигал все бои. Продолжаются с сохранённого места (<see cref="GameState.Random"/>); у партии без генераторов — потоки зерна 0.</summary>
+    private readonly IReadOnlyDictionary<RngStream, EngineRng> _rng = Streams(state.Random);
+
+    /// <summary>Поток боёв (<see cref="RngStream.Battle"/>): <c>BattleSim</c> карты, событий и экрана боя.</summary>
+    public EngineRng BattleRng => _rng[RngStream.Battle];
+
+    /// <summary>Поток решений ИИ (<see cref="RngStream.Ai"/>).</summary>
+    public EngineRng AiRng => _rng[RngStream.Ai];
+
+    /// <summary>Поток добычи (<see cref="RngStream.Loot"/>).</summary>
+    public EngineRng LootRng => _rng[RngStream.Loot];
+
+    /// <summary>Поток мира карты (<see cref="RngStream.Map"/>): события, шпионы, воры человека, облик гор.</summary>
+    public EngineRng MapRng => _rng[RngStream.Map];
+
+    /// <summary>Поток <paramref name="stream"/>.</summary>
+    public EngineRng RngOf(RngStream stream) => _rng[stream];
+
+    /// <summary>Сколько бросков взяли все потоки — отпечаток для аудита правок мимо команд (<see cref="Execute"/>).</summary>
+    private long RngSteps => _rng.Values.Sum(r => (long)r.Steps);
+
+    private static IReadOnlyDictionary<RngStream, EngineRng> Streams(RandomStreams? saved) =>
+        RngStreams.All.ToDictionary(s => s, s => saved?.Of(s) is { } at ? EngineRng.FromSeed(at.Table, at.Index) : RngStreams.Derive(0, s));
+
+    /// <summary>Места потоков и CRT для записи.</summary>
+    private RandomStreams CurrentRandom() =>
+        new(_rng.ToDictionary(p => RngStreams.Name(p.Key), p => new RngState(p.Value.Index, p.Value.TableSnapshot()), StringComparer.OrdinalIgnoreCase),
+            Crt.State);
 
     /// <summary>CRT <c>rand()</c> потока игры (msvcrt, старт <c>srand(1)</c>): им ИИ выбирает юнитов найма
     /// (<c>0x44c137</c>) и имена лидеров. Продолжается с сохранённого места.</summary>
@@ -41,7 +68,7 @@ public sealed partial class GameSession(GameState state, MapArtData art, GameBoo
     /// этому мигу (<see cref="SummariesForSave"/>; нет поставщика — прежние, из загрузки).</summary>
     public GameState Snapshot() => State with
     {
-        Random = new RandomStreams(Rng.Index, Rng.TableSnapshot(), Crt.State),
+        Random = CurrentRandom(),
         Summaries = SummariesForSave?.Invoke() ?? State.Summaries,
     };
 
@@ -638,7 +665,7 @@ public sealed partial class GameSession(GameState state, MapArtData art, GameBoo
             if (spied)
             {
                 if (allied || other.CapturedBy.Length > 0) continue;
-                if (Rng.Next(Percent) >= book.SpyDiscovery) continue;
+                if (MapRng.Next(Percent) >= book.SpyDiscovery) continue;
                 players[playerId] = players[playerId] with { Spied = [.. players[playerId].Spied.Where(x => !Same(x, other.Id))] };
                 changed = true;
                 // CCmdDiscoverSpyMsg всем (0x43e8c0): разведанному — «обнаружен шпион», хозяину — «голова шпиона» (клиент 0x489f16).
@@ -977,7 +1004,7 @@ public sealed partial class GameSession(GameState state, MapArtData art, GameBoo
 
     /// <summary>Снимок для записи без итогов хода людей (<see cref="SummariesForSave"/> не зовётся): текущее состояние и генераторы.
     /// Для зонда порта — его сохранение дня идёт с потока хода ИИ, а итоги собирает сцена на главном.</summary>
-    public GameState SnapshotWithoutSummaries() => State with { Random = new RandomStreams(Rng.Index, Rng.TableSnapshot(), Crt.State) };
+    public GameState SnapshotWithoutSummaries() => State with { Random = CurrentRandom() };
 
     /// <summary>Бой, конец которого показан (<see cref="EndBattle"/>), но в карту ещё не записан.</summary>
     private (BattleStart Battle, MapState Spent, MapState Map, BattleSummary Summary)? _ending;
@@ -1287,7 +1314,7 @@ public sealed partial class GameSession(GameState state, MapArtData art, GameBoo
             {
                 if (types.ContainsKey(item)) { gained.Add(item); continue; }
                 string instance = NewId(ref ids, types.Keys, map.Units.Keys.FirstOrDefault() ?? "S000", "IM");
-                types[instance] = item.ToUpperInvariant();
+                types[instance] = item;
                 gained.Add(instance);
                 created.Add(instance);
             }
@@ -1361,7 +1388,7 @@ public sealed partial class GameSession(GameState state, MapArtData art, GameBoo
     public static MapState KnownSpellsSorted(MapState map)
     {
         ArgumentNullException.ThrowIfNull(map);
-        var players = map.Players.ToDictionary(p => p.Key, p => p.Value with { KnownSpells = KnownSpellOrder.Sort(p.Value.KnownSpells) },
+        var players = map.Players.ToDictionary(p => p.Key, p => p.Value with { KnownSpells = KnownSpellOrder.Sort(p.Value.KnownSpells, LegacyIds.Base.OriginalOf) },
                                                StringComparer.OrdinalIgnoreCase);
         return With(map, players: players);
     }

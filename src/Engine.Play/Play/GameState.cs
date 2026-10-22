@@ -1,4 +1,6 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
+using LastEdict.Data.Content;
 using LastEdict.Data.Map;
 
 namespace LastEdict.Data.Play;
@@ -97,30 +99,40 @@ public sealed record AllianceOffer(string From, string To, int Day, LastEdict.Ru
     public bool IsAlliance => Trade is null && !Exchange;
 }
 
-/// <summary>Состояние двух генераторов партии: R250 движка (<see cref="LastEdict.Rules.Rng.EngineRng"/>: индекс и таблица из
-/// 250 слов — таблица меняется с каждым шагом, одного индекса мало) и CRT <c>rand()</c>
-/// (<see cref="LastEdict.Rules.Rng.CrtRand"/>, одно слово состояния).</summary>
-public sealed record RandomStreams(int Index, IReadOnlyList<ushort> Table, uint Crt);
+/// <summary>Место потока R250 (<see cref="LastEdict.Rules.Rng.EngineRng"/>): индекс и таблица из 250 слов — таблица меняется с каждым
+/// шагом, одного индекса мало.</summary>
+public sealed record RngState(int Index, IReadOnlyList<ushort> Table);
 
-/// <summary>Пересев генератора боя, как у движка при «Random» (ключ <c>Disciple.ini</c>, по умолчанию включён — во всех прогонах корпуса есть
-/// пересев от таймера). Новая партия — <c>reseed(timeGetTime())</c> (<c>0x429dc8</c>): меняется только индекс (<c>setState(seed % 250,
-/// текущая таблица)</c>, <c>0x548500</c>), таблица — прежняя. Загрузка генератор не трогает (<c>0x429d3b</c>): движок продолжает состояние
-/// процесса, а в <c>.sg</c> оно пропадает (зонд 7.1 п. 3, 28.09). Порт состояния процесса между партиями не хранит, поэтому у
-/// загруженной партии индекс тоже пересевается от времени над её таблицей (ранг 3) — перезагрузка, как у оригинала, не повторяет
-/// бросков. Только для входов из интерфейса: проверки и харнессы остаются повторяемыми.
-/// <para>CRT <c>rand()</c> — другое дело: он свой у каждого потока ОС, а партия (новая и загруженная) идёт новым потоком игры со
-/// <c>srand(1)</c>. У загрузки поток начинается заново — состояние 1 (корпус 18.10: у всех 9 загруженных партий первый <c>crt_rand</c>
-/// потока — 41, первое значение после <c>srand(1)</c>); у новой партии <see cref="NewGame"/> уже сделал свой шаг, его
-/// <paramref name="keepCrt"/> сохраняет.</para></summary>
+/// <summary>Генераторы партии: потоки R250 по системам (<see cref="LastEdict.Rules.Rng.RngStream"/>: бой, ИИ, добыча, карта — у каждого
+/// свой, от зерна партии, Э4) и CRT <c>rand()</c> процесса (<see cref="LastEdict.Rules.Rng.CrtRand"/>, одно слово состояния). Ключ потока
+/// — его имя (<see cref="LastEdict.Rules.Rng.RngStreams.Name"/>).</summary>
+public sealed record RandomStreams(IReadOnlyDictionary<string, RngState> Streams, uint Crt)
+{
+    /// <summary>Потоки партии с зерном <paramref name="seed"/> (<see cref="LastEdict.Rules.Rng.RngStreams.Derive"/>).</summary>
+    public static RandomStreams FromSeed(ulong seed, uint crt = 1) => new(
+        LastEdict.Rules.Rng.RngStreams.All.ToDictionary(LastEdict.Rules.Rng.RngStreams.Name, s =>
+        {
+            var rng = LastEdict.Rules.Rng.RngStreams.Derive(seed, s);
+            return new RngState(rng.Index, rng.TableSnapshot());
+        }, StringComparer.OrdinalIgnoreCase), crt);
+
+    /// <summary>Место потока <paramref name="stream"/>; нет в записи — null.</summary>
+    public RngState? Of(LastEdict.Rules.Rng.RngStream stream) => Streams.GetValueOrDefault(LastEdict.Rules.Rng.RngStreams.Name(stream));
+}
+
+/// <summary>Пересев генераторов партии от зерна: все потоки R250 сразу (<see cref="RandomStreams.FromSeed"/>, Э4) — одно зерно даёт те же
+/// броски каждой системы, как бы ни менялись остальные. Новая партия и загруженная из интерфейса берут зерно от таймера (у оригинала —
+/// <c>reseed(timeGetTime())</c>, <c>0x429dc8</c>), поэтому перезагрузка не повторяет бросков; проверки и харнессы подают своё зерно и
+/// повторяемы.
+/// <para>CRT <c>rand()</c> — поток процесса: партия (новая и загруженная) идёт новым потоком игры со <c>srand(1)</c> — состояние 1; у новой
+/// партии <see cref="NewGame"/> уже сделал свой шаг, его <paramref name="keepCrt"/> сохраняет.</para></summary>
 public static class RandomReseed
 {
     public static GameState Reseeded(this GameState state, uint seed, bool keepCrt = false)
     {
         ArgumentNullException.ThrowIfNull(state);
-        var table = state.Random?.Table ?? new LastEdict.Rules.Rng.EngineRng().TableSnapshot();
-        int index = (int)(seed % (uint)LastEdict.Rules.Rng.EngineRng.Size);
         uint crt = keepCrt && state.Random is { } kept ? kept.Crt : 1;
-        return state with { Random = new RandomStreams(index, table, crt) };
+        return state with { Random = RandomStreams.FromSeed(seed, crt) };
     }
 }
 
@@ -145,8 +157,18 @@ public static class GameSave
     /// старые — без них.</para>
     /// <para>10 — память обмена картами у игрока (<c>MapPlayer.MapExchanges</c>, <c>EXMAPID/EXMAPTURN</c>) и приоритет редактора для ИИ
     /// (<c>MapStack.AiPriority</c>, <c>MapSite.AiPriority</c>, <c>AIPRIORITY</c>), прежние хозяева деревни (<c>MapSite.PreviousOwners</c>,
-    /// <c>P_O_*</c>); старые — без памяти обмена и прежних хозяев, приоритет 3 (без поправки).</para></summary>
-    public const int Version = 10;
+    /// <c>P_O_*</c>); старые — без памяти обмена и прежних хозяев, приоритет 3 (без поправки).</para>
+    /// <para>11 — ссылки на содержимое — id содержимого (<c>base:unit/knight</c>), а не id оригинала (Р18: перенос между версиями Last
+    /// Edict); старые переводятся при чтении (<see cref="LegacyRefs"/>).</para>
+    /// <para>12 — генераторы по потокам (<see cref="RandomStreams.Streams"/>: бой, ИИ, добыча, карта); у старых единый поток становится
+    /// потоком боя, прочие выводятся из его места (<see cref="SplitStreams"/>).</para></summary>
+    public const int Version = 12;
+
+    /// <summary>Первая версия с генераторами по потокам.</summary>
+    private const int StreamsVersion = 12;
+
+    /// <summary>Первая версия со ссылками по id содержимого.</summary>
+    private const int ContentIdsVersion = 11;
 
     /// <summary>Файл сохранения: сначала то, что показывает список сохранений (имя, день, когда), потом партия.</summary>
     private sealed record Envelope(string Format, int Version, string Title, int Day, DateTime SavedAt, GameInfo Info,
@@ -172,16 +194,24 @@ public static class GameSave
         Envelope? e;
         try
         {
-            e = JsonSerializer.Deserialize<Envelope>(json, SaveJson.Options);
+            int version = SaveJson.VersionOf(json);
+            if (version >= StreamsVersion) e = JsonSerializer.Deserialize<Envelope>(json, SaveJson.Options);
+            else
+            {
+                var node = JsonNode.Parse(json);
+                if (version < ContentIdsVersion) LegacyRefs.ToContentIds(node, LegacyIds.Base);
+                if (node?["Random"] is JsonObject single) node["Random"] = SplitStreams(single);
+                e = node.Deserialize<Envelope>(SaveJson.Options);
+            }
         }
-        catch (JsonException ex)
+        catch (Exception ex) when (ex is JsonException or InvalidOperationException or FormatException)
         {
             throw new InvalidDataException($"сохранение не читается: {ex.Message}", ex);
         }
         if (e is null || e.Format != Format) throw new InvalidDataException("не сохранение порта");
         if (e.Version > Version) throw new InvalidDataException($"сохранение версии {e.Version}, сборка знает до {Version}");
-        if (e.Random is { } r && r.Table.Count != LastEdict.Rules.Rng.EngineRng.Size)
-            throw new InvalidDataException($"таблица генератора — {r.Table.Count} слов, нужно {LastEdict.Rules.Rng.EngineRng.Size}");
+        if (e.Random?.Streams.Values.FirstOrDefault(s => s.Table.Count != LastEdict.Rules.Rng.EngineRng.Size) is { } bad)
+            throw new InvalidDataException($"таблица генератора — {bad.Table.Count} слов, нужно {LastEdict.Rules.Rng.EngineRng.Size}");
         // Счётчики id после загрузки — наибольший номер + 1 (0x5ee996): номера удалённых до записи объектов снова свободны, как у движка.
         var map = GameSession.KnownSpellsSorted(Healed(e.Looks.Map));   // как после чтения движком (KnownSpellOrder, 0x5fe926)
         var looks = GameSession.Retold(e.Looks, GameSession.With(map, idNext: GameSession.IdNextOf(map)), e.Looks.Stacks) with
@@ -202,6 +232,19 @@ public static class GameSave
                 ? new Dictionary<string, PendingSummary>(summaries, StringComparer.OrdinalIgnoreCase)
                 : new Dictionary<string, PendingSummary>(StringComparer.OrdinalIgnoreCase),
         };
+    }
+
+    /// <summary>Единый генератор сохранения до версии 12 (<c>{Index, Table, Crt}</c>) — потоки партии: его место продолжает поток боя (бои
+    /// старой партии идут теми же бросками), прочие потоки выводятся из этого места (зерно — свёртка индекса и таблицы).</summary>
+    private static JsonObject SplitStreams(JsonObject single)
+    {
+        int index = single["Index"]?.GetValue<int>() ?? LastEdict.Rules.Rng.EngineRng.DefaultIndex;
+        var table = single["Table"]?.AsArray().Select(w => w!.GetValue<ushort>()).ToList() ?? [];
+        ulong seed = table.Aggregate((ulong)(uint)index, (h, w) => (h ^ w) * 0x100000001B3UL);
+        var streams = RandomStreams.FromSeed(seed).Streams.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase);
+        if (table.Count > 0) streams[LastEdict.Rules.Rng.RngStreams.Name(LastEdict.Rules.Rng.RngStream.Battle)] = new RngState(index, table);
+        var split = JsonSerializer.SerializeToNode(new RandomStreams(streams, single["Crt"]?.GetValue<uint>() ?? 1), SaveJson.Options)!.AsObject();
+        return split;
     }
 
     /// <summary>

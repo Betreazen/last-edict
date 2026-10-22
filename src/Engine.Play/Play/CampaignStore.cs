@@ -1,4 +1,5 @@
 using System.Text.Json;
+using LastEdict.Data.Content;
 using LastEdict.Data.Game;
 using LastEdict.Data.Sg;
 
@@ -72,7 +73,7 @@ public static class CampaignStore
                 chapters.Add(new ChapterInfo(i, new ScenarioInfo { Id = id, File = "", Name = Path.GetFileNameWithoutExtension(name) }));
             }
         }
-        string raceId = $"G000RR{csg.RaceIndex:X4}";
+        string raceId = LegacyIds.Base.IdOf($"G000RR{csg.RaceIndex:X4}") ?? "";   // своя кампания .csg пишет номер расы оригинала
         var campaign = new CampaignInfo
         {
             Id = stem, Custom = true, Name = csg.Name, Description = csg.Description, Author = csg.Author, LeaderLevel = csg.LeaderLevel,

@@ -42,7 +42,7 @@ public sealed class BuildingCardLogic(WindowContext context, string buildingId, 
         texts.TryGetValue(buildingId, out var text);
         ui.SetText("TXT_BUILDING_NAME", UiTemplate.Fill(context.Text("X005TA0657"), ("NAME", text is null ? buildingId : context.Text(text.NameTxt))));
         ui.SetText("TXT_BUILDING_INFO", text is null ? "" : context.Text(text.DescTxt));
-        ui.SetImage("IMG_BUILDING", $"IconBld:{buildingId.ToUpperInvariant()}");
+        ui.SetImage("IMG_BUILDING", $"IconBld:{ArtNames.Of(buildingId)}");
         string? to = To, from = From;
         bool pair = from is not null;
         ui.SetHidden("IMG_ARROW", !pair);

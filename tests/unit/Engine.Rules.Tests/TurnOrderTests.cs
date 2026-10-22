@@ -81,8 +81,8 @@ public class TurnOrderTests
         Units = units.Select(u => new BattleUnit
         {
             Id = u.id,
-            Type = new UnitType("g000uu0001", 1, 100, 0, "g000aa0001", "g000000000", false, true, 20, 80),
-            Attack = new AttackType("g000aa0001", u.ini, AttackClass.Damage, 80, 3, 25, 0, false, 0),
+            Type = new UnitType("base:unit/squire-empire", 1, 100, 0, "base:attack/squire-empire", "g000000000", false, true, 20, 80),
+            Attack = new AttackType("base:attack/squire-empire", u.ini, AttackClass.Damage, 80, 3, 25, 0, false, 0),
             Attacker = u.attacker, Slot = u.slot, HpMax = 100, Hp = 100,
         }).ToList(),
     };

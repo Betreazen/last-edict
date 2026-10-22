@@ -39,10 +39,10 @@ public class AiGiftTests
     [Fact]
     public void PickSpell_BelowLevel3_BuyPlusRelation()
     {
-        var spells = new List<AiGiftSpell> { new("G000SS0003", 3, 500), new("G000SS0097", 1, 200) };
+        var spells = new List<AiGiftSpell> { new("base:spell/strength", 3, 500), new("base:spell/bramble", 1, 200) };
         var offer = AiGift.PickSpell(new ScriptedRng([0]), spells, 100);   // rng(1)=0 → SS0097 первым
-        Assert.Equal(new AiTradeOffer(AiGiftKind.Spell, "G000SS0097", "", 300), offer);
-        Assert.Null(AiGift.PickSpell(new ScriptedRng([]), [new("G000SS0003", 4, 500)], 100));
+        Assert.Equal(new AiTradeOffer(AiGiftKind.Spell, "base:spell/bramble", "", 300), offer);
+        Assert.Null(AiGift.PickSpell(new ScriptedRng([]), [new("base:spell/strength", 4, 500)], 100));
     }
 
     /// <summary>Золото: союзнику нет; иначе отношение × 2, если столько есть в казне.</summary>

@@ -93,7 +93,7 @@ public sealed class BuildingPanelLogic(WindowContext context, string buildingId)
     public void Open(UiScreenState ui)
     {
         ArgumentNullException.ThrowIfNull(ui);
-        ui.SetImage("IMG_BUILDING", $"IconBld:{buildingId.ToUpperInvariant()}");
+        ui.SetImage("IMG_BUILDING", $"IconBld:{ArtNames.Of(buildingId)}");
         ui.SetText("TXT_BUILDING", context.Rules?.BuildingNames.TryGetValue(buildingId, out var name) == true ? context.Text(name) : buildingId);
         foreach (string button in (string[])["BTN_REPORT", "BTN_OPTIONS", "BTN_QUESTLOG"]) ui.SetEnabled(button, false);
     }

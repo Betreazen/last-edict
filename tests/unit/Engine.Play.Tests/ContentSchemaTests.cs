@@ -160,7 +160,7 @@ public class ContentSchemaTests
     [InlineData("""{ "units": [ { "id": "base:unit/squire-empire", "$remove": true } ] }""", "previousLevel")]
     [InlineData("""{ "units": [ { "id": "base:unit/knight", "legacyId": "g000uu0099" } ] }""", "legacyId правкой не меняется")]
     [InlineData("""{ "units": [ { "id": "base:unit/knight", "$remove": "true" } ] }""", "только true или false")]
-    [InlineData("""{ "units": [ { "id": "bad:unit/twin", "role": "soldier", "legacyId": "G000UU0002" } ] }""", "один ключ правил")]
+    [InlineData("""{ "units": [ { "id": "bad:unit/twin", "role": "soldier", "legacyId": "G000UU0002" } ] }""", "один id оригинала")]
     [InlineData("""{ "units": [ { "id": "bad:unit/x", "attack": "base:unit/knight" } ] }""", "это unit, а нужен attack")]
     public void Layers_BadPatch_IsAnErrorWithItsSource(string units, string expected)
     {
@@ -197,7 +197,7 @@ public class ContentSchemaTests
         string json = ContentJson.Write(ContentSet.KindNamed("modifier"), set.Modifiers, null);
         Assert.Contains("\"scope\": 2", json, StringComparison.Ordinal);
         Assert.Equal("legacy:class/99", set.Attacks.Single(a => a.LegacyId == "g999aa0001").Effect);
-        var attack = LastEdict.Data.Battle.RulesLoader.Load(set).Attacks["g999aa0001"];
+        var attack = LastEdict.Data.Battle.RulesLoader.Load(set).Attacks["base:attack/g999aa0001"];
         Assert.IsType<LastEdict.Rules.Battle.Effects.UnknownEffect>(attack.Effect);
     }
 

@@ -11,16 +11,16 @@ namespace LastEdict.Data.Tests;
 /// Главное — полоса не врёт: следующий ходящий — следующий непропускающий в прежней полосе.</summary>
 public class BattleSessionQueueTests(ITestOutputHelper output)
 {
-    private static readonly AttackType Strike = new("g000aa0019", 90, AttackClass.Damage, 100, 2, 10, 0, false, 1);
-    private static readonly AttackType Middle = new("g000aa0022", 70, AttackClass.Damage, 100, 2, 10, 0, false, 1);
-    private static readonly AttackType Slow = new("g000aa0020", 50, AttackClass.Damage, 100, 2, 10, 0, false, 1);
-    private static readonly AttackType Late = new("g000aa0023", 30, AttackClass.Damage, 100, 2, 10, 0, false, 1);
-    private static readonly AttackType Give = new("g000aa0161", 60, AttackClass.GiveAttack, 100, 2, 0, 0, false, 1);
+    private static readonly AttackType Strike = new("base:attack/pegasus-knight", 90, AttackClass.Damage, 100, 2, 10, 0, false, 1);
+    private static readonly AttackType Middle = new("base:attack/arch-angel", 70, AttackClass.Damage, 100, 2, 10, 0, false, 1);
+    private static readonly AttackType Slow = new("base:attack/ranger", 50, AttackClass.Damage, 100, 2, 10, 0, false, 1);
+    private static readonly AttackType Late = new("base:attack/thief-empire", 30, AttackClass.Damage, 100, 2, 10, 0, false, 1);
+    private static readonly AttackType Give = new("base:attack/alchemist", 60, AttackClass.GiveAttack, 100, 2, 0, 0, false, 1);
 
     private static BattleUnit Unit(string id, bool attacker, int slot, AttackType attack, int hp = 1000) => new()
     {
         Id = id, Attacker = attacker, Slot = slot, Hp = hp, HpMax = hp, Attack = attack,
-        Type = new UnitType("g000uu0019", 1, hp, 0, attack.Id, "g000000000", false, true, 10, 100),
+        Type = new UnitType("base:unit/pegasus-knight", 1, hp, 0, attack.Id, "g000000000", false, true, 10, 100),
     };
 
     private static BattleState State(params BattleUnit[] units) => new() { Units = [.. units], AttackerGroup = "A", DefenderGroup = "D" };
@@ -142,7 +142,7 @@ public class BattleSessionQueueTests(ITestOutputHelper output)
     {
         var fighter = Unit("F", true, 0, Strike);
         fighter.Hp = 500;
-        var healer = Unit("H", true, 1, new AttackType("g000aa0011", 10, AttackClass.Heal, 100, 2, 0, 20, false, 1));
+        var healer = Unit("H", true, 1, new AttackType("base:attack/acolyte", 10, AttackClass.Heal, 100, 2, 0, 20, false, 1));
         var enemy = Unit("E", false, 0, Slow, hp: 5);
         var session = Session(State(fighter, healer, enemy));
         var seen = new List<string>();

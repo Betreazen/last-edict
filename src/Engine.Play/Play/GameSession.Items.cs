@@ -171,14 +171,14 @@ public sealed partial class GameSession
         {
             ItemCategory.PotionHeal => unit with { Hp = unit.Hp + ItemUse.HealAmount(item, unit.Hp, max) },
             ItemCategory.PotionRevive => unit with { Hp = 1 },
-            _ => unit with { Modifiers = [.. unit.Modifiers, item.PotionModifierId.ToUpperInvariant()] },
+            _ => unit with { Modifiers = [.. unit.Modifiers, item.PotionModifierId] },
         };
         var units = map.Units.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase);
         units[unitId] = drunk;
         var records = map.SpellEffects;
         string owner = map.Stacks.TryGetValue(holderId, out var holder) ? holder.Owner : map.Sites.First(s => Same(s.Id, holderId)).Owner;
         if (item.Category == ItemCategory.PotionBoost && item.PotionModifierId.Length > 0)
-            records = [.. records, new SpellEffectRecord(unitId, item.Id.ToUpperInvariant(), item.PotionModifierId.ToUpperInvariant(),
+            records = [.. records, new SpellEffectRecord(unitId, item.Id, item.PotionModifierId,
                                                          owner, SpellCast.TurnStop(map.Turn))];
         var stacks = map.Stacks.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase);
         var sites = map.Sites.ToList();
@@ -332,7 +332,7 @@ public sealed partial class GameSession
             if (!units.TryGetValue(unitId, out var unit)) continue;
             var mods = unit.Modifiers.ToList();
             foreach (var item in worn.Where(i => i.Category == ItemCategory.Banner || Same(unitId, stack.LeaderId)))
-                if (add) mods.Add(item.EquipModifierId.ToUpperInvariant());
+                if (add) mods.Add(item.EquipModifierId);
                 else if (mods.FindIndex(m => Same(m, item.EquipModifierId)) is int at and >= 0) mods.RemoveAt(at);
             if (mods.Count == unit.Modifiers.Count && mods.SequenceEqual(unit.Modifiers)) continue;
             units[unitId] = unit with { Modifiers = mods };
@@ -350,7 +350,7 @@ public sealed partial class GameSession
             {
                 if (!units.TryGetValue(bearer, out var u)) continue;
                 var mods = u.Modifiers.ToList();
-                if (add) mods.Add(outcome.ModifierId.ToUpperInvariant());
+                if (add) mods.Add(outcome.ModifierId);
                 else if (mods.FindIndex(m => Same(m, outcome.ModifierId)) is int at and >= 0) mods.RemoveAt(at);
                 units[bearer] = u with { Modifiers = mods };
             }

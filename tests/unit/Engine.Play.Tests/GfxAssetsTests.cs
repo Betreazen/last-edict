@@ -211,15 +211,16 @@ public class GfxAssetsTests(ITestOutputHelper output)
     public void UnitFaces_EveryUnitTypeHasSmallFaceByBase()
     {
         var faces = LastEdict.Data.Ui.Windows.UnitFaces.Load(ImportedData.PathOf("rules"));
-        Assert.Equal("G000UU0154FACE", faces.SmallName("g000uu5354"));
+        Assert.Equal("G000UU0154FACE", faces.SmallName("base:unit/imperial-assassin-neutral"));
         Assert.Null(Gfx.Image(LastEdict.Data.Ui.Windows.UnitFaces.Archive, "G000UU5354FACE"));
-        Assert.NotNull(Gfx.Image(LastEdict.Data.Ui.Windows.UnitFaces.Archive, faces.SmallName("G000UU5354")));
+        Assert.NotNull(Gfx.Image(LastEdict.Data.Ui.Windows.UnitFaces.Archive, faces.SmallName("base:unit/imperial-assassin-neutral")));
 
         var types = LastEdict.Data.Dbf.GameTables.Read(ImportedData.PathOf("rules"), "Gunits.dbf").Rows
             .Select(r => r.GetString("UNIT_ID")).ToList();
         Assert.Equal(356, types.Count);
         Assert.Equal(100, types.Count(t => Gfx.Image(LastEdict.Data.Ui.Windows.UnitFaces.Archive, t.ToUpperInvariant() + "FACE") is null));
-        Assert.DoesNotContain(types, t => Gfx.Image(LastEdict.Data.Ui.Windows.UnitFaces.Archive, faces.SmallName(t)) is null);
+        Assert.DoesNotContain(types, t => Gfx.Image(LastEdict.Data.Ui.Windows.UnitFaces.Archive,
+                                                       faces.SmallName(LastEdict.Data.Content.LegacyIds.Base.IdOf(t)!)) is null);
     }
 
     /// <summary>Портрет панелей у большого юнита (пометка 3 партии 15.10: призванный лидер <c>G000UU0102</c> на панели команд — сжатый
@@ -230,19 +231,19 @@ public class GfxAssetsTests(ITestOutputHelper output)
     {
         string rules = ImportedData.PathOf("rules");
         var faces = LastEdict.Data.Ui.Windows.UnitFaces.Load(rules, name => Gfx.Image(LastEdict.Data.Ui.Windows.UnitFaces.Archive, name) is not null);
-        Assert.Equal("G000UU0102FACES", faces.PanelName("g000uu0102"));
-        Assert.Equal("Faces:G000UU0102FACES", faces.Panel("g000uu0102"));
-        var panel = Gfx.Image(LastEdict.Data.Ui.Windows.UnitFaces.Archive, faces.PanelName("g000uu0102"))!;
-        var wide = Gfx.Image(LastEdict.Data.Ui.Windows.UnitFaces.Archive, faces.SmallName("g000uu0102"))!;
+        Assert.Equal("G000UU0102FACES", faces.PanelName("base:unit/evil-ent"));
+        Assert.Equal("Faces:G000UU0102FACES", faces.Panel("base:unit/evil-ent"));
+        var panel = Gfx.Image(LastEdict.Data.Ui.Windows.UnitFaces.Archive, faces.PanelName("base:unit/evil-ent"))!;
+        var wide = Gfx.Image(LastEdict.Data.Ui.Windows.UnitFaces.Archive, faces.SmallName("base:unit/evil-ent"))!;
         Assert.Equal((70, 85, 150, 85), (panel.W, panel.H, wide.W, wide.H));
-        Assert.Equal("G000UU0154FACE", faces.PanelName("g000uu5354"));
-        Assert.Equal("G000UU0101FACE", faces.PanelName("g000uu0101"));
+        Assert.Equal("G000UU0154FACE", faces.PanelName("base:unit/imperial-assassin-neutral"));
+        Assert.Equal("G000UU0101FACE", faces.PanelName("base:unit/skeleton"));
         Assert.Equal("G000UU0102FACE", LastEdict.Data.Ui.Windows.UnitFaces.Load(rules).PanelName("g000uu0102"));   // без проверки картинок — FACE
 
         var units = LastEdict.Data.Dbf.GameTables.Read(rules, "Gunits.dbf").Rows.ToList();
-        var withS = units.Where(r => faces.PanelName(r.GetString("UNIT_ID")).EndsWith("FACES", StringComparison.Ordinal)).ToList();
+        var withS = units.Where(r => faces.PanelName(LastEdict.Data.Content.LegacyIds.Base.IdOf(r.GetString("UNIT_ID"))!).EndsWith("FACES", StringComparison.Ordinal)).ToList();
         Assert.NotEmpty(withS);
         Assert.All(withS, r => Assert.False(r.GetBool("SIZE_SMALL")));
-        Assert.DoesNotContain(units, r => Gfx.Image(LastEdict.Data.Ui.Windows.UnitFaces.Archive, faces.PanelName(r.GetString("UNIT_ID"))) is null);
+        Assert.DoesNotContain(units, r => Gfx.Image(LastEdict.Data.Ui.Windows.UnitFaces.Archive, faces.PanelName(LastEdict.Data.Content.LegacyIds.Base.IdOf(r.GetString("UNIT_ID"))!)) is null);
     }
 }

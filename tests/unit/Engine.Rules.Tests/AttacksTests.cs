@@ -181,10 +181,10 @@ public class AttacksTests
     /// удар теми же бросками попадает дважды.</summary>
     [Fact] public void Act_MageLeaderLosesTenPowerPerPlaceInShuffledGroup()
     {
-        foreach (var (typeId, missed) in new[] { ("g000uu0021", true), ("g000uu0001", false) })
+        foreach (var (typeId, missed) in new[] { ("base:unit/archmage", true), ("base:unit/squire-empire", false) })
         {
             var a = Unit("A", true, AttackClass.Damage, reach: AttackType.ReachAll);
-            a.Type = a.Type with { Id = typeId };
+            a.Type = a.Type with { Id = typeId, MageLeader = missed };
             var e1 = Unit("E1", false); var e2 = Unit("E2", false); var dead = Unit("E0", false);
             dead.Hp = 0;
             var state = new BattleState { AttackerGroup = "G1", DefenderGroup = "G2", Round = 1, Units = [a, e1, dead, e2] };
@@ -391,9 +391,9 @@ public class AttacksTests
                                    (AttackClass cls, int dam)? second = null) => new()
     {
         Id = id,
-        Type = new UnitType("g000uu0001", 1, 100, 0, "g000aa0001", second is null ? "g000000000" : "g000aa0002", twice, true, 20, 80),
-        Attack = new AttackType("g000aa0001", 50, cls, 80, reach, dam, heal, false, 0, infinite),
-        Attack2 = second is { } s ? new AttackType("g000aa0002", 50, s.cls, 80, reach, s.dam, 0, false, 0, true) : null,
+        Type = new UnitType("base:unit/squire-empire", 1, 100, 0, "base:attack/squire-empire", second is null ? "g000000000" : "base:attack/knight", twice, true, 20, 80),
+        Attack = new AttackType("base:attack/squire-empire", 50, cls, 80, reach, dam, heal, false, 0, infinite),
+        Attack2 = second is { } s ? new AttackType("base:attack/knight", 50, s.cls, 80, reach, s.dam, 0, false, 0, true) : null,
         Attacker = attacker, Slot = slot, HpMax = 100, Hp = 100,
     };
 

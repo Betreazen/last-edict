@@ -39,7 +39,7 @@ public class BattleAiRareTests
     /// первому врагу; при двух — превращается сам.</summary>
     [Fact] public void TransformSelf_UsesAltAttackOnEnemiesUnlessSelfTransformPossible()
     {
-        var alt = new AttackType("g000aa1164", 50, AttackClass.Damage, 80, AttackReach.All, 40, 0, false, 1, Source: 0);
+        var alt = new AttackType("base:attack/wolf-lord-alt", 50, AttackClass.Damage, 80, AttackReach.All, 40, 0, false, 1, Source: 0);
         var wolf = U("W", true, 0, cls: AttackClass.TransformSelf, reach: AttackReach.Any);
         wolf.Attack = wolf.Attack with { AltAttackId = alt.Id };
         var rules = new GameRules(new Dictionary<string, UnitType>(), new Dictionary<string, AttackType> { [alt.Id] = alt }, C);

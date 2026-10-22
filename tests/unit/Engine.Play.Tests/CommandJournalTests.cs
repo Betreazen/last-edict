@@ -88,7 +88,7 @@ public class CommandJournalTests
         var replay = AiGame();
         CommandJournal.FromJsonLines(game.Journal.ToJsonLines()).Replay(replay);
         Assert.Equal(StateHash.Of(game), StateHash.Of(replay));
-        Assert.Equal(game.Rng.Index, replay.Rng.Index);
+        Assert.Equal(game.AiRng.Index, replay.AiRng.Index);
 
         // Без решений журнала (автобой ядра, подарка нет) партия другая: повтор её ловит.
         var plain = AiGame();
@@ -134,7 +134,7 @@ public class CommandJournalTests
             session.Crt.Next();   // фон экрана (MapScreen.BackgroundDraw)
             session.Crt.Next();
             var rules = session.Book!.Rules;
-            var battle = new BattleSession(state, new BattleSim(state, session.Rng, rules.Constants), rules.Constants, attackerIsPlayer: false)
+            var battle = new BattleSession(state, new BattleSim(state, session.BattleRng, rules.Constants), rules.Constants, attackerIsPlayer: false)
             {
                 HoldTurnStart = true,
             };

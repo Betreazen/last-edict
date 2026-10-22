@@ -269,7 +269,7 @@ public sealed class StealLogic(WindowContext context, string stackId, string tar
         ArgumentNullException.ThrowIfNull(ui);
         ui.SetText("TXT_CHOOSE_ITEM_STR", context.Text(Spells ? "X005TA0540" : "X005TA0539"));
         var spec = ItemCells.Spec(ui, List);
-        ui.SetCards(List, [.. Choices.Select(c => new UiCard(Spells ? $"IconSpel:{c.Icon.ToUpperInvariant()}" : ItemCells.IconFrame(c.Icon, context), new UiPoint(0, 0),
+        ui.SetCards(List, [.. Choices.Select(c => new UiCard(Spells ? $"IconSpel:{ArtNames.Of(c.Icon)}" : ItemCells.IconFrame(c.Icon, context), new UiPoint(0, 0),
             Spells ? null : UiTemplate.Fill(context.Text("X005TA0323"), ("NUM", c.Count)) + "  ",
             new UiRect(1, 1, Math.Max(0, spec.CellWidth - 2), Math.Max(0, spec.CellHeight - 2))))]);
         ui.SetMarkColor(List, Mark);

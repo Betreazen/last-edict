@@ -3,7 +3,6 @@
  "units": [
   {
    "id": "test:unit/sun-colossus",
-   "legacyId": "t000uua001",
    "role": "guardian",
    "level": 1,
    "race": "test:race/sun",
@@ -43,7 +42,6 @@
   },
   {
    "id": "test:unit/sun-thief",
-   "legacyId": "t000uua002",
    "role": "noble",
    "level": 1,
    "race": "test:race/sun",
@@ -84,7 +82,6 @@
   },
   {
    "id": "test:unit/sun-captain",
-   "legacyId": "t000uua003",
    "role": "leader",
    "level": 1,
    "race": "test:race/sun",
@@ -125,7 +122,6 @@
   },
   {
    "id": "test:unit/sun-ranger",
-   "legacyId": "t000uua004",
    "role": "leader",
    "level": 1,
    "race": "test:race/sun",
@@ -166,7 +162,6 @@
   },
   {
    "id": "test:unit/sun-sage",
-   "legacyId": "t000uua005",
    "role": "leader",
    "level": 1,
    "race": "test:race/sun",
@@ -207,7 +202,6 @@
   },
   {
    "id": "test:unit/sun-warden",
-   "legacyId": "t000uua006",
    "role": "leader",
    "level": 1,
    "race": "test:race/sun",
@@ -248,7 +242,6 @@
   },
   {
    "id": "test:unit/sun-footman",
-   "legacyId": "t000uua007",
    "role": "soldier",
    "level": 1,
    "race": "test:race/sun",
@@ -284,7 +277,6 @@
   },
   {
    "id": "test:unit/sun-bowman",
-   "legacyId": "t000uua008",
    "role": "soldier",
    "level": 1,
    "race": "test:race/sun",
@@ -320,7 +312,6 @@
   },
   {
    "id": "test:unit/sun-adept",
-   "legacyId": "t000uua009",
    "role": "soldier",
    "level": 1,
    "race": "test:race/sun",
@@ -356,7 +347,6 @@
   },
   {
    "id": "test:unit/sun-healer",
-   "legacyId": "t000uua00a",
    "role": "soldier",
    "level": 1,
    "race": "test:race/sun",
@@ -392,7 +382,6 @@
   },
   {
    "id": "test:unit/sun-veteran",
-   "legacyId": "t000uua00b",
    "role": "soldier",
    "level": 2,
    "race": "test:race/sun",
@@ -430,7 +419,6 @@
   },
   {
    "id": "test:unit/sun-marksman",
-   "legacyId": "t000uua00c",
    "role": "soldier",
    "level": 2,
    "race": "test:race/sun",
@@ -468,7 +456,6 @@
   },
   {
    "id": "test:unit/moon-colossus",
-   "legacyId": "t000uua00d",
    "role": "guardian",
    "level": 1,
    "race": "test:race/moon",
@@ -508,7 +495,6 @@
   },
   {
    "id": "test:unit/moon-thief",
-   "legacyId": "t000uua00e",
    "role": "noble",
    "level": 1,
    "race": "test:race/moon",
@@ -549,7 +535,6 @@
   },
   {
    "id": "test:unit/moon-captain",
-   "legacyId": "t000uua00f",
    "role": "leader",
    "level": 1,
    "race": "test:race/moon",
@@ -590,7 +575,6 @@
   },
   {
    "id": "test:unit/moon-ranger",
-   "legacyId": "t000uua010",
    "role": "leader",
    "level": 1,
    "race": "test:race/moon",
@@ -631,7 +615,6 @@
   },
   {
    "id": "test:unit/moon-sage",
-   "legacyId": "t000uua011",
    "role": "leader",
    "level": 1,
    "race": "test:race/moon",
@@ -672,7 +655,6 @@
   },
   {
    "id": "test:unit/moon-warden",
-   "legacyId": "t000uua012",
    "role": "leader",
    "level": 1,
    "race": "test:race/moon",
@@ -713,7 +695,6 @@
   },
   {
    "id": "test:unit/moon-footman",
-   "legacyId": "t000uua013",
    "role": "soldier",
    "level": 1,
    "race": "test:race/moon",
@@ -749,7 +730,6 @@
   },
   {
    "id": "test:unit/moon-bowman",
-   "legacyId": "t000uua014",
    "role": "soldier",
    "level": 1,
    "race": "test:race/moon",
@@ -785,7 +765,6 @@
   },
   {
    "id": "test:unit/moon-adept",
-   "legacyId": "t000uua015",
    "role": "soldier",
    "level": 1,
    "race": "test:race/moon",
@@ -821,7 +800,6 @@
   },
   {
    "id": "test:unit/moon-hexer",
-   "legacyId": "t000uua016",
    "role": "soldier",
    "level": 1,
    "race": "test:race/moon",
@@ -857,7 +835,6 @@
   },
   {
    "id": "test:unit/moon-veteran",
-   "legacyId": "t000uua017",
    "role": "soldier",
    "level": 2,
    "race": "test:race/moon",
@@ -895,7 +872,6 @@
   },
   {
    "id": "test:unit/moon-marksman",
-   "legacyId": "t000uua018",
    "role": "soldier",
    "level": 2,
    "race": "test:race/moon",
@@ -933,7 +909,6 @@
   },
   {
    "id": "test:unit/wild-wolf",
-   "legacyId": "t000uua019",
    "role": "neutralSoldier",
    "level": 1,
    "race": "test:race/wild",
@@ -969,7 +944,6 @@
   },
   {
    "id": "test:unit/wild-ogre",
-   "legacyId": "t000uua01a",
    "role": "neutralSoldier",
    "level": 2,
    "race": "test:race/wild",
@@ -1005,7 +979,6 @@
   },
   {
    "id": "test:unit/wild-shaman",
-   "legacyId": "t000uua01b",
    "role": "neutralSoldier",
    "level": 1,
    "race": "test:race/wild",
@@ -1041,7 +1014,6 @@
   },
   {
    "id": "test:unit/wild-chief",
-   "legacyId": "t000uua01c",
    "role": "neutralLeader",
    "level": 2,
    "race": "test:race/wild",
@@ -1081,7 +1053,6 @@
   },
   {
    "id": "test:unit/wild-bat",
-   "legacyId": "t000uua01d",
    "role": "neutralSoldier",
    "level": 1,
    "race": "test:race/wild",

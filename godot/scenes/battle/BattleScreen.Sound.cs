@@ -40,7 +40,7 @@ public partial class BattleScreen
             // Звук эффекта (SNDINFO+0x30) движок ставит в стадии HEFF (0x63a30f в 0x639f2b): нет картинки HEFF у ходящего — нет и звука.
             // Боевой предмет — звуки юнита предмета; шаг предмета звука эффекта не имеет вовсе (itemStep, BattleSoundPlan).
             bool heff = actorType is not null || _session.State.Unit(action[0].Unit) is not { } actor
-                        || _scene.CasterEffects(actor.Type.GlobalId, TargetsAttackers(actor, action)).Count > 0;
+                        || _scene.CasterEffects(actor.Type.Id, TargetsAttackers(actor, action)).Count > 0;
             // У шага предмета удар цели начинается через кадр после TUCH (TouchReactFrame), а звук удара — сразу: DEATH — на этот кадр позже.
             Func<string, double?> death = itemStep ? id => DeathAfter(id) + (TouchReactFrame * AnimFrameMs / 1000.0) : DeathAfter;
             Queue(action[0].Unit, BattleSoundPlan.Of(action, _session.State.Unit, GameSound.Units, _soundRandom.Next, actorType, heff, itemStep,

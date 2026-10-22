@@ -10,6 +10,10 @@ public static class LegacyRaces
 {
     public const int Human = 0, Undead = 1, Heretic = 2, Dwarf = 3, Neutral = 4, Elf = 5;
 
+    /// <summary>Id расы нейтралов мода <c>base</c> — для правил без содержимого (проверки, собранные в коде); с содержимым нейтралы —
+    /// расы с признаком <see cref="RaceInfo.Neutral"/> (<see cref="EconomyRules.NeutralRaces"/>).</summary>
+    public const string NeutralId = "base:race/neutral";
+
     /// <summary>
     /// Земля какой расы своя для рода <paramref name="raceType"/> (<c>Grace.RACE_TYPE</c> → <c>Lterrain.ID</c>). Ранг 1:
     /// <c>GetTerrainByRace</c> (Gog <c>0x5e515e</c>) возвращает категории <c>0x837978 human</c>, <c>0x837960 heretic</c>,

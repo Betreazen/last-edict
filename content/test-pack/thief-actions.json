@@ -3,85 +3,71 @@
  "thiefActions": [
   {
    "id": "test:thief-action/poisonStack",
-   "legacyId": "t000NAa001",
    "kind": "poisonStack",
    "chance": 40
   },
   {
    "id": "test:thief-action/spy",
-   "legacyId": "t000NAa002",
    "kind": "spy",
    "chance": 44
   },
   {
    "id": "test:thief-action/stealItem",
-   "legacyId": "t000NAa003",
    "kind": "stealItem",
    "chance": 48
   },
   {
    "id": "test:thief-action/assassinate",
-   "legacyId": "t000NAa004",
    "kind": "assassinate",
    "chance": 52
   },
   {
    "id": "test:thief-action/misfit",
-   "legacyId": "t000NAa005",
    "kind": "misfit",
    "chance": 56
   },
   {
    "id": "test:thief-action/duel",
-   "legacyId": "t000NAa006",
    "kind": "duel",
    "chance": 60
   },
   {
    "id": "test:thief-action/poisonCity",
-   "legacyId": "t000NAa007",
    "kind": "poisonCity",
    "chance": 64
   },
   {
    "id": "test:thief-action/stealSpell",
-   "legacyId": "t000NAa008",
    "kind": "stealSpell",
    "chance": 68
   },
   {
    "id": "test:thief-action/bribe",
-   "legacyId": "t000NAa009",
    "kind": "bribe",
    "chance": 72
   },
   {
    "id": "test:thief-action/stealGold",
-   "legacyId": "t000NAa00a",
    "kind": "stealGold",
    "chance": 76
   },
   {
    "id": "test:thief-action/stealMerchant",
-   "legacyId": "t000NAa00b",
    "kind": "stealMerchant",
    "chance": 80
   },
   {
    "id": "test:thief-action/stealMage",
-   "legacyId": "t000NAa00c",
    "kind": "stealMage",
    "chance": 84
   },
   {
    "id": "test:thief-action/spyRuin",
-   "legacyId": "t000NAa00d",
    "kind": "spyRuin",
    "chance": 88
   },
   {
    "id": "test:thief-action/riotCity",
-   "legacyId": "t000NAa00e",
    "kind": "riotCity",
    "chance": 92
   }

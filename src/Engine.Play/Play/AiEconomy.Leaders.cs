@@ -199,7 +199,7 @@ public static partial class AiEconomy
                     [c.FighterNormal, c.FighterAssist, c.FighterDefend], AiStrategicRules.FighterOrderShares, [0, 2, 1]);
             }
             bool assist = role == AiLeaderRole.Thief ? sub == 1 : sub == 2;
-            var pick = AiStrategicRules.PickLeader(options, role, map.Players[playerId].Bank, assist, session.Rng);
+            var pick = AiStrategicRules.PickLeader(options, role, map.Players[playerId].Bank, assist, session.AiRng);
             if (pick is null) yield break;
             if (!budget.Allows(AiStepType.HireLeader, pick.Cost)) continue;
             var order = StackOrder.Normal;

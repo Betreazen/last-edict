@@ -526,7 +526,7 @@ public class BattleSceneTests(ITestOutputHelper output)
         var scene = new BattleScene(Content.Screens.First(s => s.Id == "DLG_BATTLE_A"), Content.Gfx,
                                     type => type.ToUpperInvariant(), type => type.StartsWith("g000uu", StringComparison.OrdinalIgnoreCase) ? "HUMAN" : "");
         var unit = Unit();
-        unit.Type = unit.Type with { Id = "G000UG0ce6", GlobalId = "g000uu0019" };
+        unit.Type = unit.Type with { Id = "g000uu0019", GrownLevel = 2 };
 
         Assert.NotNull(scene.Portrait(unit));
         Assert.NotNull(scene.BigFace(unit));

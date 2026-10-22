@@ -23,7 +23,7 @@ public class AudioRegionsTests
             Map = map, TreeImage = new byte[Size, Size], TreeGroup = new byte[Size, Size], Forts = forts,
             Sites = [new SiteLook("m0", 20, 20, "MERH", 0), new SiteLook("m1", 30, 30, "MERH", 1), new SiteLook("t", 5, 5, "MAGE", 2)],
             Crystals = [new CrystalLook("g", 10, 12, 0), new CrystalLook("r", 11, 12, 1)],
-            Landmarks = [new LandmarkLook("l1", 12, 10, "G000MG0006"), new LandmarkLook("l2", 40, 40, "G000MG0001")],
+            Landmarks = [new LandmarkLook("l1", 12, 10, "base:landmark/fall-3x3"), new LandmarkLook("l2", 40, 40, "base:landmark/talder-s-altar")],
             Ruins = [new RuinLook("r1", 30, 4, false, 0), new RuinLook("r2", 33, 4, true, 1)],
         };
     }

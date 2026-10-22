@@ -61,7 +61,7 @@ public sealed class PaperdollView
             if (!ui.Screen.Elements.Any(e => e.Id == id)) continue;
             ui.SetHidden(id, !shown);
             ui.SetImage(id, shown && s < worn.Count && worn[s].Length > 0 && map.ItemTypes.TryGetValue(worn[s], out var type)
-                ? $"{ItemArchive}:{type}" : null);
+                ? $"{ItemArchive}:{ArtNames.Of(type)}" : null);
         }
     }
 

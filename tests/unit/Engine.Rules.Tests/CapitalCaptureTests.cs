@@ -200,8 +200,8 @@ public class CapitalCaptureTests
             },
             Units = new Dictionary<string, MapUnit>(StringComparer.OrdinalIgnoreCase)
             {
-                ["S001UN0001"] = new() { Id = "S001UN0001", TypeId = "G000UU0001", Hp = 0 },
-                ["S001UN0002"] = new() { Id = "S001UN0002", TypeId = "G000UU0001", Hp = 50 },
+                ["S001UN0001"] = new() { Id = "S001UN0001", TypeId = "base:unit/squire-empire", Hp = 0 },
+                ["S001UN0002"] = new() { Id = "S001UN0002", TypeId = "base:unit/squire-empire", Hp = 50 },
             },
             Objects = new Dictionary<string, MapObject>(),
             Plan = new Dictionary<(int X, int Y), IReadOnlyList<string>>(),

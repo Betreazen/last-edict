@@ -59,7 +59,7 @@ public class PortJournalWatcherTests(ITestOutputHelper output)
                 }
             }
             Assert.Equal(plain.Map.Players.Values.Select(p => p.Bank), watched.Map.Players.Values.Select(p => p.Bank));
-            Assert.Equal(plain.Rng.Index, watched.Rng.Index);
+            Assert.Equal(plain.AiRng.Index, watched.AiRng.Index);
             Assert.Equal(plain.Crt.State, watched.Crt.State);
 
             var lines = File.ReadAllLines(path).Select(l => JsonDocument.Parse(l).RootElement.Clone()).ToList();
@@ -87,12 +87,12 @@ public class PortJournalWatcherTests(ITestOutputHelper output)
             Assert.Equal(watched.Map.Players[human].Bank.Gold, me.GetProperty("bank")[0].GetInt64());
             Assert.True(me.GetProperty("capital").GetString() is { Length: > 0 }, "столица человека в снимке");
             Assert.True(me.GetProperty("land").GetInt32() > 0, "своя земля в снимке");
-            Assert.Equal(watched.Rng.Index, last.GetProperty("rng").GetProperty("r250").GetInt32());
+            Assert.Equal(watched.BattleRng.Index, last.GetProperty("rng").GetProperty("r250").GetInt32());
             string save = last.GetProperty("save").GetString()!;
             Assert.EndsWith($"-day{Days + 1:000}-{human}.d2save", save, StringComparison.Ordinal);
             var restored = GameSave.Read(save);
             Assert.Equal(Days + 1, restored.Looks.Map.Turn);
-            Assert.Equal(watched.Rng.Index, restored.Random!.Index);
+            Assert.Equal(watched.BattleRng.Index, restored.Random!.Of(LastEdict.Rules.Rng.RngStream.Battle)!.Index);
 
             // Итоги боёв — на каждый бой; трасса ИИ: выборы тактики и шаги стратегии, ход ИИ с длительностью.
             Assert.Equal(kinds["battle"].Count, kinds["battle_end"].Count);
@@ -137,7 +137,7 @@ public class PortJournalWatcherTests(ITestOutputHelper output)
             Assert.True(counter.Battles > 0 && counter.Events > 0, $"боёв {counter.Battles}, событий {counter.Events}");
             Assert.True(journal.Disabled);
             Assert.Contains("IOException", journal.LastFailure, StringComparison.Ordinal);
-            Assert.Equal(plain.Rng.Index, watched.Rng.Index);
+            Assert.Equal(plain.AiRng.Index, watched.AiRng.Index);
             Assert.Equal(plain.Map.Players.Values.Select(p => p.Bank), watched.Map.Players.Values.Select(p => p.Bank));
         }
         finally
@@ -189,7 +189,7 @@ public class PortJournalWatcherTests(ITestOutputHelper output)
                     {
                         Map = GameSession.With(session.Map, units: new Dictionary<string, MapUnit>(session.Map.Units, StringComparer.OrdinalIgnoreCase)
                         {
-                            ["S073UN0fff"] = new() { Id = "S073UN0fff", TypeId = "G000UU0001", Level = 1, Hp = 100 },
+                            ["S073UN0fff"] = new() { Id = "S073UN0fff", TypeId = "base:unit/squire-empire", Level = 1, Hp = 100 },
                         }),
                     },
                 }, session.Art, session.Book);

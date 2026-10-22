@@ -3,7 +3,6 @@
  "buildings": [
   {
    "id": "test:building/sun-barracks",
-   "legacyId": "t000bba001",
    "cost": {
     "gold": 250
    },
@@ -13,7 +12,6 @@
   },
   {
    "id": "test:building/sun-range",
-   "legacyId": "t000bba002",
    "cost": {
     "gold": 230
    },
@@ -23,7 +21,6 @@
   },
   {
    "id": "test:building/sun-guild",
-   "legacyId": "t000bba003",
    "cost": {
     "gold": 300
    },
@@ -32,7 +29,6 @@
   },
   {
    "id": "test:building/sun-temple",
-   "legacyId": "t000bba004",
    "cost": {
     "gold": 300
    },
@@ -41,7 +37,6 @@
   },
   {
    "id": "test:building/sun-tower",
-   "legacyId": "t000bba005",
    "cost": {
     "gold": 350
    },
@@ -50,7 +45,6 @@
   },
   {
    "id": "test:building/moon-barracks",
-   "legacyId": "t000bba006",
    "cost": {
     "gold": 250
    },
@@ -60,7 +54,6 @@
   },
   {
    "id": "test:building/moon-range",
-   "legacyId": "t000bba007",
    "cost": {
     "gold": 230
    },
@@ -70,7 +63,6 @@
   },
   {
    "id": "test:building/moon-guild",
-   "legacyId": "t000bba008",
    "cost": {
     "gold": 300
    },
@@ -79,7 +71,6 @@
   },
   {
    "id": "test:building/moon-temple",
-   "legacyId": "t000bba009",
    "cost": {
     "gold": 300
    },
@@ -88,7 +79,6 @@
   },
   {
    "id": "test:building/moon-tower",
-   "legacyId": "t000bba00a",
    "cost": {
     "gold": 350
    },

@@ -58,7 +58,7 @@ public sealed partial class GameSession
         var centre = LandModel.FortCentre(site.X, site.Y);
         var plan = LandModel.PlanCells(map, site.Id);
         var source = new LandSource(site.Id, centre, book.Land.Village(site.Size ?? 1), plan.Count > 0 ? plan : [centre]);
-        var cells = LandModel.AcquisitionLand(map, owned, source, book.Land, LandModel.BlockedCells(map, map.Sites, book.MountainLandmarks));
+        var cells = LandModel.AcquisitionLand(map, owned, source, book.Land, LandModel.BlockedCells(map, map.Sites, book.MountainLandmarks, book.Economy.NeutralRaces));
         return cells.Count == 0 ? map : Recolor(map, cells.ToHashSet(), terrain);
     }
 

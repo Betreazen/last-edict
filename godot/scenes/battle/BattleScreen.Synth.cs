@@ -273,8 +273,8 @@ public partial class BattleScreen
     /// <summary>A1, пометка 2: Аббатиса по отравленному — значок яда и жёлто-зелёная подкраска портрета сняты.</summary>
     private async Task SynthCure(Func<Func<BattleUnit, bool>, Task<bool>> until, Func<string, BattleUnit?> of)
     {
-        var knight = of("g000uu0019");
-        bool got = await until(c => c.Type.Id.Equals("g000uu0017", StringComparison.OrdinalIgnoreCase) && knight is { Alive: true }
+        var knight = of("base:unit/pegasus-knight");
+        bool got = await until(c => c.Type.Id.Equals("base:unit/matriarch", StringComparison.OrdinalIgnoreCase) && knight is { Alive: true }
                                     && knight.Dots.Any(d => d.Class == AttackClass.Poison));
         if (!got || knight is null || _session.Current is not { } abbess) { GD.Print("battle synth A1 cure нет_хода"); return; }
         string before = string.Join("+", BattlePanel.Icons(knight, !knight.Type.SizeSmall, _field.Marks, upgrade: false, highLevel: 0).Select(i => i.Name));
@@ -291,9 +291,9 @@ public partial class BattleScreen
     /// воскрешение Патриархом; вампир бьёт упырей; клетка с костями под призванным — в панели один портрет и одна надпись «ОЗ».</summary>
     private async Task SynthSummonRevive(Func<Func<BattleUnit, bool>, Task<bool>> until, Func<string, BattleUnit?> of, Func<Task> settle)
     {
-        var squire = of("g000uu0001");
+        var squire = of("base:unit/squire-empire");
         // Вампир — первым: его ход раньше, чем упыри его парализуют.
-        var vampire = of("g000uu0175");
+        var vampire = of("base:unit/elder-vampire");
         GD.Print($"battle synth A2 vampire целей={(vampire is null ? 0 : LastEdict.Rules.Battle.BattleTargets.Possible(_session.State, vampire, vampire.Attack, human: true).Count)} " +
                  $"у_ИИ={(vampire is null ? 0 : LastEdict.Rules.Battle.BattleTargets.Possible(_session.State, vampire, vampire.Attack).Count)}");
         if (await until(c => c.Attack.Class == AttackClass.Summon) && _session.Current is { } summoner)
@@ -356,7 +356,7 @@ public partial class BattleScreen
                      $"чужих={targets.Count(t => t.Attacker != dop.Attacker)} меток_всех={_field.FieldMarks}");
         }
         else GD.Print("battle synth A3 doppel нет_хода");
-        var wolf = of("g000uu0164");
+        var wolf = of("base:unit/wolf-lord");
         if (wolf is not null && await until(c => ReferenceEquals(c, wolf)))
         {
             var targets = _session.Targets();
@@ -402,7 +402,7 @@ public partial class BattleScreen
     /// лечения второй атакой эльфа картинки на цели нет (<c>0x635321…0x6353da</c>) — прежде первым шло красное <c>HEALTUCH</c>.</summary>
     private async Task SynthDryad(Func<Func<BattleUnit, bool>, Task<bool>> until, Func<string, BattleUnit?> of)
     {
-        if (!await until(c => c.Type.Id.Equals("g000uu8033", StringComparison.OrdinalIgnoreCase)) || _session.Current is not { } dryad
+        if (!await until(c => c.Type.Id.Equals("base:unit/grovemaiden-elves", StringComparison.OrdinalIgnoreCase)) || _session.Current is not { } dryad
             || _session.Targets().FirstOrDefault(t => !ReferenceEquals(t, dryad)) is not { } ally)
         {
             GD.Print("battle synth A4 dryad нет_хода");

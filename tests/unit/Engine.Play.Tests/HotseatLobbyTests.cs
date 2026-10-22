@@ -101,8 +101,8 @@ public class HotseatLobbyTests
         {
             var hero = new LastEdict.Data.Leaders.ExportedLeader
             {
-                Name = "Мерло", Race = 0, UnitType = "G000UU0021", Level = 2,
-                Attack = new LastEdict.Data.Leaders.LeaderAttack("G000AA0021", 1, "Молния", 80, 0, 30, 7, 40, 1),
+                Name = "Мерло", Race = 0, UnitType = "base:unit/archmage", Level = 2,
+                Attack = new LastEdict.Data.Leaders.LeaderAttack("base:attack/archmage", 1, "Молния", 80, 0, 30, 7, 40, 1),
             };
             LastEdict.Data.Leaders.LeaderFile.Write(Path.Combine(dir, "Merlot.json"), hero);
             LastEdict.Data.Leaders.LeaderFile.Write(Path.Combine(dir, "Zgnom.json"), hero with { Name = "Гном", Race = 3 });

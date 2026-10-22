@@ -395,7 +395,7 @@ public partial class BattleScreen : Node
     {
         var card = GameData.Content.Screens.FirstOrDefault(s => s.Id == "DLG_R_C_UNIT");
         if (card?.Elements.FirstOrDefault(e => e.Id == "IMG_UNIT_ICON")?.Rect is not { } slot) return;
-        string name = BaseUnit()(unit.Type.GlobalId).ToUpperInvariant();
+        string name = BaseUnit()(unit.Type.Id).ToUpperInvariant();
         if (GameData.Content.Gfx.Image("Events", name) is not { } info) return;
         if (GfxAssets.PathOf(info, GameData.GfxRoot) is not { } path || !File.Exists(path)) return;
         var texture = ImageTexture.CreateFromImage(GfxTextures.Canvas(path));
@@ -452,7 +452,7 @@ public partial class BattleScreen : Node
 
     /// <summary>Имя типа юнита из таблиц порта (<c>Gunits.NAME_TXT</c> → строка локализации).</summary>
     private string UnitName(BattleUnit unit) =>
-        GameData.Content.MapArt.Unit(unit.Type.GlobalId) is { NameTxt.Length: > 0 } look
+        GameData.Content.MapArt.Unit(unit.Type.Id) is { NameTxt.Length: > 0 } look
         && _strings.TryGetValue(look.NameTxt, out string? name) ? name : unit.Type.Id;
 
     private IReadOnlyDictionary<string, string> _strings = new Dictionary<string, string>();
@@ -498,7 +498,7 @@ public partial class BattleScreen : Node
     {
         if (_session.Current is not { } unit || index >= unit.BattleItems.Count) return;
         _itemDrag = index;
-        string item = unit.BattleItems[index].Id.ToUpperInvariant();
+        string item = ArtNames.Of(unit.BattleItems[index].Id);
         _dragImage = GameData.Content.Gfx.Image("IconItem", item) is { } info && GfxAssets.PathOf(info, GameData.GfxRoot) is { } path
                      && File.Exists(path) ? GfxTextures.Canvas(path) : null;
         _dragItem = item;
@@ -1187,7 +1187,7 @@ public partial class BattleScreen : Node
         var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var unit in content.Units)
             if (unit.BaseUnit is not null) map[unit.Key] = content.KeyOf(unit.BaseUnit);
-        return type => (map.TryGetValue(type, out string? based) ? based : type).ToUpperInvariant();
+        return type => ArtNames.Of(map.TryGetValue(type, out string? based) ? based : type);
     }
 
     /// <summary>Тип юнита → раса смерти (<see cref="LastEdict.Data.Content.Schema.DeathAnimation"/> заглавными: <c>HUMAN</c>, <c>GHOST</c>…).</summary>

@@ -316,14 +316,14 @@ public sealed partial class GameSession
         var units = map.Units.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase);
         units[unitId] = new MapUnit
         {
-            Id = unitId, TypeId = type.Id.ToUpperInvariant(), Level = grown.Level, Hp = grown.Type.HitPoints, Creation = map.Turn,
+            Id = unitId, TypeId = type.Id, Level = grown.Level, Hp = grown.Type.HitPoints, Creation = map.Turn,
         };
         stack = stack with { Move = Allowance(With(map, units: units), stack) };
         var stacks = map.Stacks.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase);
         stacks[stackId] = stack;
         var plan = map.Plan.ToDictionary(p => p.Key, p => p.Value);
         plan[at] = [.. plan.GetValueOrDefault(at) ?? [], stackId];
-        var look = new StackLook(stackId, at.X, at.Y, playerId, subrace, type.Id.ToUpperInvariant(), LeaderAlive: true, AnyAlive: true,
+        var look = new StackLook(stackId, at.X, at.Y, playerId, subrace, type.Id, LeaderAlive: true, AnyAlive: true,
                                  Facing: 4, Inside: "", Invisible: false);
         State = State with { Looks = Retold(Looks, With(map, units: units, stacks: stacks, plan: plan, idNext: ids), [.. Looks.Stacks, look]) };
         // Обзор призванного — сразу (0x41c506: у игрока не нейтральной расы, 0x5e5358, эффект тумана 0x4382a8 в клетке постановки

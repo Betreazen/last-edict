@@ -69,7 +69,7 @@ public partial class MapView
     public bool PlaySpell(string spellId, int x, int y, float speed = 1f)
     {
         var parts = SpellMapAnim.Parts(GameData.Content.Gfx, spellId);
-        if (!PlayEffect([.. parts.Select(p => (p.Anim, p.Front))], x, y, speed, [("Midgard", spellId, false)], null, cls: "CMidAnim2Spell")) return false;
+        if (!PlayEffect([.. parts.Select(p => (p.Anim, p.Front))], x, y, speed, [("Midgard", LastEdict.Data.Ui.ArtNames.Of(spellId), false)], null, cls: "CMidAnim2Spell")) return false;
         GameLog.Verbose($"spell {spellId} в=({x},{y}) картинок={_spellParts.Count} кадров={_spellLength} звук={_spellSoundLeft:0.###}");
         return true;
     }
@@ -88,7 +88,7 @@ public partial class MapView
         bool summon = Session.Book?.CategoryOf(type) == LastEdict.Rules.Battle.UnitCategory.Summon;
         if (GameData.Content.Gfx.Anim("IsoCmon", summon ? "G000UU9998DYIN8" : "G000UU9999DYIN8") is not { } anim) return false;
         var sounds = new List<(string, string, bool)> { ("Midgard", summon ? "AUNN7788" : "AUNN7778", false) };
-        if (type.Length > 0) sounds.Add(("Midgard", $"{type}KILL", true));   // голос юнита — громкостью голосов (0x5b08f4)
+        if (type.Length > 0) sounds.Add(("Midgard", $"{LastEdict.Data.Ui.ArtNames.Of(type)}KILL", true));   // голос юнита — громкостью голосов (0x5b08f4)
         if (!PlayEffect([(anim, true)], x, y, speed, sounds, () =>
             {
                 Reload(hiddenStack: stackId);

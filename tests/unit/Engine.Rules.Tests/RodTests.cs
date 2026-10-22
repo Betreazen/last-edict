@@ -169,7 +169,7 @@ public class RodTests
         Rods.PlaceRefusal(map, x, y, Rich, Rules, WithRod);
 
     /// <summary>«Sinkhole» в объёме, который нужен снятию жезла: категория и цена применения.</summary>
-    private static Spell Sinkhole() => new("g000ss0119", SpellCategory.RemoveRod, 5,
+    private static Spell Sinkhole() => new("base:spell/sinkhole", SpellCategory.RemoveRod, 5,
         new Bank(0, 0, 80, 60, 110, 250), Bank.Zero, 1, "", "", 0, -1, 0, 0, -1, []);
 
     private static MapStack Stack(string owner, int move) => new()

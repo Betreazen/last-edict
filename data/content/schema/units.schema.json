@@ -278,6 +278,27 @@
        "null"
       ]
      },
+     "mageLeader": {
+      "description": "Маг-лидер: точность площадной атаки падает на 10 с каждой следующей целью. Нет — по id оригинала (список движка).",
+      "type": [
+       "boolean",
+       "null"
+      ]
+     },
+     "damageBonus": {
+      "description": "Прибавка к потолку урона (LeaderBonusMaxDamage). Нет — по id оригинала (список движка).",
+      "type": [
+       "boolean",
+       "null"
+      ]
+     },
+     "copyable": {
+      "description": "Двойник может скопировать юнит. Нет — по id оригинала (список движка; у прочих — да).",
+      "type": [
+       "boolean",
+       "null"
+      ]
+     },
      "deathAnimation": {
       "enum": [
        "human",

@@ -38,7 +38,7 @@ public static class DaySnapshot
         return new Dictionary<string, object?>
         {
             ["day"] = map.Turn, ["player"] = playerId, ["players"] = players, ["relations"] = relations, ["allies"] = allies,
-            ["rng"] = new Dictionary<string, object?> { ["r250"] = session.Rng.Index, ["crt"] = session.Crt.State },
+            ["rng"] = new Dictionary<string, object?> { ["r250"] = session.BattleRng.Index, ["crt"] = session.Crt.State },
             ["events_off"] = progress.Disabled.Count, ["quest_log"] = progress.Log.Count,
         };
     }

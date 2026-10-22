@@ -148,8 +148,10 @@ public sealed class MiniMap
 
     private string Race(string player)
     {
-        if (!_looks.Map.Players.TryGetValue(player, out var p) || p.RaceId.Length != 10) return "NE";
-        return int.TryParse(p.RaceId[6..], out int n) && n >= 0 && n < RaceIcon.Length ? RaceIcon[n] : "NE";
+        if (!_looks.Map.Players.TryGetValue(player, out var p)) return "NE";
+        string race = Ui.ArtNames.Of(p.RaceId);   // номер расы — по id оригинала
+        if (race.Length != 10) return "NE";
+        return int.TryParse(race[6..], out int n) && n >= 0 && n < RaceIcon.Length ? RaceIcon[n] : "NE";
     }
 
     private static int Mod(int value, int size) => ((value % size) + size) % size;

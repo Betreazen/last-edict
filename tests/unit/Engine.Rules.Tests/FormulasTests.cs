@@ -1,5 +1,6 @@
 using LastEdict.Rules.Battle;
 using LastEdict.Rules.Rng;
+using LastEdict.Rules.Units;
 
 public class FormulasTests
 {
@@ -23,22 +24,20 @@ public class FormulasTests
         Assert.True(Formulas.ShouldMiss(80, 76, 86));    // 81 > 80 - промах (battle-012)
     }
 
-    /// <summary>docs/re-damage-max.md: 300 + 100 только для десяти прошитых typeIndex; BASE_UNIT
+    /// <summary>docs/re-damage-max.md эталона: 300 + 100 только для десяти прошитых typeIndex (<see cref="LegacyUnits"/>); BASE_UNIT
     /// (g000uu5130 -> g000uu5030) движок не читает.</summary>
     [Fact] public void DamageMax_Is300Plus100ForTenHardcodedLeaders()
     {
-        Assert.Equal(400, Formulas.DamageMax(C, "g000uu0019"));   // Pegasus Knight, живой бой
-        Assert.Equal(400, Formulas.DamageMax(C, "G000UU8009"));   // Forest Liege, регистр корпуса
-        Assert.Equal(300, Formulas.DamageMax(C, "g000uu5130"));   // Thug, живой бой
-        Assert.Equal(300, Formulas.DamageMax(C, "g000uu5030"));   // его BASE_UNIT
-        Assert.Equal(300, Formulas.DamageMax(C, "g000uu0018"));   // соседний индекс, не в списке
-    }
-
-    [Fact] public void DamageMax_GeneratedLeaderId_IsNotSupportedLoudly()
-    {
-        var ex = Assert.Throws<NotSupportedException>(() => Formulas.DamageMax(C, "S143UG0001"));
-        Assert.Contains("UG", ex.Message);
-        Assert.Throws<ArgumentException>(() => Formulas.DamageMax(C, "uu19"));
+        Assert.True(LegacyUnits.HasDamageBonus("g000uu0019"));    // Pegasus Knight, живой бой
+        Assert.True(LegacyUnits.HasDamageBonus("G000UU8009"));    // Forest Liege, регистр корпуса
+        Assert.False(LegacyUnits.HasDamageBonus("g000uu5130"));   // Thug, живой бой
+        Assert.False(LegacyUnits.HasDamageBonus("g000uu5030"));   // его BASE_UNIT
+        Assert.False(LegacyUnits.HasDamageBonus("g000uu0018"));   // соседний индекс, не в списке
+        Assert.False(LegacyUnits.HasDamageBonus("S143UG0019"));   // не тип UU
+        Assert.False(LegacyUnits.HasDamageBonus(null));           // новый юнит мода
+        var unit = new UnitType("mod:unit/hero", 1, 100, 0, "", "", false, true, 0, 0);
+        Assert.Equal(300, Formulas.DamageMax(C, unit));
+        Assert.Equal(400, Formulas.DamageMax(C, unit with { DamageBonus = true }));
     }
 
     [Fact] public void DamageWithBuffs_NoRandom_IsAttackDamageCappedByMax()

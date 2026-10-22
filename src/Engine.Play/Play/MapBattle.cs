@@ -1,3 +1,4 @@
+using LastEdict.Data.Content;
 using LastEdict.Rules.Battle;
 using LastEdict.Rules.Magic;
 using LastEdict.Rules.Map;
@@ -49,8 +50,8 @@ public static class MapBattle
             foreach (var u in units)
                 u.Hidden = !u.Id.Equals(attacker.LeaderId, StringComparison.OrdinalIgnoreCase)
                            && !u.Id.Equals(defender.Stack?.LeaderId, StringComparison.OrdinalIgnoreCase);
-        var attackerSide = SideOf(map, attacker.Owner, attacker, attackerMove);
-        var defenderSide = SideOf(map, defender.Owner, defender.Stack, defender.Stack?.Move ?? 0);
+        var attackerSide = SideOf(map, book.Economy, attacker.Owner, attacker, attackerMove);
+        var defenderSide = SideOf(map, book.Economy, defender.Owner, defender.Stack, defender.Stack?.Move ?? 0);
         bool easy = difficulty == (int)Difficulty.Easy;
         return new BattleState
         {
@@ -194,12 +195,8 @@ public static class MapBattle
     {
         ArgumentNullException.ThrowIfNull(unit);
         ArgumentNullException.ThrowIfNull(rules);
-        // Выросший уровнем юнит движок держит порождённой реализацией (G000UG…): у неё выросли и тип, и атаки.
-        string implId = unit.TypeId;
-        if (rules.Units.TryGetValue(unit.TypeId, out var baseType) && unit.Level > baseType.Level && rules.Generator is { } g
-            && g.GeneratedId(unit.TypeId, unit.Level) is { Length: > 0 } generated)
-            implId = generated;
-        var impl = rules.ImplOf(implId) ?? rules.ImplOf(unit.TypeId)
+        // Выросший уровнем юнит воюет реализацией, выращенной до уровня: у неё выросли и тип, и атаки.
+        var impl = rules.ImplOf(unit.TypeId, unit.Level)
                    ?? throw new InvalidDataException($"юнит {unit.Id}: тип {unit.TypeId} не найден в правилах");
         if (impl.Attack is not { } attack) throw new InvalidDataException($"юнит {unit.Id}: у типа {unit.TypeId} нет атаки");
         var chain = Chain(unit, rules);
@@ -222,13 +219,13 @@ public static class MapBattle
                     : throw new InvalidDataException($"модификатор {id} юнита {unit.Id} не найден в правилах"))];
     }
 
-    private static BattleSide SideOf(MapState map, string ownerId, MapStack? stack, int movement)
+    private static BattleSide SideOf(MapState map, EconomyRules economy, string ownerId, MapStack? stack, int movement)
     {
         var owner = map.Players.GetValueOrDefault(ownerId);
         return new BattleSide
         {
             Known = owner is not null, IsStack = stack is not null, IsHuman = owner?.IsHuman ?? false,
-            PlayableRace = owner is not null && !owner.RaceId.EndsWith("RR0004", StringComparison.OrdinalIgnoreCase),
+            PlayableRace = owner is not null && !economy.NeutralRaces.Contains(owner.RaceId),
             Order = (StackOrder)(stack?.Order ?? 0), OrderTarget = stack?.OrderTarget ?? "",
             AiOrder = (StackOrder)(stack?.AiOrder ?? 0), Movement = movement,
         };
@@ -271,8 +268,8 @@ public static class MapBattle
         };
     }
 
-    /// <summary>Раса в именах фонов столицы (<c>CAP_HUMAN</c>…): по id расы в <c>Grace</c>.</summary>
-    private static string RaceArt(string raceId) => raceId.ToUpperInvariant() switch
+    /// <summary>Раса в именах фонов столицы (<c>CAP_HUMAN</c>…): по id оригинала расы (<c>Grace</c>).</summary>
+    private static string RaceArt(string raceId) => LegacyIds.Base.ArtOf(raceId).ToUpperInvariant() switch
     {
         "G000RR0000" => "HUMAN", "G000RR0001" => "DWARF", "G000RR0002" => "HERETIC", "G000RR0003" => "UNDEAD",
         "G000RR0005" => "ELF", _ => "HUMAN",

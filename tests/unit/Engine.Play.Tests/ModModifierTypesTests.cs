@@ -52,16 +52,16 @@ public class ModModifierTypesTests
     {
         using var mod = Mod(type: 14, source: 0, classColumns: true, cls: (int)AttackClass.Poison, level: (int)ImmunityLevel.Always);
         var tables = ModifierLoader.Load(mod.Dir);
-        var element = Assert.Single(tables.Modifiers["g999um0001"].Elements);
+        var element = Assert.Single(tables.Modifiers["base:modifier/g999um0001"].Elements);
         Assert.Equal(new ModifierElement(ModifierElementType.Immunityclass, Immunity: (int)AttackClass.Poison,
                                          ImmuneCat: (int)ImmunityLevel.Always), element);
 
         var rules = RulesLoader.Load(mod.Dir);
-        var type = rules.Units["g000uu0001"];
+        var type = rules.Units["base:unit/squire-empire"];
         var unit = new BattleUnit
         {
             Id = "u", Type = type, Attack = rules.AttackOf(type)!, Attacker = false, Slot = 0, HpMax = type.HitPoints, Hp = type.HitPoints,
-            Modifiers = [rules.Modifiers!["g999um0001"]],
+            Modifiers = [rules.Modifiers!["base:modifier/g999um0001"]],
         };
         Assert.Equal(ImmunityLevel.Always, Immunity.LevelsFor(unit, source: 0, AttackClass.Poison).ByClass);
         Assert.Equal(ImmunityLevel.NotImmune, Immunity.LevelsFor(unit, source: 0, AttackClass.Damage).ByClass);

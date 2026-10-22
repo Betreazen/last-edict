@@ -112,7 +112,8 @@ public sealed class UnitCardLogic(WindowContext context, string unitId, MapUnit?
     {
         var book = context.Session.RequireBook();
         var type = book.Rules.Units.GetValueOrDefault(unit.TypeId) ?? grown;
-        var editor = chain.Where(m => m.Id.Length == 10 && int.TryParse(m.Id[6..], System.Globalization.NumberStyles.HexNumber,
+        // Модификаторы редактора — номера G000UM9000…9999 оригинала (по id оригинала модификатора).
+        var editor = chain.Where(m => ArtNames.Of(m.Id) is { Length: 10 } legacy && int.TryParse(legacy[6..], System.Globalization.NumberStyles.HexNumber,
                                                                          CultureInfo.InvariantCulture, out int n) && n is >= 0x9000 and <= 0x9999).ToList();
         int baseArmor = Math.Clamp(EffectiveStats.Of(type, editor).Armor, 0, EffectiveStats.ArmorMax);
         var fort = FortModifiers(unit).Select(m => book.Rules.Modifiers?.GetValueOrDefault(m)).OfType<Modifier>();
@@ -222,8 +223,7 @@ public sealed class UnitCardLogic(WindowContext context, string unitId, MapUnit?
             case AttackClass.Heal:
                 return Num(raw.QtyHeal);
         }
-        int max = type.GlobalId.Length == 10 && type.GlobalId[4..6].Equals("uu", StringComparison.OrdinalIgnoreCase)
-            ? Formulas.DamageMax(constants, type.GlobalId) : constants.MaxDamage;
+        int max = Formulas.DamageMax(constants, type);
         int baseDamage = Math.Min(raw.QtyDamage, max), actual = Math.Min(attack.QtyDamage, max);
         string text = Num(baseDamage) + Difference(baseDamage, actual);
         if (actual == max) text = UiTemplate.Fill(Text("X005TA0811"), ("DMG", text));

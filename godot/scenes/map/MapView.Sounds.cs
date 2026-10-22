@@ -236,6 +236,7 @@ public partial class MapView
         Map.Players.TryGetValue(playerId, out var p) && Session.Book is { } book && book.Economy.Races.TryGetValue(p.RaceId, out var r)
             ? r.RaceType : -1;
 
+    /// <summary>Имя звуков лидера отряда (<c>{тип}ATTK</c>, <c>{тип}ACK1</c>…) — по id оригинала типа (<see cref="ArtNames"/>).</summary>
     private string LeaderType(MapStack stack) =>
-        Map.Units.TryGetValue(stack.LeaderId, out var leader) ? leader.TypeId.ToUpperInvariant() : "";
+        Map.Units.TryGetValue(stack.LeaderId, out var leader) ? LastEdict.Data.Ui.ArtNames.Of(leader.TypeId) : "";
 }

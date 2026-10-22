@@ -36,7 +36,7 @@ public sealed class SpellCardLogic(WindowContext context, string spellId, IReadO
         var book = context.Session.RequireBook();
         if (!book.Spells.TryGetValue(spellId, out var spell)) return;
         texts.TryGetValue(spellId, out var t);
-        ui.SetImage("IMG_SPELL_ICON", $"IconSpel:{spellId.ToUpperInvariant()}");
+        ui.SetImage("IMG_SPELL_ICON", $"IconSpel:{ArtNames.Of(spellId)}");
         ui.SetText("TXT_SPELL_INFO", UiTemplate.Fill(context.Text("X005TA0653"),
             ("NAME", t is null ? spellId : context.Text(t.NameTxt)), ("DESC", t is null ? "" : context.Text(t.DescTxt)),
             ("AREA", UiTemplate.Fill(context.Text("X005TA0710"), ("AREA", Area(spell.Area)))), ("INFO", Info(spell, t))));

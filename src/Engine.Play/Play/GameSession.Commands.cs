@@ -14,7 +14,7 @@ public sealed partial class GameSession
         set
         {
             _journal = value;
-            _settled = (State, Rng.Index, Crt.State);   // правка мимо команд до первой команды журнала — тоже Outside
+            _settled = (State, RngSteps, Crt.State);   // правка мимо команд до первой команды журнала — тоже Outside
         }
     }
 
@@ -28,7 +28,7 @@ public sealed partial class GameSession
 
     /// <summary>Отпечаток партии после прошлой команды верхнего уровня: состояние (запись неизменяемая — новое состояние, новая ссылка) и
     /// места потоков случайных чисел. Не совпал перед следующей — партия менялась мимо команд.</summary>
-    private (GameState State, int Rng, uint Crt)? _settled;
+    private (GameState State, long Rng, uint Crt)? _settled;
 
     /// <summary>Записчик команды верхнего уровня, пока она идёт: вложенные команды пишутся в её решения.</summary>
     private EventRecorder? _outerRecorder;
@@ -63,7 +63,7 @@ public sealed partial class GameSession
             throw new InvalidOperationException($"команда {command.GetType().Name} подана во время другой не на вызове наблюдателя");
         bool outside = _executing == 0 && _settled is { } settled
                        && (!ReferenceEquals(settled.State, State)
-                           || !command.FollowsScreenDraws && (settled.Rng != Rng.Index || settled.Crt != Crt.State));
+                           || !command.FollowsScreenDraws && (settled.Rng != RngSteps || settled.Crt != Crt.State));
         var saved = _observer;
         var recorder = new EventRecorder(saved);
         _observer = recorder;
@@ -76,7 +76,7 @@ public sealed partial class GameSession
             if (_executing == 1)
             {
                 Journal?.Add(command, StateHash.Of(this), recorder.Answers, outside);
-                _settled = (State, Rng.Index, Crt.State);
+                _settled = (State, RngSteps, Crt.State);
             }
             else outer!.Nested(command);
             return result;
@@ -111,7 +111,7 @@ public sealed partial class GameSession
     {
         if (Book is null) throw new InvalidOperationException("повтор боя без правил");
         for (int i = 0; i < play.CrtDraws; i++) Crt.Next();
-        return play.Replay(state, Rng, Book.Rules.Constants).Log;
+        return play.Replay(state, BattleRng, Book.Rules.Constants).Log;
     }
 
     /// <summary>Повтор боя на экране (<see cref="ReplayBattle(BattlePlay, BattleState)"/>) — на собранном бою (<see cref="StartBattle"/>).</summary>

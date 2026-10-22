@@ -128,7 +128,7 @@ public sealed class MapScene
         foreach (var l in _looks.Landmarks)
         {
             var (cx, cy) = _art.LandmarkFootprint(l.Type);
-            Obj(l.Type, "LANDMARKS", l.X, l.Y, cx, cy, l.Id);
+            Obj(Ui.ArtNames.Of(l.Type), "LANDMARKS", l.X, l.Y, cx, cy, l.Id);
         }
         foreach (var s in _looks.Stacks) AddStack(s);
         AddFog();
@@ -279,9 +279,10 @@ public sealed class MapScene
             bool flyer = _art.IsFlyer(s.LeaderType);
             string pose = flyer || moving ? "MOVE" : "STOP";
             // Тени есть не у всех (у Архимага G000UU0021 нет SSTO): имени нет — тени нет, как у движка.
-            Add(Unit(), $"{s.LeaderType}S{pose[..3]}{f}", "STACKS_SHADOW", s.X, s.Y, 1, 1, s.Id, shadow: true, quiet: true);
-            Add(Unit(), $"{s.LeaderType}{pose}{f}", "STACKS", s.X, s.Y, 1, 1, s.Id);
-            Add(Unit(), $"{s.LeaderType}{pose[..3]}2{f}", "STACKS", s.X, s.Y, 1, 1, s.Id, quiet: true);
+            string leader = Ui.ArtNames.Of(s.LeaderType);
+            Add(Unit(), $"{leader}S{pose[..3]}{f}", "STACKS_SHADOW", s.X, s.Y, 1, 1, s.Id, shadow: true, quiet: true);
+            Add(Unit(), $"{leader}{pose}{f}", "STACKS", s.X, s.Y, 1, 1, s.Id);
+            Add(Unit(), $"{leader}{pose[..3]}2{f}", "STACKS", s.X, s.Y, 1, 1, s.Id, quiet: true);
         }
         if (!s.LeaderAlive) Add(Unit(), "ICNDEADL", "STACKS", s.X, s.Y, 1, 1, s.Id);
         if (s.Invisible) Obj("INVISIBLE", "SYM_INVISIBLE", s.X, s.Y, 1, 1, s.Id);
@@ -374,7 +375,7 @@ public sealed class MapScene
 
     /// <summary><c>RACE_ID</c> игрока; нет игрока — нейтралы.</summary>
     private string PlayerRace(string player) =>
-        _looks.Map.Players.TryGetValue(player, out var p) && p.RaceId.Length > 0 ? p.RaceId.ToUpperInvariant() : NeutralRace;
+        _looks.Map.Players.TryGetValue(player, out var p) && p.RaceId.Length > 0 ? Ui.ArtNames.Of(p.RaceId) : NeutralRace;
 
     private static int RaceIndex(string raceId) =>
         raceId.Length == 10 && int.TryParse(raceId[6..], out int n) ? n : 4;

@@ -34,14 +34,14 @@ public class TestPackSnapshotTests
     [Theory]
     [MemberData(nameof(Maps))]
     public void AiDays_MatchTheSnapshot(string map) =>
-        PortSnapshot.Verify($"test-pack-{map}-days", PortSnapshot.AiDays(Start(map, out _), Days));
+        PortSnapshot.Verify($"test-pack-{map}-days", PortSnapshot.AiDays(Start(map, out _), Days, trace: $"test-pack-{map}-days"));
 
     [Theory]
     [MemberData(nameof(Maps))]
     public void Battles_MatchTheSnapshot(string map)
     {
         var session = Start(map, out var book);
-        PortSnapshot.Verify($"test-pack-{map}-battles", PortSnapshot.Battles(session.Map, book, Battles, (int)Seed));
+        PortSnapshot.Verify($"test-pack-{map}-battles", PortSnapshot.Battles(session.Map, book, Battles, (int)Seed, trace: $"test-pack-{map}-battles"));
     }
 
     private static GameSession Start(string map, out GameBook book)

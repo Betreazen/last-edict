@@ -121,9 +121,10 @@ public sealed class TradeSpellLogic(WindowContext context, string targetId, IRea
 
     protected override IReadOnlyList<string> SpellsOf(int level)
     {
-        var spells = C.Session.RequireBook().Spells;
+        var book = C.Session.RequireBook();
+        var spells = book.Spells;
         return [.. C.Player.KnownSpells.Where(s => spells.TryGetValue(s, out var spell) && spell.Level == level)
-                                       .Order(StringComparer.OrdinalIgnoreCase)];
+                                       .Order(book.Legacy)];   // порядок оригинала: по id оригинала заклинания
     }
 
     protected override int StartLevel()
@@ -158,7 +159,7 @@ public sealed class TradeSpellLogic(WindowContext context, string targetId, IRea
         }
         string capital = C.Map.Sites.FirstOrDefault(s => s.Kind == SiteKind.Capital && s.Owner.Equals(C.Viewer, StringComparison.OrdinalIgnoreCase))?.Id ?? "";
         Requests.Add(new UiOpen(TradePriceLogic.Screen, new TradePriceLogic(C, targetId, new AiTradeOffer(AiGiftKind.Spell, spellId, capital, 0),
-            $"IconSpel:{spellId.ToUpperInvariant()}", Name(spellId), spell.BuyCost.Gold)));
+            $"IconSpel:{ArtNames.Of(spellId)}", Name(spellId), spell.BuyCost.Gold)));
     }
 }
 

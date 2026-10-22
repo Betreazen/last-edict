@@ -3,7 +3,6 @@
  "lords": [
   {
    "id": "test:lord/sun-lord",
-   "legacyId": "t000LRa001",
    "race": "test:race/sun",
    "category": "warrior",
    "buildings": [
@@ -30,7 +29,6 @@
   },
   {
    "id": "test:lord/moon-lord",
-   "legacyId": "t000LRa002",
    "race": "test:race/moon",
    "category": "warrior",
    "buildings": [

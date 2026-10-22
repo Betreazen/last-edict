@@ -1,6 +1,6 @@
 {
  "Format": "d2-port-scenario",
- "Version": 5,
+ "Version": 6,
  "Id": "twin-fields",
  "Looks": {
   "Map": {
@@ -537,7 +537,7 @@
    "Units": {
     "S901UN0000": {
      "Id": "S901UN0000",
-     "TypeId": "T000UUA003",
+     "TypeId": "test:unit/sun-captain",
      "Level": 1,
      "Hp": 140,
      "Xp": 0,
@@ -546,7 +546,7 @@
     },
     "S901UN0001": {
      "Id": "S901UN0001",
-     "TypeId": "T000UUA007",
+     "TypeId": "test:unit/sun-footman",
      "Level": 1,
      "Hp": 110,
      "Xp": 0,
@@ -555,7 +555,7 @@
     },
     "S901UN0002": {
      "Id": "S901UN0002",
-     "TypeId": "T000UUA008",
+     "TypeId": "test:unit/sun-bowman",
      "Level": 1,
      "Hp": 50,
      "Xp": 0,
@@ -564,7 +564,7 @@
     },
     "S901UN0003": {
      "Id": "S901UN0003",
-     "TypeId": "T000UUA001",
+     "TypeId": "test:unit/sun-colossus",
      "Level": 1,
      "Hp": 700,
      "Xp": 0,
@@ -573,7 +573,7 @@
     },
     "S901UN0004": {
      "Id": "S901UN0004",
-     "TypeId": "T000UUA00F",
+     "TypeId": "test:unit/moon-captain",
      "Level": 1,
      "Hp": 140,
      "Xp": 0,
@@ -582,7 +582,7 @@
     },
     "S901UN0005": {
      "Id": "S901UN0005",
-     "TypeId": "T000UUA013",
+     "TypeId": "test:unit/moon-footman",
      "Level": 1,
      "Hp": 110,
      "Xp": 0,
@@ -591,7 +591,7 @@
     },
     "S901UN0006": {
      "Id": "S901UN0006",
-     "TypeId": "T000UUA014",
+     "TypeId": "test:unit/moon-bowman",
      "Level": 1,
      "Hp": 50,
      "Xp": 0,
@@ -600,7 +600,7 @@
     },
     "S901UN0007": {
      "Id": "S901UN0007",
-     "TypeId": "T000UUA00D",
+     "TypeId": "test:unit/moon-colossus",
      "Level": 1,
      "Hp": 700,
      "Xp": 0,
@@ -609,7 +609,7 @@
     },
     "S901UN0008": {
      "Id": "S901UN0008",
-     "TypeId": "T000UUA019",
+     "TypeId": "test:unit/wild-wolf",
      "Level": 1,
      "Hp": 70,
      "Xp": 0,
@@ -618,7 +618,7 @@
     },
     "S901UN0009": {
      "Id": "S901UN0009",
-     "TypeId": "T000UUA01B",
+     "TypeId": "test:unit/wild-shaman",
      "Level": 1,
      "Hp": 45,
      "Xp": 0,
@@ -627,7 +627,7 @@
     },
     "S901UN000a": {
      "Id": "S901UN000a",
-     "TypeId": "T000UUA019",
+     "TypeId": "test:unit/wild-wolf",
      "Level": 1,
      "Hp": 70,
      "Xp": 0,
@@ -636,7 +636,7 @@
     },
     "S901UN000b": {
      "Id": "S901UN000b",
-     "TypeId": "T000UUA01B",
+     "TypeId": "test:unit/wild-shaman",
      "Level": 1,
      "Hp": 45,
      "Xp": 0,
@@ -645,7 +645,7 @@
     },
     "S901UN000c": {
      "Id": "S901UN000c",
-     "TypeId": "T000UUA019",
+     "TypeId": "test:unit/wild-wolf",
      "Level": 1,
      "Hp": 70,
      "Xp": 0,
@@ -654,7 +654,7 @@
     },
     "S901UN000d": {
      "Id": "S901UN000d",
-     "TypeId": "T000UUA019",
+     "TypeId": "test:unit/wild-wolf",
      "Level": 1,
      "Hp": 70,
      "Xp": 0,
@@ -663,7 +663,7 @@
     },
     "S901UN000e": {
      "Id": "S901UN000e",
-     "TypeId": "T000UUA019",
+     "TypeId": "test:unit/wild-wolf",
      "Level": 1,
      "Hp": 70,
      "Xp": 0,
@@ -672,7 +672,7 @@
     },
     "S901UN000f": {
      "Id": "S901UN000f",
-     "TypeId": "T000UUA019",
+     "TypeId": "test:unit/wild-wolf",
      "Level": 1,
      "Hp": 70,
      "Xp": 0,
@@ -681,7 +681,7 @@
     },
     "S901UN0010": {
      "Id": "S901UN0010",
-     "TypeId": "T000UUA019",
+     "TypeId": "test:unit/wild-wolf",
      "Level": 1,
      "Hp": 70,
      "Xp": 0,
@@ -690,7 +690,7 @@
     },
     "S901UN0011": {
      "Id": "S901UN0011",
-     "TypeId": "T000UUA019",
+     "TypeId": "test:unit/wild-wolf",
      "Level": 1,
      "Hp": 70,
      "Xp": 0,
@@ -699,7 +699,7 @@
     },
     "S901UN0012": {
      "Id": "S901UN0012",
-     "TypeId": "T000UUA01B",
+     "TypeId": "test:unit/wild-shaman",
      "Level": 1,
      "Hp": 45,
      "Xp": 0,
@@ -708,7 +708,7 @@
     },
     "S901UN0013": {
      "Id": "S901UN0013",
-     "TypeId": "T000UUA019",
+     "TypeId": "test:unit/wild-wolf",
      "Level": 1,
      "Hp": 70,
      "Xp": 0,
@@ -717,7 +717,7 @@
     },
     "S901UN0014": {
      "Id": "S901UN0014",
-     "TypeId": "T000UUA01D",
+     "TypeId": "test:unit/wild-bat",
      "Level": 1,
      "Hp": 40,
      "Xp": 0,
@@ -726,7 +726,7 @@
     },
     "S901UN0015": {
      "Id": "S901UN0015",
-     "TypeId": "T000UUA01D",
+     "TypeId": "test:unit/wild-bat",
      "Level": 1,
      "Hp": 40,
      "Xp": 0,
@@ -735,7 +735,7 @@
     },
     "S901UN0016": {
      "Id": "S901UN0016",
-     "TypeId": "T000UUA019",
+     "TypeId": "test:unit/wild-wolf",
      "Level": 1,
      "Hp": 70,
      "Xp": 0,
@@ -744,7 +744,7 @@
     },
     "S901UN0017": {
      "Id": "S901UN0017",
-     "TypeId": "T000UUA01D",
+     "TypeId": "test:unit/wild-bat",
      "Level": 1,
      "Hp": 40,
      "Xp": 0,
@@ -753,7 +753,7 @@
     },
     "S901UN0018": {
      "Id": "S901UN0018",
-     "TypeId": "T000UUA01D",
+     "TypeId": "test:unit/wild-bat",
      "Level": 1,
      "Hp": 40,
      "Xp": 0,
@@ -762,7 +762,7 @@
     },
     "S901UN0019": {
      "Id": "S901UN0019",
-     "TypeId": "T000UUA019",
+     "TypeId": "test:unit/wild-wolf",
      "Level": 1,
      "Hp": 70,
      "Xp": 0,
@@ -771,7 +771,7 @@
     },
     "S901UN001a": {
      "Id": "S901UN001a",
-     "TypeId": "T000UUA01C",
+     "TypeId": "test:unit/wild-chief",
      "Level": 1,
      "Hp": 150,
      "Xp": 0,
@@ -780,7 +780,7 @@
     },
     "S901UN001b": {
      "Id": "S901UN001b",
-     "TypeId": "T000UUA01B",
+     "TypeId": "test:unit/wild-shaman",
      "Level": 1,
      "Hp": 45,
      "Xp": 0,
@@ -789,7 +789,7 @@
     },
     "S901UN001c": {
      "Id": "S901UN001c",
-     "TypeId": "T000UUA019",
+     "TypeId": "test:unit/wild-wolf",
      "Level": 1,
      "Hp": 70,
      "Xp": 0,
@@ -798,7 +798,7 @@
     },
     "S901UN001d": {
      "Id": "S901UN001d",
-     "TypeId": "T000UUA01C",
+     "TypeId": "test:unit/wild-chief",
      "Level": 1,
      "Hp": 150,
      "Xp": 0,
@@ -807,7 +807,7 @@
     },
     "S901UN001e": {
      "Id": "S901UN001e",
-     "TypeId": "T000UUA01B",
+     "TypeId": "test:unit/wild-shaman",
      "Level": 1,
      "Hp": 45,
      "Xp": 0,
@@ -816,7 +816,7 @@
     },
     "S901UN001f": {
      "Id": "S901UN001f",
-     "TypeId": "T000UUA019",
+     "TypeId": "test:unit/wild-wolf",
      "Level": 1,
      "Hp": 70,
      "Xp": 0,
@@ -825,7 +825,7 @@
     },
     "S901UN0020": {
      "Id": "S901UN0020",
-     "TypeId": "T000UUA01C",
+     "TypeId": "test:unit/wild-chief",
      "Level": 1,
      "Hp": 150,
      "Xp": 0,
@@ -834,7 +834,7 @@
     },
     "S901UN0021": {
      "Id": "S901UN0021",
-     "TypeId": "T000UUA01D",
+     "TypeId": "test:unit/wild-bat",
      "Level": 1,
      "Hp": 40,
      "Xp": 0,
@@ -843,7 +843,7 @@
     },
     "S901UN0022": {
      "Id": "S901UN0022",
-     "TypeId": "T000UUA01B",
+     "TypeId": "test:unit/wild-shaman",
      "Level": 1,
      "Hp": 45,
      "Xp": 0,
@@ -852,7 +852,7 @@
     },
     "S901UN0023": {
      "Id": "S901UN0023",
-     "TypeId": "T000UUA019",
+     "TypeId": "test:unit/wild-wolf",
      "Level": 1,
      "Hp": 70,
      "Xp": 0,
@@ -863,8 +863,8 @@
    "Players": {
     "S901PL0000": {
      "Id": "S901PL0000",
-     "RaceId": "T000RRA003",
-     "LordId": "T000LRA001",
+     "RaceId": "test:race/wild",
+     "LordId": "test:lord/sun-lord",
      "Name": "Wild",
      "Face": 0,
      "IsHuman": false,
@@ -897,8 +897,8 @@
     },
     "S901PL0001": {
      "Id": "S901PL0001",
-     "RaceId": "T000RRA001",
-     "LordId": "T000LRA001",
+     "RaceId": "test:race/sun",
+     "LordId": "test:lord/sun-lord",
      "Name": "Sun",
      "Face": 0,
      "IsHuman": false,
@@ -931,8 +931,8 @@
     },
     "S901PL0002": {
      "Id": "S901PL0002",
-     "RaceId": "T000RRA002",
-     "LordId": "T000LRA002",
+     "RaceId": "test:race/moon",
+     "LordId": "test:lord/moon-lord",
      "Name": "Moon",
      "Face": 0,
      "IsHuman": false,
@@ -2073,7 +2073,7 @@
     "Y": 4,
     "Owner": "S901PL0001",
     "Subrace": "S901SR0001",
-    "LeaderType": "T000UUA003",
+    "LeaderType": "test:unit/sun-captain",
     "LeaderAlive": true,
     "AnyAlive": true,
     "Facing": 0,
@@ -2087,7 +2087,7 @@
     "Y": 39,
     "Owner": "S901PL0002",
     "Subrace": "S901SR0002",
-    "LeaderType": "T000UUA00F",
+    "LeaderType": "test:unit/moon-captain",
     "LeaderAlive": true,
     "AnyAlive": true,
     "Facing": 0,
@@ -2101,7 +2101,7 @@
     "Y": 2,
     "Owner": "S901PL0000",
     "Subrace": "S901SR0000",
-    "LeaderType": "T000UUA019",
+    "LeaderType": "test:unit/wild-wolf",
     "LeaderAlive": true,
     "AnyAlive": true,
     "Facing": 0,
@@ -2115,7 +2115,7 @@
     "Y": 21,
     "Owner": "S901PL0000",
     "Subrace": "S901SR0000",
-    "LeaderType": "T000UUA019",
+    "LeaderType": "test:unit/wild-wolf",
     "LeaderAlive": true,
     "AnyAlive": true,
     "Facing": 0,
@@ -2129,7 +2129,7 @@
     "Y": 38,
     "Owner": "S901PL0000",
     "Subrace": "S901SR0000",
-    "LeaderType": "T000UUA019",
+    "LeaderType": "test:unit/wild-wolf",
     "LeaderAlive": true,
     "AnyAlive": true,
     "Facing": 0,
@@ -2143,7 +2143,7 @@
     "Y": 34,
     "Owner": "S901PL0000",
     "Subrace": "S901SR0000",
-    "LeaderType": "T000UUA019",
+    "LeaderType": "test:unit/wild-wolf",
     "LeaderAlive": true,
     "AnyAlive": true,
     "Facing": 0,
@@ -2157,7 +2157,7 @@
     "Y": 41,
     "Owner": "S901PL0000",
     "Subrace": "S901SR0000",
-    "LeaderType": "T000UUA01B",
+    "LeaderType": "test:unit/wild-shaman",
     "LeaderAlive": true,
     "AnyAlive": true,
     "Facing": 0,
@@ -2171,7 +2171,7 @@
     "Y": 32,
     "Owner": "S901PL0000",
     "Subrace": "S901SR0000",
-    "LeaderType": "T000UUA01D",
+    "LeaderType": "test:unit/wild-bat",
     "LeaderAlive": true,
     "AnyAlive": true,
     "Facing": 0,
@@ -2185,7 +2185,7 @@
     "Y": 43,
     "Owner": "S901PL0000",
     "Subrace": "S901SR0000",
-    "LeaderType": "T000UUA01D",
+    "LeaderType": "test:unit/wild-bat",
     "LeaderAlive": true,
     "AnyAlive": true,
     "Facing": 0,
@@ -2199,7 +2199,7 @@
     "Y": 30,
     "Owner": "S901PL0000",
     "Subrace": "S901SR0000",
-    "LeaderType": "T000UUA01C",
+    "LeaderType": "test:unit/wild-chief",
     "LeaderAlive": true,
     "AnyAlive": true,
     "Facing": 0,
@@ -2213,7 +2213,7 @@
     "Y": 18,
     "Owner": "S901PL0000",
     "Subrace": "S901SR0000",
-    "LeaderType": "T000UUA01C",
+    "LeaderType": "test:unit/wild-chief",
     "LeaderAlive": true,
     "AnyAlive": true,
     "Facing": 0,
@@ -2227,7 +2227,7 @@
     "Y": 36,
     "Owner": "S901PL0000",
     "Subrace": "S901SR0000",
-    "LeaderType": "T000UUA01C",
+    "LeaderType": "test:unit/wild-chief",
     "LeaderAlive": true,
     "AnyAlive": true,
     "Facing": 0,

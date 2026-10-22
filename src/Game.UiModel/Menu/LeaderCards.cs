@@ -73,7 +73,7 @@ internal sealed class LeaderFileCardLogic(MenuContext context, ExportedLeader le
     public void Open(UiScreenState ui)
     {
         ArgumentNullException.ThrowIfNull(ui);
-        string type = leader.UnitType.ToUpperInvariant();
+        string type = Ui.ArtNames.Of(leader.UnitType);
         var book = context.Book;
         ui.SetImage("IMG_UNIT_ICON", $"gfx:Events/{type}", UiImageAlign.Center);   // картина во весь рост, как у карточки воина (0x576d51)
         ui.SetText("TXT_UNIT_NAME", UiTemplate.Fill(Text("X005TA0567"), ("NAME", leader.Name)));
@@ -100,11 +100,11 @@ internal sealed class LeaderFileCardLogic(MenuContext context, ExportedLeader le
     {
         var a = leader.Attack;
         var attacks = book?.Rules.Attacks;
-        var raw = attacks?.GetValueOrDefault(a.Id.ToUpperInvariant());
+        var raw = attacks?.GetValueOrDefault(a.Id);
         var cls = (AttackClass)a.Class;
         int accuracy = UnitCardLogic.AlwaysHitClasses.Contains(cls) ? 100 : Math.Min(100, a.Power);
         int baseAccuracy = raw is null ? accuracy : UnitCardLogic.AlwaysHitClasses.Contains(raw.Class) ? 100 : Math.Min(100, raw.Power);
-        var second = leader.Attack2.Length > 0 ? attacks?.GetValueOrDefault(leader.Attack2.ToUpperInvariant()) : null;
+        var second = leader.Attack2.Length > 0 ? attacks?.GetValueOrDefault(leader.Attack2) : null;
         string part1 = UiTemplate.Fill(Text("X005TA0787"),
             ("TWICE", leader.AttacksTwice ? UiTemplate.Fill(Text("X005TA0786"), ("BLANK", "")) : ""),
             ("ALTATTACK", ""), ("ATTACK", a.Name),

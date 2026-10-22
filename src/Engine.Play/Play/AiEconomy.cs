@@ -130,7 +130,7 @@ public static partial class AiEconomy
             string stackId = stack.Id;
             yield return new AiEvaluation(stackId, () =>
                 LastEdict.Rules.Units.SkillChoice.ByAi(session.SkillOffer(stackId)) is { } pick
-                    ? [new AiStepAction(AiStepType.UpgradeLeader, stackId, pick.ModifId.ToUpperInvariant())]
+                    ? [new AiStepAction(AiStepType.UpgradeLeader, stackId, pick.ModifId)]
                     : []);
         }
     }
@@ -152,7 +152,7 @@ public static partial class AiEconomy
         if (AiStrategicRules.PickResearch(session.Map.Turn, player.KnownSpells.Count, (LordCategory)book.LordCategory(player.LordId), options)
             is not { } pick) yield break;
         var price = session.ResearchCheck(playerId, pick.Id).Price;
-        string spellId = pick.Id.ToUpperInvariant();
+        string spellId = pick.Id;
         yield return new AiEvaluation(spellId, () =>
             budget.Allows(AiStepType.SpellResearch, price) ? [new AiStepAction(AiStepType.SpellResearch, playerId, spellId)] : []);
     }

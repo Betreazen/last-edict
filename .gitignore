@@ -57,3 +57,6 @@ tools/synth-maps/out/
 # Данные игры: импорт из своей копии Disciples II (GOG), в репозитории их нет — docs/publishing.md
 /data/content/base/
 /data/scenarios/
+
+# MCP-серверы на этой машине (REA на Ghidra: пути профиля и установок) — локально, не в публичный репозиторий
+.mcp.json

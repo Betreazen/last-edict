@@ -133,9 +133,9 @@ public sealed partial class GameSession
                                   string modifierId, string casterId, int turnStop)
     {
         if (!units.TryGetValue(unitId, out var unit)) return;
-        string modifier = modifierId.ToUpperInvariant();
+        string modifier = modifierId;
         units[unitId] = unit with { Modifiers = [.. unit.Modifiers, modifier] };
-        records.Add(new SpellEffectRecord(unitId, origin.ToUpperInvariant(), modifier, casterId, turnStop));
+        records.Add(new SpellEffectRecord(unitId, origin, modifier, casterId, turnStop));
     }
 
     /// <summary>

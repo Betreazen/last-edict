@@ -26,22 +26,22 @@ public class AttackClassTests(ITestOutputHelper output)
     private static readonly Lazy<GameRules> Rules = new(() => RulesLoader.Load(ImportedData.Content));
 
     // Ванильные участники, названные поимённо (перебор Gunits × Gattacks по классу атаки):
-    private const string Shamaness = "g000uu8046";     // ATTACK2 — Fear
-    private const string FearBite = "g000aa8146";      // Fear, POWER 30, REACH 1, SOURCE 1, INFINITE = T
-    private const string Medusa = "g000uu5025";        // ATTACK — Petrify
-    private const string PetrifyGaze = "g000aa5025";   // Petrify, POWER 60, REACH 1, SOURCE 6
-    private const string Matriarch = "g000uu0017";     // ATTACK2 — Cure
-    private const string CureTouch = "g000aa1017";     // Cure, POWER 100, REACH 1
-    private const string Tenderfoot = "g000uu0033";    // ATTACK — BoostDamage LEVEL 1
-    private const string Boost1 = "g000aa0033";        // BoostDamage, LEVEL 1 (+25 %)
-    private const string Boost2 = "g000aa0034";        // BoostDamage, LEVEL 2 (+50 %)
-    private const string Boost3 = "g000aa0035";        // BoostDamage, LEVEL 3 (+75 %), INFINITE = T
-    private const string Boost4 = "g000aa0160";        // BoostDamage, LEVEL 4 (+100 %), INFINITE = T
-    private const string Tiamath = "g000uu0168";       // ATTACK2 — LowerDamage
-    private const string LowerDam = "g000aa1168";      // LowerDamage, LEVEL 2 (−33 %), INFINITE = T
-    private const string Hermit = "g000uu0163";        // ATTACK2 — LowerInitiative
-    private const string LowerIni = "g000aa1163";      // LowerInitiative, LEVEL 1 (−50 %), INFINITE = F
-    private const string Squire = "g000uu0001";        // Damage, QTY_DAM 25, ARMOR 0 — мишень и боец
+    private const string Shamaness = "base:unit/shamaness-neutral";     // ATTACK2 — Fear
+    private const string FearBite = "base:attack/shamaness-neutral-2nd";      // Fear, POWER 30, REACH 1, SOURCE 1, INFINITE = T
+    private const string Medusa = "base:unit/medusa";        // ATTACK — Petrify
+    private const string PetrifyGaze = "base:attack/medusa";   // Petrify, POWER 60, REACH 1, SOURCE 6
+    private const string Matriarch = "base:unit/matriarch";     // ATTACK2 — Cure
+    private const string CureTouch = "base:attack/matriarch-2nd";     // Cure, POWER 100, REACH 1
+    private const string Tenderfoot = "base:unit/tenderfoot";    // ATTACK — BoostDamage LEVEL 1
+    private const string Boost1 = "base:attack/tenderfoot";        // BoostDamage, LEVEL 1 (+25 %)
+    private const string Boost2 = "base:attack/novice";        // BoostDamage, LEVEL 2 (+50 %)
+    private const string Boost3 = "base:attack/druidess";        // BoostDamage, LEVEL 3 (+75 %), INFINITE = T
+    private const string Boost4 = "base:attack/archdruidess";        // BoostDamage, LEVEL 4 (+100 %), INFINITE = T
+    private const string Tiamath = "base:unit/tiamath-legions";       // ATTACK2 — LowerDamage
+    private const string LowerDam = "base:attack/tiamath-legions-2nd";      // LowerDamage, LEVEL 2 (−33 %), INFINITE = T
+    private const string Hermit = "base:unit/hermit-clans";        // ATTACK2 — LowerInitiative
+    private const string LowerIni = "base:attack/hermit-clans-2nd";      // LowerInitiative, LEVEL 1 (−50 %), INFINITE = F
+    private const string Squire = "base:unit/squire-empire";        // Damage, QTY_DAM 25, ARMOR 0 — мишень и боец
 
     private static RulesConstants C => Rules.Value.Constants;
 
@@ -92,8 +92,8 @@ public class AttackClassTests(ITestOutputHelper output)
         Assert.Equal(AttackType.ReachAll, Attack(FearBite).Reach);
         Assert.Equal(30, Attack(FearBite).Power);
         // Squire — мишень и боец всех числовых утверждений ниже: урон 25, броня 0, инициатива 50.
-        Assert.Equal(25, Attack("g000aa0001").QtyDamage);
-        Assert.Equal(50, Attack("g000aa0001").Initiative);
+        Assert.Equal(25, Attack("base:attack/squire-empire").QtyDamage);
+        Assert.Equal(50, Attack("base:attack/squire-empire").Initiative);
         Assert.Equal(0, Rules.Value.Units[Squire].Armor);
     }
 
@@ -395,7 +395,7 @@ public class AttackClassTests(ITestOutputHelper output)
         finite.LowerInitiativeLevel = 1;
         var eternal = Of(Squire, attacker: true, slot: 1);
         eternal.LowerInitiativeLevel = 1; eternal.LowerInitiativeLong = true;
-        var rival = Of(Squire, attackId: "g000aa0029", slot: 1);   // INITIATIVE 30
+        var rival = Of(Squire, attackId: "base:attack/hill-giant-clans", slot: 1);   // INITIATIVE 30
         var state = new BattleState { Units = [finite, eternal, rival], AttackerGroup = "A", DefenderGroup = "D", Round = 1 };
 
         var built = TurnOrder.Build(state, new ScriptedRng([9, 0, 2]), C);   // 30, 25, 32

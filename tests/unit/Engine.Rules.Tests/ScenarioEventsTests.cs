@@ -100,8 +100,8 @@ public class ScenarioEventsTests
     public void Items_StackExists_KillStack_LootRuin()
     {
         var map = Map();
-        Assert.Single(Fire(Set(Event("S001EV0001", [new OwnItemCondition("G000IG0001")])), map, ""));
-        Assert.Empty(Fire(Set(Event("S001EV0001", [new OwnItemCondition("G000IG0002")])), map, ""));
+        Assert.Single(Fire(Set(Event("S001EV0001", [new OwnItemCondition("base:item/life-potion")])), map, ""));
+        Assert.Empty(Fire(Set(Event("S001EV0001", [new OwnItemCondition("base:item/potion-of-protection")])), map, ""));
         Assert.Single(Fire(Set(Event("S001EV0001", [new StackExistsCondition("S001KC0001", 0)])), map, ""));
         Assert.Single(Fire(Set(Event("S001EV0001", [new StackExistsCondition("S001KC0009", 1)])), map, ""));
         Assert.Single(Fire(Set(Event("S001EV0001", [new StackExistsCondition("S001TM0001", 0)])), map, ""));   // шаблон
@@ -182,7 +182,7 @@ public class ScenarioEventsTests
                     UnitIds = [], Slots = [], Items = ["S001IM0001"], TemplateId = "S001TM0001",
                 },
             },
-            ItemTypes = new Dictionary<string, string> { ["S001IM0001"] = "G000IG0001" },
+            ItemTypes = new Dictionary<string, string> { ["S001IM0001"] = "base:item/life-potion" },
             Sites =
             [
                 new MapSite { Id = "S001FT0001", Kind = SiteKind.Village, RawKind = "MidVillage", Owner = Empire },

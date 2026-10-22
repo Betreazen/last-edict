@@ -156,7 +156,7 @@ public abstract class SpellBookLogic : IWindowLogic
     /// <summary>Строка пустого уровня.</summary>
     protected virtual string NoneText => "";
 
-    private UiCard Row(string spell) => new($"{IconArchive}:{spell.ToUpperInvariant()}", new UiPoint(0, 0),
+    private UiCard Row(string spell) => new($"{IconArchive}:{ArtNames.Of(spell)}", new UiPoint(0, 0),
         UiTemplate.Fill(@"\vC;" + C.Text("X005TA0654"), ("NAME", Name(spell))) + @"\n" + Desc(spell),
         new UiRect(IconW + 10, 0, RowW - IconW - 10, RowH), Marked(spell) ? Known : null);
 
@@ -169,7 +169,7 @@ public abstract class SpellBookLogic : IWindowLogic
             foreach (string t in (string[])["TXT_SPELL_INFO_2", "TXT_SPELL_STATS", "TXT_COST"]) ui.SetText(t, "");
             return;
         }
-        ui.SetImage("IMG_SPELL", $"{IconArchive}:{id.ToUpperInvariant()}");
+        ui.SetImage("IMG_SPELL", $"{IconArchive}:{ArtNames.Of(id)}");
         ui.SetText("TXT_SPELL_INFO_2", Name(id));
         string stats = UiTemplate.Fill(C.Text("X005TA0438"), ("LEVEL", spell.Level));
         if (spell.DamageQty > 0 && spell.DamageSource is >= 0 and <= 7)
@@ -252,7 +252,7 @@ public sealed class ResearchSpellLogic(WindowContext context, IReadOnlyDictionar
         var lord = (book.LordResearch.GetValueOrDefault(C.Player.LordId) ?? []).Select(r => r.SpellId);
         return [.. lord.Concat(known).Distinct(StringComparer.OrdinalIgnoreCase)
                        .Where(s => book.Spells.TryGetValue(s, out var spell) && spell.Level == level)
-                       .Order(StringComparer.OrdinalIgnoreCase)];
+                       .Order(book.Legacy)];   // порядок оригинала: по id оригинала заклинания
     }
 
     protected override int StartLevel() => C.Memory.ResearchLevel;

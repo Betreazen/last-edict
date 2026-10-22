@@ -12,8 +12,8 @@ def test_files_match_the_generator():
     assert stale == [], f"content/test-pack разошёлся с tools/test_pack.py: {stale} — py tools/test_pack.py"
 
 
-def test_no_legacy_id_collides_with_the_original_range():
-    kinds = tp.with_legacy_ids(tp.build())
-    ids = [e["legacyId"] for entities in kinds.values() for e in entities if "legacyId" in e]
-    assert ids and all(i.startswith("t000") and int(i[-4:], 16) >= 0xA001 for i in ids)
-    assert len(ids) == len(set(i.lower() for i in ids))
+def test_entities_have_no_legacy_id():
+    """Ключ правил — id содержимого: test-pack — как мод, без id оригинала у сущностей и в картах."""
+    kinds = tp.build()
+    assert all("legacyId" not in e for entities in kinds.values() for e in entities)
+    assert all(e["id"].startswith(tp.MOD + ":") for entities in kinds.values() for e in entities)

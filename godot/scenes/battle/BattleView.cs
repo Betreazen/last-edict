@@ -712,7 +712,7 @@ public partial class BattleView : Node2D
         var frames = Frames(sprite);
         if (kind is not null && unit is not null && PortProbe.Av is { } av)
         {
-            if (kind is "EFFECT" or "ITEM") av.BattleAnim(unit.Id, unit.Type.GlobalId, kind, frames.Length);
+            if (kind is "EFFECT" or "ITEM") av.BattleAnim(unit.Id, unit.Type.Id, kind, frames.Length);
             else av.BattleFx(kind, unit.Id, sprite.Name, frames.Length);
         }
         if (frames.Length == 0) return 0;
@@ -756,10 +756,10 @@ public partial class BattleView : Node2D
         // крутилось по кругу до пересборки поля в конце шага, а шаг ждёт ещё и надписей (+0x14d8, NoteMs) — короткий замах успевал пройти
         // два-три раза (замечание 13).
         // Журнал зонда: только смена действия юнита, как у зонда оригинала (поле перерисовывается и без смены).
-        if (PortProbe.Av is { } av && _traced.GetValueOrDefault(unit.Id) != (action, unit.Type.GlobalId))
+        if (PortProbe.Av is { } av && _traced.GetValueOrDefault(unit.Id) != (action, unit.Type.Id))
         {
-            _traced[unit.Id] = (action, unit.Type.GlobalId);
-            av.BattleAnim(unit.Id, unit.Type.GlobalId, action switch
+            _traced[unit.Id] = (action, unit.Type.Id);
+            av.BattleAnim(unit.Id, unit.Type.Id, action switch
             {
                 BattleAction.Still => "STIL",
                 BattleAction.Idle => "IDLE",

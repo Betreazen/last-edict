@@ -52,7 +52,7 @@ public sealed class ItemCardLogic(Func<string, string> text, Item item, string n
     public void Open(UiScreenState ui)
     {
         ArgumentNullException.ThrowIfNull(ui);
-        ui.SetImage("IMG_SPELL_ICON", icon ?? $"IconItem:{item.Id.ToUpperInvariant()}");
+        ui.SetImage("IMG_SPELL_ICON", icon ?? $"IconItem:{ArtNames.Of(item.Id)}");
         string cast = item.Category == ItemCategory.Wand
             ? UiTemplate.Fill(text("X005TA0661"), ("CASTCOST", PriceText.Words(text, item.CastingCost))) : "";
         ui.SetText("TXT_SPELL_INFO", UiTemplate.Fill(text("X005TA0660"), ("NAME", text(nameTxt)), ("DESC", text(descTxt)),

@@ -354,7 +354,7 @@ public sealed class BattleScene
     public BattleSprite? Portrait(BattleUnit unit)
     {
         ArgumentNullException.ThrowIfNull(unit);
-        string name = _baseUnit(unit.Type.GlobalId) + "FACE";
+        string name = _baseUnit(unit.Type.Id) + "FACE";
         if (_gfx.Image("Faces", name) is { } image)
         {
             var slot = PanelFace(unit, image.W);
@@ -379,7 +379,7 @@ public sealed class BattleScene
     public BattleSprite? BigFace(BattleUnit unit)
     {
         ArgumentNullException.ThrowIfNull(unit);
-        string name = _baseUnit(unit.Type.GlobalId) + "FACEB";
+        string name = _baseUnit(unit.Type.Id) + "FACEB";
         var slot = BigFaceSlot(unit.Attacker);
         if (_gfx.Image("Faces", name) is { } image)
             return new BattleSprite("Faces", image.Name, slot.X, slot.Y, PanelLayer + 1, unit.Id);
@@ -400,7 +400,7 @@ public sealed class BattleScene
     {
         if (itemType.Length == 0) return null;
         var slot = ItemSlot(attacker, index);
-        if (_gfx.Image("IconItem", itemType) is { } image)
+        if (_gfx.Image("IconItem", Ui.ArtNames.Of(itemType)) is { } image)
             return new BattleSprite("IconItem", image.Name, slot.X, slot.Y, PanelLayer + 1, itemType);
         return null;
     }
@@ -569,7 +569,7 @@ public sealed class BattleScene
     {
         ArgumentNullException.ThrowIfNull(unit);
         if (_deathRace is null) return null;
-        string race = _deathRace(unit.Type.GlobalId);
+        string race = _deathRace(unit.Type.Id);
         if (race.Length == 0) return null;
         string prefix = $"DEATH_{race}_{(unit.Type.SizeSmall ? 'S' : 'L')}";
         var anim = _gfx.Archive("Battle")?.Anims
@@ -718,10 +718,10 @@ public sealed class BattleScene
                      bool shadow, int layerNo, bool quiet = false)
     {
         if (action == BattleAction.Idle && StillIdle) action = BattleAction.Still;
-        string name = NameOf(unit.Type.GlobalId, action, unit.Attacker, shadow, layerNo);
+        string name = NameOf(unit.Type.Id, action, unit.Attacker, shadow, layerNo);
         var art = _gfx.Anim("BatUnits", name);
         // Нет STIL — покой IDLE (запасной, ранг 3: у движка такой картинки нет — не проверено).
-        if (art is null && action == BattleAction.Still) art = _gfx.Anim("BatUnits", name = NameOf(unit.Type.GlobalId, BattleAction.Idle, unit.Attacker, shadow, layerNo));
+        if (art is null && action == BattleAction.Still) art = _gfx.Anim("BatUnits", name = NameOf(unit.Type.Id, BattleAction.Idle, unit.Attacker, shadow, layerNo));
         if (art is null)
         {
             if (!quiet) _missing.Add(name);

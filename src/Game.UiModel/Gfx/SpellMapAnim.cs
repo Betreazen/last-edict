@@ -34,6 +34,7 @@ public static class SpellMapAnim
     public static IReadOnlyList<SpellMapPart> Parts(GfxAssets gfx, string spellId)
     {
         ArgumentNullException.ThrowIfNull(gfx);
+        spellId = Ui.ArtNames.Of(spellId ?? "");   // анимации названы id оригинала заклинания
         if (spellId is not { Length: IdLength } || gfx.Archive(Archive) is not { } archive) return [];
         var anims = archive.Anims.Where(a => a.Name.Length == IdLength + 5 && a.Name.StartsWith(spellId, StringComparison.OrdinalIgnoreCase))
                                  .OrderBy(a => a.Name, StringComparer.OrdinalIgnoreCase).ToList();

@@ -177,7 +177,7 @@ public static partial class AiTactics
         return new AiTacticTurn(playerId, weights, AiTacticScore.InfluenceGrid(map.Size, forts), map.Turn, memo)
         {
             Forces = forces ?? session.ForcesOf(playerId) ?? AiSpells.Forces(session, playerId),
-            Rng = new CountingRng(session.Rng),
+            Rng = new CountingRng(session.AiRng),
             Purse = TacticPurse(session, player),
             MainEnemy = MainEnemy(session),
             WinTargets = WinTargets(session, playerId),

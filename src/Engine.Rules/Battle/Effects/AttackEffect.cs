@@ -121,5 +121,5 @@ public abstract record AttackEffect
 
     /// <summary>Урон в силе ИИ (<c>0x5dd7fd</c>): прямой урон — <c>min(QTY_DAM, DamageMax)</c>, прочее 1 (лечение — своё).</summary>
     public virtual double AiDamageFactor(BattleUnit unit, RulesConstants constants) =>
-        IsDirectDamage ? Math.Min(unit.Attack.QtyDamage, Formulas.DamageMax(constants, unit.Type.GlobalId)) : 1.0;
+        IsDirectDamage ? Math.Min(unit.Attack.QtyDamage, Formulas.DamageMax(constants, unit.Type)) : 1.0;
 }

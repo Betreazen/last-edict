@@ -1,4 +1,6 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
+using LastEdict.Data.Content;
 using LastEdict.Data.Play;
 
 namespace LastEdict.Data.Leaders;
@@ -8,8 +10,13 @@ public static class LeaderFile
 {
     public const string Format = "d2-port-leader";
 
-    /// <summary>Версия формата. Меняется, когда старый файл нельзя прочитать новой моделью как есть.</summary>
-    public const int Version = 1;
+    /// <summary>Версия формата. Меняется, когда старый файл нельзя прочитать новой моделью как есть.
+    /// <para>2 — тип юнита, атаки, предметы и модификаторы — id содержимого (<c>base:unit/knight</c>); версия 1 (id оригинала) переводится
+    /// при чтении (<see cref="LegacyRefs"/>).</para></summary>
+    public const int Version = 2;
+
+    /// <summary>Первая версия со ссылками по id содержимого.</summary>
+    private const int ContentIdsVersion = 2;
 
     public const string Extension = ".json";
 
@@ -23,9 +30,15 @@ public static class LeaderFile
         Envelope? e;
         try
         {
-            e = JsonSerializer.Deserialize<Envelope>(json, SaveJson.Options);
+            if (SaveJson.VersionOf(json) >= ContentIdsVersion) e = JsonSerializer.Deserialize<Envelope>(json, SaveJson.Options);
+            else
+            {
+                var node = JsonNode.Parse(json);
+                LegacyRefs.ToContentIds(node, LegacyIds.Base);
+                e = node.Deserialize<Envelope>(SaveJson.Options);
+            }
         }
-        catch (JsonException ex)
+        catch (Exception ex) when (ex is JsonException or InvalidOperationException or FormatException)
         {
             throw new InvalidDataException($"герой не читается: {ex.Message}", ex);
         }
@@ -94,7 +107,7 @@ public static class LeaderStore
             if (File.Exists(target)) continue;
             try
             {
-                LeaderFile.Write(target, LdrFile.Read(File.ReadAllBytes(ldr)));
+                LeaderFile.Write(target, LegacyRefs.ToContentIds(LdrFile.Read(File.ReadAllBytes(ldr)), LegacyIds.Base));
                 count++;
             }
             catch (Exception e) when (e is InvalidDataException or IOException)

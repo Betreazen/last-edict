@@ -19,10 +19,10 @@ public class SiteTradeTests
     {
         var roster = new List<MercenaryOffer>
         {
-            new("G000UU5040", 1, true), new("G000UU5039", 4, false), new("G000UU5013", 1, false),
+            new("base:unit/barbarian-warrior", 1, true), new("base:unit/wolf-neutral", 4, false), new("base:unit/orc-neutral", 1, false),
         };
 
-        var hire = SiteTrade.HireUnit(roster, "G000UU5040", true, 6, G(850), G(4580));
+        var hire = SiteTrade.HireUnit(roster, "base:unit/barbarian-warrior", true, 6, G(850), G(4580));
 
         Assert.Equal([roster[2], roster[1]], hire.State);
         Assert.Equal(G(3730), hire.Purse);
@@ -45,17 +45,17 @@ public class SiteTradeTests
     [Fact]
     public void HireUnit_RefusesWithoutRoom()
     {
-        var roster = new List<MercenaryOffer> { new("G000UU5039", 1, false) };
+        var roster = new List<MercenaryOffer> { new("base:unit/wolf-neutral", 1, false) };
 
-        var full = SiteTrade.HireUnit(roster, "G000UU5039", true, 0, G(100), G(1000));
+        var full = SiteTrade.HireUnit(roster, "base:unit/wolf-neutral", true, 0, G(100), G(1000));
         Assert.StartsWith("X005TA0247", full.Refused);
         Assert.Same(roster, full.State);
         Assert.Equal(G(1000), full.Purse);
 
-        Assert.StartsWith("X005TA0501", SiteTrade.HireUnit(roster, "G000UU5039", false, 1, G(100), G(1000)).Refused);
-        Assert.True(SiteTrade.HireUnit(roster, "G000UU5039", true, 1, G(100), G(1000)).Done);
-        Assert.True(SiteTrade.HireUnit(roster, "G000UU5039", false, 2, G(100), G(1000)).Done);
-        Assert.StartsWith("X005TA0514", SiteTrade.HireUnit([], "G000UU5039", true, 6, G(100), G(1000)).Refused);
+        Assert.StartsWith("X005TA0501", SiteTrade.HireUnit(roster, "base:unit/wolf-neutral", false, 1, G(100), G(1000)).Refused);
+        Assert.True(SiteTrade.HireUnit(roster, "base:unit/wolf-neutral", true, 1, G(100), G(1000)).Done);
+        Assert.True(SiteTrade.HireUnit(roster, "base:unit/wolf-neutral", false, 2, G(100), G(1000)).Done);
+        Assert.StartsWith("X005TA0514", SiteTrade.HireUnit([], "base:unit/wolf-neutral", true, 6, G(100), G(1000)).Refused);
     }
 
     /// <summary>ai-q20 (ранг 1): при <c>BUY_WEAPON=0</c> Runic Blade (L_WEAPON) продан за 400; Totem (L_SPECIAL)
@@ -63,13 +63,13 @@ public class SiteTradeTests
     [Fact]
     public void SellItem_RefusesOnlySpecial()
     {
-        var stock = new List<MerchantStock> { new("G000IG0001", 1) };
+        var stock = new List<MerchantStock> { new("base:item/life-potion", 1) };
 
-        var blade = SiteTrade.SellItem(stock, Of("G000IG2001", ItemCategory.Weapon, 2000), 20, G(100));
+        var blade = SiteTrade.SellItem(stock, Of("base:item/runestone-artifact", ItemCategory.Weapon, 2000), 20, G(100));
         Assert.True(blade.Done);
         Assert.Equal(G(500), blade.Purse);
 
-        var totem = SiteTrade.SellItem(stock, Of("G000IG9001", ItemCategory.Special, 500), 20, G(100));
+        var totem = SiteTrade.SellItem(stock, Of("base:item/squire-orb", ItemCategory.Special, 500), 20, G(100));
         Assert.False(totem.Done);
         Assert.Equal(G(100), totem.Purse);
         Assert.Same(stock, totem.State);
@@ -89,8 +89,8 @@ public class SiteTradeTests
     [Fact]
     public void Buy_WithLeaderDiscount_PaysDiscountedPrice()
     {
-        var item = Of("G000IG0005", ItemCategory.PotionHeal, 150);
-        var stock = new List<MerchantStock> { new("G000IG0005", 1) };
+        var item = Of("base:item/potion-of-healing", ItemCategory.PotionHeal, 150);
+        var stock = new List<MerchantStock> { new("base:item/potion-of-healing", 1) };
 
         Assert.False(SiteTrade.BuyItem(stock, item, G(140)).Done);
         var bought = SiteTrade.BuyItem(stock, item, G(140), lowerCostPercent: 10);

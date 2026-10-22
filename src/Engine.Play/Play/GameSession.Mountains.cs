@@ -53,7 +53,7 @@ public sealed partial class GameSession
                     }
                     if (size > 1 && !Square(grid, x, y, size, w, h)) continue;
                     int race = SquareRace(grid, x, y, size);
-                    int image = Rng.Next(Art.MountainImageCount(MountainLook.RaceCode(race), size));
+                    int image = MapRng.Next(Art.MountainImageCount(MountainLook.RaceCode(race), size));
                     int id = _nextMountainId ?? 0;
                     _nextMountainId = id + 1;
                     placed.Add(new MountainLook(id, x0 + x, y0 + y, size, size, image, race));

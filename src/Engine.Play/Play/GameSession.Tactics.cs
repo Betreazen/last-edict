@@ -404,7 +404,7 @@ public sealed partial class GameSession
         var stack = Map.Stacks[stackId];
         if (AiTactics.KindOf(this, stack) == AiStackKind.Thief && !Invisible(foe))
         {
-            AiTactics.ThiefVisit(this, turn?.Rng ?? (IRng)Rng, stackId, foe);
+            AiTactics.ThiefVisit(this, turn?.Rng ?? (IRng)AiRng, stackId, foe);
             return true;
         }
         return AiBattle(stackId, foe, arrival: true);
@@ -487,7 +487,7 @@ public sealed partial class GameSession
     /// </summary>
     private int VisitShop(AiTacticOption a, AiTacticTurn? turn)
     {
-        LastEdict.Rules.Rng.IRng rng = turn?.Rng ?? (LastEdict.Rules.Rng.IRng)Rng;
+        LastEdict.Rules.Rng.IRng rng = turn?.Rng ?? (LastEdict.Rules.Rng.IRng)AiRng;
         if (a.Type == AiActionType.VisitMerchant) AiTactics.BuyAtMerchant(this, turn, rng, a.Stack, a.Target);
         else AiTactics.BuyAtMage(this, turn, rng, a.Stack, a.Target);
         return StatusDone;
@@ -548,7 +548,7 @@ public sealed partial class GameSession
             // Оборван событием — посещения нет (0x43fc13: объект за концом не зовётся), а с ним и колбэка решения ИИ.
             arrived = !cut && today.Count == path.Points.Count - 1 && Near((end.X, end.Y), (a.X, a.Y), 1);
         }
-        LastEdict.Rules.Rng.IRng rng = turn?.Rng ?? (LastEdict.Rules.Rng.IRng)Rng;
+        LastEdict.Rules.Rng.IRng rng = turn?.Rng ?? (LastEdict.Rules.Rng.IRng)AiRng;
         // Найм идёт в колбэке посещения уже после того, как фаза 4 прочла статус (как у знатного): в память ложится 2, а не 1 найма —
         // 4 из 4 наймов в корпусе (2026101[6bcd]-port-synth, S143KC001a у S143SI0004: ai_tactic_result 2 раньше site_buy_unit).
         if (arrived) AiTactics.HireAtMercs(this, turn, rng, a.Stack, a.Target);
@@ -610,7 +610,7 @@ public sealed partial class GameSession
             || !(Map.Stacks.ContainsKey(targetId) || Map.Sites.Any(f => f.Id.Equals(targetId, StringComparison.OrdinalIgnoreCase))))
             return false;
         if (AiTactics.KindOf(this, helper) != AiStackKind.Thief) return Strike(helperId, targetId);
-        AiTactics.ThiefVisit(this, turn?.Rng ?? (IRng)Rng, helperId, targetId);
+        AiTactics.ThiefVisit(this, turn?.Rng ?? (IRng)AiRng, helperId, targetId);
         return true;
     }
 
@@ -667,7 +667,7 @@ public sealed partial class GameSession
             return true;
         }
         var rules = Book!.Rules;
-        var battle = new LastEdict.Data.Battle.BattleSession(state, new BattleSim(state, Rng, rules.Constants), rules.Constants) { Auto = true };
+        var battle = new LastEdict.Data.Battle.BattleSession(state, new BattleSim(state, BattleRng, rules.Constants), rules.Constants) { Auto = true };
         battle.PlayOut();
         FinishBattle(battle.Log);
         return true;
@@ -726,7 +726,7 @@ public sealed partial class GameSession
             // 11,29 бил KC007c в 14,48, а у движка вор встаёт в 11,29 без действия, seq 4058965).
             if (!reached) return AiTactic.StatusProgress;
         }
-        IRng rng = turn?.Rng ?? (IRng)Rng;
+        IRng rng = turn?.Rng ?? (IRng)AiRng;
         AiTactics.ThiefVisit(this, rng, a.Stack, a.Target);
         return AiTactic.StatusProgress;
     }

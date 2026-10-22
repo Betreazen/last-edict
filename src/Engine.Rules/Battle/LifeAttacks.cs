@@ -79,7 +79,7 @@ internal static class LifeAttacks
                                       BattleState? state, bool overflow)
     {
         int before = target.Hp;
-        int dwb = Formulas.DamageWithBuffs(attack, Formulas.DamageMax(c, attacker.Type.GlobalId),
+        int dwb = Formulas.DamageWithBuffs(attack, Formulas.DamageMax(c, attacker.Type),
                                            c.BoostDamagePercent(attacker.BoostDamageLevel),
                                            c.LowerDamagePercent(attacker.LowerDamageLevel), true, rng, c,
                                            state?.HumanOnEasy(attacker) == true);

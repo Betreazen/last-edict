@@ -44,6 +44,10 @@ public sealed class GameBook
 
     public RulesLoader.RulesExtras Extras { get; }
 
+    /// <summary>Id оригинала сущностей содержимого (<see cref="LegacyIds"/>): по ним называются графика и звук импорта и держится порядок,
+    /// в котором движок оригинала перебирал сущности по id.</summary>
+    public LegacyIds Legacy { get; private init; } = LegacyIds.Base;
+
     /// <summary><c>Gunits.UPGRADE_B</c> по типу: постройка, открывающая этот тип как улучшение.</summary>
     public IReadOnlyDictionary<string, string> UpgradeBuilding { get; }
 
@@ -151,13 +155,13 @@ public sealed class GameBook
     /// Имя значка предмета в архиве <c>IconItem</c> (<c>0x5c5d89</c>): у свитка (<see cref="LastEdict.Rules.Magic.ItemCategory.Scroll"/>) своих
     /// значков нет — значок расы его заклинания: <c>SCROLLHU</c>, <c>SCROLLUN</c>, <c>SCROLLHE</c>, <c>SCROLLDW</c>, <c>SCROLLEL</c> по категории
     /// расы (<c>0x5c5e1d</c>…<c>0x5c5e8b</c>; раса — первого лорда, у которого заклинание в списке исследований, <c>0x5c5f4f</c>; ни у кого —
-    /// люди, <c>0x5c6005</c>); нейтральная — пустое имя (значка нет). Прочие предметы — по своему id. Соответствие категорий именам значков —
+    /// люди, <c>0x5c6005</c>); нейтральная — пустое имя (значка нет). Прочие предметы — по своему id оригинала (имя графики импорта). Соответствие категорий именам значков —
     /// по именам (<c>L_HUMAN</c> ↔ <c>HU</c> и т. д.), ранг 2.
     /// </summary>
     public string ItemIcon(string itemType)
     {
         ArgumentNullException.ThrowIfNull(itemType);
-        if (!Items.TryGetValue(itemType, out var item) || item.Category != LastEdict.Rules.Magic.ItemCategory.Scroll) return itemType.ToUpperInvariant();
+        if (!Items.TryGetValue(itemType, out var item) || item.Category != LastEdict.Rules.Magic.ItemCategory.Scroll) return Legacy.ArtOf(itemType).ToUpperInvariant();
         int raceType = SpellRaceType.TryGetValue(item.SpellId, out int t) ? t : HumanRace;
         return raceType switch
         {
@@ -220,15 +224,17 @@ public sealed class GameBook
         ArgumentNullException.ThrowIfNull(content);
         var g = content.Globals;
         var ai = content.AiAttitudes;
+        var legacy = LegacyIds.Of(content);
         return new(RulesLoader.Load(content), RulesLoader.LoadExtras(content), EconomyLoader.Load(content), EconomyLoader.LoadVars(content))
         {
+            Legacy = legacy,
             Lords = content.Lords.ToDictionary(l => l.Key, l => (int)l.Category, StringComparer.OrdinalIgnoreCase),
             RaceLeaders = content.Races.ToDictionary(r => r.Key, r => EconomyLoader.LeadersOf(content, r), StringComparer.OrdinalIgnoreCase),
             LeaderNames = content.Races.Where(r => r.HeroNames.Any(n => n.Male))
                 .ToDictionary(r => r.Key, r => (IReadOnlyList<string>)[.. r.HeroNames.Where(n => n.Male).Select(n => n.Text.Trim())],
                               StringComparer.OrdinalIgnoreCase),
             LordBuildings = content.Lords.Where(l => l.Buildings.Count > 0)
-                .ToDictionary(l => l.Key, l => (IReadOnlyList<string>)[.. l.Buildings.Select(content.KeyOf).OrderBy(id => id, StringComparer.OrdinalIgnoreCase)],
+                .ToDictionary(l => l.Key, l => (IReadOnlyList<string>)[.. l.Buildings.Select(content.KeyOf).Order(legacy)],
                               StringComparer.OrdinalIgnoreCase),
             AiCheats = EconomyLoader.LoadAiCheats(content),
             AiWeights = EconomyLoader.LoadAiWeights(content),
@@ -291,13 +297,12 @@ public sealed class GameBook
     public int LeaderCategoryOf(string typeId) =>
         TryGlobal(typeId, out var id, out _) && Extras.Units.TryGetValue(id, out var e) ? e.LeaderCategory : 0;
 
-    /// <summary>Глобальный тип и уровень реализации: строка <c>Gunits</c> как есть, порождённая (<c>UG</c>) — разбором.</summary>
-    public bool TryGlobal(string implId, out string globalId, out int level)
+    /// <summary>Тип юнита есть в правилах; <paramref name="level"/> — его уровень.</summary>
+    public bool TryGlobal(string typeId, out string globalId, out int level)
     {
-        globalId = implId;
-        level = 0;
-        if (Rules.Units.TryGetValue(implId, out var type)) { level = type.Level; return true; }
-        return Rules.Generator is not null && Rules.Generator.TryDecode(implId, out globalId, out level);
+        globalId = typeId;
+        level = Rules.Units.TryGetValue(typeId, out var type) ? type.Level : 0;
+        return type is not null;
     }
 
     /// <summary>Тип <paramref name="typeId"/>, выращенный до уровня <paramref name="level"/> (<see cref="UnitGrowth"/>).</summary>

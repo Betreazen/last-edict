@@ -76,7 +76,7 @@ public sealed partial class GameSession
         var types = map.ItemTypes.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase);
         var ids = map.IdNext;
         string instance = NewId(ref ids, types.Keys, stackId, "IM");
-        types[instance] = itemType.ToUpperInvariant();
+        types[instance] = itemType;
         var stacks = map.Stacks.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase);
         stacks[stackId] = stack with { Items = [.. stack.Items, instance] };
         var players = map.Players.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase);
@@ -105,7 +105,7 @@ public sealed partial class GameSession
         var trade = SiteTrade.BuySpell(new SpellBooks(site.Spells, player.KnownSpells), spell, player.Bank, LowerCostPercent(stack));
         if (trade.Refused is { } why) return why;
         var players = map.Players.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase);
-        players[player.Id] = player with { Bank = trade.Purse, KnownSpells = [.. trade.State.Known.Select(s => s.ToUpperInvariant())] };
+        players[player.Id] = player with { Bank = trade.Purse, KnownSpells = [.. trade.State.Known] };
         var sites = map.Sites.Select(s => ReferenceEquals(s, site) ? s with { Spells = trade.State.Site } : s).ToList();
         State = State with { Looks = Retold(Looks, With(map, players: players, sites: sites), Looks.Stacks) };
         Observer?.Happened(new TurnSight(TurnSightKind.Bought, player.Id, 0, 0, spellId));   // звук окна (сессия Г)
@@ -172,7 +172,7 @@ public sealed partial class GameSession
         var ids = map.IdNext;
         string id = NewId(ref ids, map.Units.Keys, stackId, "UN");
         var units = map.Units.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase);
-        units[id] = new MapUnit { Id = id, TypeId = type.Id.ToUpperInvariant(), Level = grown.Level, Hp = grown.Type.HitPoints };
+        units[id] = new MapUnit { Id = id, TypeId = type.Id, Level = grown.Level, Hp = grown.Type.HitPoints };
         int[] slots = cells.Slots();
         slots[at] = stack.UnitIds.Count;
         if (big) slots[at + 1] = stack.UnitIds.Count;

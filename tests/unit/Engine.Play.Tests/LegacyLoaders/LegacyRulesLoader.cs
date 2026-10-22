@@ -55,6 +55,10 @@ public static class LegacyRulesLoader
                 Category = r.GetInt("UNIT_CAT"),
                 Branch = r.GetInt("BRANCH"),
                 IsLeader = r.GetString("LEADER_CAT").Length > 0,
+                // Списки движка, которые прежде жили в Formulas/BattleTargets по id (Э4 — признаки типа).
+                MageLeader = LastEdict.Rules.Units.LegacyUnits.IsMageLeader(id),
+                DamageBonus = LastEdict.Rules.Units.LegacyUnits.HasDamageBonus(id),
+                Copyable = LastEdict.Rules.Units.LegacyUnits.IsCopyable(id),
             };
         }
 
@@ -78,7 +82,7 @@ public static class LegacyRulesLoader
                              // CUnitGenerator: журнал зовёт прокачанного юнита порождённым id
                              // (G000UG****), которого в Gunits нет вовсе. Без генератора такой бой
                              // не грузится целиком.
-                             new UnitGenerator(units.Keys, growth, DynUpgrades(globalsDir)),
+                             new UnitGenerator(growth, DynUpgrades(globalsDir)),
                              // Задача 16: что из цепочки выдаётся уровнем, а что надевается руками —
                              // без этого различия нельзя понять, какой снимок .sg описывает бой.
                              tables.LeaderUpgrades.Select(u => u.ModifId)

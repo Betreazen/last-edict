@@ -35,8 +35,8 @@ public sealed partial class GameSession
         int ownForts = FortCount(map, playerId), otherForts = FortCount(map, targetId);
         int share = AiDiplomacy.PlainLandShare(map, other, book.Economy);
         var (breakTurn, breakChance) = book.AllianceBreak;
-        int steps = Rng.Steps;
-        var decision = AiDiplomacy.Evaluate(Rng, book.Diplomacy, pair, map.Turn, ownForts, otherForts, share, breakTurn, breakChance,
+        int steps = AiRng.Steps;
+        var decision = AiDiplomacy.Evaluate(AiRng, book.Diplomacy, pair, map.Turn, ownForts, otherForts, share, breakTurn, breakChance,
                                             kind => PickGift(playerId, targetId, kind, pair.Current));
         DiplomacyChecks?.Add(new AiDiploCheck(
             playerId, targetId, map.Turn, pair.Current, pair.Ally, ownForts, otherForts, share,
@@ -44,7 +44,7 @@ public sealed partial class GameSession
             pair.Ally ? AiDiplomacy.BreakChance(pair, map.Turn, ownForts, otherForts, breakTurn, breakChance) : null,
             pair.Current > book.Diplomacy.Neutral && decision.Action is not (AiDiploAction.Break or AiDiploAction.Offer)
                 ? pair.Current * 20 / 100 : null,
-            decision, Rng.Steps - steps));
+            decision, AiRng.Steps - steps));
         return decision;
     }
 
@@ -77,7 +77,7 @@ public sealed partial class GameSession
                     return true;
                 }
                 int rel = Diplomacy.Current(Map.Relations, PartyOf(playerId)!.Value, PartyOf(targetId)!.Value);
-                bool accept = AiDiplomacy.AnswerAlliance(Rng, rel, AiDiplomacy.PlainLandShare(Map, PartyOf(playerId)!.Value, Book!.Economy));
+                bool accept = AiDiplomacy.AnswerAlliance(AiRng, rel, AiDiplomacy.PlainLandShare(Map, PartyOf(playerId)!.Value, Book!.Economy));
                 SettleAlliance(playerId, targetId, accept, report);
                 return true;
             case AiDiploAction.Gift:
@@ -187,7 +187,7 @@ public sealed partial class GameSession
     private void Chat(string from, string to, AiMessage category, List<string>? report)
     {
         var messages = Book!.AiMessages(Map.Players[from].RaceId, category);
-        int n = AiDiplomacy.Chat(Rng, messages.Count);
+        int n = AiDiplomacy.Chat(AiRng, messages.Count);
         if (messages.Count == 0) return;
         report?.Add($"{from} → {to}: {messages[n]}");
         if (IsHuman(to)) Observer?.Happened(new TurnSight(TurnSightKind.AiChat, to, -1, -1, from) { Text = messages[n] });

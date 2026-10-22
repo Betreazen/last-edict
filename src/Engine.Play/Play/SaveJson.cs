@@ -13,6 +13,23 @@ public static class SaveJson
 {
     public static readonly JsonSerializerOptions Options = Create();
 
+    /// <summary>Версия файла — число в поле <c>Version</c> верхнего уровня (сценарий, сохранение, герой); нет поля — 0. Читается потоком, без
+    /// дерева: дерево JSON строят только файлы старых версий, которым нужен перевод.</summary>
+    public static int VersionOf(string json)
+    {
+        ArgumentNullException.ThrowIfNull(json);
+        var reader = new Utf8JsonReader(System.Text.Encoding.UTF8.GetBytes(json));
+        if (!reader.Read() || reader.TokenType != JsonTokenType.StartObject) return 0;
+        while (reader.Read() && reader.TokenType == JsonTokenType.PropertyName)
+        {
+            bool version = reader.ValueTextEquals("Version");
+            reader.Read();
+            if (version) return reader.TokenType == JsonTokenType.Number && reader.TryGetInt32(out int v) ? v : 0;
+            reader.Skip();
+        }
+        return 0;
+    }
+
     private static JsonSerializerOptions Create()
     {
         var options = new JsonSerializerOptions

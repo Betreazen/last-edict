@@ -113,24 +113,15 @@ public sealed record EconomyRules(
     int SellRatio,
     int ConstructionUrgency)
 {
-    // Кэш по ссылке на справочник рас: запись копируется через with, и копия с другими расами не должна взять чужой набор.
-    private (IReadOnlyDictionary<string, RaceInfo> For, IReadOnlySet<string> Set)? _neutralRaces;
-
-    /// <summary>Расы нейтралов (<see cref="RaceInfo.Neutral"/>) — хозяев ничьих отрядов и объектов.</summary>
-    public IReadOnlySet<string> NeutralRaces
-    {
-        get
-        {
-            if (_neutralRaces is { } cached && ReferenceEquals(cached.For, Races)) return cached.Set;
-            var set = Races.Where(p => p.Value.Neutral).Select(p => p.Key).ToHashSet(StringComparer.OrdinalIgnoreCase);
-            _neutralRaces = (Races, set);
-            return set;
-        }
-    }
+    /// <summary>Расы нейтралов (<see cref="RaceInfo.Neutral"/>) — хозяев ничьих отрядов и объектов. Считается заново: рас единицы, а кэш в
+    /// записи вошёл бы в её равенство и пережил бы <c>with</c> с другими расами.</summary>
+    public IReadOnlySet<string> NeutralRaces =>
+        Races.Where(p => p.Value.Neutral).Select(p => p.Key).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Игрок <paramref name="playerId"/> — нейтралы; нет такого игрока — тоже (владелец «никто»).</summary>
     public bool IsNeutral(MapState map, string playerId) =>
         !map.Players.TryGetValue(playerId, out var p) || NeutralRaces.Contains(p.RaceId);
+
     /// <summary>Своя земля рода <paramref name="raceType"/>: признак первой расы этого рода (<see cref="RaceInfo.Terrain"/>); такой расы нет —
     /// по роду (<see cref="LegacyRaces.Terrain"/>). Дипломатия движка (отношения, союзы, доля равнины) ведётся по паре родов
     /// (<c>Relation(Race1, Race2)</c>), а земля — признак расы из содержимого.</summary>

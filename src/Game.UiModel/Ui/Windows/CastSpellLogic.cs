@@ -36,9 +36,10 @@ public sealed class CastSpellLogic(WindowContext context, IReadOnlyDictionary<st
 
     protected override IReadOnlyList<string> SpellsOf(int level)
     {
-        var spells = C.Session.RequireBook().Spells;
+        var book = C.Session.RequireBook();
+        var spells = book.Spells;
         return [.. C.Player.KnownSpells.Where(s => spells.TryGetValue(s, out var spell) && spell.Level == level)
-                                       .Order(StringComparer.OrdinalIgnoreCase)];
+                                       .Order(book.Legacy)];   // порядок оригинала: по id оригинала заклинания
     }
 
     protected override int StartLevel()

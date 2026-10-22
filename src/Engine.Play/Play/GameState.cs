@@ -194,11 +194,15 @@ public static class GameSave
         Envelope? e;
         try
         {
-            var node = JsonNode.Parse(json);
-            int version = node?["Version"]?.GetValue<int>() ?? 0;
-            if (version < ContentIdsVersion) LegacyRefs.ToContentIds(node, LegacyIds.Base);
-            if (version < StreamsVersion && node?["Random"] is JsonObject single) node["Random"] = SplitStreams(single);
-            e = node.Deserialize<Envelope>(SaveJson.Options);
+            int version = SaveJson.VersionOf(json);
+            if (version >= StreamsVersion) e = JsonSerializer.Deserialize<Envelope>(json, SaveJson.Options);
+            else
+            {
+                var node = JsonNode.Parse(json);
+                if (version < ContentIdsVersion) LegacyRefs.ToContentIds(node, LegacyIds.Base);
+                if (node?["Random"] is JsonObject single) node["Random"] = SplitStreams(single);
+                e = node.Deserialize<Envelope>(SaveJson.Options);
+            }
         }
         catch (Exception ex) when (ex is JsonException or InvalidOperationException or FormatException)
         {

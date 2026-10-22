@@ -59,9 +59,13 @@ public static class ScenarioFile
         Envelope? e;
         try
         {
-            var node = JsonNode.Parse(json);
-            if (node?["Version"]?.GetValue<int>() < ContentIdsVersion) LegacyRefs.ToContentIds(node, LegacyIds.Base);
-            e = node.Deserialize<Envelope>(SaveJson.Options);
+            if (SaveJson.VersionOf(json) >= ContentIdsVersion) e = JsonSerializer.Deserialize<Envelope>(json, SaveJson.Options);
+            else
+            {
+                var node = JsonNode.Parse(json);
+                LegacyRefs.ToContentIds(node, LegacyIds.Base);
+                e = node.Deserialize<Envelope>(SaveJson.Options);
+            }
         }
         catch (Exception ex) when (ex is JsonException or InvalidOperationException or FormatException)
         {

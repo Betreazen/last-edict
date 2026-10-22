@@ -252,7 +252,7 @@ public sealed class ResearchSpellLogic(WindowContext context, IReadOnlyDictionar
         var lord = (book.LordResearch.GetValueOrDefault(C.Player.LordId) ?? []).Select(r => r.SpellId);
         return [.. lord.Concat(known).Distinct(StringComparer.OrdinalIgnoreCase)
                        .Where(s => book.Spells.TryGetValue(s, out var spell) && spell.Level == level)
-                       .Order(StringComparer.OrdinalIgnoreCase)];
+                       .Order(book.Legacy)];   // порядок оригинала: по id оригинала заклинания
     }
 
     protected override int StartLevel() => C.Memory.ResearchLevel;

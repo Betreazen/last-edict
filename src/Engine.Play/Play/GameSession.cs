@@ -1388,7 +1388,7 @@ public sealed partial class GameSession(GameState state, MapArtData art, GameBoo
     public static MapState KnownSpellsSorted(MapState map)
     {
         ArgumentNullException.ThrowIfNull(map);
-        var players = map.Players.ToDictionary(p => p.Key, p => p.Value with { KnownSpells = KnownSpellOrder.Sort(p.Value.KnownSpells, LegacyIds.Base.LegacyOf) },
+        var players = map.Players.ToDictionary(p => p.Key, p => p.Value with { KnownSpells = KnownSpellOrder.Sort(p.Value.KnownSpells, LegacyIds.Base.OriginalOf) },
                                                StringComparer.OrdinalIgnoreCase);
         return With(map, players: players);
     }

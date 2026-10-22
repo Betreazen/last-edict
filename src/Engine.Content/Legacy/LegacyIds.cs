@@ -54,9 +54,17 @@ public sealed partial class LegacyIds : IComparer<string>
     public string ArtOf(string key)
     {
         ArgumentNullException.ThrowIfNull(key);
+        return OriginalOf(key) ?? key;
+    }
+
+    /// <summary>Id оригинала сущности: из набора, а у сущности мода оригинала, которой нет в таблице (<c>base:вид/g000uu9001</c>), — имя после
+    /// «/». Новая сущность мода — null.</summary>
+    public string? OriginalOf(string key)
+    {
+        ArgumentNullException.ThrowIfNull(key);
         if (LegacyOf(key) is { } legacy) return legacy;
         int slash = key.LastIndexOf('/');
-        return slash >= 0 && key.Contains(':', StringComparison.Ordinal) && LegacyShape().IsMatch(key.AsSpan(slash + 1)) ? key[(slash + 1)..] : key;
+        return slash >= 0 && key.Contains(':', StringComparison.Ordinal) && LegacyShape().IsMatch(key.AsSpan(slash + 1)) ? key[(slash + 1)..] : null;
     }
 
     /// <summary>Вид id оригинала: <c>g000uu0002</c> — категория, номер, тип из двух букв, номер из четырёх.</summary>
@@ -69,7 +77,7 @@ public sealed partial class LegacyIds : IComparer<string>
     {
         if (ReferenceEquals(x, y)) return 0;
         if (x is null || y is null) return x is null ? -1 : 1;
-        string? lx = LegacyOf(x), ly = LegacyOf(y);
+        string? lx = OriginalOf(x), ly = OriginalOf(y);
         if (lx is not null || ly is not null)
             return lx is null ? 1 : ly is null ? -1 : StringComparer.OrdinalIgnoreCase.Compare(lx, ly);
         int ix = _index.GetValueOrDefault(x, int.MaxValue), iy = _index.GetValueOrDefault(y, int.MaxValue);

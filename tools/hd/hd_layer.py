@@ -11,7 +11,8 @@
       и одинаковый по сторонам (до 1 точки разницы — подгоняется), прозрачность (Topaz отдаёт RGB — альфа берётся с исходника,
       увеличенная). Отчёт — import-report.txt в моде и на экран. Анимация берётся только целиком (все кадры).
       --compress — сжать слой: рядом с каждым PNG — DDS BC7 с mip-уровнями (godot/bench/hd_compress.gd, нужен Godot: GODOT или
-      C:/Tools/bin/godot.cmd); игра берёт DDS в текстуру, в видеопамяти ≈ ×0,33 от RGBA.
+      C:/Tools/bin/godot.cmd); игра берёт DDS в текстуру, в видеопамяти ≈ ×0,33 от RGBA. --jobs N — процессов разбора и сжатия
+      (по умолчанию половина ядер; вся графика ×4 — десятки гигабайт).
 
 Наборы — порядок апскейла из docs/own-version-roadmap.md §3.3: ui (интерфейс), faces (портреты, лорды), battle-bg (поле боя),
 capital (столица, город), icons (значки, события, вор), map (карта: объекты, земля, мини-карта, курсоры, заклинания), sprites (юниты
@@ -149,35 +150,56 @@ def load_json(path: Path, default):
     return json.loads(path.read_text(encoding="utf-8")) if path.exists() else default
 
 
-def import_layer(export_dir: Path, upscaled: Path, mod: Path, mod_id: str) -> int:
+def import_one(e: dict, export_dir: Path, upscaled: Path, mod: Path) -> tuple[dict | None, list[str], bool]:
+    """Один кадр: проверка множителя, прозрачность, запись в слой. (запись описи или None, замечания, восстановлена ли альфа)."""
+    up_path = upscaled / e["flat"]
+    if not up_path.exists():
+        return None, [f"нет апскейла: {e['flat']}"], False
+    with Image.open(export_dir / e["flat"]) as s, Image.open(up_path) as u:
+        src, up = s.convert("RGBA"), u.copy()
+    scale, why = fit(src, up)
+    if scale is None:
+        return None, [f"{e['flat']}: {why}"], False
+    exact = (scale * src.width, scale * src.height)
+    if up.size != exact:
+        up = up.resize(exact, Image.Resampling.LANCZOS)
+    up, fixed = with_alpha(src, up)
+    kind_root = "ui" if e["kind"] == "ui" else "gfx"
+    rel = str(Path(e["file"]).with_suffix(".png")).replace("\\", "/")
+    target = mod / "assets" / kind_root / rel
+    target.parent.mkdir(parents=True, exist_ok=True)
+    up.save(target, compress_level=1)   # игра берёт DDS (--compress); PNG — запасной и источник сжатия: быстрее записи, чем мельче файла
+    notes = []
+    if e["kind"] != "ui" and "at" not in e and (e["fileW"], e["fileH"]) == (e["w"], e["h"]):
+        notes.append(f"{e['flat']}: в описи нет угла обрезки — в память идёт весь холст ×{scale}")
+    return {**e, "modFile": rel, "scale": scale, "sha256": short_hash(target)}, notes, fixed
+
+
+def _import_chunk(args: tuple[list[dict], Path, Path, Path]) -> list[tuple[dict | None, list[str], bool]]:
+    entries, export_dir, upscaled, mod = args
+    return [import_one(e, export_dir, upscaled, mod) for e in entries]
+
+
+def import_layer(export_dir: Path, upscaled: Path, mod: Path, mod_id: str, jobs: int = 1) -> int:
     manifest = json.loads((export_dir / MANIFEST).read_text(encoding="utf-8"))
     done: list[dict] = []
     report: list[str] = []
     restored = 0
-    for e in manifest["entries"]:
-        up_path = upscaled / e["flat"]
-        if not up_path.exists():
-            report.append(f"нет апскейла: {e['flat']}")
-            continue
-        with Image.open(export_dir / e["flat"]) as s, Image.open(up_path) as u:
-            src, up = s.convert("RGBA"), u.copy()
-        scale, why = fit(src, up)
-        if scale is None:
-            report.append(f"{e['flat']}: {why}")
-            continue
-        exact = (scale * src.width, scale * src.height)
-        if up.size != exact:
-            up = up.resize(exact, Image.Resampling.LANCZOS)
-        up, fixed = with_alpha(src, up)
+    entries = manifest["entries"]
+    if jobs > 1:
+        # Кадры — пачками по процессам (PNG ×4 — сотни мегабайт на кадр анимации разом); опись пишет главный процесс.
+        from concurrent.futures import ProcessPoolExecutor
+        size = max(1, len(entries) // (jobs * 8))
+        chunks = [(entries[i:i + size], export_dir, upscaled, mod) for i in range(0, len(entries), size)]
+        with ProcessPoolExecutor(max_workers=jobs) as pool:
+            results = [r for part in pool.map(_import_chunk, chunks) for r in part]
+    else:
+        results = [import_one(e, export_dir, upscaled, mod) for e in entries]
+    for entry, notes, fixed in results:
+        report.extend(notes)
         restored += fixed
-        kind_root = "ui" if e["kind"] == "ui" else "gfx"
-        rel = str(Path(e["file"]).with_suffix(".png")).replace("\\", "/")
-        target = mod / "assets" / kind_root / rel
-        target.parent.mkdir(parents=True, exist_ok=True)
-        up.save(target)
-        done.append({**e, "modFile": rel, "scale": scale, "sha256": short_hash(target)})
-        if e["kind"] != "ui" and "at" not in e and (e["fileW"], e["fileH"]) == (e["w"], e["h"]):
-            report.append(f"{e['flat']}: в описи нет угла обрезки — в память идёт весь холст ×{scale}")
+        if entry is not None:
+            done.append(entry)
     write_inventories(mod, mod_id, done, report)
     lines = [f"в слой {mod}: {len(done)} кадров, прозрачность восстановлена у {restored}; замечаний {len(report)}", *report]
     (mod / "import-report.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
@@ -260,6 +282,8 @@ def main(argv: list[str]) -> int:
     im.add_argument("--mod", type=Path, default=REPO / "mods" / "hd")
     im.add_argument("--id", default="hd")
     im.add_argument("--compress", action="store_true")
+    im.add_argument("--jobs", type=int, default=max(1, (os.cpu_count() or 2) // 2),
+                    help="процессов разбора и сжатия (по умолчанию — половина ядер)")
     a = parser.parse_args(argv)
     if a.command == "export":
         sets = [s.strip() for s in a.sets.split(",") if s.strip()]
@@ -267,17 +291,23 @@ def main(argv: list[str]) -> int:
         if unknown:
             parser.error(f"нет наборов {unknown}; есть: {', '.join(SETS)}")
         return export(a.out, sets, a.limit, a.data, assets_root())
-    code = import_layer(a.export_dir, a.upscaled, a.mod, a.id)
-    return compress(a.mod) if code == 0 and a.compress else code
+    code = import_layer(a.export_dir, a.upscaled, a.mod, a.id, a.jobs)
+    return compress(a.mod, a.jobs) if code == 0 and a.compress else code
 
 
-def compress(mod: Path) -> int:
-    """DDS BC7 с mip-уровнями рядом с каждым PNG слоя — Godot headless (godot/bench/hd_compress.gd); уже сжатые и не старые — пропуск."""
+def compress(mod: Path, jobs: int = 1) -> int:
+    """DDS BC7 с mip-уровнями рядом с каждым PNG слоя — Godot headless (godot/bench/hd_compress.gd), jobs процессов, у каждого своя
+    часть файлов (--part k/n); уже сжатые и не старые — пропуск."""
     godot = os.environ.get("GODOT", r"C:\Tools\bin\godot.cmd")
-    proc = subprocess.run([godot, "--headless", "--path", str(REPO / "godot"), "--script", "res://bench/hd_compress.gd", "--",
-                           str(mod.resolve())], capture_output=True, text=True, encoding="utf-8", errors="replace")
-    print("\n".join(line for line in (proc.stdout + proc.stderr).splitlines() if "hd_compress" in line))
-    return proc.returncode
+    procs = [subprocess.Popen([godot, "--headless", "--path", str(REPO / "godot"), "--script", "res://bench/hd_compress.gd", "--",
+                               str(mod.resolve()), "--part", f"{k}/{jobs}"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+                              encoding="utf-8", errors="replace") for k in range(max(1, jobs))]
+    code = 0
+    for proc in procs:
+        out, _ = proc.communicate()
+        print("\n".join(line for line in (out or "").splitlines() if "hd_compress" in line))
+        code = max(code, proc.returncode)
+    return code
 
 
 if __name__ == "__main__":

@@ -1,7 +1,8 @@
 extends SceneTree
 # Сжатие HD-слоя (Р19, tools/hd/hd_layer.py import --compress): каждый PNG в assets/ мода — рядом DDS в BC7 (BPTC) с mip-уровнями.
 # Загрузчики (GfxTextures, ImageScales.Texture) берут DDS, если он есть: в видеопамяти ≈ ×0,33 от RGBA вместе с mip-уровнями.
-#   godot --headless --path godot --script res://bench/hd_compress.gd -- <каталог мода> [--force]
+#   godot --headless --path godot --script res://bench/hd_compress.gd -- <каталог мода> [--force] [--part k/n]
+# --part k/n — только каждый n-й файл начиная с k-го (несколько процессов сжимают слой вместе, tools/hd/hd_layer.py --jobs).
 
 func _init() -> void:
 	var args := OS.get_cmdline_user_args()
@@ -13,6 +14,17 @@ func _init() -> void:
 	var root: String = args[0].path_join("assets")
 	var files := []
 	_collect(root, files)
+	files.sort()
+	var at := args.find("--part")
+	if at >= 0 and at + 1 < args.size():
+		var kn: PackedStringArray = args[at + 1].split("/")
+		var k := int(kn[0])
+		var n := maxi(1, int(kn[1]))
+		var mine := []
+		for i in files.size():
+			if i % n == k:
+				mine.append(files[i])
+		files = mine
 	var done := 0
 	var failed := 0
 	var skipped := 0

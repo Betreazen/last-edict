@@ -159,12 +159,14 @@ public partial class HdCompare : Node2D
         foreach (var l in layers)
             for (int i = 0; i < l.Flats.Length; i++)
             {
+                if (l.Sizes[2 * i] <= 1 && l.Sizes[(2 * i) + 1] <= 1) continue;   // пустой кадр (1×1) — не в рамку
                 x0 = Math.Min(x0, l.At[2 * i]);
                 y0 = Math.Min(y0, l.At[(2 * i) + 1]);
                 x1 = Math.Max(x1, l.At[2 * i] + l.Sizes[2 * i]);
                 y1 = Math.Max(y1, l.At[(2 * i) + 1] + l.Sizes[(2 * i) + 1]);
             }
-        // Пустые кадры (второй слой атаки 1×1) рамку не раздвигают — она по всем кадрам всех слоёв.
+        // Пустые кадры (второй слой атаки 1×1) рамку не раздвигают — она по всем непустым кадрам всех слоёв.
+        if (x0 > x1) (x0, y0, x1, y1) = (0, 0, 60, 40);
         return new Cell(title, layers, new Rect2(x0, y0, Math.Max(60, x1 - x0), Math.Max(40, y1 - y0)), layers.All(l => l.Flats.Length == 1));
     }
 

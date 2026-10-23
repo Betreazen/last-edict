@@ -7,9 +7,10 @@
       зазор pad точек (апскейлер смотрит на соседние точки: без зазора край одного кадра подмешался бы к другому). Рядом с каждым листом —
       sheet_0001.json: плоское имя → место в листе. Кадры одной анимации идут подряд (имена по порядку), лист заполняется полками.
       --skip — кадры, что уже есть в этой папке (апскейл по одному), в листы не идут.
-  py tools/hd/hd_atlas.py unpack <листы> <увеличенные листы> <папка апскейла>
+  py tools/hd/hd_atlas.py unpack <листы> <увеличенные листы> <папка апскейла> [--new]
       Увеличенный лист (то же имя, PNG) режется обратно на кадры под их плоскими именами — в папку апскейла, откуда их берёт
-      hd_layer.py import. Множитель — по размеру листа (целый, одинаковый по сторонам); лист, которого ещё нет, пропускается.
+      hd_layer.py import. Множитель — по размеру листа (целый, одинаковый по сторонам); лист, которого ещё нет, пропускается;
+      --new — и лист, все кадры которого уже нарезаны (дорезать листы, что пришли позже).
 """
 from __future__ import annotations
 
@@ -87,14 +88,14 @@ def pack(out: Path, sources: list[Path], match: list[str], size: int, pad: int, 
     return 0
 
 
-def unpack(sheets: Path, upscaled: Path, out: Path) -> int:
+def unpack(sheets: Path, upscaled: Path, out: Path, new_only: bool = False) -> int:
     out.mkdir(parents=True, exist_ok=True)
     done = skipped = frames = 0
     problems = []
     for meta_path in sorted(sheets.glob("sheet_*.json")):
         meta = json.loads(meta_path.read_text(encoding="utf-8"))
         up_path = upscaled / f"{meta_path.stem}.png"
-        if not up_path.is_file():
+        if not up_path.is_file() or (new_only and all((out / f["flat"]).is_file() for f in meta["frames"])):
             skipped += 1
             continue
         with Image.open(up_path) as up:
@@ -109,7 +110,7 @@ def unpack(sheets: Path, upscaled: Path, out: Path) -> int:
                 up.crop(box).save(out / f["flat"], optimize=False, compress_level=1)
                 frames += 1
         done += 1
-    print(f"листов разрезано {done}, ещё нет {skipped}; кадров {frames} → {out}")
+    print(f"листов разрезано {done}, пропущено {skipped} (нет листа{' или уже нарезан' if new_only else ''}); кадров {frames} → {out}")
     for p in problems:
         print("  ", p)
     return 1 if problems else 0
@@ -129,10 +130,11 @@ def main(argv: list[str] | None = None) -> int:
     up.add_argument("sheets", type=Path)
     up.add_argument("upscaled", type=Path)
     up.add_argument("out", type=Path)
+    up.add_argument("--new", action="store_true")
     a = ap.parse_args(argv)
     if a.cmd == "pack":
         return pack(a.out, a.src, a.match, a.size, a.pad, a.skip)
-    return unpack(a.sheets, a.upscaled, a.out)
+    return unpack(a.sheets, a.upscaled, a.out, a.new)
 
 
 if __name__ == "__main__":

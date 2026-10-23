@@ -2,10 +2,11 @@
 """hd_atlas.py — листы для апскейла (Р19): кадры выгрузки hd_layer.py — в несколько больших листов и обратно.
 
 Апскейлер (Topaz) на сотне тысяч мелких файлов тратит время на открытие и запись каждого, а не на сам апскейл. Лист — только перевозка:
-  py tools/hd/hd_atlas.py pack <листы> --src <выгрузка> [--src <ещё папка>] [--match подстрока ...] [--size 2048] [--pad 8]
+  py tools/hd/hd_atlas.py pack <листы> --src <выгрузка> [--src <ещё папка>] [--match подстрока ...] [--skip <папка апскейла>] [--size 2048] [--pad 8]
       Кадры выгрузки (плоские имена hd_layer.py) — в листы <листы>/sheet_0001.png… не больше size×size, между кадрами — прозрачный
       зазор pad точек (апскейлер смотрит на соседние точки: без зазора край одного кадра подмешался бы к другому). Рядом с каждым листом —
       sheet_0001.json: плоское имя → место в листе. Кадры одной анимации идут подряд (имена по порядку), лист заполняется полками.
+      --skip — кадры, что уже есть в этой папке (апскейл по одному), в листы не идут.
   py tools/hd/hd_atlas.py unpack <листы> <увеличенные листы> <папка апскейла>
       Увеличенный лист (то же имя, PNG) режется обратно на кадры под их плоскими именами — в папку апскейла, откуда их берёт
       hd_layer.py import. Множитель — по размеру листа (целый, одинаковый по сторонам); лист, которого ещё нет, пропускается.
@@ -59,8 +60,10 @@ def find(flat: str, sources: list[Path]) -> Path | None:
     return next((s / flat for s in sources if (s / flat).is_file()), None)
 
 
-def pack(out: Path, sources: list[Path], match: list[str], size: int, pad: int) -> int:
+def pack(out: Path, sources: list[Path], match: list[str], size: int, pad: int, skip: list[Path] | None = None) -> int:
     names = sorted({p.name for s in sources for p in s.glob("*.png")})
+    ready = {p.name for d in skip or [] for p in d.glob("*.png")}
+    names = [n for n in names if n not in ready]
     if match:
         names = [n for n in names if any(m in n for m in match)]
     sizes = []
@@ -80,7 +83,7 @@ def pack(out: Path, sources: list[Path], match: list[str], size: int, pad: int) 
         sheet.save(out / f"{stem}.png", optimize=False, compress_level=1)
         (out / f"{stem}.json").write_text(json.dumps({"w": w, "h": h, "pad": pad, "frames": [p.__dict__ for p in placed]},
                                                      ensure_ascii=False, indent=1), encoding="utf-8")
-    print(f"кадров {len(sizes)} → листов {len(sheets)} в {out} (не больше {size}×{size}, зазор {pad})")
+    print(f"кадров {len(sizes)} → листов {len(sheets)} в {out} (не больше {size}×{size}, зазор {pad}; уже готовых пропущено {len(ready)})")
     return 0
 
 
@@ -119,6 +122,7 @@ def main(argv: list[str] | None = None) -> int:
     pk.add_argument("out", type=Path)
     pk.add_argument("--src", type=Path, action="append", required=True)
     pk.add_argument("--match", action="append", default=[])
+    pk.add_argument("--skip", type=Path, action="append", default=[])
     pk.add_argument("--size", type=int, default=2048)
     pk.add_argument("--pad", type=int, default=8)
     up = sub.add_parser("unpack")
@@ -127,7 +131,7 @@ def main(argv: list[str] | None = None) -> int:
     up.add_argument("out", type=Path)
     a = ap.parse_args(argv)
     if a.cmd == "pack":
-        return pack(a.out, a.src, a.match, a.size, a.pad)
+        return pack(a.out, a.src, a.match, a.size, a.pad, a.skip)
     return unpack(a.sheets, a.upscaled, a.out)
 
 

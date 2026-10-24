@@ -88,7 +88,10 @@ def guard_output(path: Path) -> None:
         return
     # Файл внутри: правило каталога (mods/hd*/) git применяет к пути, только если знает, что это каталог, — а его ещё может не быть.
     probe = target / "probe.png"
-    ignored = subprocess.run(["git", "-C", str(REPO), "check-ignore", "-q", str(probe)], capture_output=True).returncode == 0
+    try:
+        ignored = subprocess.run(["git", "-C", str(REPO), "check-ignore", "-q", str(probe)], capture_output=True).returncode == 0
+    except FileNotFoundError:
+        raise SystemExit(f"{path}: внутри репозитория, а git не найден — не проверить, что файлы игры не попадут в git (Р3)") from None
     if not ignored:
         raise SystemExit(f"{path}: внутри репозитория и не в .gitignore — графика игры попала бы в git (Р3); "
                          "выберите папку вне репозитория или под mods/hd*/")
@@ -145,18 +148,28 @@ def collect(sets: list[str], data: Path) -> list[Entry]:
                 entries.append(Entry(flat_name("gfx", arch, f"{n['name']}/{frame}"), "gfx-anim", arch, n["name"],
                                      f"{n['dir']}/{frame}{ext}", n["w"], n["h"], extra))
     # В слой не идут — не выгружать: апскейл их всё равно отбросил бы (kept).
-    return [e for e in entries if kept({"archive": e.archive, "name": e.name})]
+    return unique([e for e in entries if kept({"archive": e.archive, "name": e.name})])
+
+
+def unique(entries: list[Entry]) -> list[Entry]:
+    """Плоские имена — одна папка: у описи бывают две разные картинки с одним именем в разных папках архива (IsoTerrn: MOMNE0507 в
+    frames/ и plain/). Второй и следующим к имени добавляется папка файла — имена прочих кадров (и уже сделанный апскейл) прежние.
+    Совпадение регистром — тоже совпадение: на NTFS это один файл."""
+    seen: set[str] = set()
+    for e in entries:
+        if e.flat.lower() in seen:
+            folder = Path(e.file).parent.name or "root"
+            e.flat = e.flat[:-len(".png")] + f"~{folder}.png"
+        if e.flat.lower() in seen:
+            raise SystemExit(f"плоские имена совпадают: {e.flat}")
+        seen.add(e.flat.lower())
+    return entries
 
 
 def export(out: Path, sets: list[str], data: Path, root: Path) -> int:
     guard_output(out)
     out.mkdir(parents=True, exist_ok=True)
     entries = collect(sets, data)
-    # Плоские имена — одна папка: совпадение (в том числе регистром — на NTFS это один файл) затёрло бы кадр молча.
-    seen: dict[str, Entry] = {}
-    for e in entries:
-        if (other := seen.setdefault(e.flat.lower(), e)) is not e:
-            raise SystemExit(f"плоские имена совпадают: {other.flat} и {e.flat}")
     written, missing = [], []
     for e in entries:
         src = root / ("ui" if e.kind == "ui" else "gfx") / e.file

@@ -191,3 +191,17 @@ def test_guard_output_refuses_tracked_repo_paths() -> None:
         hd.guard_output(hd.REPO / "docs" / "hd-export")
     hd.guard_output(hd.REPO / "mods" / "hd-test")   # mods/hd*/ — в .gitignore
     hd.guard_output(hd.REPO.parent / "le-hd")        # вне репозитория — можно
+
+
+def test_same_name_in_two_folders_gets_unique_flat_names(tmp_path: Path) -> None:
+    """Две разные картинки архива с одним именем (IsoTerrn: MOMNE0507 в frames/ и plain/): вторая — с папкой в плоском имени, первая —
+    прежняя (её апскейл годится); обе выгружаются."""
+    data, assets = make(tmp_path)
+    for folder, colour in (("frames", 10), ("plain", 20)):
+        (assets / "gfx" / "IsoTerrn" / folder).mkdir(parents=True)
+        Image.new("RGBA", (4, 4), (colour, 0, 0, 255)).save(assets / "gfx" / "IsoTerrn" / folder / "M1.webp", lossless=True)
+    (data / "gfx" / "IsoTerrn.json").write_text(json.dumps({"archive": "IsoTerrn.ff", "images": [
+        {"name": "M1", "file": f"IsoTerrn/{f}/M1.webp", "w": 4, "h": 4} for f in ("frames", "plain")], "anims": []}), encoding="utf-8")
+    out = tmp_path / "out"
+    assert hd.export(out, ["map"], data, assets) == 0
+    assert sorted(p.name for p in out.glob("*.png")) == ["gfx__IsoTerrn__M1.png", "gfx__IsoTerrn__M1~plain.png"]

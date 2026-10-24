@@ -412,6 +412,16 @@ public partial class MapView : Node2D
         _requested.Clear();
     }
 
+    /// <summary>Масштаб вида: точек вьюпорта на точку картинки карты (зум камеры); вьюпорт карты — в точках экрана (MapScreen.Place).</summary>
+    public float Zoom
+    {
+        get => _camera?.Zoom.X ?? 1f;
+        set
+        {
+            if (_camera is not null) _camera.Zoom = new Vector2(value, value);
+        }
+    }
+
     /// <summary>Клетка в центре вида.</summary>
     public (int X, int Y) CentreCell
     {

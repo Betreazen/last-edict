@@ -161,6 +161,9 @@ public partial class GameData : Node
         UiAssetsRoot = Path.Combine(AssetsRoot, "ui");
         VideoRoot = Path.Combine(AssetsRoot, "video");
         GfxRoot = Path.Combine(AssetsRoot, "gfx");
+        // Нет графики импорта — земля карты не соберётся (её узоры в HD-слой не идут), без мода — пусто всё; сказать сразу, где искали.
+        if (!Directory.Exists(GfxRoot))
+            GD.PushError($"GameData: нет графики игры в {AssetsRoot} — задайте D2_ASSETS_DIR (каталог assets импорта) или запустите play.cmd");
         RulesDir = Directory.Exists(Path.Combine(GameDataDir, "content", "base")) ? Path.Combine(GameDataDir, "content", "base")
             : Path.Combine(GameDataDir, "rules");
         ScenariosDir = Path.Combine(GameDataDir, "scenarios");

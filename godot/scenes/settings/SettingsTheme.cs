@@ -274,7 +274,9 @@ public static class SettingsTheme
     {
         string path = GameData.FromRoot(Path.Combine("data", "fonts", file));
         if (!File.Exists(path)) return null;
-        var font = new FontFile();
+        // Векторные буквы (MSDF): окно рисуется в разметке 800×600 и вписывается с масштабом — растровый шрифт растягивался бы картинкой
+        // и мылился (ответ пользователя 24.10), MSDF чёток при любом масштабе.
+        var font = new FontFile { MultichannelSignedDistanceField = true, MsdfPixelRange = 16, MsdfSize = 48 };
         return font.LoadDynamicFont(path) == Error.Ok ? font : null;
     }
 }

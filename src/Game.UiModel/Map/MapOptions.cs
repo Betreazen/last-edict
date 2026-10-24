@@ -47,7 +47,9 @@ namespace LastEdict.Data.Map;
 /// <see cref="LastEdict.Data.Input.InputActions"/>); null — все по умолчанию. <paramref name="LargeUi"/> — крупный интерфейс (Р11, Steam Deck):
 /// <see cref="LargeUiAuto"/> — на Steam Deck, <see cref="LargeUiOn"/>, <see cref="LargeUiOff"/>; крупнее курсор и подсказки кнопок.
 /// <paramref name="WindowSize"/> — размер окна, <paramref name="Resolution"/> — разрешение полного экрана (<see cref="LastEdict.Data.Ui.DisplaySizes"/>:
-/// число ширина × 10000 + высота, 0 — по умолчанию).</para>
+/// число ширина × 10000 + высота, 0 — по умолчанию). <paramref name="MapZoom"/> — масштаб карты в процентах: 100 — точка картинки на точку
+/// экрана (как у врапера DisciplesGL: карты видно больше), больше — крупнее; <see cref="MapZoomFit"/> — по окну, как в оригинале (место
+/// карты 640×600 растянуто на окно).</para>
 /// </summary>
 public sealed record MapSettings(int PlayerSpeed = 1, int OpponentSpeed = 1, bool PlayAiMoves = true,
                                  int FxVolume = 83, int MusicVolume = 80, int Acknowledgements = 66, int AudioRegions = 3,
@@ -62,7 +64,7 @@ public sealed record MapSettings(int PlayerSpeed = 1, int OpponentSpeed = 1, boo
                                  bool QueueStrip = true,
                                  int MasterVolume = 100, int AmbientVolume = 100, string WindowMode = "windowed", bool VSync = true,
                                  int MaxFps = 0, string Language = "", LastEdict.Data.Input.KeyBindings? Bindings = null,
-                                 int LargeUi = MapSettings.LargeUiAuto, int WindowSize = 0, int Resolution = 0)
+                                 int LargeUi = MapSettings.LargeUiAuto, int WindowSize = 0, int Resolution = 0, int MapZoom = 100)
 {
     /// <summary>Режим вписывания экрана в окно; неизвестное имя в файле — чёткий (<see cref="LastEdict.Data.Ui.ScreenScaling.Sharp"/>).</summary>
     [System.Text.Json.Serialization.JsonIgnore]
@@ -140,7 +142,13 @@ public sealed record MapSettings(int PlayerSpeed = 1, int OpponentSpeed = 1, boo
         LargeUi = Math.Clamp(LargeUi, LargeUiAuto, LargeUiOff),
         WindowSize = LastEdict.Data.Ui.DisplaySizes.Known(WindowSize),
         Resolution = LastEdict.Data.Ui.DisplaySizes.Known(Resolution),
+        MapZoom = MapZooms.Contains(MapZoom) ? MapZoom : 100,
     };
+
+    /// <summary>Масштаб карты «по окну» (как в оригинале) и допустимые значения <see cref="MapZoom"/>.</summary>
+    public const int MapZoomFit = 0;
+
+    public static readonly int[] MapZooms = [MapZoomFit, 100, 125, 150, 200];
 
     /// <summary>Быстрые настройки «для слабых» и «для мощных систем» (<c>BTN_LOWEND</c>/<c>BTN_HIGHEND</c>, ответ «Да» на вопрос
     /// <c>X005TA0863</c>/<c>0864</c>: <c>0x4c0c8f</c>/<c>0x4c0e6b</c>): фоны мест — первая или последняя ступень, «Слабая видеокарта» —

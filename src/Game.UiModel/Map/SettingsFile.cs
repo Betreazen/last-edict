@@ -46,6 +46,7 @@ public static class SettingsFile
         new(Display, "windowMode", nameof(MapSettings.WindowMode)),
         new(Display, "windowSize", nameof(MapSettings.WindowSize)),
         new(Display, "resolution", nameof(MapSettings.Resolution)),
+        new(Display, "mapZoom", nameof(MapSettings.MapZoom)),
         new(Display, "vsync", nameof(MapSettings.VSync)),
         new(Display, "maxFps", nameof(MapSettings.MaxFps)),
         new(Display, "scaling", nameof(MapSettings.Scaling)),

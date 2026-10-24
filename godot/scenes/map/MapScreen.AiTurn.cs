@@ -148,6 +148,7 @@ public partial class MapScreen
         _map.AnimatedIso = _settings.AnimatedIso;
         _map.Clouds = _settings.IsoClouds;
         _map.ScrollDelayMs = _settings.ScrollSpeed;
+        if (_placed) Place();   // масштаб карты — сразу
         _map.StackSmooth = _settings.StackSmoothScroll;
         _map.SmoothScroll = _settings.SmoothScroll;   // «Прокрутка между действиями» (TOG_SMOOTHSCROLL): вид к событию плавно или сразу
     }

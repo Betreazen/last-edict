@@ -80,6 +80,12 @@ public static class SettingsPages
             Choices = Sizes("LE_SET_RES_NATIVE"),
             Display = true,
         },
+        // Масштаб карты (ответ пользователя 24.10: «как во врапере, карты больше видно») — сразу, без подтверждения.
+        new("mapZoom", SettingsTab.Display, SettingKind.Choice, "LE_SET_MAP_ZOOM", "LE_SET_MAP_ZOOM_HELP", s => s.MapZoom,
+            (s, v) => s with { MapZoom = v })
+        {
+            Choices = [.. MapSettings.MapZooms.Select(z => new SettingChoice(z, z == MapSettings.MapZoomFit ? "LE_SET_MAP_ZOOM_FIT" : $"{z} %"))],
+        },
         new("vsync", SettingsTab.Display, SettingKind.Toggle, "LE_SET_VSYNC", "LE_SET_VSYNC_HELP", s => B(s.VSync), (s, v) => s with { VSync = v != 0 })
         {
             Display = true,

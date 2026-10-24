@@ -653,8 +653,12 @@ public partial class MapScreen : Node
         var size = GetViewport().GetVisibleRect().Size;
         float k = Mathf.Min(size.X / _host.X, size.Y / _host.Y);
         _mapBox.Position = ((size - (_host * k)) / 2f) + (_mapRect.Position * k);
-        _mapBox.Size = _mapRect.Size;
-        _mapBox.Scale = new Vector2(k, k);
+        // Вьюпорт карты — в точках экрана (не место карты 640×600, растянутое на окно): HD-графика видна, карты видно столько, сколько
+        // даёт масштаб карты (MapZoom: 100 % — точка картинки на точку экрана, как у врапера; «по окну» — как в оригинале).
+        _mapBox.Scale = Vector2.One;
+        _mapBox.Size = _mapRect.Size * k;
+        float zoom = MapZoom(k);
+        _map.Zoom = zoom;
         PlaceCapital(size, k);
         if (_face is not null && _faceSlot.Size != Vector2.Zero)
         {
@@ -665,8 +669,17 @@ public partial class MapScreen : Node
         _mini.Position = ((size - (_host * k)) / 2f) + (_miniRect.Position * k);
         _mini.Scale = new Vector2(k, k);
         _mini.Centre = _map.CentreCell;
-        _mini.ViewSize = _mapRect.Size;   // рамка вида — по месту карты на холсте формы окна
+        _mini.ViewSize = _mapRect.Size * k / zoom;   // рамка вида — по видимой части карты
         _mini.Place();
+    }
+
+    /// <summary>Зум камеры карты: «по окну» — как место карты растянуто на окно (<paramref name="k"/>); проценты — от точки экрана (показ
+    /// экранов через буфер ScreenStage уменьшает его на свой масштаб).</summary>
+    private float MapZoom(float k)
+    {
+        if (_settings.MapZoom == MapSettings.MapZoomFit) return k;
+        float stage = ScreenStage.Current is { } st && st.Stage == GetViewport() && st.Fit.Scale > 0 ? st.Fit.Scale : 1f;
+        return _settings.MapZoom / 100f / stage;
     }
 
     private static UiRect Slot(UiScreen screen, string id) =>

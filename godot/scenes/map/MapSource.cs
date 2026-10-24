@@ -20,10 +20,13 @@ public static class MapSource
     }
 
     /// <summary>Карта вместе с объектами для отрисовки (<see cref="MapLooks"/>): <c>--sg</c> — файл игры (проверки по
-    /// сохранениям корпуса), иначе сценарий порта <c>data/scenarios/&lt;--scenario&gt;.json</c> (или слоя мода).</summary>
+    /// сохранениям корпуса), иначе сценарий порта <c>data/scenarios/&lt;--scenario&gt;.json</c> (или слоя мода). Ссылки <c>.sg</c> на
+    /// содержимое — id оригинала: переводятся на id содержимого (<see cref="LegacyRefs"/>), как у импорта сценариев, — иначе раса игрока
+    /// (<c>G000RR0001</c>) не находилась в правилах и столица открывалась без картинки (24.10).</summary>
     public static (MapLooks Looks, string Path) LoadLooks(string[] args)
     {
-        if (Arg(args, "--sg") is { } sg) return (MapLooksLoader.Load(sg), sg);
+        if (Arg(args, "--sg") is { } sg)
+            return (LastEdict.Data.Play.LegacyRefs.ToContentIds(MapLooksLoader.Load(sg), LastEdict.Data.Content.LegacyIds.Base), sg);
         string path = GameData.Content.ScenarioPath(Arg(args, "--scenario") ?? "Tutorial");
         return (GameData.ReadScenario(path).Looks, path);
     }

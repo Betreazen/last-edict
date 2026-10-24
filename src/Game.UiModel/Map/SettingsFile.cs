@@ -47,6 +47,7 @@ public static class SettingsFile
         new(Display, "windowSize", nameof(MapSettings.WindowSize)),
         new(Display, "resolution", nameof(MapSettings.Resolution)),
         new(Display, "mapZoom", nameof(MapSettings.MapZoom)),
+        new(Display, "antialiasing", nameof(MapSettings.Antialiasing)),
         new(Display, "vsync", nameof(MapSettings.VSync)),
         new(Display, "maxFps", nameof(MapSettings.MaxFps)),
         new(Display, "scaling", nameof(MapSettings.Scaling)),

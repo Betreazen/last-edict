@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using LastEdict.Data.Map;
 using LastEdict.Data.Ui;
 using Godot;
 
@@ -90,6 +91,11 @@ public partial class ScreenStage : Node
         Stage.Snap2DVerticesToPixel = root.Snap2DVerticesToPixel;
         Stage.GuiEmbedSubwindows = root.GuiEmbedSubwindows;
         Stage.Msaa2D = root.Msaa2D;
+        // Сглаживание кадра: из настроек, в проверке и снимках — ключ --aa fxaa|smaa.
+        SetAntialiasing(MapSource.Arg(OS.GetCmdlineUserArgs(), "--aa") switch
+        {
+            "fxaa" => MapSettings.AntialiasingFxaa, "smaa" => MapSettings.AntialiasingSmaa, _ => DisplaySettings.Antialiasing,
+        });
         Stage.TransparentBg = false;
         Stage.RenderTargetUpdateMode = SubViewport.UpdateMode.Always;
         Stage.AddChild(Hub);
@@ -168,6 +174,44 @@ public partial class ScreenStage : Node
         PrintStats();
         GetViewport().SizeChanged -= Refit;
         if (Current == this) Current = null;
+    }
+
+    private Camera3D? _aaCamera;
+    private WorldEnvironment? _aaEnvironment;
+
+    /// <summary>Сглаживание всего кадра (FXAA, SMAA). Godot делает его в 3D-проходе, а 2D-экраны его не проходят: буфер получает
+    /// 3D-камеру и окружение, у которого фон — 2D-холст (<c>BGMode.Canvas</c>); тогда кадр экранов идёт через постобработку и
+    /// сглаживается. Выключено — ни камеры, ни прохода (ничего не стоит).</summary>
+    public void SetAntialiasing(int mode)
+    {
+        bool on = mode is MapSettings.AntialiasingFxaa or MapSettings.AntialiasingSmaa;
+        Stage.ScreenSpaceAA = mode switch
+        {
+            MapSettings.AntialiasingFxaa => Viewport.ScreenSpaceAAEnum.Fxaa,
+            MapSettings.AntialiasingSmaa => Viewport.ScreenSpaceAAEnum.Smaa,
+            _ => Viewport.ScreenSpaceAAEnum.Disabled,
+        };
+        if (on && _aaCamera is null)
+        {
+            _aaCamera = new Camera3D { Name = "AaCamera", Current = true };
+            _aaEnvironment = new WorldEnvironment
+            {
+                Name = "AaEnvironment",
+                Environment = new global::Godot.Environment
+                {
+                    BackgroundMode = global::Godot.Environment.BGMode.Canvas, BackgroundCanvasMaxLayer = int.MaxValue,
+                },
+            };
+            Stage.AddChild(_aaCamera);
+            Stage.AddChild(_aaEnvironment);
+        }
+        else if (!on && _aaCamera is not null)
+        {
+            _aaCamera.QueueFree();
+            _aaEnvironment?.QueueFree();
+            _aaCamera = null;
+            _aaEnvironment = null;
+        }
     }
 
     /// <summary>Сменить режим вписывания на ходу (окно настроек, «Применить»): растяжение корня и раскладка показа заново.</summary>

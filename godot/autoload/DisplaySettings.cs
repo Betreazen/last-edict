@@ -33,6 +33,8 @@ public static class DisplaySettings
         settings = settings.Clamped();
         SetMode(settings.Display);
         SetSize(settings);
+        Antialiasing = settings.Antialiasing;
+        ScreenStage.Current?.SetAntialiasing(Antialiasing);
         DisplayServer.WindowSetVsyncMode(settings.VSync ? DisplayServer.VSyncMode.Enabled : DisplayServer.VSyncMode.Disabled);
         Engine.MaxFps = settings.MaxFps;
         GD.Print($"display окно={DisplayModes.Name(settings.Display)} vsync={(settings.VSync ? 1 : 0)} fps={settings.MaxFps} " +
@@ -59,6 +61,10 @@ public static class DisplaySettings
         }
         GD.Print($"display окно={DisplayModes.Name(next)} (Alt+Enter)");
     }
+
+    /// <summary>Сглаживание кадра из настроек (<see cref="MapSettings.Antialiasing"/>): буфер показа берёт его при запуске
+    /// (<see cref="ScreenStage"/>).</summary>
+    public static int Antialiasing { get; private set; }
 
     /// <summary>Разрешение, в котором корень рисует кадр в полном экране (<see cref="MapSettings.Resolution"/>); null — в размере окна.
     /// Растяжением корня распоряжается <see cref="ScreenStage"/> (<see cref="RootScale"/>): он же меняет его при смене вписывания.</summary>

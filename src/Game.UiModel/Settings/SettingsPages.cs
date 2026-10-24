@@ -103,6 +103,14 @@ public static class SettingsPages
                        new((int)ScreenScaling.Nearest, "LE_SET_SCALING_NEAREST")],
             Display = true,
         },
+        // Сглаживание кадра (ответ пользователя 24.10): постобработка всего кадра — смягчает рваные края спрайтов оригинала.
+        new("antialiasing", SettingsTab.Display, SettingKind.Choice, "LE_SET_AA", "LE_SET_AA_HELP", s => s.Antialiasing,
+            (s, v) => s with { Antialiasing = v })
+        {
+            Choices = [new(MapSettings.AntialiasingOff, "LE_SET_AA_OFF"), new(MapSettings.AntialiasingFxaa, "FXAA"),
+                       new(MapSettings.AntialiasingSmaa, "SMAA")],
+            Display = true,
+        },
         new("largeUi", SettingsTab.Display, SettingKind.Choice, "LE_SET_LARGE_UI", "LE_SET_LARGE_UI_HELP", s => s.LargeUi,
             (s, v) => s with { LargeUi = v })
         {

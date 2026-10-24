@@ -387,7 +387,7 @@ public sealed class BuildLogic : IWindowLogic, IPadTargets, IBuildTreeSource
     {
         if (!InArea(x, y) || _area is not { } area || (Card is { } card && Inside(card.Rect, x, y))) return null;
         var (cx, cy) = View.ToContent(x - area.X, y - area.Y);
-        return Items.LastOrDefault(i => Contains(i.Icon, cx, cy) || Contains(i.Plate, cx, cy));
+        return Items.LastOrDefault(i => Contains(i.Icon, cx, cy) || Contains(i.Plate with { Height = BuildTreeGeometry.LabelHeight }, cx, cy));
     }
 
     private static bool Contains(UiRect r, double x, double y) => x >= r.X && x < r.Right && y >= r.Y && y < r.Bottom;
@@ -478,7 +478,8 @@ public sealed class BuildLogic : IWindowLogic, IPadTargets, IBuildTreeSource
         var (tabs, _) = TabsAndArea(bg with { Width = bg.Width - TabReserve }, [.. Tree.Branches.Select(b => (b.Id, BranchName(b)))], Branch,
                                     _hoveredTab);
         Tabs = tabs;
-        var (_, area) = TabsAndArea(bg, [], Branch, null);
+        // Место дерева — левее карточки: дерево по середине видимого и под карточку не уходит (замечание пользователя 24.10).
+        var (_, area) = TabsAndArea(bg with { Width = bg.Width - CardWidth - CardMargin }, [], Branch, null);
         var (cw, ch) = ContentSize;
         if (_area is not { } was) View.Reset(area.Width, area.Height, cw, ch);
         else if (was.Width != area.Width || was.Height != area.Height) View.Resize(area.Width, area.Height);

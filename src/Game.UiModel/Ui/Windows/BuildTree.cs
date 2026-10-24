@@ -123,6 +123,9 @@ public static class BuildTreeGeometry
     public const int CellWidth = 132, CellHeight = 146, Margin = 28, IconWidth = 77, IconHeight = 74, PlateWidth = 124, PlateHeight = 22,
         PlateGap = 6;
 
+    /// <summary>Высота подписи в две строки: длинное имя вид переносит, плашка растёт вниз — попадание мышью берёт её всю.</summary>
+    public const int LabelHeight = 40;
+
     /// <summary>Значок постройки в клетке: по середине столбца, сверху строки.</summary>
     public static UiRect Icon(BuildTreeNode node)
     {

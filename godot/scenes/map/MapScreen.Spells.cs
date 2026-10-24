@@ -206,7 +206,11 @@ public partial class MapScreen
             ? MapView.CellSprite("IsoCmon", m.Frame, m.X, m.Y, tex.GetWidth(), tex.GetHeight(), layer) : null).OfType<MapSprite>()]);
         foreach (var t in view.Targets)
             if (Texture("IsoCmon", t.Frame) is { } texture)
-                _aimArea.AddChild(new Sprite2D { Texture = texture, Centered = true, Position = CellCenter(t.X, t.Y) });
+                _aimArea.AddChild(new Sprite2D
+                {
+                    Texture = texture, Centered = true, Position = CellCenter(t.X, t.Y),
+                    TextureFilter = ImageScales.Filter(texture, CanvasItem.TextureFilterEnum.Nearest),
+                });
         Cursor.Show(view.Cursor);
     }
 
@@ -217,7 +221,11 @@ public partial class MapScreen
         foreach (var child in into.GetChildren()) child.QueueFree();
         foreach (var mark in marks)
             if (Texture("IsoCmon", mark.Frame) is { } texture)
-                into.AddChild(new Sprite2D { Texture = texture, Centered = true, Position = CellCenter(mark.X, mark.Y) });
+                into.AddChild(new Sprite2D
+                {
+                    Texture = texture, Centered = true, Position = CellCenter(mark.X, mark.Y),
+                    TextureFilter = ImageScales.Filter(texture, CanvasItem.TextureFilterEnum.Nearest),
+                });
     }
 
     /// <summary>Отметки строкой проверки: «x,y:кадр» через «+»; нет — «-».</summary>
@@ -242,7 +250,7 @@ public partial class MapScreen
         string? path = gfx.Image(archive, name) is { } image ? GfxAssets.PathOf(image, GameData.GfxRoot)
             : gfx.Anim(archive, name) is { } anim && GfxAssets.FramePaths(anim, GameData.GfxRoot) is { Count: > 0 } frames ? frames[0]
             : null;
-        var texture = path is not null && File.Exists(path) ? ImageTexture.CreateFromImage(GfxTextures.Canvas(path)) : null;
+        var texture = path is not null ? GfxTextures.Of(path) : null;   // общий кэш графики мира: HD логического размера
         _aimTextures[key] = texture;
         return texture;
     }

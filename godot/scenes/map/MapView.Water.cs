@@ -47,19 +47,82 @@ public partial class MapView
     private void BuildWater()
     {
         if (GameData.Content.Gfx.Anim("IsoAnim", WaterAnim) is not { } anim) return;
-        _waterFrames = [.. GfxAssets.FramePaths(anim, GameData.GfxRoot).Where(File.Exists)
-                                   .Select(p => (Texture2D)ImageTexture.CreateFromImage(GfxTextures.Canvas(p)))];
+        // Кадры — в HD слоя (текстура логического размера, точки полные): плитка повторяется своим размером.
+        long started = System.Diagnostics.Stopwatch.GetTimestamp();
+        _waterFrames = [.. GfxAssets.FramePaths(anim, GameData.GfxRoot).Where(File.Exists).Select(WaterFrame)];
+        double waterMs = System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds;
         if (_waterFrames.Length == 0) return;
+        var filter = ImageScales.Filter(_waterFrames[0], TextureFilterEnum.Nearest);
         float left = MathF.Floor(_bounds.Position.X / WaterTile) * WaterTile, top = MathF.Floor(_bounds.Position.Y / WaterTile) * WaterTile;
         float width = MathF.Ceiling((_bounds.End.X - left) / WaterTile) * WaterTile, height = MathF.Ceiling((_bounds.End.Y - top) / WaterTile) * WaterTile;
         _water = new Sprite2D
         {
             Name = "Water", Texture = _waterFrames[0], Centered = false, Position = new Vector2(left, top),
             RegionEnabled = true, RegionRect = new Rect2(0, 0, width, height),
-            TextureRepeat = TextureRepeatEnum.Enabled, TextureFilter = TextureFilterEnum.Nearest,
+            TextureRepeat = TextureRepeatEnum.Enabled, TextureFilter = filter,
         };
         AddChild(_water);
-        GameLog.Verbose($"water кадров={_waterFrames.Length} плитка={WaterTile}");
+        int hd = filter == TextureFilterEnum.LinearWithMipmaps ? 1 : 0;
+        GameLog.Verbose($"water кадров={_waterFrames.Length} плитка={WaterTile} hd={hd} мс={waterMs:F0}");
+    }
+
+    /// <summary>Кадр воды. У HD-кадра апскейл тёмнит края плитки — повторённая, она ложится сеткой (как туман и дороги, которые в слой не
+    /// идут). Края чинятся здесь: плитка смешивается со своей копией, сдвинутой на полплитки (<see cref="Seamless"/>), — у краёв видна
+    /// середина копии, а она по кругу непрерывна, поэтому стыков нет. Кадр ×1 — как есть.</summary>
+    private static Texture2D WaterFrame(string path)
+    {
+        var image = GfxTextures.CanvasHd(path);
+        Texture2D texture;
+        if (ImageScales.Of(image) <= 1) texture = ImageTexture.CreateFromImage(image);
+        else
+        {
+            Seamless(ImageScales.Detach(image));   // точки меняются — текстура из них, а не из DDS файла
+            texture = ImageScales.Texture(image);
+        }
+        image.Dispose();   // точки уже в текстуре: HD-кадр ×4 не ждёт сборки мусора
+        return texture;
+    }
+
+    /// <summary>Доля стороны плитки у каждого края, где она переходит в сдвинутую копию.</summary>
+    private const float SeamBand = 0.2f;
+
+    /// <summary>Плитка без шва при повторе — два прохода: по горизонтали (у левого и правого края — копия, сдвинутая на полплитки по x),
+    /// затем по вертикали (у верха и низа — копия, сдвинутая по y). Шов копии каждого прохода лежит посередине плитки, где видна сама плитка;
+    /// смесь двух бесшовных по x картинок бесшовна по x — второй проход первому не мешает.</summary>
+    private static void Seamless(Image image)
+    {
+        if (image.GetFormat() != Image.Format.Rgba8) image.Convert(Image.Format.Rgba8);
+        int w = image.GetWidth(), h = image.GetHeight();
+        byte[] data = image.GetData();
+        data = Blend(data, w, h, horizontal: true);
+        data = Blend(data, w, h, horizontal: false);
+        image.SetData(w, h, false, Image.Format.Rgba8, data);
+    }
+
+    /// <summary>Один проход: в полосе <see cref="SeamBand"/> у двух краёв оси — плавно копия, сдвинутая на половину по этой оси. Вес —
+    /// заранее на каждую точку оси (0…256), смесь — целыми, строки — параллельно: 16 кадров ×4 готовятся при открытии карты.</summary>
+    private static byte[] Blend(byte[] src, int w, int h, bool horizontal)
+    {
+        var dst = new byte[src.Length];
+        int side = horizontal ? w : h;
+        float band = MathF.Max(1, side * SeamBand);
+        var weight = new int[side];
+        for (int a = 0; a < side; a++)
+        {
+            float m = MathF.Min(1, MathF.Min(a, side - 1 - a) / band);
+            weight[a] = (int)MathF.Round(m * m * (3 - (2 * m)) * 256);   // плавно (smoothstep)
+        }
+        System.Threading.Tasks.Parallel.For(0, h, y =>
+        {
+            int row = y * w * 4, rolledRow = horizontal ? row : ((y + (h / 2)) % h) * w * 4;
+            for (int x = 0; x < w; x++)
+            {
+                int m = weight[horizontal ? x : y], at = row + (x * 4);
+                int rolled = rolledRow + ((horizontal ? (x + (w / 2)) % w : x) * 4);
+                for (int c = 0; c < 4; c++) dst[at + c] = (byte)(((src[at + c] * m) + (src[rolled + c] * (256 - m)) + 128) >> 8);
+            }
+        });
+        return dst;
     }
 
     private void StepWater(double delta)

@@ -45,6 +45,8 @@ public partial class BuildTreeView : Control
         Name = "BuildTree";
         MouseFilter = MouseFilterEnum.Ignore;
         _canvas = new Canvas(this);
+        // Дерево — под рисунком самого вида: карточка, вкладки и кнопки всегда поверх значков, даже при зуме у края.
+        _clip.ShowBehindParent = true;
         AddChild(_clip);
         _clip.AddChild(_canvas);
     }
@@ -87,8 +89,11 @@ public partial class BuildTreeView : Control
         if (build.Card is { } card) DrawCard(card);
         var gold = build.GoldRect;
         if (build.Gold.Length > 0 && gold.Width > 0)
-            DrawString(Caption, new Vector2(gold.X - _corner.X, gold.Y - _corner.Y + ((gold.Height + Caption.GetAscent(TabSize) - Caption.GetDescent(TabSize)) / 2f)),
-                       build.Gold, HorizontalAlignment.Right, gold.Width - 6, TabSize, Gold);
+        {
+            int size = Shrink(Caption, build.Gold, gold.Width - 6, TabSize, MinSize);
+            DrawString(Caption, new Vector2(gold.X - _corner.X, gold.Y - _corner.Y + ((gold.Height + Caption.GetAscent(size) - Caption.GetDescent(size)) / 2f)),
+                       build.Gold, HorizontalAlignment.Right, gold.Width - 6, size, Gold);
+        }
         foreach (var button in build.Buttons) DrawButton(button);
     }
 
@@ -116,9 +121,11 @@ public partial class BuildTreeView : Control
         DrawStyleBox(_card, r);
         var font = Caption;
         float x = r.Position.X + 16, width = r.Size.X - 32, y = r.Position.Y + 18;
-        DrawString(font, new Vector2(x, y + font.GetAscent(20)), Fit(font, card.Title, width, 20), HorizontalAlignment.Left, width, 20, Light);
+        int title = Shrink(font, card.Title, width, 20, 14);
+        DrawString(font, new Vector2(x, y + font.GetAscent(20)), Fit(font, card.Title, width, title), HorizontalAlignment.Left, width, title, Light);
         y += 30;
-        DrawString(font, new Vector2(x, y + font.GetAscent(15)), Fit(font, card.Cost, width, 15), HorizontalAlignment.Left, width, 15, Gold);
+        int cost = Shrink(font, card.Cost, width, 15, 11);
+        DrawString(font, new Vector2(x, y + font.GetAscent(15)), Fit(font, card.Cost, width, cost), HorizontalAlignment.Left, width, cost, Gold);
         y += 24;
         DrawMultilineString(font, new Vector2(x, y + font.GetAscent(14)), card.Description, HorizontalAlignment.Left, width, 14, 6, Light);
         var face = BuildLogic.FaceRect(card);
@@ -145,14 +152,58 @@ public partial class BuildTreeView : Control
         DrawMultilineString(font, new Vector2(x, statusY + font.GetAscent(14)), card.Status, HorizontalAlignment.Center, width, 14, 2, statusColor);
     }
 
-    /// <summary>Строка по середине прямоугольника (обрезается многоточием, если не входит).</summary>
+    /// <summary>Строка по середине прямоугольника: не входит — шрифт мельче (до <see cref="MinSize"/>), многоточие — лишь крайний случай.</summary>
     private static void DrawCentered(CanvasItem item, string text, Rect2 rect, int size, Color color)
     {
         var font = Caption;
         float width = rect.Size.X - 8;
-        float baseline = rect.Position.Y + ((rect.Size.Y + font.GetAscent(size) - font.GetDescent(size)) / 2f);
-        item.DrawString(font, new Vector2(rect.Position.X + 4, baseline), Fit(font, text, width, size), HorizontalAlignment.Center, width, size, color);
+        int fit = Shrink(font, text, width, size, MinSize);
+        float baseline = rect.Position.Y + ((rect.Size.Y + font.GetAscent(fit) - font.GetDescent(fit)) / 2f);
+        item.DrawString(font, new Vector2(rect.Position.X + 4, baseline), Fit(font, text, width, fit), HorizontalAlignment.Center, width, fit, color);
     }
+
+    /// <summary>Самый мелкий шрифт подписей.</summary>
+    private const int MinSize = 10;
+
+    /// <summary>Размер шрифта от <paramref name="size"/> вниз до <paramref name="least"/>, при котором строка входит в ширину.</summary>
+    private static int Shrink(Font font, string text, float width, int size, int least)
+    {
+        while (size > least && font.GetStringSize(text, HorizontalAlignment.Left, -1, size).X > width) size--;
+        return size;
+    }
+
+    /// <summary>Подпись постройки на плашке: входит строкой — строкой; нет — в две строки по словам (плашка растёт вниз, к связям), шрифт
+    /// мельче, только если слово длиннее плашки. Многоточия нет (замечание пользователя 24.10).</summary>
+    private static void DrawLabel(CanvasItem item, string text, Rect2 plate, Color color)
+    {
+        var font = Caption;
+        float width = plate.Size.X - 8;
+        if (font.GetStringSize(text, HorizontalAlignment.Left, -1, CaptionSize).X <= width)
+        {
+            item.DrawStyleBox(_plate, plate);
+            DrawCentered(item, text, plate, CaptionSize, color);
+            return;
+        }
+        if (!LabelFits.TryGetValue((text, width), out var fit))
+        {
+            int s = CaptionSize - 1;
+            string[] words = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            while (s > MinSize && words.Max(w => font.GetStringSize(w, HorizontalAlignment.Left, -1, s).X) > width) s--;
+            LabelFits[(text, width)] = fit = (s, font.GetMultilineStringSize(text, HorizontalAlignment.Center, width, s, -1, Wrap));
+        }
+        var (size, block) = fit;
+        var grown = plate with { Size = new Vector2(plate.Size.X, Mathf.Max(plate.Size.Y, block.Y + 6)) };
+        item.DrawStyleBox(_plate, grown);
+        var at = new Vector2(grown.Position.X + 4, grown.Position.Y + ((grown.Size.Y - block.Y) / 2f) + font.GetAscent(size));
+        item.DrawMultilineString(font, at, text, HorizontalAlignment.Center, width, size, -1, color, Wrap);
+    }
+
+    /// <summary>Шрифт и размер блока длинных подписей (по имени и ширине): вид перерисовывается на каждый сдвиг, зум и наведение.</summary>
+    private static readonly System.Collections.Generic.Dictionary<(string Text, float Width), (int Size, Vector2 Block)> LabelFits = new();
+
+    /// <summary>Перенос подписи: по словам, а слово длиннее плашки — по буквам.</summary>
+    private const TextServer.LineBreakFlag Wrap =
+        TextServer.LineBreakFlag.Mandatory | TextServer.LineBreakFlag.WordBound | TextServer.LineBreakFlag.Adaptive;
 
     /// <summary>Строка, укороченная многоточием до ширины.</summary>
     private static string Fit(Font font, string text, float width, int size)
@@ -191,9 +242,7 @@ public partial class BuildTreeView : Control
                 DrawStyleBox(item.Hovered ? _frameHover : _frame, icon.Grow(5));
                 if (item.Marked) DrawRect(icon.Grow(8), Mine, false, 2f);   // постройка мода (живая страница Студии)
                 if (item.Selected) DrawRect(icon.Grow(1), Pick, false, 1.5f);
-                var plate = Rect(item.Plate);
-                DrawStyleBox(_plate, plate);
-                DrawCentered(this, item.Name, plate, CaptionSize, item.Kind == BuildIcon.OtherPath ? Muted : Light);
+                DrawLabel(this, item.Name, Rect(item.Plate), item.Kind == BuildIcon.OtherPath ? Muted : Light);
             }
             owner.Drawn = drawn;
         }

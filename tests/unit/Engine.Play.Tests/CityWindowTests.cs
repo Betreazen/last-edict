@@ -817,8 +817,10 @@ public class CityWindowTests(ITestOutputHelper output)
         Assert.Equal(5, logic.Tree.Branches.Count);   // пять веток оригинала — из содержимого
         Assert.Equal(5, logic.Tabs.Count);
         Assert.DoesNotContain(ui.Screen.Elements, e => e.Id.StartsWith("IMG_PANEL_", StringComparison.Ordinal));   // картинки веток нет
-        Assert.StartsWith("Gradient:437x600#", ui.Frame("IMG_TREE_BG"), StringComparison.Ordinal);   // фон дерева — серый градиент
-        Assert.Equal(UiAnchor.TopRight, ui.Screen.Elements.First(e => e.Id == "BTN_BUILD").Anchor);   // панель — к правому краю
+        Assert.StartsWith("Gradient:800x600#", ui.Frame("IMG_TREE_BG"), StringComparison.Ordinal);   // дерево — во всё окно
+        Assert.DoesNotContain(ui.Screen.Elements, e => e.Id is "IMG_FRAME_DLG" or "TOG_MAGE" or "TXT_INFO");   // панели «Управление городом» нет
+        Assert.True(ui.IsHidden("BTN_BUILD"));   // ничего не выбрано — карточки и «Построить» нет
+        Assert.Null(logic.Card);
 
         string b26 = LegacyIds.Base.IdOf("g000bb0026")!;
         var item = logic.Items.First(i => i.Building == b26);
@@ -838,6 +840,10 @@ public class CityWindowTests(ITestOutputHelper output)
         Assert.Equal(pick, logic.Selected, StringComparer.OrdinalIgnoreCase);
         Assert.True(logic.Items.First(i => i.Building == pick).Selected);
         Assert.True(ui.IsEnabled("BTN_BUILD"));
+        Assert.False(ui.IsHidden("BTN_BUILD"));
+        var card = Assert.IsType<BuildLogic.BuildCard>(logic.Card);   // карточка выбранной постройки у правого края
+        Assert.DoesNotContain(@"\f", card.Title + card.Cost + card.Description + string.Join("", card.UnitLines), StringComparison.Ordinal);
+        Assert.False(string.IsNullOrEmpty(card.Status));
         Assert.False(logic.Allows("BTN_BUILD", ui));
         logic.Press(x, y, ui);
         logic.DoubleClick(x, y, ui);   // двойной щелчок = «Построить» (0x4add6c)
@@ -848,7 +854,6 @@ public class CityWindowTests(ITestOutputHelper output)
         Assert.IsType<UiClose>(logic.TakeRequest());   // построено — окно закрывается само (0x4ab364 → 0x5c8f71)
         Assert.Equal(BuildIcon.Built, logic.Icon(pick));
 
-        Assert.True(ui.IsHidden("TOG_MAGE"));   // ветки — только вкладками над деревом (кнопки круга спрятаны, решение пользователя 24.10)
         var mage = logic.Tabs.First(t => t.Branch == "base:building-branch/mage").Rect;
         logic.Release(mage.X + 5, mage.Y + 5, ui);
         Assert.Equal("base:building-branch/mage", logic.Branch);

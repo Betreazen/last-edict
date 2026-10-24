@@ -113,5 +113,8 @@
   "LE_BUILD_MAGES": "Маги",
   "LE_BUILD_ARCHERS": "Стрелки",
   "LE_BUILD_SUPPORT": "Поддержка",
-  "LE_BUILD_OTHER": "Здания"
+  "LE_BUILD_OTHER": "Здания",
+  "LE_BUILD_BUILD": "Построить",
+  "LE_BUILD_BACK": "Назад",
+  "LE_BUILD_GOLD": "Золото"
 }

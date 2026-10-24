@@ -113,5 +113,8 @@
   "LE_BUILD_MAGES": "Mages",
   "LE_BUILD_ARCHERS": "Archers",
   "LE_BUILD_SUPPORT": "Support",
-  "LE_BUILD_OTHER": "Buildings"
+  "LE_BUILD_OTHER": "Buildings",
+  "LE_BUILD_BUILD": "Build",
+  "LE_BUILD_BACK": "Back",
+  "LE_BUILD_GOLD": "Gold"
 }

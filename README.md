@@ -53,7 +53,8 @@ change what the original could not:
 | Screen | 800×600 | ✅ any aspect ratio (16:9, 16:10, 21:9, 4:3): the map fills the screen, windows stay sharp · ✅ HD art pipeline (export → upscale → import, BC7) and an HD display mode: drawn at window resolution, vector text, sharpening · ✅ wide battle like the DisciplesGL wrapper · 📋 an HD art pack |
 | Input | mouse and keyboard | ✅ full gamepad: stick pointer, D-pad between buttons, button hints for Xbox, PlayStation and Steam Deck, remapping · 🚧 tested on real devices |
 | Multiplayer | LAN of 2002 | 📋 friends' rooms via a relay, async games |
-| Modding | external tools | 📋 built-in Studio: building tree, content, maps without a size limit |
+| Building window | a fixed tree on a panel | ✅ the tree comes from data: branch tabs, zoom to the cursor, drag with the middle button, gamepad, a card for the chosen building; mods add branches and buildings without code |
+| Modding | external tools | ✅ built-in Studio: building tree, any content by schema with undo, a battle arena and AI stand (base vs mod), map painting at any size, hot reload into a running game, `d2mod` CLI · 🚧 creating buildings, units and map objects in the Studio window |
 
 ✅ done · 🚧 in progress · 📋 planned
 
@@ -123,6 +124,13 @@ Decisions and details: [`docs/own-version-roadmap.md`](docs/own-version-roadmap.
 ## Progress
 
 <!-- Новые записи — сверху: дата, что изменилось, снимки «было / стало» (порядок — docs/media.md). -->
+
+- **2026-10-24 — Building window and Studio.** The building tree is now data: branches are tabs over the tree, it zooms to the cursor
+  and pans with the middle button or a gamepad, and the chosen building opens as a card instead of the old side panel. Mods add
+  branches and buildings without code. A built-in Studio edits a mod with undo: the building tree, any content by its schema, a battle
+  arena and an AI stand that compare the base game with the mod, and maps of any size; a running game reloads the mod on save.
+  Maps up to 1024×1024 are measured and playable. Water, map spells and battle event pictures now use the HD art too.
+  Rules unchanged: the snapshots are identical. Screenshots will follow.
 
 - **2026-10-24 — HD and crisp at any resolution.** An HD display mode draws the game at window resolution, so an upscaled art layer
   shows at full detail ([before / after](https://github.com/Betreazen/last-edict/releases/download/media/compare-hd-detail.png)); the map keeps its own pixel size and shows more of the world

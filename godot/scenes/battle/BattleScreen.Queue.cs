@@ -26,7 +26,7 @@ public partial class BattleScreen
         setting && (args.Contains(key) || !(args.Contains("--check") || args.Contains("--input")));
 
     /// <summary>Широкий бой (<see cref="LastEdict.Data.Map.MapSettings.WideBattle"/>; задаёт хозяин боя по настройкам). Под проверкой — с
-    /// ключом <c>--wide-battle</c> (или <c>--wide-units</c>): прежние проверки идут на раскладке 800×600.</summary>
+    /// ключом <c>--wide-battle</c>: прежние проверки идут на раскладке 800×600.</summary>
     public bool Wide { get; set; } = new LastEdict.Data.Map.MapSettings().WideBattle;
 
     /// <summary>Полоса над полем: портреты — те же кадры <c>Faces</c>, что у панели (<see cref="BattleView.PlainFace"/>); пересборка — по

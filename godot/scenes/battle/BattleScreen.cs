@@ -107,12 +107,9 @@ public partial class BattleScreen : Node
             _strings = GameData.Strings(GameData.Language);
             var screen = GameData.Content.Screens.First(s => s.Id == Screen);
             // Широкий бой (16:9 и шире, как у врапера): разметка — на холст формы окна (WideBattle); уже — как в оригинале.
-            bool wide = Wanted(Wide, args, "--wide-battle") || MapSource.Arg(args, "--wide-units") is not null;
             var layout = new BattleLayout(PlayerIsAttacker, Flipped || (Standalone && args.Contains("--flip")),
-                                          wide ? CanvasWidth() : BattleLayout.ScreenWidth,
-                                          MapSource.Arg(args, "--wide-units") == "spread" ? WideUnits.Spread : WideUnits.Wrapper);
-            layout = layout with { Width = WideBattle.Width(layout.Width, layout.Units) };
-            screen = WideBattle.Place(screen, layout.Width, layout.Units);
+                                          Wanted(Wide, args, "--wide-battle") ? WideBattle.Width(CanvasWidth()) : BattleLayout.ScreenWidth);
+            screen = WideBattle.Place(screen, layout.Width);
             _host = new Vector2(screen.Design.Width, screen.Design.Height);
             var rules = Rules ?? RulesLoader.Load(GameData.Rules);
             var state = Prepared ?? Load(args, rules);
@@ -1409,7 +1406,7 @@ public sealed class BattleButtons(Func<BattleSession> session, Func<BattleScene>
     {
         ArgumentNullException.ThrowIfNull(screen);
         var layout = scene?.Invoke().Layout ?? BattleLayout.Default;
-        screen = WideBattle.Place(screen, layout.Width, layout.Units);   // широкий бой — та же разметка, что у поля
+        screen = WideBattle.Place(screen, layout.Width);   // широкий бой — та же разметка, что у поля
         var elements = screen.Elements
             .Select(e => layout.Mirrored && e.Id is "TOG_RIGHTUNITS" or "IMG_PUNITGROUP_SPOT" ? e with { Rect = layout.Mirror(e.Rect) } : e)
             // Картинки разметки движок снимает с диалога (0x62e017 → 0x62dc66 → 0x50b795; IMG_BIGFACESBG — 0x62dba6) и рисует сам на слое поля:

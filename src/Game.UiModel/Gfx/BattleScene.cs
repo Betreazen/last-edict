@@ -33,8 +33,7 @@ public enum BattleAction
 /// <para>Широкий бой (<paramref name="Width"/> не меньше <see cref="WideBattle.MinWidth"/>, <see cref="WideBattle"/>): как у врапера —
 /// сдвига мест и зеркала нет, обе колонки отрядов на своих сторонах, фон 950 — по середине холста.</para>
 /// </summary>
-public sealed record BattleLayout(bool OwnAttacks = true, bool Flipped = false, int Width = BattleLayout.ScreenWidth,
-                                  WideUnits Units = WideUnits.Wrapper)
+public sealed record BattleLayout(bool OwnAttacks = true, bool Flipped = false, int Width = BattleLayout.ScreenWidth)
 {
     /// <summary>Широкий бой: разметка — на всю ширину холста (<see cref="WideBattle.Place"/>).</summary>
     public bool Wide => WideBattle.Wide(Width);

@@ -1,29 +1,18 @@
 namespace LastEdict.Data.Ui;
 
-/// <summary>Как стоят юниты на широком поле боя (<see cref="WideBattle"/>).</summary>
-public enum WideUnits
-{
-    /// <summary>Места врапера DisciplesGL (холст 990, <c>DLG_BATTLE_B</c>) — по середине холста.</summary>
-    Wrapper,
-
-    /// <summary>Те же места, разведённые на всю ширину поля между колонками отрядов.</summary>
-    Spread,
-}
-
 /// <summary>
 /// Широкий бой (ответ пользователя 24.10, «как во врапере»): на холсте не уже <see cref="MinWidth"/> (16:9 и шире) разметка
 /// <c>DLG_BATTLE_A</c> раскладывается на всю ширину — колонки отрядов у краёв холста (обе видны всегда), кнопки и середина нижней панели —
 /// по центру, подписи крупных портретов — до середины, нижняя панель собирается из краёв и центра своей картинки со вставками (кадр
-/// <c>Widen:</c>, без растяжения), юниты — на местах врапера (<c>DLG_BATTLE_B</c>, холст 990) по середине или разведённые по полю.
-/// Уже 990 (16:10, 4:3) — бой как в оригинале.
+/// <c>Widen:</c>, без растяжения), юниты — на местах врапера (<c>DLG_BATTLE_B</c>, холст 990). Холст боя — 990 и на окне шире (остальное —
+/// поля прироста с растяжкой фона): картинки мест нарисованы только в полосе 650 точек — ровно под поле врапера между колонками (вариант
+/// «разведённых» по всей ширине юнитов с зеркальным продолжением фона пользователь отклонил 24.10). Уже 990 (16:10, 4:3) — бой как в
+/// оригинале.
 /// </summary>
 public static class WideBattle
 {
     /// <summary>Ширина холста, с которой бой широкий (у врапера — 990: колонки 174 и 173, поле между ними 643).</summary>
     public const int MinWidth = 990;
-
-    /// <summary>Колонки отрядов врапера у краёв холста.</summary>
-    public const int LeftColumn = 174, RightColumn = 173;
 
     private const int ScreenWidth = 800, WrapperWidth = 990;
 
@@ -46,25 +35,26 @@ public static class WideBattle
     /// <summary>Холст ширины <paramref name="width"/> (высота 600) — для широкого боя.</summary>
     public static bool Wide(int width) => width >= MinWidth;
 
-    /// <summary>Ширина разметки боя на холсте <paramref name="canvas"/>: уже <see cref="MinWidth"/> — экран оригинала; места врапера — его
-    /// холст 990 (остальное — поля прироста); разведённые — весь холст.</summary>
-    public static int Width(int canvas, WideUnits units) => !Wide(canvas) ? ScreenWidth : units == WideUnits.Wrapper ? WrapperWidth : canvas;
+    /// <summary>Ширина разметки боя на холсте <paramref name="canvas"/>: уже <see cref="MinWidth"/> — экран оригинала, иначе — холст врапера
+    /// 990 (остальное — поля прироста).</summary>
+    public static int Width(int canvas) => Wide(canvas) ? WrapperWidth : ScreenWidth;
 
     /// <summary>Разметка боя на холсте <paramref name="width"/>×600. Уже <see cref="MinWidth"/> — та же разметка.</summary>
-    public static UiScreen Place(UiScreen screen, int width, WideUnits units)
+    public static UiScreen Place(UiScreen screen, int width)
     {
         ArgumentNullException.ThrowIfNull(screen);
         if (!Wide(width)) return screen;
         int right = width - ScreenWidth, center = (width - ScreenWidth) / 2;
-        var elements = screen.Elements.Select(e => e with { Rect = Rect(e, width, right, center, units) }).Select(e => e.Id == "IMG_BIGFACESBG"
+        var elements = screen.Elements.Select(e => e with { Rect = Rect(e, width, right, center) }).Select(e => e.Id == "IMG_BIGFACESBG"
             && e.Image is { Length: > 0 } image ? e with { Image = $"Widen:{image}@{width}/{BottomCuts}" } : e).ToList();
         return screen with { Design = screen.Design with { Width = width }, Elements = elements };
     }
 
-    private static UiRect Rect(UiElement e, int width, int right, int center, WideUnits units)
+    private static UiRect Rect(UiElement e, int width, int right, int center)
     {
         var r = e.Rect;
-        if (WrapperUnits.TryGetValue(e.Id, out var at)) return r with { X = UnitX(at.X, width, units), Y = at.Y };
+        // Места врапера — по середине холста (на его холсте 990 — как есть).
+        if (WrapperUnits.TryGetValue(e.Id, out var at)) return r with { X = at.X + ((width - WrapperWidth) / 2), Y = at.Y };
         return e.Id switch
         {
             "IMG_BIGFACESBG" => r with { X = 0, Width = width },
@@ -76,15 +66,5 @@ public static class WideBattle
             _ when e.Id.StartsWith("BTN_", StringComparison.Ordinal) || e.Id == "TOG_AUTOBATTLE" => r with { X = r.X + center },
             _ => r,
         };
-    }
-
-    /// <summary>x места юнита: у врапера — его место, сдвинутое на середину холста; разведённое — середина места пропорционально по полю
-    /// между колонками (у врапера поле 174…817 из 990).</summary>
-    private static int UnitX(int x, int width, WideUnits units)
-    {
-        if (units == WideUnits.Wrapper) return x + ((width - WrapperWidth) / 2);
-        double field = WrapperWidth - LeftColumn - RightColumn, now = width - LeftColumn - RightColumn;
-        double centre = LeftColumn + ((x + 40 - LeftColumn) * now / field);
-        return (int)Math.Round(centre) - 40;
     }
 }

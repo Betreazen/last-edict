@@ -29,7 +29,7 @@ _Открывать в каталоге репозитория `..\last-edict` (
 по умолчанию — экраны рисуются сразу в точках окна (`ScreenScaling.Hd`, без HD-слоя — «Чёткий»); текст игры — векторный PT Serif с MSDF
 (`VectorFonts`, `GameData.Fonts`), резкость CAS (`ScreenStage.SetSharpness`), «Размер окон» над картой (`UiScreenView.SlotScale`); карта и
 поле боя — во вьюпортах в точках экрана, масштаб — камерой или `CanvasTransform`; широкий бой как у врапера (`WideBattle`, холст 990).
-Сложенные картинки (рамка с портретом, раны, значки) собираются в множителе HD (`ImageScales.AtScale`/`Composed`, `GfxTextures.CanvasHd`):
+Сложенные картинки (рамка с портретом, раны, значки) собираются в множителе HD (`ImageScales.AtScale`, `ImageScales.Texture(ImageScales.With(…))`, `GfxTextures.CanvasHd`):
 `GfxTextures.Canvas` отдаёт HD уменьшенной до логических точек — для текстур не брать. Проверки (ui-render-check, снимки) идут без модов и
 настроек показа: HD-пути смотреть снимками окна (`--scale hd --vector-text --sharpen 40`, `--stage-shot`; окно ставить на основной монитор
 `--position 3900,541` — у пользователя слева телевизор, `0,0` открывает игру на нём).

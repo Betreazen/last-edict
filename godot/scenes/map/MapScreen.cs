@@ -73,10 +73,12 @@ public partial class MapScreen : Node
             _map = new MapView { Standalone = false, Name = "MapView" };
             viewport.AddChild(_map);
 
-            var session = Session ?? LoadSession(args);
-            if (Session is null && args.Contains("--new-game")) NewGame = true;   // сцена сама: окно начала дня 1, как у новой партии
+            // Перезапуск со снимка после перезагрузки модов (--watch, MapScreen.Reload.cs): та же партия с новыми правилами.
+            var held = GameData.TakeReload();
+            var session = Session ?? (held is { } h ? new GameSession(h.State, GameData.Content.MapArt, GameData.Book) : LoadSession(args));
+            if (Session is null && held is null && args.Contains("--new-game")) NewGame = true;   // сцена сама: окно начала дня 1, как у новой партии
             var looks = session.Looks;
-            string? viewer = Session is not null ? Viewer : MapSource.Arg(args, "--player") switch
+            string? viewer = Session is not null ? Viewer : held is { } kept ? kept.Viewer : MapSource.Arg(args, "--player") switch
             {
                 "none" => null,
                 { } id => id,
@@ -138,6 +140,8 @@ public partial class MapScreen : Node
             GetViewport().SizeChanged += Place;
             _placed = true;
             Callable.From(ShowOffers).CallDeferred();   // предложения, ждущие с прошлого хода (загруженная партия)
+            HookReload();
+            if (held?.Reopen is { } reopen) Callable.From(() => Reopen(reopen)).CallDeferred();
             if (args.Contains("--check"))
             {
                 UiScreenView.ManualTime = true;   // автоповтор и подсказки — только шагом «wait N»
@@ -204,6 +208,7 @@ public partial class MapScreen : Node
         if (!_placed) return;   // до подписки (ранний отказ при загрузке) отписываться не от чего
         _placed = false;
         GetViewport().SizeChanged -= Place;
+        UnhookReload();
     }
 
     private bool _placed;
@@ -742,6 +747,14 @@ public partial class MapScreen : Node
                 for (int i = 0; i < 3; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
                 continue;
             }
+            if (step == "reloadwait")   // перезагрузка модов (--watch): ждать до 30 с, пока файлы мода поменяют снаружи; сцена перезапустится
+            {
+                var since = DateTime.UtcNow;
+                while (!_leaving && (DateTime.UtcNow - since).TotalSeconds < 30) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+                if (_leaving) return;   // новая сцена карты допечатает итог сама
+                GD.Print("reloadwait: перезагрузки не было");
+                continue;
+            }
             if (step == "pause")   // 150 мс без ввода: зонд порта отделяет следствия нажатия (ui_enable_click — 100 мс) от следующего
             {
                 var at = DateTime.UtcNow;
@@ -1257,7 +1270,8 @@ public partial class MapScreen : Node
                  $"лидер={(panel.LeaderName.Length == 0 ? "-" : panel.LeaderName)} ходы={panel.MoveLeft}/{panel.MoveMax} " +
                  $"день={panel.Turn} золото={panel.Bank.Gold} звук={GetTree().Root.GetChildren().Count(n => n is GameAudio)} " +
                  $"фильтр={(int)_map.TextureFilter} фильтр_вьюпорта={(int)_map.GetViewport().CanvasItemDefaultTextureFilter} " +
-                 $"ms={(DateTime.UtcNow - start).TotalMilliseconds:F0}" +
+                 $"ms={(DateTime.UtcNow - start).TotalMilliseconds:F0} ревизия={GameData.Revision}" +
+                 (GameData.Revision > 0 ? $" {WindowLine()}" : "") +   // после перезагрузки модов — окна, открытые снова
                  (shot is null ? "" : $" shot={shot}"));
         GetTree().Quit(_map.GroundReady ? 0 : 1);
     }

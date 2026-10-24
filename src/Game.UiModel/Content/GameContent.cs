@@ -138,6 +138,13 @@ public sealed class GameContent
             try
             {
                 loaded = UiStrings.LoadLayers(dirs, language);
+                // Строки сущностей модов «папка = сущность» (автоматические ключи <id>#name, EntityFolders) — поверх.
+                if (Mods.Select(m => EntityFolders.Strings(m, language)).Where(s => s.Count > 0).ToList() is { Count: > 0 } entity)
+                {
+                    var merged = new Dictionary<string, string>(loaded, StringComparer.OrdinalIgnoreCase);
+                    foreach (var (key, text) in entity.SelectMany(s => s)) merged[key] = text;
+                    loaded = merged;
+                }
             }
             catch (JsonException e)
             {
@@ -265,6 +272,7 @@ public sealed class GameContent
                     transitions = UiTransitions.Merge(transitions, modTransitions);
                 gfx = GfxAssets.Merge(gfx, GfxAssets.Load(Path.Combine(mod.Dir, "data", "gfx")),
                                       Path.Combine(mod.Dir, "assets", "gfx"));
+                gfx = GfxAssets.Merge(gfx, EntityIcons(mod), mod.Dir);
                 mapArt = MapArtData.Merge(mapArt, MapArtData.Load(Path.Combine(mod.Dir, "data", "map")));
                 string modVideos = Path.Combine(mod.Dir, "data", "video", "videos.json");
                 if (File.Exists(modVideos))
@@ -289,20 +297,52 @@ public sealed class GameContent
         };
     }
 
+    /// <summary>Архивы значков по виду сущности: значок <c>icon.png</c> каталога сущности мода (<see cref="EntityFolders"/>) встаёт в архив
+    /// значков вида под именем графики сущности (<see cref="ArtNames"/>) — так окно построек находит значок постройки мода без описи.</summary>
+    private static readonly IReadOnlyDictionary<string, string> IconArchives = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["building"] = "IconBld.ff",
+    };
+
+    private static GfxAssets EntityIcons(ModInfo mod) => GfxAssets.Of(EntityFolders.Scan(mod)
+        .Where(f => f.Icon is not null && IconArchives.ContainsKey(f.Kind.Name))
+        .GroupBy(f => IconArchives[f.Kind.Name])
+        .Select(g => new GfxArchive
+        {
+            Archive = g.Key,
+            Images = [.. g.Select(f => Icon(f.Id, f.Icon!))],
+        }));
+
+    private static GfxImage Icon(string id, string path)
+    {
+        var (w, h) = PngSize(path);
+        return new GfxImage { Name = ArtNames.Of(id), File = path, W = w, H = h };
+    }
+
+    /// <summary>Размер PNG по заголовку (IHDR); не PNG — 0×0.</summary>
+    private static (int W, int H) PngSize(string path)
+    {
+        Span<byte> head = stackalloc byte[24];
+        using var file = File.OpenRead(path);
+        if (file.Read(head) < 24) return (0, 0);
+        return (System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(head[16..]), System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(head[20..]));
+    }
+
     private static UiFlow? LoadFlow(string path) => File.Exists(path) ? UiFlows.Load(path) : null;
 
     private static UiDefaults? LoadDefaults(string path) => File.Exists(path) ? UiDefaults.Load(path) : null;
 
     private static UiTransitions? LoadTransitions(string path) => File.Exists(path) ? UiTransitions.Load(path) : null;
 
-    /// <summary>Моды из перечисленных корней: подкаталог считается модом, если в нём есть <c>mod.json</c>.
+    /// <summary>Моды из перечисленных корней: подкаталог считается модом, если в нём есть <c>mod.json</c> (корень с <c>mod.json</c> — сам мод).
     /// Несуществующий корень — не ошибка (у игрока может не быть <c>user://mods</c>), прочее содержимое корня
     /// (README, архивы, чужие каталоги) просто не мод.</summary>
     public static IReadOnlyList<ModInfo> Discover(params string[] roots)
     {
         ArgumentNullException.ThrowIfNull(roots);
+        // Корень с mod.json — сам мод (Студия запускает игру с одним модом: --mods <каталог мода>).
         return roots.Where(Directory.Exists)
-            .SelectMany(root => Directory.EnumerateDirectories(root)
+            .SelectMany(root => File.Exists(Path.Combine(root, "mod.json")) ? (IEnumerable<string>)[root] : Directory.EnumerateDirectories(root)
                 .Where(dir => File.Exists(Path.Combine(dir, "mod.json")))
                 .OrderBy(Path.GetFileName, StringComparer.OrdinalIgnoreCase))
             .Select(Read)
@@ -340,6 +380,7 @@ public sealed class GameContent
         {
             Dependencies = mod.Dependencies ?? [],
             LoadAfter = mod.LoadAfter ?? [],
+            Plugins = ModInfo.PluginsIn(dir),
         };
     }
 

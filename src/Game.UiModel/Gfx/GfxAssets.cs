@@ -103,6 +103,9 @@ public sealed class GfxAssets
 
     public static GfxAssets Empty { get; } = new([]);
 
+    /// <summary>Опись из архивов, собранных кодом (значки сущностей модов «папка = сущность»).</summary>
+    public static GfxAssets Of(IEnumerable<GfxArchive> archives) => new(archives);
+
     /// <summary>Углы файлов по полному пути, на весь процесс: пути кадров собирают десятки мест рантайма, а загрузчик (кэш текстур) видит только
     /// путь. Пополняется из потоков сцен и рабочих потоков; ключ — полный путь как его строят <see cref="PathOf"/> и
     /// <see cref="FramePaths"/> (с учётом регистра): путь, собранный в обход них, угла не найдёт.</summary>

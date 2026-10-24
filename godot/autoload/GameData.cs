@@ -280,7 +280,71 @@ public partial class GameData : Node
             return;
         }
 
-        GD.Print($"mods: {(_mods.Count == 0 ? "-" : string.Join(", ", _mods.Select(m => m.Id)))}");
+        // Мод с C#-плагином исполняет код (Р21) — помечается в строке модов; плагины регистрируются до чтения правил.
+        GD.Print($"mods: {(_mods.Count == 0 ? "-" : string.Join(", ", _mods.Select(m => m.ExecutesCode ? $"{m.Id} (исполняет код)" : m.Id)))}");
+        Watch();
+        if (_mods.Any(m => m.ExecutesCode))
+        {
+            try
+            {
+                foreach (string line in ModPlugins.Load(_mods)) GD.Print($"plugin {line}");
+            }
+            catch (InvalidDataException e)
+            {
+                GD.PrintErr($"GameData: {e.Message}");
+                GetTree().Quit(1);
+            }
+        }
+    }
+
+    // ---- горячая перезагрузка модов (Э6, --watch)
+
+    private static ContentWatcher? _watcher;
+
+    /// <summary>Ревизия реестра содержимого: растёт с каждой перезагрузкой модов (<c>--watch</c>).</summary>
+    public static int Revision => _watcher?.Revision ?? 0;
+
+    /// <summary>Моды перечитаны: что изменилось. Кто держит прочитанное (партия, окна), перестраивается; правила и карта — со снимка партии.</summary>
+    public static event Action<ContentReload>? Reloaded;
+
+    /// <summary>Снимок партии для перезапуска сцены карты после перезагрузки правил (<see cref="TakeReload"/>).</summary>
+    private static (LastEdict.Data.Play.GameState State, string? Viewer, string? Reopen)? _reload;
+
+    /// <summary>Отложить партию до новой сцены карты: та же партия с новыми правилами, <paramref name="reopen"/> — окно, которое открыть
+    /// снова (<c>build:&lt;столица&gt;</c>).</summary>
+    public static void HoldForReload(LastEdict.Data.Play.GameState state, string? viewer, string? reopen) => _reload = (state, viewer, reopen);
+
+    public static (LastEdict.Data.Play.GameState State, string? Viewer, string? Reopen)? TakeReload()
+    {
+        var held = _reload;
+        _reload = null;
+        return held;
+    }
+
+    /// <summary>Следить за каталогами модов (<c>--watch</c>): правки Студии видны в идущей игре.</summary>
+    private void Watch()
+    {
+        SetProcess(false);
+        if (!OS.GetCmdlineUserArgs().Contains("--watch") || _mods.Count == 0) return;
+        _watcher = new ContentWatcher(_mods.Select(m => m.Dir));
+        GD.Print($"watch: {string.Join(", ", _mods.Select(m => m.Id))}");
+        SetProcess(true);
+    }
+
+    public override void _Process(double delta)
+    {
+        if (_watcher?.Take() is not { } reload) return;
+        // Прочитанное — заново при первом обращении: правила, книга, экраны, кадры, строки, шрифты.
+        _rules = null;
+        _book = null;
+        _content = null;
+        (_vectorFonts, _hasHd) = (null, null);
+        if ((reload.Changes & (ContentChange.Art | ContentChange.Screens)) != 0) UiArt.ForgetImages();
+        GD.Print($"reload revision={reload.Revision} files={reload.Files.Count} rules={Flag(ContentChange.Rules)} screens={Flag(ContentChange.Screens)} " +
+                 $"art={Flag(ContentChange.Art)} code={(reload.Changes.HasFlag(ContentChange.Code) ? "restart-needed" : "0")}");
+        Reloaded?.Invoke(reload);
+
+        int Flag(ContentChange change) => reload.Changes.HasFlag(change) ? 1 : 0;
     }
 
     /// <summary><c>Alt+Enter</c> — полный экран ↔ окно (<see cref="DisplaySettings.ToggleFullscreen"/>), во всех сценах. Экраны получают ввод

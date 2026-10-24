@@ -65,12 +65,20 @@ public static class ContentLayers
             foreach (var mod in ordered)
             {
                 string path = Path.Combine(ContentDir(mod), kind.File);
-                if (!File.Exists(path)) continue;
-                foreach (var node in ContentJson.ReadNodes(kind, File.ReadAllText(path), path))
+                if (File.Exists(path))
+                    foreach (var node in ContentJson.ReadNodes(kind, File.ReadAllText(path), path))
+                    {
+                        Apply(kind, mod, node, path, nodes, index, owner, changes);
+                        string id = IdOf(node, path);
+                        from[id] = nodes[index[id]] is null ? $"её убрал мод {mod.Id}, content/{kind.File}" : $"мод {mod.Id}, content/{kind.File}";
+                    }
+                // «Папка = сущность» (EntityFolders): каталоги content/<вид>/<имя>/entity.json — после файла вида, по имени каталога.
+                foreach (var folder in EntityFolders.Scan(mod, kind))
                 {
-                    Apply(kind, mod, node, path, nodes, index, owner, changes);
-                    string id = IdOf(node, path);
-                    from[id] = nodes[index[id]] is null ? $"её убрал мод {mod.Id}, content/{kind.File}" : $"мод {mod.Id}, content/{kind.File}";
+                    var node = EntityFolders.Read(folder);
+                    Apply(kind, mod, node, folder.EntityPath, nodes, index, owner, changes);
+                    string where = $"{Path.GetFileNameWithoutExtension(kind.File)}/{folder.Name}/{EntityFolders.EntityFile}";
+                    from[folder.Id] = nodes[index[folder.Id]] is null ? $"её убрал мод {mod.Id}, content/{where}" : $"мод {mod.Id}, content/{where}";
                 }
             }
             byKind[kind.Type] = [.. nodes.OfType<JsonObject>().Select(n => ContentJson.ToDef(kind, n, $"«{n["id"]}» ({from[n["id"]!.GetValue<string>()]})"))];

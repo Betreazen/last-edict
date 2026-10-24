@@ -51,6 +51,7 @@
     <ProjectReference Include="..\..\..\src\Engine.Play\Engine.Play.csproj" />
     <ProjectReference Include="..\..\..\src\Game.UiModel\Game.UiModel.csproj" />
     <ProjectReference Include="..\..\..\src\Import.Legacy\Import.Legacy.csproj" />
+    <ProjectReference Include="..\..\..\src\Authoring\Authoring.csproj" />
   </ItemGroup>
 
   <ItemGroup>

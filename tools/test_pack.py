@@ -207,11 +207,15 @@ def build() -> dict[str, list[dict]]:
                    "stealGold", "stealMerchant", "stealMage", "spyRuin", "riotCity"]
     thief = [{"id": ref("thief-action", k), "kind": k, "chance": 40 + 4 * i} for i, k in enumerate(thief_kinds)]
     attitudes = ["small", "medium", "large", "humongous", "smallNoResources", "mediumNoResources", "mediumNoResourcesRuins"]
+    # Ветки окна построек (Э6): найм воинов, найм стрелков, прочие постройки — без переключателей круга (у test-pack нет разметки окна).
+    branches = [{"id": ref("building-branch", "fighters"), "units": ["fighter"]},
+                {"id": ref("building-branch", "archers"), "units": ["archer"]},
+                {"id": ref("building-branch", "other"), "categories": ["guild", "heal", "magic"]}]
     ai = [ai_attitude(i, a) for i, a in enumerate(attitudes)]
     return {
         "units": units, "growth": growth, "attacks": attacks, "effects": effects, "modifiers": modifiers, "spells": spells,
-        "items": items, "buildings": buildings, "races": races, "cities": cities, "lords": lords, "leaderSkills": skills,
-        "landmarks": landmarks, "thiefActions": thief, "ai": ai, "globals": [GLOBALS],
+        "items": items, "buildings": buildings, "buildingBranches": branches, "races": races, "cities": cities, "lords": lords,
+        "leaderSkills": skills, "landmarks": landmarks, "thiefActions": thief, "ai": ai, "globals": [GLOBALS],
     }
 
 
@@ -255,7 +259,7 @@ GLOBALS = {
 
 FILES = {
     "units": "units", "growth": "growth", "attacks": "attacks", "effects": "effects", "modifiers": "modifiers", "spells": "spells",
-    "items": "items", "buildings": "buildings", "races": "races", "cities": "cities", "lords": "lords",
+    "items": "items", "buildings": "buildings", "buildingBranches": "building-branches", "races": "races", "cities": "cities", "lords": "lords",
     "leaderSkills": "leader-skills", "landmarks": "landmarks", "thiefActions": "thief-actions", "ai": "ai", "globals": "globals",
 }
 

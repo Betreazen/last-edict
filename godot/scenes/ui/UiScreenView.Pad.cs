@@ -43,12 +43,23 @@ public partial class UiScreenView
         foreach (var (action, direction) in Directions)
         {
             if (!InputMap.HasAction(action) || !@event.IsActionPressed(action)) continue;
-            string? from = _padFocus is { } focus && _state.Screen.Elements.Any(e => e.Id == focus) && Usable(focus) ? focus
+            // Цели вне разметки (значки дерева построек) — рядом с кнопками экрана.
+            var pad = Logic as IPadTargets;
+            var extra = pad?.PadTargets() ?? [];
+            var screen = extra.Count == 0 ? _state.Screen : _state.Screen with { Elements = [.. _state.Screen.Elements, .. extra] };
+            bool Can(string id) => extra.Any(e => e.Id == id) || Usable(id);
+            string? from = _padFocus is { } focus && screen.Elements.Any(e => e.Id == focus) && Can(focus) ? focus
                 : _state.Hovered is { } hovered && Usable(hovered) ? hovered : null;
-            string? next = UiNavigation.Next(_state.Screen, Usable, from, direction) ?? from;
+            string? next = UiNavigation.Next(screen, Can, from, direction) ?? from;
             if (next is null) return false;   // нажимать нечего — крестовина остаётся стрелками
             _padFocus = next;
-            var rect = _state.Screen.Elements.First(e => e.Id == next).Rect;
+            if (pad is not null && extra.Any(e => e.Id == next))
+            {
+                pad.PadFocused(next);   // вид сдвинулся к цели — место цели заново
+                Refresh();
+                screen = _state.Screen with { Elements = [.. _state.Screen.Elements, .. pad.PadTargets()] };
+            }
+            var rect = screen.Elements.First(e => e.Id == next).Rect;
             var (x, y) = UiNavigation.Center(rect);
             pointer.MoveTo(RootPoint(new Vector2((float)x, (float)y)));
             GD.Print($"pad focus {_state.Screen.Id} {direction.ToString().ToLowerInvariant()} → {next} {pointer.Line()}");

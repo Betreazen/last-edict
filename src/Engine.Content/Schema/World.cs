@@ -17,6 +17,32 @@ public sealed record BuildingDef : ContentDef
     [LegacyGroup, Description("Картинка постройки на экране столицы (у двух построек оригинала).")]
     public BuildingPicture Picture { get; init; } = new();
     [Legacy("COMMENTS")] public string? Comment { get; init; }
+    [Description("Место в дереве окна построек (Last Edict). Нет — ветка по категории и ветке юнитов, место — автораскладкой.")]
+    public BuildingTreePlace? Tree { get; init; }
+}
+
+/// <summary>Место постройки в дереве окна построек (Э6): ветка (вкладка) и клетка сетки дерева. Заданное поле главнее автораскладки.</summary>
+public sealed record BuildingTreePlace
+{
+    [Ref("building-branch"), Description("Ветка окна построек; нет — по категории и ветке юнитов, иначе — ветка требуемой постройки.")]
+    public string? Branch { get; init; }
+    [Description("Столбец сетки дерева (можно дробный: середина между столбцами); нет — автораскладка.")]
+    public double? Column { get; init; }
+    [Description("Строка сетки дерева сверху (0 — первая); нет — по уровню и требованию.")]
+    public int? Row { get; init; }
+}
+
+/// <summary>Ветка окна построек (Э6): вкладка дерева построек столицы. Постройки попадают в ветку по <see cref="BuildingDef.Tree"/>, иначе
+/// по категории (<see cref="Categories"/>) или ветке юнитов постройки найма (<see cref="Units"/>), иначе — в ветку требуемой постройки.
+/// Порядок вкладок — порядок содержимого. База — пять веток окна оригинала (импорт); моды добавляют свои.</summary>
+public sealed record BuildingBranchDef : ContentDef
+{
+    [Description("Строка имени ветки (подсказка вкладки).")] public string? NameText { get; init; }
+    [Description("Переключатель окна построек, который открывает ветку (у веток оригинала — кнопки круга TOG_*); нет — только вкладкой.")]
+    public string? Toggle { get; init; }
+    [Description("Постройки найма каких веток юнитов идут в ветку.")] public IReadOnlyList<BranchKind> Units { get; init; } = [];
+    [Description("Постройки каких категорий идут в ветку (кроме найма — у него ветка юнитов).")]
+    public IReadOnlyList<BuildingCategory> Categories { get; init; } = [];
 }
 
 /// <summary>Картинка постройки на экране столицы (<c>PIC_1</c>, кадры и место).</summary>

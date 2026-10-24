@@ -111,5 +111,10 @@
   "LE_SET_LARGE_UI_HELP": "Крупнее курсор и подсказки кнопок геймпада — для маленького экрана (Steam Deck). «Сам» включает его на Steam Deck.",
   "LE_SET_LARGE_AUTO": "Сам",
   "LE_SET_LARGE_ON": "Включён",
-  "LE_SET_LARGE_OFF": "Выключен"
+  "LE_SET_LARGE_OFF": "Выключен",
+  "LE_BUILD_FIGHTERS": "Воины",
+  "LE_BUILD_MAGES": "Маги",
+  "LE_BUILD_ARCHERS": "Стрелки",
+  "LE_BUILD_SUPPORT": "Поддержка",
+  "LE_BUILD_OTHER": "Здания"
 }

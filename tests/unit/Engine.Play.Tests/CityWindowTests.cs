@@ -799,9 +799,9 @@ public class CityWindowTests(ITestOutputHelper output)
 
     // --- постройки ---
 
-    /// <summary>Окно построек: панели веток расы встроены в экран (Кланы — DLG_M_*), видна одна; щелчок по значку
-    /// выбирает постройку; «Построить» спрашивает цену и строит, второй раз за день — X005TA0239. Значки — по id оригинала постройки
-    /// (<see cref="ArtNames"/>), постройки правил — id содержимого.</summary>
+    /// <summary>Окно построек (Э6): дерево — данными (ветки содержимого, связи — требования), вид с зумом; щелчок по значку выбирает
+    /// постройку; «Построить» спрашивает цену и строит, второй раз за день — X005TA0239. Значки — по id оригинала постройки
+    /// (<see cref="ArtNames"/>), постройки правил — id содержимого. Переключатель круга открывает ветку, у которой он есть.</summary>
     [SkippableFact]
     public void Build_SelectsAndBuildsOncePerDay()
     {
@@ -810,42 +810,37 @@ public class CityWindowTests(ITestOutputHelper output)
         Assert.Empty(human.Buildings);   // лорд-воин: бесплатной постройки нет
         _c = Context(session);
         var screens = Screens();
-        var logic = new BuildLogic(_c, Imported().Content.Flow, screens, BuildLogic.LoadTexts(ImportedData.Content));
+        var logic = BuildLogic.For(_c, ContentSource.Open(ImportedData.Content), BuildLogic.LoadTexts(ImportedData.Content));
         var ui = new UiScreenState(logic.Shape(screens.First(s => s.Id == BuildLogic.Screen)));
         logic.Open(ui);
-        Assert.Equal("TOG_FIGHTER", logic.Branch);
+        Assert.Equal("base:building-branch/fighter", logic.Branch);
+        Assert.Equal(5, logic.Tree.Branches.Count);   // пять веток оригинала — из содержимого
+        Assert.Equal(5, logic.Tabs.Count);
         Assert.DoesNotContain(ui.Screen.Elements, e => e.Id.StartsWith("IMG_PANEL_", StringComparison.Ordinal));   // картинки веток нет
         Assert.StartsWith("Gradient:437x600#", ui.Frame("IMG_TREE_BG"), StringComparison.Ordinal);   // фон дерева — серый градиент
-        Assert.True(ui.IsHidden("IMG_37"));   // ветка магов Кланов спрятана
-        Assert.True(ui.IsHidden("PLATE_TXT_37"));
-        Assert.StartsWith("Plate:", ui.Frame("PLATE_TXT_26"), StringComparison.Ordinal);   // плашка подписи — из картинки ветки
-        // Панель «Управление городом» — к правому краю, дерево — по середине прироста ширины.
-        Assert.Equal(UiAnchor.TopRight, ui.Screen.Elements.First(e => e.Id == "BTN_BUILD").Anchor);
-        Assert.Equal(UiAnchor.Top, ui.Screen.Elements.First(e => e.Id == "IMG_26").Anchor);
+        Assert.Equal(UiAnchor.TopRight, ui.Screen.Elements.First(e => e.Id == "BTN_BUILD").Anchor);   // панель — к правому краю
 
         string b26 = LegacyIds.Base.IdOf("g000bb0026")!;
+        var item = logic.Items.First(i => i.Building == b26);
         string expected = logic.Icon(b26) switch
         {
             BuildIcon.Built => "IconBld:G000BB0026#0000C4", BuildIcon.NeedPrevious => "IconBld:G000BB0026#FF0000",
             BuildIcon.OtherPath => "IconBld:G000BB0026#000000", _ => "IconBld:G000BB0026",
         };
-        Assert.Equal(expected, ui.Frame("IMG_26"));   // построено — синим, нет предыдущей — красным, другой путь — чёрным
+        Assert.Equal(expected, item.Frame);   // построено — синим, нет предыдущей — красным, другой путь — чёрным
         Assert.Equal(new UiFrameRef("IconBld", "G000BB0026", new UiColor(0, 0, 196), 0), UiFrameRef.Parse("IconBld:G000BB0026#0000C4"));
         Assert.Equal(new UiFrameRef("Faces", "X", new UiColor(255, 0, 0), 60), UiFrameRef.Parse("Faces:X#FF0000@60"));
         Assert.Null(UiFrameRef.Parse("DLG_CITY_STACK_ADDSTACK"));
-        string pick = session.Buildable(human.Id).First(b => logic.Status(b) == BuildStatus.CanBeBuilt
-            && ui.Screen.Elements.Any(e => e.Id == IconOf(b) && !ui.IsHidden(e.Id)));
-        var icon = ui.Screen.Elements.First(e => e.Id == IconOf(pick)).Rect;
-        logic.Release(icon.X + 5, icon.Y + 5, ui);
+        Assert.All(logic.Links, l => Assert.True(l.From.Bottom <= l.To.Y));   // связь — сверху вниз
+        string pick = session.Buildable(human.Id).First(b => logic.Status(b) == BuildStatus.CanBeBuilt && logic.Items.Any(i => i.Building == b));
+        var (x, y) = ScreenOf(logic, pick);
+        logic.Release(x, y, ui);
         Assert.Equal(pick, logic.Selected, StringComparer.OrdinalIgnoreCase);
-        // Рамка выбора — контур 1 точка (225,225,0) вокруг значка (0x4adafe).
-        string selId = IconOf(pick) + "_SEL";
-        var sel = ui.Screen.Elements.First(e => e.Id == selId).Rect;
-        Assert.Equal((icon.X - 1, icon.Y - 1, icon.Width + 2, icon.Height + 2), (sel.X, sel.Y, sel.Width, sel.Height));
-        Assert.Equal($"Outline:{icon.Width + 2}x{icon.Height + 2}#E1E100", ui.Frame(selId));
+        Assert.True(logic.Items.First(i => i.Building == pick).Selected);
         Assert.True(ui.IsEnabled("BTN_BUILD"));
         Assert.False(logic.Allows("BTN_BUILD", ui));
-        logic.DoubleClick(icon.X + 5, icon.Y + 5, ui);   // двойной щелчок = «Построить» (0x4add6c)
+        logic.Press(x, y, ui);
+        logic.DoubleClick(x, y, ui);   // двойной щелчок = «Построить» (0x4add6c)
         var ask = Assert.IsType<UiAsk>(logic.TakeRequest());
         output.WriteLine(ask.Text);
         ask.Yes();
@@ -854,16 +849,69 @@ public class CityWindowTests(ITestOutputHelper output)
         Assert.Equal(BuildIcon.Built, logic.Icon(pick));
 
         logic.Handle(new UiGroupChanged("RAD_BUILDING_TYPE", 1, "TOG_MAGE"), ui);
-        Assert.True(ui.IsHidden("IMG_26"));
-        Assert.False(ui.IsHidden("IMG_37"));
-        Assert.Equal("TOG_MAGE", _c.Memory.BuildBranch);   // окно откроется на ней снова
-        var other = session.Buildable(human.Id).FirstOrDefault(b => logic.Icon(b) == BuildIcon.Can
-            && ui.Screen.Elements.Any(e => e.Id == IconOf(b) && !ui.IsHidden(e.Id)));
+        Assert.Equal("base:building-branch/mage", logic.Branch);
+        Assert.DoesNotContain(logic.Items, i => i.Building == b26);
+        Assert.Equal("base:building-branch/mage", _c.Memory.BuildBranch);   // окно откроется на ней снова
+        var other = session.Buildable(human.Id).FirstOrDefault(b => logic.Icon(b) == BuildIcon.Can && logic.Items.Any(i => i.Building == b));
         Skip.If(other is null, "в ветке магов нечего строить");
-        var r = ui.Screen.Elements.First(e => e.Id == IconOf(other!)).Rect;
-        logic.Release(r.X + 5, r.Y + 5, ui);
+        (x, y) = ScreenOf(logic, other!);
+        logic.Release(x, y, ui);
         logic.Handle(new UiClicked("BTN_BUILD"), ui);
         Assert.Equal(_c.Text("X005TA0239"), Assert.IsType<UiTell>(logic.TakeRequest()).Text);
+
+        // Вкладка над деревом открывает ветку «прочие» (у неё тоже есть переключатель круга — он отмечается).
+        var tab = logic.Tabs.First(t => t.Branch == "base:building-branch/other");
+        logic.Release(tab.Rect.X + 5, tab.Rect.Y + 5, ui);
+        Assert.Equal("base:building-branch/other", logic.Branch);
+        Assert.True(ui.IsChecked("TOG_OTHER"));
+    }
+
+    /// <summary>Зум колесом к курсору и тащение в окне построек: точка под курсором остаётся на месте, пределы масштаба, вид не уходит
+    /// за рамку дерева; щелчок после тащения не выбирает постройку.</summary>
+    [SkippableFact]
+    public void BuildTree_ZoomsToCursor_AndPansWithinTheTree()
+    {
+        var (session, _) = Game();
+        _c = Context(session);
+        var logic = BuildLogic.For(_c, ContentSource.Open(ImportedData.Content), BuildLogic.LoadTexts(ImportedData.Content));
+        var ui = new UiScreenState(logic.Shape(Screens().First(s => s.Id == BuildLogic.Screen)));
+        logic.Open(ui);
+        var area = logic.TreeArea!.Value;
+        string first = logic.Items[0].Building;
+        int x = area.X + (area.Width / 2), y = area.Y + (area.Height / 2);
+        var under = logic.View.ToContent(x - area.X, y - area.Y);
+        Assert.True(logic.Wheel(x, y, 3, ui));
+        Assert.True(logic.View.Zoom > 1);
+        var (ux, uy) = logic.View.ToContent(x - area.X, y - area.Y);
+        Assert.InRange(Math.Abs(ux - under.X) + Math.Abs(uy - under.Y), 0, 0.01);   // точка под курсором осталась на месте
+        for (int i = 0; i < 40; i++) logic.Wheel(x, y, 1, ui);
+        Assert.Equal(ZoomView.MaxZoom, logic.View.Zoom, 6);
+        Assert.False(logic.Wheel(area.Right + 50, area.Y + 10, 1, ui));   // вне дерева колесо — не дереву
+        Assert.True(logic.Pan(area.X + 10, area.Y + 10, 5000, 5000, ui));
+        Assert.Equal(0, logic.View.X, 6);   // упёрлись в левый верхний угол содержимого
+        Assert.Equal(0, logic.View.Y, 6);
+        logic.Pan(area.X + 10, area.Y + 10, -50000, -50000, ui);
+        var (cw, ch) = logic.ContentSize;
+        Assert.Equal(area.Width - (cw * logic.View.Zoom), logic.View.X, 6);   // правый нижний край содержимого — у края вида
+        Assert.Equal(area.Height - (ch * logic.View.Zoom), logic.View.Y, 6);
+        // Тащение левой по пустому месту сдвигает вид и не выбирает.
+        double before = logic.View.X;
+        logic.Press(area.X + 2, area.Bottom - 3, ui);
+        logic.Motion(area.X + 40, area.Bottom - 3, ui);
+        logic.Release(area.X + 40, area.Bottom - 3, ui);
+        Assert.NotEqual(before, logic.View.X);
+        Assert.Null(logic.Selected);
+        Assert.True(logic.Key(0x22, ui));   // PageDown (курок геймпада) — мельче
+        Assert.Contains("зум=", logic.Summary, StringComparison.Ordinal);
+    }
+
+    /// <summary>Середина значка постройки в точках разметки экрана.</summary>
+    private static (int X, int Y) ScreenOf(BuildLogic logic, string building)
+    {
+        var icon = logic.Items.First(i => i.Building == building).Icon;
+        var (vx, vy) = logic.View.ToView(icon.X + (icon.Width / 2.0), icon.Y + (icon.Height / 2.0));
+        var area = logic.TreeArea!.Value;
+        return ((int)Math.Round(vx + area.X), (int)Math.Round(vy + area.Y));
     }
 
     // --- столица и навигатор ---
@@ -1072,8 +1120,6 @@ public class CityWindowTests(ITestOutputHelper output)
         Economy.HireList(session.Map, playerId, session.Book!.Economy).FirstOrDefault(t => !session.Book.Rules.Units[t].SizeSmall);
 
     /// <summary>Значок постройки в окне построек: <c>IMG_</c> и номер постройки оригинала без нулей (<c>G000BB0026</c> → <c>IMG_26</c>).</summary>
-    private static string IconOf(string building) => "IMG_" + ArtNames.Of(building)[7..].TrimStart('0');
-
     private static GameSession WithPlayer(GameSession session, MapPlayer player)
     {
         var players = session.Map.Players.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase);

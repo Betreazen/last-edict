@@ -44,7 +44,15 @@ public partial class UiScreenView
             {
                 TipMove(x, y);
                 DragCursorAt(x, y);
-                if (Logic is LastEdict.Data.Ui.Windows.IWindowLogic w) Guarded(() => w.Motion(x, y, _state), $"motion {x},{y}");
+                if (Logic is LastEdict.Data.Ui.Windows.IWindowLogic w)
+                {
+                    if (_middle is { } from && motion.ButtonMask.HasFlag(MouseButtonMask.Middle))
+                    {
+                        Guarded(() => w.Pan(from.X, from.Y, x - from.X, y - from.Y, _state), $"pan {x - from.X},{y - from.Y}");
+                        _middle = new Vector2I(x, y);
+                    }
+                    Guarded(() => w.Motion(x, y, _state), $"motion {x},{y}");
+                }
                 return _state.Move(x, y);
             }),
             InputEventMouseButton { ButtonIndex: MouseButton.Left } button => Pointer(button, (x, y) =>
@@ -58,8 +66,15 @@ public partial class UiScreenView
             // Колесо мыши у движка — стрелки: WndProc 0x5626a3 переводит WM_MOUSEWHEEL в нажатие VK_UP (вперёд) или VK_DOWN (назад) и шлёт
             // его тем же путём, что WM_KEYDOWN (0x562993). Списки сами клавиш не берут (CListBoxInterf, слот клавиатуры — общий 0x5305ac),
             // листают кнопки со стрелками в горячих клавишах (38/40: книга заклинаний, сохранения, сценарии, журнал, наёмники…).
-            InputEventMouseButton { ButtonIndex: MouseButton.WheelUp or MouseButton.WheelDown, Pressed: true } wheel =>
-                KeyPressed(wheel.ButtonIndex == MouseButton.WheelUp ? VkUp : VkDown),
+            // Окно с зумом (дерево построек) съедает колесо над своим видом раньше стрелок.
+            InputEventMouseButton { ButtonIndex: MouseButton.WheelUp or MouseButton.WheelDown, Pressed: true } wheel => Pointer(wheel, (x, y) =>
+                WindowWheel(x, y, wheel.ButtonIndex == MouseButton.WheelUp ? 1 : -1) ? [] : KeyPressed(wheel.ButtonIndex == MouseButton.WheelUp ? VkUp : VkDown)),
+            // Средняя кнопка — тащение вида окна (дерево построек, IWindowLogic.Pan): начало — здесь, сдвиг — с движением мыши.
+            InputEventMouseButton { ButtonIndex: MouseButton.Middle } middle => Pointer(middle, (x, y) =>
+            {
+                _middle = middle.Pressed ? new Vector2I(x, y) : null;
+                return [];
+            }),
             _ => [],
         };
         bool pointed = Dispatch(events, @event is InputEventMouseButton { ButtonIndex: MouseButton.Left or MouseButton.Right } mouse
@@ -82,6 +97,17 @@ public partial class UiScreenView
         Refresh();
         if (events.Count > 0) Fired?.Invoke(events);
         return pointed;
+    }
+
+    /// <summary>Точка нажатия средней кнопки (или последняя точка её тащения); не зажата — null.</summary>
+    private Vector2I? _middle;
+
+    /// <summary>Колесо — логике окна (<see cref="LastEdict.Data.Ui.Windows.IWindowLogic.Wheel"/>); true — съела.</summary>
+    private bool WindowWheel(int x, int y, int steps)
+    {
+        bool eaten = false;
+        if (Logic is LastEdict.Data.Ui.Windows.IWindowLogic window) Guarded(() => eaten = window.Wheel(x, y, steps, _state), $"wheel {x},{y} {steps}");
+        return eaten;
     }
 
     /// <summary>Клавиша — сначала логике окна (<see cref="LastEdict.Data.Ui.Windows.IWindowLogic.Key"/>; клавиша без кода — 0), не съела —
@@ -207,6 +233,7 @@ public partial class UiScreenView
     /// уже названы в строке итога экрана.</summary>
     private void Refresh()
     {
+        SyncTree();   // дерево окна построек: раскладка логики по новому холсту — до кадров (фон дерева меняет размер)
         foreach (var (id, sprite) in _sprites)
         {
             string frame = _state.Frame(id) ?? "";
@@ -383,6 +410,19 @@ public partial class UiScreenView
             return true;
         }
 
+        if (verb == "mdrag")
+        {
+            // Тащение средней кнопкой: «mdrag x,y dx,dy» — от точки разметки на смещение (нажатие, движение, отпускание).
+            string[] drag = arg.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (drag.Length != 2 || Point(drag[0]) is not Vector2I start || Point(drag[1]) is not Vector2I by) return false;
+            Vector2 a = ViewPoint(start), b = ViewPoint(start + by);
+            Push(new InputEventMouseButton { Position = a, ButtonIndex = MouseButton.Middle, Pressed = true, ButtonMask = MouseButtonMask.Middle });
+            Push(new InputEventMouseMotion { Position = b, ButtonMask = MouseButtonMask.Middle });
+            Push(new InputEventMouseButton { Position = b, ButtonIndex = MouseButton.Middle, Pressed = false });
+            at = $"{start.X},{start.Y}";
+            return true;
+        }
+
         if (Point(arg) is not Vector2I design) return false;
         at = $"{design.X},{design.Y}";
         // Точка Design → координаты вьюпорта тем же преобразованием, каким рисуется экран.
@@ -414,6 +454,10 @@ public partial class UiScreenView
         if (ScreenStage.Current is { } stage && stage.Stage == GetViewport()) stage.PushFromStage(@event);
         else GetViewport().PushInput(@event, true);
     }
+
+    /// <summary>Точка разметки → координаты вьюпорта экрана (середина точки).</summary>
+    private Vector2 ViewPoint(Vector2I design) =>
+        (_root!.GetGlobalTransformWithCanvas() * (Vector2)(design - Origin(_state.Screen))) + (new Vector2(0.5f, 0.5f) * _root.Scale);
 
     private static InputEventMouseButton Button(Vector2 at, bool pressed, bool doubleClick) => new()
     {

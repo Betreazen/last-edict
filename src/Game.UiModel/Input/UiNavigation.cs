@@ -19,6 +19,15 @@ public enum NavDirection
 /// нажать (<paramref name="usable"/>). Без начального элемента — кнопка «подтвердить» экрана (горячая клавиша Enter), иначе первая
 /// сверху-слева.
 /// </summary>
+/// <summary>Логика окна, у которой есть цели крестовины вне разметки (значки дерева построек в виде с зумом): прямоугольники — в точках разметки
+/// экрана, как у элементов; шаг на цель зовёт <see cref="PadFocused"/> (вид сдвигается, чтобы цель была видна), затем цель спрашивается заново.</summary>
+public interface IPadTargets
+{
+    IReadOnlyList<UiElement> PadTargets();
+
+    void PadFocused(string id);
+}
+
 public static class UiNavigation
 {
     private const int VkEnter = 13;

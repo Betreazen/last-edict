@@ -80,6 +80,13 @@ public interface IWindowLogic : IScreenLogic
     /// поля ввода фокус, клавиши сюда не приходят.</summary>
     bool Key(int vk, UiScreenState ui) => false;
 
+    /// <summary>Колесо мыши в точке (шаги: + от себя, − к себе): true — логика его съела (зум окна построек).</summary>
+    bool Wheel(int x, int y, int steps, UiScreenState ui) => false;
+
+    /// <summary>Тащение средней кнопкой на (<paramref name="dx"/>, <paramref name="dy"/>) точек разметки от точки (<paramref name="x"/>,
+    /// <paramref name="y"/>): true — логика его съела (сдвиг окна построек).</summary>
+    bool Pan(int x, int y, int dx, int dy, UiScreenState ui) => false;
+
     /// <summary>Что сейчас тащат и примет ли его место под мышью (<c>CDragAndDropInterf</c> <c>0x56c158</c>): true — примет (курсор
     /// обычный), false — нет или вне мест броска (<c>NODRAGDROP</c>); null — ничего не тащат.</summary>
     bool? DropAccepts(int x, int y, UiScreenState ui) => null;

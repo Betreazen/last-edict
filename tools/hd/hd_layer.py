@@ -43,6 +43,11 @@ SETS = {
 }
 MANIFEST = "manifest.json"
 
+# Земля карты собирается на процессоре в логических точках (GroundArt: узоры Ground, маски переходов GrBorder) — HD ей ничего не даёт,
+# а увеличенная и уменьшенная обратно маска портит переходы (чёрная сетка между плитками, ступенчатый берег; проба 24.10).
+# Эти архивы в слой не идут.
+LOGICAL_ONLY = {"Ground.ff", "GrBorder.ff"}
+
 
 def assets_root() -> Path:
     env = os.environ.get("D2_ASSETS_DIR")
@@ -152,6 +157,8 @@ def load_json(path: Path, default):
 
 def import_one(e: dict, export_dir: Path, upscaled: Path, mod: Path) -> tuple[dict | None, list[str], bool]:
     """Один кадр: проверка множителя, прозрачность, запись в слой. (запись описи или None, замечания, восстановлена ли альфа)."""
+    if e.get("archive") in LOGICAL_ONLY:
+        return None, [], False
     up_path = upscaled / e["flat"]
     if not up_path.exists():
         return None, [f"нет апскейла: {e['flat']}"], False

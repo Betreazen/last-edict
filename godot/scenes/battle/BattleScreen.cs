@@ -92,6 +92,9 @@ public partial class BattleScreen : Node
     private UiScreenView _panel = null!;
     private Vector2 _host = new(800, 600);
     private SubViewportContainer _box = null!;
+
+    /// <summary>Холст поля в точках поля (разметка с полями прироста); вьюпорт — он же в точках экрана.</summary>
+    private Vector2 _canvas;
     private Node2D _overlay = null!;
 
     /// <summary>Слой окон поверх боя (сообщение, карточки): портреты и рамки панелей лежат на слоях 3000+ (<see cref="BattleScene.PanelLayer"/>),
@@ -1143,8 +1146,12 @@ public partial class BattleScreen : Node
         // Поле — на весь холст формы окна (Э5, Р13): юниты и разметка 800×600 — по центру, края — фоном места (BattleView.Edges.cs).
         var margin = new Vector2I(Mathf.CeilToInt((((size.X / k) - _host.X) / 2f) - 0.01f), Mathf.CeilToInt((((size.Y / k) - _host.Y) / 2f) - 0.01f));
         _box.Position = ((size - (_host * k)) / 2f) - (new Vector2(margin.X, margin.Y) * k);
-        _box.Size = _host + (new Vector2(margin.X, margin.Y) * 2);
-        _box.Scale = new Vector2(k, k);
+        // Вьюпорт поля — в точках экрана, поле в нём — масштабом холста (как вьюпорт карты, MapScreen.Place): прежде вьюпорт был размером с
+        // холст боя в логических точках и растягивался на экран целиком — HD юнитов и фона терялся (прогон 24.10: «поле и юниты пиксельные»).
+        _canvas = _host + (new Vector2(margin.X, margin.Y) * 2);
+        _box.Scale = Vector2.One;
+        _box.Size = (_canvas * k).Ceil();
+        ((SubViewport)_box.GetChild(0)).CanvasTransform = new Transform2D(0f, new Vector2(k, k), 0f, Vector2.Zero);
         _field.Margin = margin;
         if (_overlay is null) return;
         _overlay.Position = (size - (_host * k)) / 2f;
@@ -1350,7 +1357,7 @@ public partial class BattleScreen : Node
                  + FormattableString.Invariant($"костей_на_поле={_field.CorpsesShown} черепов={_field.DeadMasks} видеопамять_мб={GfxTextures.Bytes / 1048576.0:0.0}"));
         if (_strip is not null) GD.Print($"battle queue конец портретов={_strip.Cells.Count} модель={_session.Upcoming.Count}");
         // Вписывание в окно (Э5, Р13): поле прироста холста, размер поля и растяжка краёв фона.
-        GD.Print($"battle fit поле={_field.Margin.X},{_field.Margin.Y} холст={_box.Size.X}x{_box.Size.Y} края={_field.EdgesShown}");
+        GD.Print($"battle fit поле={_field.Margin.X},{_field.Margin.Y} холст={_canvas.X}x{_canvas.Y} края={_field.EdgesShown}");
         GD.Print($"battle units={units} sprites={sprites} missing={_scene.Missing.Count} round={_session.Round} " +
                  $"turns={_session.Log.Count} card={(CardShown ? 1 : 0)} winner={_session.Winner ?? "-"} фильтр={(int)_field.TextureFilter} ms={(DateTime.UtcNow - start).TotalMilliseconds:F0}" +
                  (shot is null ? "" : $" shot={shot}"));

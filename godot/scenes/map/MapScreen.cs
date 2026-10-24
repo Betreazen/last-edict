@@ -480,12 +480,14 @@ public partial class MapScreen : Node
             _face.Visible = false;
             return;
         }
-        var canvas = GfxTextures.Canvas(path);
+        // HD — полной точности (прежде Canvas сводил портрет к логическим точкам): раны и значки — в его множителе.
+        var canvas = GfxTextures.CanvasHd(path);
+        int scale = ImageScales.Of(canvas);
         var built = state.Face is { } look ? PanelFaceImage(canvas, look) : canvas;
-        var texture = ImageTexture.CreateFromImage(built);
-        built.Dispose();
+        var texture = ImageScales.Composed(built, scale);
         var old = _face.Texture;
         _face.Texture = texture;
+        _face.TextureFilter = ImageScales.Filter(texture, CanvasItem.TextureFilterEnum.Nearest);
         old?.Dispose();   // прежний портрет больше никто не держит — видеопамять сразу, а не сборкой мусора
         _face.Visible = true;
         var size = texture.GetSize();
@@ -500,11 +502,12 @@ public partial class MapScreen : Node
     /// направо вместе с маской и долей; значки (<c>Battle.ff</c>) — поверх по своим местам, без отражения.</summary>
     private static Image PanelFaceImage(Image face, PanelFace look)
     {
+        int s = ImageScales.Of(face);   // HD: точки лица гуще в s раз, места — в логических точках × s
         face.Convert(Image.Format.Rgba8);
         int w = face.GetWidth(), h = face.GetHeight();
         byte[] data = face.GetData();
-        var mask = look.Mask is { } name ? FaceMask(name) : null;
-        BattlePanel.Shade(data, w, null, look.KeptRows(h), mask?.Data, mask?.W ?? 0, mask?.H ?? 0);
+        var mask = look.Mask is { } name ? FaceMask(name, s) : null;
+        BattlePanel.Shade(data, w, null, look.KeptRows(h / s) * s, mask?.Data, mask?.W ?? 0, mask?.H ?? 0);
         face.SetData(w, h, false, Image.Format.Rgba8, data);
         if (PanelFace.Mirrored) face.FlipX();
         var gfx = GameData.Content.Gfx;
@@ -512,10 +515,10 @@ public partial class MapScreen : Node
         {
             if (gfx.Image("Battle", icon.Name) is not { } info || GfxAssets.PathOf(info, GameData.GfxRoot) is not { } path || !File.Exists(path))
                 continue;
-            var image = GfxTextures.Canvas(path);
+            var image = ImageScales.AtScale(GfxTextures.CanvasHd(path), s);
             image.Convert(Image.Format.Rgba8);
-            int x = icon.Centered ? (w / 2) - (image.GetWidth() / 2) : icon.X;   // 0x48dbd4…0x48dbf5: половина ширины − половина значка
-            face.BlendRect(image, new Rect2I(Vector2I.Zero, image.GetSize()), new Vector2I(x, icon.Y));
+            int x = icon.Centered ? (w / 2) - (image.GetWidth() / 2) : icon.X * s;   // 0x48dbd4…0x48dbf5: половина ширины − половина значка
+            face.BlendRect(image, new Rect2I(Vector2I.Zero, image.GetSize()), new Vector2I(x, icon.Y * s));
             image.Dispose();
         }
         return face;
@@ -530,7 +533,8 @@ public partial class MapScreen : Node
             || GfxAssets.PathOf(info, GameData.GfxRoot) is not { } path || !File.Exists(path))
             return "сырое=- отражённое=-";
         var shown = texture.GetImage();
-        var raw = GfxTextures.Canvas(path);
+        var raw = GfxTextures.CanvasHd(path);
+        if (shown.HasMipmaps()) shown.ClearMipmaps();
         raw.Convert(Image.Format.Rgba8);
         shown.Convert(Image.Format.Rgba8);
         var flipped = (Image)raw.Duplicate();
@@ -556,19 +560,21 @@ public partial class MapScreen : Node
         }
     }
 
-    /// <summary>Точки маски павшего (<c>Faces</c>, <c>MASKDEADS</c>/<c>MASKDEADL</c>) — по одному разу на запуск; нет в графике — null.</summary>
-    private static (byte[] Data, int W, int H)? FaceMask(string name)
+    /// <summary>Точки маски павшего (<c>Faces</c>, <c>MASKDEADS</c>/<c>MASKDEADL</c>) в множителе портрета <paramref name="scale"/> — по одному
+    /// разу на запуск; нет в графике — null.</summary>
+    private static (byte[] Data, int W, int H)? FaceMask(string name, int scale)
     {
-        if (_faceMasks.TryGetValue(name, out var cached)) return cached;
+        string key = $"{name}@{scale}";
+        if (_faceMasks.TryGetValue(key, out var cached)) return cached;
         (byte[], int, int)? mask = null;
         if (GameData.Content.Gfx.Image("Faces", name) is { } info && GfxAssets.PathOf(info, GameData.GfxRoot) is { } path && File.Exists(path))
         {
-            var image = GfxTextures.Canvas(path);
+            var image = ImageScales.AtScale(GfxTextures.CanvasHd(path), scale, smooth: false);
             image.Convert(Image.Format.Rgba8);
             mask = (image.GetData(), image.GetWidth(), image.GetHeight());
             image.Dispose();
         }
-        return _faceMasks[name] = mask;
+        return _faceMasks[key] = mask;
     }
 
     private static readonly Dictionary<string, (byte[] Data, int W, int H)?> _faceMasks = new(StringComparer.OrdinalIgnoreCase);

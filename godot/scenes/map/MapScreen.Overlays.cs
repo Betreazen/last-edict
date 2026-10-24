@@ -416,12 +416,12 @@ public partial class MapScreen
         var (screen, logic, close) = _overlayQueue.Dequeue();
         _overlay = new UiScreenView { Hosted = screen, Name = screen, SlotHost = _host, Logic = logic };
         // По середине холста карты в его масштабе, как окна (MapScreen.Windows.cs): без места свиток вписывался во всё окно сам —
-        // 337×367 во всю высоту экрана (ответ пользователя 24.10).
+        // 337×367 во всю высоту экрана (ответ пользователя 24.10). Без градиента по бокам: у окна события (800×600) прозрачные места, сквозь
+        // них карта видна, как в оригинале (градиент закрывал её — «карта и интерфейс исчезли», прогон 24.10).
         if (Centered(screen) is { } at)
         {
             _overlay.SlotAt = at;
-            _overlay.Backdrop = FullScreen(screen);
-            if (!_overlay.Backdrop) _overlay.SlotScale = WindowScale;
+            if (!FullScreen(screen)) _overlay.SlotScale = WindowScale;
         }
         _overlayClose = close;
         var shown = _overlay;

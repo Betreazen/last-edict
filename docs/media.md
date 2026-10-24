@@ -35,7 +35,9 @@ git, старые снимки удаляются без переписыван�
 `-small`), `compare-battle-queue` (+ `-small`); с Э5 — `compare-widescreen`, `compare-settings`, `controls`, `gamepad` (каждый + `-small`);
 с 24.10 — `compare-hd-detail`, `compare-hd-map`, `compare-hd-battle`, `compare-hd-hero` (каждый + `-small`): «было» — вид оригинала
 (без модов, «Чёткий», карта по окну, узкий бой), «стало» — HD-слой пользователя, показ «HD», чёткий текст, резкость 40 %, широкий бой;
-окно 1920×1080, `--stage-shot` (сцена карты с `--sg` сохранения корпуса, `--settings` с `mapZoom`), деталь — кусок боя ×2.
+окно 1920×1080, `--stage-shot` (сцена карты с `--sg` сохранения корпуса, `--settings` с `mapZoom`), деталь — кусок боя ×2; с 25.10 —
+`compare-build-tree` (окно построек: «было» — сборка до Э6 `08bcb08`, «стало» — `main`; сохранение стенда `CheckSaves` за гномов, день 30,
+`--scale hd --vector-text`, HD-слой пользователя) и `studio-tree` (Студия, `--check --shot`), каждый + `-small`.
 
 ## Как выложить
 

@@ -152,6 +152,11 @@ public static class SettingsTheme
     /// <summary>Рамка Kenney (<paramref name="file"/>, 48×48, углы 16; <paramref name="half"/> — вдвое мельче) золотом поверх поля
     /// <paramref name="back"/> во всю рамку; поля содержимого — <paramref name="x"/>, <paramref name="y"/>. Нет файла — плоское поле с
     /// золотой каймой.</summary>
+    /// <summary>Плашка в рамке темы (дерево построек, Э6): поле <paramref name="back"/>, золотая нить <paramref name="line"/>; малая — рамка
+    /// кнопок, иначе — рамка окна. Поле прозрачное — только рамка.</summary>
+    public static StyleBox Plate(Color back, Color line, bool small = true) =>
+        small ? Framed("panel-border-010.png", back, 16, 6, 2, line, half: true) : Framed("panel-border-030.png", back, 16, 8, 8, line);
+
     private static StyleBox Framed(string file, Color back, int corner, int x, int y, Color? line = null, bool half = false)
     {
         string path = GameData.FromRoot(Path.Combine(Art, file));
@@ -174,7 +179,7 @@ public static class SettingsTheme
             for (int px = 0; px < image.GetWidth(); px++)
             {
                 float a = lines.GetPixel(px, py).A;
-                image.SetPixel(px, py, back.Lerp(tone with { A = 1 }, a * tone.A) with { A = back.A });
+                image.SetPixel(px, py, back.Lerp(tone with { A = 1 }, a * tone.A) with { A = Mathf.Max(back.A, a * tone.A) });   // поле насквозь — видна нить
             }
         var texture = ImageTexture.CreateFromImage(image);
         return new StyleBoxTexture

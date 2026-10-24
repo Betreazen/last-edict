@@ -28,6 +28,9 @@ public partial class GameData : Node
 
     /// <summary>Id подключённых модов по порядку загрузки (заголовок журнала команд — повтор берёт то же содержимое).</summary>
     public static IReadOnlyList<string> ModIds => [.. _mods.Select(m => m.Id)];
+
+    /// <summary>Включённые моды (Студия: моды под открытым).</summary>
+    public static IReadOnlyList<ModInfo> Mods => _mods;
     private static string _dataDir = "";
 
     /// <summary>Корень распакованных кадров интерфейса (<c>assets/ui</c>). Кадры модов лежат у модов, и путь
@@ -281,7 +284,90 @@ public partial class GameData : Node
             return;
         }
 
-        GD.Print($"mods: {(_mods.Count == 0 ? "-" : string.Join(", ", _mods.Select(m => m.Id)))}");
+        // Мод с C#-плагином исполняет код (Р21): включается только с явным разрешением (--allow-plugins; Студия и d2mod run передают его
+        // для мода автора), иначе пропускается целиком — его правила без поведений плагина не загрузились бы. Плагины — до чтения правил.
+        bool allow = args.Contains("--allow-plugins");
+        var skipped = allow ? [] : _mods.Where(m => m.ExecutesCode).ToList();
+        _mods = [.. _mods.Except(skipped)];
+        GD.Print($"mods: {(_mods.Count == 0 ? "-" : string.Join(", ", _mods.Select(m => m.ExecutesCode ? $"{m.Id} (исполняет код)" : m.Id)))}" +
+                 (skipped.Count == 0 ? "" : $" пропущены={string.Join(",", skipped.Select(m => m.Id))} (исполняют код — нужен --allow-plugins)"));
+        foreach (var line in ModPlugins.Load(_mods))
+            if (line.Failed) GD.PrintErr($"plugin {line}");
+            else GD.Print($"plugin {line}");
+        Watch();
+    }
+
+    // ---- горячая перезагрузка модов (Э6, --watch)
+
+    private static ContentWatcher? _watcher;
+
+    /// <summary>Ревизия реестра содержимого: растёт с каждой перезагрузкой модов (<c>--watch</c>).</summary>
+    public static int Revision => _watcher?.Revision ?? 0;
+
+    /// <summary>Моды перечитаны: что изменилось. Кто держит прочитанное (партия, окна), перестраивается; правила и карта — со снимка партии.</summary>
+    public static event Action<ContentReload>? Reloaded;
+
+    /// <summary>Снимок партии для перезапуска сцены карты после перезагрузки правил (<see cref="TakeReload"/>).</summary>
+    private static (LastEdict.Data.Play.GameState State, string? Viewer, string? Reopen)? _reload;
+
+    /// <summary>Отложить партию до новой сцены карты: та же партия с новыми правилами, <paramref name="reopen"/> — окно, которое открыть
+    /// снова (<c>build:&lt;столица&gt;</c>).</summary>
+    public static void HoldForReload(LastEdict.Data.Play.GameState state, string? viewer, string? reopen) => _reload = (state, viewer, reopen);
+
+    public static (LastEdict.Data.Play.GameState State, string? Viewer, string? Reopen)? TakeReload()
+    {
+        var held = _reload;
+        _reload = null;
+        return held;
+    }
+
+    /// <summary>Следить за каталогами модов (<c>--watch</c>): правки Студии видны в идущей игре.</summary>
+    private void Watch()
+    {
+        SetProcess(false);
+        if (!OS.GetCmdlineUserArgs().Contains("--watch") || _mods.Count == 0) return;
+        _watcher = new ContentWatcher(_mods.Select(m => m.Dir));
+        GD.Print($"watch: {string.Join(", ", _mods.Select(m => m.Id))}");
+        SetProcess(true);
+    }
+
+    /// <summary>Сцена сейчас не может перезапуститься (идёт ход ИИ, бой): перезагрузка ждёт. Ставит карта.</summary>
+    public static Func<bool>? Busy { get; set; }
+
+    /// <summary>Пачка изменений, ждущая конца хода ИИ или боя (несколько пачек сливаются).</summary>
+    private static ContentReload? _waiting;
+
+    public override void _Process(double delta)
+    {
+        if (_watcher?.Take() is { } taken)
+            _waiting = _waiting is { } was ? new ContentReload(was.Changes | taken.Changes, [.. was.Files, .. taken.Files], taken.Revision) : taken;
+        if (_waiting is not { } reload || Busy?.Invoke() == true) return;
+        _waiting = null;
+        // Новое — сначала целиком: мод, который не читается (файл пишется, ошибка в данных), не роняет партию — играет прежнее.
+        ContentSet rules;
+        LastEdict.Data.Play.GameBook book;
+        GameContent content;
+        try
+        {
+            rules = LoadRules();
+            book = LastEdict.Data.Play.GameBook.Load(rules);
+            content = GameContent.Load(_dataDir, _mods, GameDataDir, () => rules);
+            _ = content.Screens;
+        }
+        catch (Exception e) when (e is InvalidDataException or IOException or System.Text.Json.JsonException or KeyNotFoundException
+                                       or FormatException or ArgumentException)
+        {
+            GD.PrintErr($"reload revision={reload.Revision}: мод не перечитан — {e.Message}; играет прежнее содержимое");
+            return;
+        }
+        (_rules, _book, _content) = (rules, book, content);
+        (_vectorFonts, _hasHd) = (null, null);
+        if ((reload.Changes & (ContentChange.Art | ContentChange.Screens)) != 0) UiArt.ForgetImages();
+        GD.Print($"reload revision={reload.Revision} files={reload.Files.Count} rules={Flag(ContentChange.Rules)} screens={Flag(ContentChange.Screens)} " +
+                 $"art={Flag(ContentChange.Art)} code={(reload.Changes.HasFlag(ContentChange.Code) ? "restart-needed" : "0")}");
+        Reloaded?.Invoke(reload);
+
+        int Flag(ContentChange change) => reload.Changes.HasFlag(change) ? 1 : 0;
     }
 
     /// <summary><c>Alt+Enter</c> — полный экран ↔ окно (<see cref="DisplaySettings.ToggleFullscreen"/>), во всех сценах. Экраны получают ввод

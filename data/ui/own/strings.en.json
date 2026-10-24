@@ -108,5 +108,10 @@
   "LE_SET_LARGE_UI_HELP": "Larger cursor and gamepad button hints for small screens (Steam Deck). \"Auto\" turns it on on Steam Deck.",
   "LE_SET_LARGE_AUTO": "Auto",
   "LE_SET_LARGE_ON": "On",
-  "LE_SET_LARGE_OFF": "Off"
+  "LE_SET_LARGE_OFF": "Off",
+  "LE_BUILD_FIGHTERS": "Fighters",
+  "LE_BUILD_MAGES": "Mages",
+  "LE_BUILD_ARCHERS": "Archers",
+  "LE_BUILD_SUPPORT": "Support",
+  "LE_BUILD_OTHER": "Buildings"
 }

@@ -1,0 +1,79 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "Disciples: building-branch",
+ "type": "object",
+ "properties": {
+  "$schema": {
+   "type": "string"
+  },
+  "buildingBranches": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "description": "Устойчивый id «мод:вид/имя» — по нему ссылаются другие сущности и моды.",
+      "type": "string"
+     },
+     "legacyId": {
+      "description": "Id оригинала (Gunits.UNIT_ID и т. п.): по нему сущность находят сохранения, карты и журналы. У новых сущностей модов — нет.",
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "nameText": {
+      "description": "Строка имени ветки (подсказка вкладки).",
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "toggle": {
+      "description": "Переключатель окна построек, который открывает ветку (у веток оригинала — кнопки круга TOG_*); нет — только вкладкой.",
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "units": {
+      "description": "Постройки найма каких веток юнитов идут в ветку.",
+      "type": "array",
+      "items": {
+       "enum": [
+        "fighter",
+        "archer",
+        "mage",
+        "special",
+        "sideshow",
+        "hero",
+        "noble",
+        "summon"
+       ]
+      }
+     },
+     "categories": {
+      "description": "Постройки каких категорий идут в ветку (кроме найма — у него ветка юнитов).",
+      "type": "array",
+      "items": {
+       "enum": [
+        "guild",
+        "heal",
+        "magic",
+        "unit"
+       ]
+      }
+     }
+    },
+    "required": [
+     "id"
+    ],
+    "additionalProperties": false
+   }
+  }
+ },
+ "required": [
+  "buildingBranches"
+ ],
+ "additionalProperties": false
+}

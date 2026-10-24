@@ -1,0 +1,25 @@
+{
+ "$schema": "../../data/content/schema/building-branches.schema.json",
+ "buildingBranches": [
+  {
+   "id": "test:building-branch/fighters",
+   "units": [
+    "fighter"
+   ]
+  },
+  {
+   "id": "test:building-branch/archers",
+   "units": [
+    "archer"
+   ]
+  },
+  {
+   "id": "test:building-branch/other",
+   "categories": [
+    "guild",
+    "heal",
+    "magic"
+   ]
+  }
+ ]
+}

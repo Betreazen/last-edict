@@ -22,6 +22,7 @@ public sealed class ContentSet
         new("spell", "spells.json", typeof(SpellDef)),
         new("item", "items.json", typeof(ItemDef)),
         new("building", "buildings.json", typeof(BuildingDef)),
+        new("building-branch", "building-branches.json", typeof(BuildingBranchDef)),
         new("race", "races.json", typeof(RaceDef)),
         new("city", "cities.json", typeof(CityLevelDef)),
         new("lord", "lords.json", typeof(LordDef)),
@@ -74,6 +75,7 @@ public sealed class ContentSet
     public IReadOnlyList<SpellDef> Spells => Of<SpellDef>();
     public IReadOnlyList<ItemDef> Items => Of<ItemDef>();
     public IReadOnlyList<BuildingDef> Buildings => Of<BuildingDef>();
+    public IReadOnlyList<BuildingBranchDef> BuildingBranches => Of<BuildingBranchDef>();
     public IReadOnlyList<RaceDef> Races => Of<RaceDef>();
     public IReadOnlyList<CityLevelDef> Cities => Of<CityLevelDef>();
     public IReadOnlyList<LordDef> Lords => Of<LordDef>();

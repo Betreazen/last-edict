@@ -181,8 +181,7 @@ public partial class MapScreen
     private IScreenLogic? CapitalWindow(string screen, string capitalId) => Windows is not { } context ? null : screen switch
     {
         CityStackLogic.Screen => new CityStackLogic(context, capitalId, GameData.Content.Screens),
-        BuildLogic.Screen => new BuildLogic(context, GameData.Content.Flow, GameData.Content.Screens,
-                                            _buildingTexts ??= BuildLogic.LoadTexts(GameData.Rules)),
+        BuildLogic.Screen => BuildLogic.For(context, GameData.Rules, _buildingTexts ??= BuildLogic.LoadTexts(GameData.Rules)),
         _ => null,
     };
 

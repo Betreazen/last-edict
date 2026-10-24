@@ -116,6 +116,9 @@ public partial class BenchScene : Node
         cases.AddRange(BattleCases());
         foreach (string screen in new[] { "DLG_CITY_STACK", "DLG_OPTIONS", "DLG_BATTLE_A", "DLG_CAST_SPELL", "DLG_MAIN_MENU" })
             cases.Add(new($"ui_open_{screen}", () => OpenUi(screen)));
+        // Окно построек (Э6): дерево данными на Control — открытие с деревом лорда игрока и шаг зума колесом с перерисовкой вида.
+        cases.Add(new("ui_open_build_tree", () => OpenBuild(zoom: false)));
+        cases.Add(new("build_tree_zoom", () => OpenBuild(zoom: true)));
         cases.AddRange(MemoryCases());
         return cases;
     }
@@ -431,6 +434,38 @@ public partial class BenchScene : Node
         AddChild(view);
         double us = Stopwatch.GetElapsedTime(t0).TotalMicroseconds;
         _notes[$"ui_open_{screen}"] = $"nodes_in_screen={CountNodes(view)}";
+        await Close(view);
+        return us;
+    }
+
+    private GameSession? _buildSession;
+
+    /// <summary>Окно построек на партии сохранения: открытие (разбор экрана, дерево веток, вид) или — с <paramref name="zoom"/> — десять шагов
+    /// колеса к середине дерева с перерисовкой (зум и вид — в логике, узлы — в BuildTreeView).</summary>
+    private async Task<double> OpenBuild(bool zoom)
+    {
+        var session = _buildSession ??= SaveSession();
+        string viewer = ViewerOf(session)!;
+        var context = new LastEdict.Data.Ui.Windows.WindowContext(session, viewer, GameData.Strings(GameData.Language),
+            LastEdict.Data.Ui.Windows.UnitFaces.Load(GameData.Rules, _ => true));
+        var logic = LastEdict.Data.Ui.Windows.BuildLogic.For(context, GameData.Rules, LastEdict.Data.Ui.Windows.BuildLogic.LoadTexts(GameData.Rules));
+        var view = new UiScreenView { Hosted = LastEdict.Data.Ui.Windows.BuildLogic.Screen, Name = "build", Logic = logic };
+        long t0 = Stopwatch.GetTimestamp();
+        AddChild(view);
+        double us = Stopwatch.GetElapsedTime(t0).TotalMicroseconds;
+        if (zoom && logic.TreeArea is { } area)
+        {
+            await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+            t0 = Stopwatch.GetTimestamp();
+            for (int i = 0; i < 10; i++)
+            {
+                logic.Wheel(area.X + (area.Width / 2), area.Y + (area.Height / 2), i < 5 ? 1 : -1, view.State);
+                view.Sync();
+                await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+            }
+            us = Stopwatch.GetElapsedTime(t0).TotalMicroseconds / 10;
+        }
+        _notes[zoom ? "build_tree_zoom" : "ui_open_build_tree"] = $"nodes_in_screen={CountNodes(view)} drawn={view.TreeDrawn} {logic.Summary.Split(' ')[0]}";
         await Close(view);
         return us;
     }

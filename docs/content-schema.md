@@ -19,6 +19,7 @@
 | `spell` | `spells.json` | `SpellDef` | `Gspells` |
 | `item` | `items.json` | `ItemDef` | `GItem` |
 | `building` | `buildings.json` | `BuildingDef` | `Gbuild` |
+| `building-branch` | `building-branches.json` | `BuildingBranchDef` | — (ветки окна построек; база — пять веток оригинала из кода импорта, §9) |
 | `race` | `races.json` | `RaceDef` | `Grace` + `Tleader` (имена героев), `TAiMsg` (сообщения ИИ) |
 | `city` | `cities.json` | `CityLevelDef` | `GcityInf` |
 | `lord` | `lords.json` | `LordDef` | `Glord` + `GbuiList` (постройки), `GspellR` (исследования) |
@@ -183,3 +184,40 @@ life, death, runic, grove) — поля `Bank` (на них стоят прав�
 нехватка на литьё, доход ИИ (валюта мода — как мана), `+`, `-`, равенством, проверкой цены (`Bank.Covers`, ею пользуются постройка и
 литьё) и записью в сохранение (у казны оригинала поля нет вовсе, печать прежняя). `Prices.ToBank`/`Prices.Of` переводят цену ↔ казну без
 потерь. Доход, жилы и окна казны в валюте мода — Э4 (ресурсы своей версии). Тесты — `BankCurrencyTests`, `ContentSchemaTests.Price_*`.
+
+## 9. Дерево построек (Э6)
+
+Окно построек строится из содержимого, а не из разметки `.dlg` (`docs/ui-windows.md` §33).
+
+- **Ветка окна** — вид `building-branch` (`building-branches.json`, `BuildingBranchDef`): `nameText` (строка имени вкладки), `toggle`
+  (переключатель круга `RAD_BUILDING_TYPE`, который открывает ветку; нет — только вкладкой), `units` (ветки юнитов построек найма) и
+  `categories` (категории прочих построек). Порядок вкладок — порядок содержимого. База — пять веток оригинала (импорт: `fighter`, `mage`,
+  `archer`, `special`, `other`).
+- **Место постройки** — поле `tree` у `building` (`BuildingTreePlace`): `branch` (ветка), `column` (столбец сетки, можно дробный) и `row`
+  (строка). Нет поля — ветка по категории и ветке юнитов, иначе ветка требуемой постройки; место — автораскладкой. Заданное — главнее.
+- Постройки в дереве — список лорда (`lords[].buildings`); связь — `requires`.
+
+Мод с новой веткой и постройкой — без кода:
+
+```json
+// mods/towers/content/building-branches.json
+{ "buildingBranches": [ { "id": "towers:building-branch/towers", "categories": ["magic"] } ] }
+// mods/towers/content/buildings/spire/entity.json  (папка = сущность, §10)
+{ "level": 3, "category": "magic", "requires": "base:building/magic-tower", "cost": { "gold": 900 },
+  "tree": { "branch": "towers:building-branch/towers", "column": 0, "row": 0 } }
+```
+
+## 10. Папка = сущность, строки и значки (Э6, Студия)
+
+Кроме файла вида (`content/buildings.json`) сущность мода может лежать своим каталогом `content/<вид>/<имя>/` (`EntityFolders`):
+
+- `entity.json` — та же запись, что элемент массива файла вида; `id` можно не писать — он `<мод>:<вид>/<имя каталога>` (другой id — ошибка);
+- `strings.<язык>.json` — тексты короткими ключами (`{"name": "Шпиль", "description": "…"}`); **id строк автоматические:** текстовое поле
+  (`nameText`, `descriptionText`…), которого нет в `entity.json`, получает ключ `<id>#<ключ>` (`towers:building/spire#name`), строки идут в
+  строки игры поверх (`GameContent.Strings`; нет языка — английский);
+- `icon.png` — значок (у построек — в архив `IconBld` под именем графики сущности, без описи).
+
+Каталог читается слоем мода наравне с файлом вида (после файла, по имени каталога) — шага сборки нет: Студия, `d2mod` и игра видят одно и то
+же. **C#-плагин** мода — `plugins/*.dll`: мод «исполняет код» (`ModInfo.ExecutesCode`, строка `mods:` игры, Студия, `d2mod validate`),
+точки входа — открытые типы `IModPlugin` (регистрируют поведения эффектов и прочее до чтения правил; `ModPlugins`). Песочницы нет — только
+доверенные моды (Р21).

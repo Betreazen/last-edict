@@ -1064,7 +1064,13 @@ def city_cases(repo: Path) -> list[tuple[Path, str, list[tuple[str, list[str]]]]
             ("panel click BTN_CAPITAL", ["панель=DLG_CAPITAL"]),
             ("cap 5,5", ["постройка=-", "пал=DLG_ISO_PAL"]),
             ("cap click", ["окна=DLG_BUILD_STRUCTURE "]),
-            ("ui click TOG_MAGE", ["ветка=TOG_MAGE"]),
+            ("ui click TOG_MAGE", ["ветка=base:building-branch/mage", "вкладок=5"]),
+            # Дерево построек данными (Э6): вкладка, зум колесом к курсору, тащение средней кнопкой, крестовина по значкам, A — выбор.
+            ("ui click 30,15", ["ветка=base:building-branch/fighter"]),
+            ("ui wheelup 200,300", ["зум=1.088"]),
+            ("ui mdrag 200,300 -40,-30", ["зум=1.088", "вид=34.2,-69.6"]),
+            ("ui pad DpadDown", ["выбрано=-"]),
+            ("ui pad A", ["выбрано=base:building/"]),
             ("ui click BTN_CLOSE", ["окна=-"]),
             ("panel click BTN_RESEARCH_SPELL", ["окна=DLG_RESEARCH_SPELL "]),
             ("ui click BTN_CLOSE", ["окна=-"]),
@@ -1156,6 +1162,128 @@ def city_cases(repo: Path) -> list[tuple[Path, str, list[tuple[str, list[str]]]]
             ("ui click BTN_CLOSE", ["окна=-"]),
         ]),
     ]
+
+
+def mod_reload(repo: Path) -> tuple[bool, str]:
+    """Горячая перезагрузка мода (Э6, Студия): мод собирается командами d2mod (постройка-каталог со строкой, лорды Кланов), игра с --watch
+    открывает окно построек на ветке «здания», затем d2mod переносит постройку мода в другую клетку — игра перечитывает мод,
+    перезапускает карту со снимка партии (тот же день) и снова открывает окно на той же ветке с постройкой мода на новом месте. Правка —
+    после отметки игры «жду» (шаг reloadwait), а не по часам."""
+    save, _m, why = stand(repo, 30)
+    if save is None:
+        return True, f"перезагрузка мода: пропуск — {why}"
+    d2mod = dotnet_tool(repo, "d2mod")
+    mod = repo / ".cache" / "ui-check" / f"mod-reload-{os.getpid()}-{threading.get_ident()}" / "towers"
+    if mod.parent.exists():
+        shutil.rmtree(mod.parent)
+    base_lords = json.loads((repo / "data" / "content" / "base" / "lords.json").read_text(encoding="utf-8"))["lords"]
+    clans = [l for l in base_lords if l["id"].startswith("base:lord/mountain-clans")]
+    if not clans:
+        return True, "перезагрузка мода: пропуск — в базе нет лордов Кланов"
+    cmds = [["new", str(mod), "--id", "towers"],
+            ["add", str(mod), "building", "spire", "--json",
+             json.dumps({"level": 3, "category": "magic", "requires": "base:building/magic-tower-2", "cost": {"gold": 900}})],
+            ["text", str(mod), "towers:building/spire", "ru", "name", "Шпиль"]]
+    cmds += [["set", str(mod), l["id"], "buildings", json.dumps(l["buildings"] + ["towers:building/spire"])] for l in clans]
+    for c in cmds:
+        r = subprocess.run([*d2mod, *c], capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=repo)
+        if r.returncode != 0:
+            return False, f"перезагрузка мода: d2mod {c[0]} — код {r.returncode}\n{r.stdout}{r.stderr}"
+
+    def touch() -> None:
+        # Правка — когда игра дошла до шага reloadwait (отметка .studio/waiting): под нагрузкой пула старт игры долгий.
+        mark, deadline = mod / ".studio" / "waiting", time.monotonic() + 120
+        while not mark.exists() and time.monotonic() < deadline:
+            time.sleep(0.2)
+        time.sleep(0.5)
+        subprocess.run([*d2mod, "set", str(mod), "towers:building/spire", "tree", '{"column":3,"row":2}'],
+                       capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=repo)
+    threading.Thread(target=touch, daemon=True).start()
+    code, out = godot(repo, ["--mods", str(mod), "--watch", "--state", str(save), "--check", "--player", STAND_PLAYER,
+                             "--clicks", "panel click BTN_CAPITAL;cap click;ui click TOG_OTHER;reloadwait"], "res://scenes/map/MapScreen.tscn")
+    before = next((l for l in out.splitlines() if l.startswith("ui click_TOG_OTHER")), "")
+    after = next((l for l in out.splitlines() if l.startswith("mapscreen ")), "")
+    reload = next((l for l in out.splitlines() if l.startswith("reload revision=")), "")
+    if code != 0 or "towers:building/spire@" not in before or "rules=1" not in reload:
+        return False, f"перезагрузка мода: код {code}, до: {before[:300]}\nперезагрузка: {reload}\n{out[-2000:]}"
+    wants = ["ревизия=1 ", "день=30 ", "окна=DLG_BUILD_STRUCTURE ", "ветка=base:building-branch/other ", "towers:building/spire@"]
+    if missing := [w for w in wants if w not in after + " "]:
+        return False, f"перезагрузка мода: после перезагрузки нет {missing}\n{after}"
+    old = before.split("towers:building/spire@")[1].split(":")[0]
+    new = after.split("towers:building/spire@")[1].split(":")[0]
+    if old == new:
+        return False, f"перезагрузка мода: постройка мода осталась на месте {old}"
+    shutil.rmtree(mod.parent, ignore_errors=True)
+    return True, f"перезагрузка мода: d2mod {len(cmds)} команд, постройка мода в окне @{old} → после правки @{new}, карта со снимка (день 30), окно и ветка — снова"
+
+
+STUDIO_STEPS = [
+    {"op": "lord", "id": "base:lord/mountain-clans-mage-lord"},
+    {"op": "add-building", "name": "spire", "title": "Шпиль", "requires": "base:building/magic-tower-2"},
+    {"op": "connect", "from": "towers:building/spire", "to": "base:building/magic-tower-2"},
+    {"op": "drag", "building": "towers:building/spire", "column": 2, "row": 1},
+    {"op": "undo"},
+    {"op": "redo"},
+    {"op": "content-open", "kind": "unit"},
+    {"op": "content-select", "id": "base:unit/axe-thrower"},
+    {"op": "content-set", "field": "hitPoints", "text": "200"},
+    {"op": "content-set", "field": "hitPoints", "text": "много"},
+    {"op": "arena", "scenario": "Mercantile"},
+    {"op": "map-new", "id": "big", "size": 1024, "seats": 4},
+    {"op": "map-stroke", "x0": 100, "y0": 100, "x1": 300, "y1": 180, "brush": "Water", "radius": 3},
+    {"op": "map-undo"},
+    {"op": "map-stroke", "x0": 10, "y0": 500, "x1": 1000, "y1": 520, "brush": "Mountain", "radius": 2},
+    {"op": "map-save"},
+    {"op": "save"},
+]
+# (шаг, что должно быть в строке шага)
+STUDIO_WANTS = [
+    ("lord", ["ok=1", "lord=base:lord/mountain-clans-mage-lord", "errors=0"]),
+    ("add-building", ["ok=1", "dirty=1", "граф_узлов=25"]),
+    ("connect", ["ok=0", "refusal=требования_по_кругу"]),
+    ("drag", ["ok=1", "ветка=base:building-branch/other"]),
+    ("undo", ["ok=1", "redo=1"]),
+    ("redo", ["ok=1", "redo=0"]),
+    ("content-open", ["ok=1", "kind=unit"]),
+    ("content-select", ["ok=1", "selected=base:unit/axe-thrower"]),
+    ("content-set", ["ok=1", "patched=1"]),
+    ("content-set", ["ok=0", "не_integer"]),
+    ("arena", ["ok=1", "arena=8"]),
+    ("map-new", ["ok=1", "size=1024", "cells=1048576"]),
+    ("map-stroke", ["ok=1", "undo=1"]),
+    ("map-undo", ["ok=1", "undo=0", "redo=1"]),
+    ("map-stroke", ["ok=1", "undo=1", "redo=0"]),
+    ("map-save", ["ok=1", "dirty=0"]),
+    ("save", ["ok=1", "dirty=0"]),
+]
+
+
+def studio(repo: Path) -> tuple[bool, str]:
+    """Студия (Э6) без окна: мод собирает d2mod, окно Студии проходит сценарий — лорд, новая постройка, связь по кругу (отказ), перенос
+    значка на живой странице, отмена и повтор, правка поля по схеме (и отказ неверного числа), арена «база против мода», карта 1024²:
+    новая, мазки, отмена, запись в мод; запись мода. Каждый шаг печатает строки пространств."""
+    if not (repo / "data" / "content" / "base" / "lords.json").is_file():
+        return True, "Студия: пропуск — нет импорта (data/content/base)"
+    mod = repo / ".cache" / "ui-check" / f"studio-{os.getpid()}-{threading.get_ident()}" / "towers"
+    if mod.parent.exists():
+        shutil.rmtree(mod.parent)
+    r = subprocess.run([*dotnet_tool(repo, "d2mod"), "new", str(mod), "--id", "towers"], capture_output=True, text=True,
+                       encoding="utf-8", errors="replace", cwd=repo)
+    if r.returncode != 0:
+        return False, f"Студия: d2mod new — код {r.returncode}\n{r.stdout}{r.stderr}"
+    script = mod.parent / "steps.json"
+    script.write_text(json.dumps(STUDIO_STEPS, ensure_ascii=False), encoding="utf-8")
+    code, out = godot(repo, ["--open", str(mod), "--check", "--script", str(script)], "res://scenes/studio/Studio.tscn")
+    lines = [l for l in out.splitlines() if l.startswith("step ")]
+    if code != 0 or len(lines) != len(STUDIO_WANTS):
+        return False, f"Студия: код {code}, шагов {len(lines)} из {len(STUDIO_WANTS)}\n{out[-3000:]}"
+    for (op, wants), line in zip(STUDIO_WANTS, lines):
+        if not line.startswith(f"step {op} ") or (missing := [w for w in wants if w not in line]):
+            return False, f"Студия: шаг «{op}» — нет {missing if line.startswith(f'step {op} ') else op}\n{line[:1500]}"
+    if not (mod / "content" / "buildings" / "spire" / "entity.json").is_file() or not (mod / "data" / "scenarios" / "big.json").is_file():
+        return False, "Студия: запись мода — нет каталога постройки или карты"
+    shutil.rmtree(mod.parent, ignore_errors=True)
+    return True, f"Студия: {len(lines)} шагов — дерево, содержимое, арена, карта 1024², запись мода"
 
 
 def city_windows(repo: Path) -> tuple[bool, str]:
@@ -2774,7 +2902,7 @@ def steps(repo: Path, screens: list[str], window: bool) -> list[tuple[str, Calla
         ("игровой цикл", gameloop), ("автосохранение", autosave),
         ("быстрое сохранение", quicksave), ("предложение союза", alliance_offer), ("журнал команд", command_journal), ("прокрутка стрелкой", map_arrows),
         ("сага", saga), ("перевод сценариев", scenario_texts), ("конец партии", game_over), ("бой эффекта", event_battle),
-        ("импорт героя", leader_import), ("окна города", city_windows),
+        ("импорт героя", leader_import), ("окна города", city_windows), ("перезагрузка мода", mod_reload), ("Студия", studio),
         ("ход и туман по шагам, мешок", walk_steps), ("ход ИИ", ai_turn), ("плавная прокрутка", smooth_scroll),
         ("смена тумана", fog_change), ("звук", sound), ("начало боя", battle_opening), ("подсветка клетки", highlight),
         ("облака", clouds), ("снос гор", mountains), ("попап в ходе ИИ", ai_popup), ("настройки показа", map_settings), ("окно настроек", settings_window), ("переназначение клавиш", rebinding), ("геймпад", gamepad), ("HD-слой", hd_layer_step),

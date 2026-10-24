@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Ядро Студии (Э6, roadmap §3.4, docs/tools/studio-architecture.md): проект мода, документ мода (слои содержимого и «папка = сущность»),
+       команды правки с отменой, проверка мода, запуск игры. Без Godot: им пользуются окно Студии (godot/scenes/studio) и CLI tools/d2mod. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>LastEdict.Authoring</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Game.UiModel\Game.UiModel.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Engine.Play.Tests" />
+  </ItemGroup>
+
+</Project>

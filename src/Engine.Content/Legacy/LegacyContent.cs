@@ -61,6 +61,7 @@ public static class LegacyContent
                 [typeof(SpellDef)] = Keyed<SpellDef>("spell"),
                 [typeof(ItemDef)] = Keyed<ItemDef>("item"),
                 [typeof(BuildingDef)] = Keyed<BuildingDef>("building"),
+                [typeof(BuildingBranchDef)] = BuildingBranches(),
                 [typeof(RaceDef)] = Races(),
                 [typeof(CityLevelDef)] = Cities(),
                 [typeof(LordDef)] = Lords(),
@@ -149,6 +150,22 @@ public static class LegacyContent
             [.. AttackEffects.Vanilla.Select(e => (ContentDef)new EffectDef { Id = EffectId(e), Behavior = e.Behavior, Ai = e.Tuning, Looks = e.Looks })];
 
         private string EffectId(AttackEffect effect) => AttackEffect.BuiltInId(effect.Behavior, ns);
+
+        /// <summary>Ветки окна построек оригинала (Э6) — пять переключателей круга <c>RAD_BUILDING_TYPE</c> в порядке группы: в таблицах их
+        /// нет (панели <c>DLG_{раса}_{ветка}</c> и связь значков с постройками зашиты в разметку и движок), импорт выпускает их из кода.
+        /// Постройки ветки «вспомогательные» оригинала (<c>sideshow</c>) стоят в ветке требуемой постройки — своей ветки не заводим. Имена —
+        /// короткие строки Last Edict (<c>data/ui/own</c>): подсказки переключателей оригинала (<c>X100TA0087…0091</c>) длинны для вкладки.</summary>
+        private List<ContentDef> BuildingBranches() =>
+        [
+            Branch("fighter", "TOG_FIGHTER", "LE_BUILD_FIGHTERS", units: [BranchKind.Fighter]),
+            Branch("mage", "TOG_MAGE", "LE_BUILD_MAGES", units: [BranchKind.Mage]),
+            Branch("archer", "TOG_ARCHER", "LE_BUILD_ARCHERS", units: [BranchKind.Archer]),
+            Branch("special", "TOG_SPECIAL", "LE_BUILD_SUPPORT", units: [BranchKind.Special]),
+            Branch("other", "TOG_OTHER", "LE_BUILD_OTHER", categories: [BuildingCategory.Guild, BuildingCategory.Heal, BuildingCategory.Magic]),
+        ];
+
+        private BuildingBranchDef Branch(string name, string toggle, string text, BranchKind[]? units = null, BuildingCategory[]? categories = null) =>
+            new() { Id = $"{ns}:building-branch/{name}", NameText = text, Toggle = toggle, Units = units ?? [], Categories = categories ?? [] };
 
         /// <summary>Эффект атаки по классу оригинала (<c>Gattacks.CLASS</c>). Класса нет в <c>LattC</c> (мод оригинала) — ссылка
         /// <c>legacy:class/N</c>: правила грузятся, а удар такой атакой отказывает с внятным текстом (<see cref="UnknownEffect"/>), как

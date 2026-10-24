@@ -50,7 +50,7 @@ change what the original could not:
 | Random numbers | one generator for everything | ✅ separate streams for battles, AI, loot and the map — one AI change no longer reshuffles every battle |
 | Players and races | up to 5 players, one per race | ✅ the same race twice, teams with a shared victory, more than five players, races as mod content, race choice built from the content (mod races included) · 📋 lobby for friends (E7) |
 | Balance | by feel | ✅ headless simulator: thousands of AI games per seed, win rates by race, first move, snowballing |
-| Screen | 800×600 | ✅ any aspect ratio (16:9, 16:10, 21:9, 4:3): the map fills the screen, windows stay sharp · ✅ HD art pipeline (export → upscale → import, BC7) · 📋 an HD art pack |
+| Screen | 800×600 | ✅ any aspect ratio (16:9, 16:10, 21:9, 4:3): the map fills the screen, windows stay sharp · ✅ HD art pipeline (export → upscale → import, BC7) and an HD display mode: drawn at window resolution, vector text, sharpening · ✅ wide battle like the DisciplesGL wrapper · 📋 an HD art pack |
 | Input | mouse and keyboard | ✅ full gamepad: stick pointer, D-pad between buttons, button hints for Xbox, PlayStation and Steam Deck, remapping · 🚧 tested on real devices |
 | Multiplayer | LAN of 2002 | 📋 friends' rooms via a relay, async games |
 | Modding | external tools | 📋 built-in Studio: building tree, content, maps without a size limit |
@@ -75,6 +75,14 @@ The map fills any aspect ratio instead of a 4:3 picture with bars; windows and p
 <a href="https://github.com/Betreazen/last-edict/releases/download/media/compare-settings.png"><img src="https://github.com/Betreazen/last-edict/releases/download/media/compare-settings-small.png" alt="The original options screen and the Last Edict settings window"></a>
 
 One window with tabs — screen, sound, game, battle, controls, language — with hints and a 15-second confirmation for a new window mode.
+
+### HD
+
+<a href="https://github.com/Betreazen/last-edict/releases/download/media/compare-hd-detail.png"><img src="https://github.com/Betreazen/last-edict/releases/download/media/compare-hd-detail-small.png" alt="A battle detail with the original art and with the upscaled HD layer"></a>
+
+With an upscaled art layer (your own upscale of your own copy — the art never ships with the project) the game draws straight at
+window resolution: units, portraits and the capital at full detail, text in a vector font, an optional sharpening pass. Full-size
+pairs: [world map](https://github.com/Betreazen/last-edict/releases/download/media/compare-hd-map.png), [battle](https://github.com/Betreazen/last-edict/releases/download/media/compare-hd-battle.png), [hero window](https://github.com/Betreazen/last-edict/releases/download/media/compare-hd-hero.png).
 
 ## Gallery
 
@@ -115,6 +123,13 @@ Decisions and details: [`docs/own-version-roadmap.md`](docs/own-version-roadmap.
 ## Progress
 
 <!-- Новые записи — сверху: дата, что изменилось, снимки «было / стало» (порядок — docs/media.md). -->
+
+- **2026-10-24 — HD and crisp at any resolution.** An HD display mode draws the game at window resolution, so an upscaled art layer
+  shows at full detail ([before / after](https://github.com/Betreazen/last-edict/releases/download/media/compare-hd-detail.png)); the map keeps its own pixel size and shows more of the world
+  ([before / after](https://github.com/Betreazen/last-edict/releases/download/media/compare-hd-map.png)); text uses a vector font; an optional sharpening pass; scrolls and cards over the map keep
+  their original size; the battle goes wide on 16:9 and wider, like the DisciplesGL wrapper ([before / after](https://github.com/Betreazen/last-edict/releases/download/media/compare-hd-battle.png)).
+  The HD tools resume an interrupted import, never write game art where git would pick it up, and the capital no longer spends
+  a gigabyte of video memory. Rules unchanged: the snapshots are identical.
 
 - **2026-10-22 — Screen and input.** The map fills any aspect ratio ([before / after](https://github.com/Betreazen/last-edict/releases/download/media/compare-widescreen.png)); a new settings
   window with tabs, key and gamepad remapping ([before / after](https://github.com/Betreazen/last-edict/releases/download/media/compare-settings.png)); the whole game is playable with a gamepad —

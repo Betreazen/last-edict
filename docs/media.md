@@ -32,7 +32,10 @@ git, старые снимки удаляются без переписыван�
 (EB Garamond из `data/fonts`, рядом `-small.png` ≤ 200 КБ).
 
 Сейчас в выпуске: `main-menu`, `world-map`, `battle`, `battle-queue`, `city`, `spellbook`, `hero`, `diplomacy` (каждый — полный и
-`-small`), `compare-battle-queue` (+ `-small`); с Э5 — `compare-widescreen`, `compare-settings`, `controls`, `gamepad` (каждый + `-small`).
+`-small`), `compare-battle-queue` (+ `-small`); с Э5 — `compare-widescreen`, `compare-settings`, `controls`, `gamepad` (каждый + `-small`);
+с 24.10 — `compare-hd-detail`, `compare-hd-map`, `compare-hd-battle`, `compare-hd-hero` (каждый + `-small`): «было» — вид оригинала
+(без модов, «Чёткий», карта по окну, узкий бой), «стало» — HD-слой пользователя, показ «HD», чёткий текст, резкость 40 %, широкий бой;
+окно 1920×1080, `--stage-shot` (сцена карты с `--sg` сохранения корпуса, `--settings` с `mapZoom`), деталь — кусок боя ×2.
 
 ## Как выложить
 

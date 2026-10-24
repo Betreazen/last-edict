@@ -801,7 +801,7 @@ public class CityWindowTests(ITestOutputHelper output)
 
     /// <summary>Окно построек (Э6): дерево — данными (ветки содержимого, связи — требования), вид с зумом; щелчок по значку выбирает
     /// постройку; «Построить» спрашивает цену и строит, второй раз за день — X005TA0239. Значки — по id оригинала постройки
-    /// (<see cref="ArtNames"/>), постройки правил — id содержимого. Переключатель круга открывает ветку, у которой он есть.</summary>
+    /// (<see cref="ArtNames"/>), постройки правил — id содержимого. Ветку открывает вкладка над деревом.</summary>
     [SkippableFact]
     public void Build_SelectsAndBuildsOncePerDay()
     {
@@ -848,7 +848,9 @@ public class CityWindowTests(ITestOutputHelper output)
         Assert.IsType<UiClose>(logic.TakeRequest());   // построено — окно закрывается само (0x4ab364 → 0x5c8f71)
         Assert.Equal(BuildIcon.Built, logic.Icon(pick));
 
-        logic.Handle(new UiGroupChanged("RAD_BUILDING_TYPE", 1, "TOG_MAGE"), ui);
+        Assert.True(ui.IsHidden("TOG_MAGE"));   // ветки — только вкладками над деревом (кнопки круга спрятаны, решение пользователя 24.10)
+        var mage = logic.Tabs.First(t => t.Branch == "base:building-branch/mage").Rect;
+        logic.Release(mage.X + 5, mage.Y + 5, ui);
         Assert.Equal("base:building-branch/mage", logic.Branch);
         Assert.DoesNotContain(logic.Items, i => i.Building == b26);
         Assert.Equal("base:building-branch/mage", _c.Memory.BuildBranch);   // окно откроется на ней снова
@@ -859,11 +861,10 @@ public class CityWindowTests(ITestOutputHelper output)
         logic.Handle(new UiClicked("BTN_BUILD"), ui);
         Assert.Equal(_c.Text("X005TA0239"), Assert.IsType<UiTell>(logic.TakeRequest()).Text);
 
-        // Вкладка над деревом открывает ветку «прочие» (у неё тоже есть переключатель круга — он отмечается).
+        // Вкладка над деревом открывает ветку «прочие».
         var tab = logic.Tabs.First(t => t.Branch == "base:building-branch/other");
         logic.Release(tab.Rect.X + 5, tab.Rect.Y + 5, ui);
         Assert.Equal("base:building-branch/other", logic.Branch);
-        Assert.True(ui.IsChecked("TOG_OTHER"));
     }
 
     /// <summary>Зум колесом к курсору и тащение в окне построек: точка под курсором остаётся на месте, пределы масштаба, вид не уходит

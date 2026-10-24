@@ -34,12 +34,11 @@ public sealed record BuildingTreePlace
 
 /// <summary>Ветка окна построек (Э6): вкладка дерева построек столицы. Постройки попадают в ветку по <see cref="BuildingDef.Tree"/>, иначе
 /// по категории (<see cref="Categories"/>) или ветке юнитов постройки найма (<see cref="Units"/>), иначе — в ветку требуемой постройки.
-/// Порядок вкладок — порядок содержимого. База — пять веток окна оригинала (импорт); моды добавляют свои.</summary>
+/// Порядок вкладок — порядок содержимого. База — пять веток оригинала (импорт); моды добавляют свои. Ветку открывает вкладка над деревом
+/// (кнопки круга оригинала спрятаны — решение пользователя 24.10: в круге ровно пять гнёзд).</summary>
 public sealed record BuildingBranchDef : ContentDef
 {
     [Description("Строка имени ветки (подсказка вкладки).")] public string? NameText { get; init; }
-    [Description("Переключатель окна построек, который открывает ветку (у веток оригинала — кнопки круга TOG_*); нет — только вкладкой.")]
-    public string? Toggle { get; init; }
     [Description("Постройки найма каких веток юнитов идут в ветку.")] public IReadOnlyList<BranchKind> Units { get; init; } = [];
     [Description("Постройки каких категорий идут в ветку (кроме найма — у него ветка юнитов).")]
     public IReadOnlyList<BuildingCategory> Categories { get; init; } = [];

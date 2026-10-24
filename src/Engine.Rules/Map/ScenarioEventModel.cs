@@ -209,6 +209,9 @@ public sealed record EventZone(string Id, int X, int Y, int Radius);
 /// <c>HUMAN, DWARF, UNDEAD, HERETIC, NEUTRAL, ELF</c>.</param>
 /// <param name="TriggerRaces">Второй набор флагов (<c>VERHUMAN…VERELF</c> файла) в том же порядке; пусто — как
 /// <paramref name="Races"/>.</param>
+/// <remarks>Шесть флагов знают только расы оригинала (по <see cref="RaceInfo.EventFlag"/>). Сценарий Last Edict может назвать расы по id
+/// содержимого (<see cref="RaceIds"/>, <see cref="TriggerRaceIds"/>) — так событие различает расу мода — и игроков (<see cref="PlayerIds"/>) —
+/// так различаются двое одной расы (<see cref="ScenarioEvents.ForPlayer"/>).</remarks>
 public sealed record ScenarioEvent(
     string Id,
     bool Enabled,
@@ -219,7 +222,20 @@ public sealed record ScenarioEvent(
     IReadOnlyList<EventCondition> Conditions,
     IReadOnlyList<EventEffect> Effects,
     string Name = "",
-    IReadOnlyList<bool>? TriggerRaces = null);
+    IReadOnlyList<bool>? TriggerRaces = null)
+{
+    /// <summary>Расы события по id содержимого (<c>base:race/…</c>, расы модов); есть — главнее флагов <see cref="Races"/>.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<string>? RaceIds { get; init; }
+
+    /// <summary>Расы кандидатов (<c>VER…</c>) по id содержимого; есть — главнее <see cref="TriggerRaces"/>.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<string>? TriggerRaceIds { get; init; }
+
+    /// <summary>Игроки события по id; есть — событие только для них (поверх рас): двое одной расы различаются.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<string>? PlayerIds { get; init; }
+}
 
 /// <summary>События сценария и всё, без чего их не проверить: области (для <c>L_LOCATION</c>)
 /// и переменные (для <c>L_MODIFY_VARIABLE</c>). Собирает <c>LastEdict.Data.Map.EventLoader</c>.</summary>

@@ -110,7 +110,7 @@ public sealed partial class GameSession
             if (fort is not null && RiotingVillage(fort)) continue;   // гость бунтующей деревни — ни слагаемого укрепления, ни своего
             int percent = fort is null ? 0 : FortPercent(map, fort, book);
             bool ownLand = stack.Inside.Length == 0 && race is not null && map.Contains(stack.X, stack.Y)
-                           && map.At(stack.X, stack.Y).Terrain == race.Terrain;
+                           && LandOwnership.IsOwn(map, stack.X, stack.Y, stack.Owner, race.Terrain);
             terms.AddRange(stack.UnitIds.Select(id => Term(id, stack.Id, percent, ownLand)));
         }
         return terms;

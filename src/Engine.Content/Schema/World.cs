@@ -77,7 +77,7 @@ public sealed record RaceDef : ContentDef
     [Description("Своя земля: её красят захваты и жезлы расы, на ней лечатся её отряды. Нет — по роду (kind).")]
     public TerrainKind? Land { get; init; }
     [Description("Место в очереди хода, меньше — раньше. Нет — по роду (kind).")] public int? TurnOrder { get; init; }
-    [Description("Номер флага расы в событиях сценария (HUMAN, DWARF, UNDEAD, HERETIC, NEUTRAL, ELF — 0…5); −1 — флага нет. Нет — по роду (kind).")]
+    [Description("Номер флага расы в событиях сценария (HUMAN, DWARF, UNDEAD, HERETIC, NEUTRAL, ELF — 0…5); −1 — флага нет. Нет — флага нет: раса мода в шести флагах не числится, событие называет её по id (raceIds).")]
     public int? EventFlag { get; init; }
     [Description("Нейтралы: хозяин ничьих отрядов и объектов карты. Нет — по роду (kind).")] public bool? Neutral { get; init; }
     [Description("Имена героев (Tleader) по порядку таблицы.")] public IReadOnlyList<HeroName> HeroNames { get; init; } = [];

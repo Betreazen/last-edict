@@ -51,15 +51,12 @@ public sealed partial class GameSession
         if (!map.Players.TryGetValue(site.Owner, out var owner) || !book.Economy.Races.TryGetValue(owner.RaceId, out var race) || !race.Playable)
             return map;
         int terrain = race.Terrain;
-        var owned = new HashSet<(int X, int Y)>();
-        for (int x = 0; x < map.Size; x++)
-            for (int y = 0; y < map.Size; y++)
-                if (map.Tiles[x, y].Terrain == terrain) owned.Add((x, y));
+        var owned = LandOwnership.OwnCells(map, owner.Id, terrain);   // при общей расе — только земля хозяина деревни
         var centre = LandModel.FortCentre(site.X, site.Y);
         var plan = LandModel.PlanCells(map, site.Id);
         var source = new LandSource(site.Id, centre, book.Land.Village(site.Size ?? 1), plan.Count > 0 ? plan : [centre]);
         var cells = LandModel.AcquisitionLand(map, owned, source, book.Land, LandModel.BlockedCells(map, map.Sites, book.MountainLandmarks, book.Economy.NeutralRaces));
-        return cells.Count == 0 ? map : Recolor(map, cells.ToHashSet(), terrain);
+        return cells.Count == 0 ? map : Recolor(map, cells.ToHashSet(), terrain, owner.Id);
     }
 
     /// <summary>Отряд <paramref name="stackId"/> сменил хозяина (<c>CVisitorChangeStackOwner</c> <c>0x60d6a5</c> → <c>0x60d3ea</c>;

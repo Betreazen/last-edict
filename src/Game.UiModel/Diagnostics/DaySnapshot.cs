@@ -74,7 +74,8 @@ public static class DaySnapshot
 
     private static long[] Values(Bank b) => [b.Gold, b.Infernal, b.Life, b.Death, b.Runic, b.Grove];
 
-    /// <summary>Клеток земли расы игрока (<see cref="Tile.Terrain"/>); без правил или у расы без своей земли — null.</summary>
+    /// <summary>Клеток своей земли игрока (<see cref="LandOwnership.IsOwn"/>: род земли расы, при общей расе — его клетки); без правил или у
+    /// расы без своей земли — null.</summary>
     private static int? Land(MapState map, MapPlayer p, GameBook? book)
     {
         // В сохранениях id рас бывают строчными (g000rr0000) — ключ без учёта регистра.
@@ -84,7 +85,7 @@ public static class DaySnapshot
         int n = 0;
         for (int x = 0; x < map.Size; x++)
             for (int y = 0; y < map.Size; y++)
-                if (map.Tiles[x, y].Terrain == own) n++;
+                if (LandOwnership.IsOwn(map, x, y, p.Id, own)) n++;
         return n;
     }
 }

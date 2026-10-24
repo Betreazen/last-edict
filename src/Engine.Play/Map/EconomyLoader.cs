@@ -25,7 +25,9 @@ public static class EconomyLoader
                 Leaders = LeadersOf(content, r),
                 Terrain = r.Land is { } land ? (int)land : LegacyRaces.Terrain((int)r.Kind),
                 TurnOrder = r.TurnOrder ?? LegacyRaces.TurnOrder((int)r.Kind),
-                EventFlag = r.EventFlag ?? LegacyRaces.EventFlag((int)r.Kind),
+                // Флаг событий оригинала — у рас, у которых он записан (база, test-pack); раса мода без него в шести флагах не числится и
+                // не выдаёт себя за расу базы своего рода — событие называет её по id (ScenarioEvent.RaceIds).
+                EventFlag = r.EventFlag ?? -1,
                 Neutral = r.Neutral ?? r.Kind == RaceKind.Neutral,
             };
 

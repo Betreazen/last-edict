@@ -506,6 +506,17 @@ public sealed class MapState
     [System.Text.Json.Serialization.JsonIgnore]
     public IReadOnlyDictionary<string, int> IdNext { get; init; } = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Чья земля по клеткам (Last Edict, <c>docs/own-rules.md</c> §4): номер игрока в <see cref="LandOwnerIds"/> + 1, 0 — у клетки
+    /// своего хозяина нет (её раса у одного игрока или ни у кого). Нужна, когда раса у двоих и больше: у оригинала «своя земля» — род земли
+    /// клетки (<see cref="Tile.Terrain"/>), и двое одной расы делили бы её. null — у каждой расы не больше одного игрока, всё решает род
+    /// земли, как у оригинала (<see cref="LandOwnership"/>).</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public byte[,]? LandOwners { get; init; }
+
+    /// <summary>Хозяева земли <see cref="LandOwners"/> — игроки рас, у которых их двое и больше, по id.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<string>? LandOwnerIds { get; init; }
+
     /// <summary>Сид карты (<c>CScenarioInfo.MAP_SEED</c>): от него зависят только варианты узора земли
     /// (<c>docs/ground-render.md</c>), на правила не влияет.</summary>
     public uint MapSeed { get; init; }

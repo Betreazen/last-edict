@@ -336,6 +336,7 @@ public sealed partial class GameSession
                 cells.Add((x, y));
             }
         if (tiles is null) return true;
+        var owners = Book is { } book ? LandOwnership.Retag(Map, tiles, cells, null, book.Economy) : null;   // нейтральная — без хозяина
         bool Touches(MountainLook g) => g.X <= zone.X + zone.Radius && g.X + g.Width - 1 >= zone.X - zone.Radius
                                         && g.Y <= zone.Y + zone.Radius && g.Y + g.Height - 1 >= zone.Y - zone.Radius;
         var removed = Looks.Mountains.Where(Touches).OrderBy(g => g.Id).ToList();
@@ -343,7 +344,7 @@ public sealed partial class GameSession
         var relaid = RelayMountains(removed, kept, tiles);
         State = State with
         {
-            Looks = Retold(Looks, WithTiles(Map, tiles), Looks.Stacks) with { Mountains = [.. kept, .. relaid] },
+            Looks = Retold(Looks, WithTiles(Map, tiles, owners), Looks.Stacks) with { Mountains = [.. kept, .. relaid] },
         };
         if (removed.Count > 0 || relaid.Count > 0)
             Observer?.Happened(new TurnSight(TurnSightKind.MountainsRemoved, playerId, zone.X, zone.Y, zone.Id) { Cells = cells });
@@ -533,6 +534,7 @@ public sealed partial class GameSession
     {
         if (State.Events.Zones.GetValueOrDefault(c.LocationId) is not { } zone || c.Lookup is < 1 or > 7) return true;
         Tile[,]? tiles = null;
+        List<(int X, int Y)> cells = [];
         int x0 = zone.X - c.Value / 2, y0 = zone.Y - c.Value / 2;
         for (int x = x0; x < x0 + c.Value; x++)
             for (int y = y0; y < y0 + c.Value; y++)
@@ -540,8 +542,11 @@ public sealed partial class GameSession
                 if (!Map.Contains(x, y) || Map.Tiles[x, y].Ground is not (Ground.Plain or Ground.Forest)) continue;
                 tiles ??= (Tile[,])Map.Tiles.Clone();
                 tiles[x, y] = new Tile((byte)((tiles[x, y].Raw & ~0b111) | c.Lookup));
+                cells.Add((x, y));
             }
-        if (tiles is not null) State = State with { Looks = Retold(Looks, WithTiles(Map, tiles), Looks.Stacks) };
+        // Земля расы, у которой двое игроков, — тому из них, чей источник роста ближе (LandOwnership.Retag).
+        var owners = tiles is not null && Book is { } book ? LandOwnership.Retag(Map, tiles, cells, null, book.Economy) : null;
+        if (tiles is not null) State = State with { Looks = Retold(Looks, WithTiles(Map, tiles, owners), Looks.Stacks) };
         return true;
     }
 
@@ -634,6 +639,6 @@ public sealed partial class GameSession
         Relations = map.Relations, TalismanCharges = map.TalismanCharges, SpellCasts = map.SpellCasts,
         ItemCasts = map.ItemCasts, SpellEffects = map.SpellEffects, ItemTypes = map.ItemTypes, Limits = map.Limits, MapSeed = map.MapSeed, Subraces = map.Subraces,
         Destroyed = map.Destroyed, Tombs = map.Tombs,
-        IdNext = map.IdNext,
+        IdNext = map.IdNext, LandOwners = map.LandOwners, LandOwnerIds = map.LandOwnerIds,
     };
 }

@@ -413,8 +413,8 @@ public sealed class LandModel
         var capital = forts.Where(f => f.Capital).Select(f => f.Source).FirstOrDefault();
         var blocked = BlockedCells(map, map.Sites, mountainLandmarks, rules.NeutralRaces);
         return capital is not null
-            ? BuildSources(map, terrain, [capital, .. others], q, playerId, blocked)
-            : Build(map, terrain, others, q, playerId, blocked);
+            ? BuildSources(map, terrain, [capital, .. others], q, playerId, blocked, owner: playerId)
+            : Build(map, terrain, others, q, playerId, blocked, owner: playerId);
     }
 
     /// <summary>
@@ -437,17 +437,18 @@ public sealed class LandModel
     /// <param name="quotas"><c>GVars</c>; null — ванильные значения.</param>
     /// <param name="blocked">Клетки, которые обход отвергает (<see cref="BlockedCells"/>);
     /// null — <see cref="BlockedCells"/> по самой карте без ландмарков.</param>
+    /// <param name="owner">Игрок, чья земля — пятно (<see cref="LandOwnership"/>: при общей расе — только его клетки); null — весь род.</param>
     /// <exception cref="ArgumentException">На карте нет ни одной клетки этого террейна.</exception>
     public static LandModel Build(MapState map, int ownTerrain, IReadOnlyList<LandSource> extra,
                                   LandQuotas? quotas = null, string who = "игрока",
-                                  IReadOnlySet<(int X, int Y)>? blocked = null)
+                                  IReadOnlySet<(int X, int Y)>? blocked = null, string? owner = null)
     {
         ArgumentNullException.ThrowIfNull(extra);
-        var start = StartSpot(map, ownTerrain, who);
+        var start = StartSpot(map, ownTerrain, who, owner);
         var quota = quotas ?? LandQuotas.Vanilla;
         var centre = (X: start.Sum(c => c.X) / start.Count, Y: start.Sum(c => c.Y) / start.Count);
         List<LandSource> sources = [new("", centre, quota.Capital, [.. start]), .. extra];
-        return BuildSources(map, ownTerrain, sources, quota, who, blocked);
+        return BuildSources(map, ownTerrain, sources, quota, who, blocked, owner);
     }
 
     /// <summary>
@@ -458,20 +459,26 @@ public sealed class LandModel
     /// источников пуст.</exception>
     public static LandModel BuildSources(MapState map, int ownTerrain, IReadOnlyList<LandSource> sources,
                                          LandQuotas quotas, string who = "игрока",
-                                         IReadOnlySet<(int X, int Y)>? blocked = null)
+                                         IReadOnlySet<(int X, int Y)>? blocked = null, string? owner = null)
     {
         ArgumentNullException.ThrowIfNull(sources);
         ArgumentNullException.ThrowIfNull(quotas);
         if (sources.Count == 0) throw new ArgumentException("список источников пуст", nameof(sources));
-        var start = StartSpot(map, ownTerrain, who);
+        var start = StartSpot(map, ownTerrain, who, owner);
         return new LandModel(map, start, sources, quotas, blocked ?? BlockedCells(map, map.Sites));
     }
 
-    /// <summary>Стартовое пятно — все клетки своего террейна на карте.</summary>
+    /// <summary>Стартовое пятно — все клетки своего террейна на карте; у карты с хозяевами земли (<see cref="LandOwnership"/>) и с
+    /// <paramref name="owner"/> — только его клетки: землю другого игрока той же расы рост берёт, как чужую.</summary>
     /// <exception cref="ArgumentException">Ни одной такой клетки нет: расти неоткуда.</exception>
-    private static HashSet<(int X, int Y)> StartSpot(MapState map, int ownTerrain, string who)
+    private static HashSet<(int X, int Y)> StartSpot(MapState map, int ownTerrain, string who, string? owner = null)
     {
         ArgumentNullException.ThrowIfNull(map);
+        if (owner is not null && LandOwnership.Tracked(map))
+        {
+            var own = LandOwnership.OwnCells(map, owner, ownTerrain);
+            return own.Count > 0 ? own : throw new ArgumentException($"у {who} (террейн {ownTerrain}) на карте нет своей земли", nameof(ownTerrain));
+        }
         var start = new HashSet<(int X, int Y)>();
         for (int x = 0; x < map.Size; x++)
             for (int y = 0; y < map.Size; y++)

@@ -411,6 +411,6 @@ public sealed partial class GameSession
         Relations = map.Relations, TalismanCharges = map.TalismanCharges, SpellCasts = map.SpellCasts,
         ItemCasts = map.ItemCasts, SpellEffects = map.SpellEffects, ItemTypes = map.ItemTypes, Limits = map.Limits, MapSeed = map.MapSeed, Subraces = map.Subraces,
         Destroyed = destroyed, Tombs = map.Tombs,
-        IdNext = map.IdNext,
+        IdNext = map.IdNext, LandOwners = map.LandOwners, LandOwnerIds = map.LandOwnerIds,
     };
 }

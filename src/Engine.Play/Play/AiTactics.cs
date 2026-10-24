@@ -231,7 +231,7 @@ public static partial class AiTactics
         var races = session.Book!.Economy.Races;
         var forts = Forts(map).ToList();
         var crystals = map.Objects.Values.Where(o => o.Kind.Equals("CR", StringComparison.OrdinalIgnoreCase) && map.Contains(o.X, o.Y))
-                          .Select(o => map.At(o.X, o.Y).Terrain).ToList();
+                          .Select(o => (o.X, o.Y)).ToList();
         int total = forts.Count + crystals.Count;
         if (total == 0) return "";
         string best = "";
@@ -239,7 +239,8 @@ public static partial class AiTactics
         foreach (var player in map.Players.Values.OrderBy(p => p.Id, StringComparer.OrdinalIgnoreCase))
         {
             int land = races.TryGetValue(player.RaceId, out var race) ? race.Terrain : LegacyRaces.Terrain(-1);
-            double share = (double)(forts.Count(f => Same(f.Owner, player.Id)) + crystals.Count(t => t == land)) / total;
+            double share = (double)(forts.Count(f => Same(f.Owner, player.Id))
+                                    + crystals.Count(c => LandOwnership.IsOwn(map, c.X, c.Y, player.Id, land))) / total;
             if (share > top) (best, top) = (player.Id, share);
         }
         return top >= MainEnemyShare ? best : "";
@@ -1058,10 +1059,10 @@ public static partial class AiTactics
         if (!RodLeader(session, stack) || !map.Players.TryGetValue(stack.Owner, out var owner)
             || !book.Economy.Races.TryGetValue(owner.RaceId, out var race)) return [];
         int own = race.Terrain;
-        var ally = Diplomacy.AllyTerrain(map.Relations, Diplomacy.PlayerParties(map, book.Economy), owner.Party ?? race.RaceType, book.Economy, map);
+        var ally = Diplomacy.AllyLand(map, book.Economy, owner.Party ?? race.RaceType);
         var crystals = map.Objects.Values
             .Where(o => o.Kind.Equals("CR", StringComparison.OrdinalIgnoreCase) && map.Contains(o.X, o.Y))
-            .Where(o => map.At(o.X, o.Y).Terrain != own && !ally(map.At(o.X, o.Y).Terrain));
+            .Where(o => !LandOwnership.IsOwn(map, o.X, o.Y, owner.Id, own) && !ally(o.X, o.Y));
         return Nearest(crystals, o => (o.Id, o.X, o.Y), Position(map, stack), turn);
     }
 
@@ -1186,8 +1187,8 @@ public static partial class AiTactics
         var book = session.Book!;
         if (!map.Players.TryGetValue(stack.Owner, out var p) || !book.Economy.Races.TryGetValue(p.RaceId, out var race))
             return (_, _) => false;
-        var ally = Diplomacy.AllyTerrain(map.Relations, Diplomacy.PlayerParties(map, book.Economy), p.Party ?? race.RaceType, book.Economy, map);
-        return (x, y) => map.Contains(x, y) && ally(map.At(x, y).Terrain);
+        var ally = Diplomacy.AllyLand(map, book.Economy, p.Party ?? race.RaceType);
+        return (x, y) => map.Contains(x, y) && ally(x, y);
     }
 
     /// <summary>Отказ клетки жезла по <c>0x5cd11f</c> и калитке жезла: не равнина, в клетке объект, в 3×3 крепость или

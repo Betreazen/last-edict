@@ -119,7 +119,7 @@
       ]
      },
      "eventFlag": {
-      "description": "Номер флага расы в событиях сценария (HUMAN, DWARF, UNDEAD, HERETIC, NEUTRAL, ELF — 0…5); −1 — флага нет. Нет — по роду (kind).",
+      "description": "Номер флага расы в событиях сценария (HUMAN, DWARF, UNDEAD, HERETIC, NEUTRAL, ELF — 0…5); −1 — флага нет. Нет — флага нет: раса мода в шести флагах не числится, событие называет её по id (raceIds).",
       "type": [
        "integer",
        "null"

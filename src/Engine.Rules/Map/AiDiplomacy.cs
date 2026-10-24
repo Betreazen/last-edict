@@ -30,7 +30,8 @@ public static class AiDiplomacy
     /// <summary>
     /// Доля равнины расы, % (<c>0x474c5b</c>, ранг 1): <c>trunc(100 · своих / всех)</c>, где считаются
     /// ТОЛЬКО клетки грунта <c>L_PLAIN</c> (обход <c>0x5e5d50</c> → <c>0x5f33c9</c>); лес не входит — в отличие
-    /// от экономики. Своя клетка — террейн расы (<see cref="EconomyRules.TerrainOf"/>; без правил — по роду, <see cref="LegacyRaces.Terrain"/>).
+    /// от экономики. Своя клетка — террейн расы (<see cref="EconomyRules.TerrainOf"/>; без правил — по роду, <see cref="LegacyRaces.Terrain"/>);
+    /// при общей расе (<see cref="LandOwnership"/>) — клетка, чей хозяин на этой стороне.
     /// </summary>
     /// <param name="raceType">Сторона дипломатии игрока (<see cref="Diplomacy.PartyOf(MapPlayer, IReadOnlyDictionary{string, RaceInfo})"/>; у движка —
     /// <c>LRaceCategory</c>, 0 Империя … 5 эльфы).</param>
@@ -38,12 +39,18 @@ public static class AiDiplomacy
     {
         ArgumentNullException.ThrowIfNull(map);
         int own = rules is null ? LegacyRaces.Terrain(raceType) : Diplomacy.TerrainOfParty(map, rules, raceType), total = 0, mine = 0;
-        foreach (var tile in map.Tiles)
-        {
-            if (tile.Ground != Ground.Plain) continue;
-            total++;
-            if (tile.Terrain == own) mine++;
-        }
+        var shared = rules is not null && LandOwnership.Tracked(map) ? LandOwnership.SharedTerrains(map, rules) : null;
+        var partyBySlot = shared is null ? [] : LandOwnership.PartyBySlot(map, rules!);
+        for (int x = 0; x < map.Size; x++)
+            for (int y = 0; y < map.Size; y++)
+            {
+                var tile = map.Tiles[x, y];
+                if (tile.Ground != Ground.Plain) continue;
+                total++;
+                if (tile.Terrain != own) continue;
+                if (shared is null || !shared.ContainsKey(own)
+                    || (map.LandOwners![x, y] is var slot && slot > 0 && slot < partyBySlot.Length && partyBySlot[slot] == raceType)) mine++;
+            }
         // ponytail: пустая равнина даёт 0 без деления; в движке это деление double на 0 (не встречалось).
         return total == 0 ? 0 : (int)(100.0 * mine / total);
     }

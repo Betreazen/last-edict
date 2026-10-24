@@ -290,7 +290,7 @@ public static partial class AiSpells
         foreach (var crystal in session.Map.Objects.Values.Where(o => o.Kind == "CR").OrderBy(o => IdKey(o.Id)).ToList())
         {
             var tile = session.Map.At(crystal.X, crystal.Y);
-            if (tile.Ground is not (Ground.Plain or Ground.Forest) || tile.Terrain != own) continue;
+            if (tile.Ground is not (Ground.Plain or Ground.Forest) || !LandOwnership.IsOwn(session.Map, crystal.X, crystal.Y, playerId, own)) continue;
             foreach (string id in rodders)
             {
                 if (!session.Map.Stacks.TryGetValue(id, out var rodder)) continue;

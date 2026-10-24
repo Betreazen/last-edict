@@ -22,7 +22,7 @@ public sealed partial class GameSession(GameState state, MapArtData art, GameBoo
         }
     }
 
-    private GameState _state = state;
+    private GameState _state = WithLandOwners(state, book);
 
     /// <summary>Правила боя и опыта; без них партия ходит, но воевать не может.</summary>
     public GameBook? Book { get; } = book;
@@ -694,7 +694,8 @@ public sealed partial class GameSession(GameState state, MapArtData art, GameBoo
     /// (<c>0x43ed42</c>, <c>0x5e9450</c>; ранг 1 по листингу, 28.09).</summary>
     private static TurnSight LandSpread(MapState before, MapState after, string playerId, IReadOnlySet<(int X, int Y)> land, LandModel model)
     {
-        bool Changed((int X, int Y) c) => before.Tiles[c.X, c.Y].Terrain != after.Tiles[c.X, c.Y].Terrain;
+        bool Changed((int X, int Y) c) => before.Tiles[c.X, c.Y].Terrain != after.Tiles[c.X, c.Y].Terrain
+                                          || LandOwnership.OwnerAt(before, c.X, c.Y) != LandOwnership.OwnerAt(after, c.X, c.Y);
         var changed = land.Where(Changed).OrderBy(c => c.Y).ThenBy(c => c.X).ToList();
         var walks = model.Walks(2).Select(w => (w.Source, Cells: (IReadOnlyList<(int X, int Y)>)[.. w.Cells.Where(Changed)]))
                                   .Where(w => w.Cells.Count > 0).ToList();
@@ -746,7 +747,7 @@ public sealed partial class GameSession(GameState state, MapArtData art, GameBoo
                 var model = LandModel.Build(map, playerId, book.Economy, book.Land, book.MountainLandmarks);
                 land = model.Certain(2);
                 var before = map;
-                map = Recolor(map, land, race!.Terrain);
+                map = Recolor(map, land, race!.Terrain, playerId);
                 if (!ReferenceEquals(before, map) && Observer is not null) Observer.Happened(LandSpread(before, map, playerId, land, model));
             }
             catch (ArgumentException)
@@ -878,18 +879,23 @@ public sealed partial class GameSession(GameState state, MapArtData art, GameBoo
     /// обхода (у двух — ещё клетка леса квадрата жилы), реестр И210. Тот же визитор у земли захвата и жезла: день 33 — захват <c>S073FT000b</c>
     /// (<c>land_grow</c> seq 2429564, 11 бросков <c>ground_variant</c> внутри <c>fort_capture</c>), жезлы — бросок за клетку жезла перед её обходом
     /// (seq 361819).</para></summary>
-    private MapState Recolor(MapState map, IReadOnlySet<(int X, int Y)> land, int terrain)
+    /// <para>Хозяин клетки (<see cref="LandOwnership"/>, раса у двоих и больше) — <paramref name="playerId"/>: клетка того же рода, но другого
+    /// игрока перекрашивается так же, как чужая.</para>
+    private MapState Recolor(MapState map, IReadOnlySet<(int X, int Y)> land, int terrain, string playerId)
     {
         Tile[,]? tiles = null;
+        List<(int X, int Y)>? changed = LandOwnership.Tracked(map) ? [] : null;
         foreach (var (x, y) in land)
         {
             var tile = map.Tiles[x, y];
-            if (tile.Terrain == terrain) continue;
+            if (LandOwnership.IsOwn(map, x, y, playerId, terrain)) continue;
             tiles ??= (Tile[,])map.Tiles.Clone();
             tiles[x, y] = new Tile((byte)((tile.Raw & ~0b111) | terrain));
+            changed?.Add((x, y));
             if (tile.Ground == Ground.Forest) Crt.Next();
         }
-        return tiles is null ? map : WithTiles(map, tiles);
+        if (tiles is null) return map;
+        return WithTiles(map, tiles, changed is null ? null : LandOwnership.Retag(map, tiles, changed, playerId, RequireBook().Economy));
     }
 
     private BattleStart? _battle;
@@ -1445,7 +1451,7 @@ public sealed partial class GameSession(GameState state, MapArtData art, GameBoo
         Objects = map.Objects, Plan = map.Plan, Fog = map.Fog, Turn = map.Turn, Rods = rods, Sites = map.Sites,
         Relations = map.Relations, TalismanCharges = map.TalismanCharges, SpellCasts = map.SpellCasts,
         ItemCasts = map.ItemCasts, SpellEffects = map.SpellEffects, ItemTypes = map.ItemTypes, Limits = map.Limits, MapSeed = map.MapSeed, Subraces = map.Subraces, Destroyed = map.Destroyed, Tombs = map.Tombs,
-        IdNext = map.IdNext,
+        IdNext = map.IdNext, LandOwners = map.LandOwners, LandOwnerIds = map.LandOwnerIds,
     };
 
     /// <summary>Открыть туман игрока вокруг его отрядов (маска меняется на месте: туман копится и принадлежит
@@ -1578,15 +1584,32 @@ public sealed partial class GameSession(GameState state, MapArtData art, GameBoo
 
     internal static MapPlayer WithBank(MapPlayer p, Bank bank) => p with { Bank = bank };
 
-    /// <summary>Та же карта с другими клетками.</summary>
-    public static MapState WithTiles(MapState map, Tile[,] tiles) => new()
+    /// <summary>Та же карта с другими клетками; <paramref name="owners"/> — новые хозяева земли (<see cref="LandOwnership"/>), null — прежние.</summary>
+    public static MapState WithTiles(MapState map, Tile[,] tiles, byte[,]? owners = null) => new()
     {
         Size = map.Size, Tiles = tiles, Stacks = map.Stacks, Units = map.Units, Players = map.Players,
         Objects = map.Objects, Plan = map.Plan, Fog = map.Fog, Turn = map.Turn, Rods = map.Rods, Sites = map.Sites,
         Relations = map.Relations, TalismanCharges = map.TalismanCharges, SpellCasts = map.SpellCasts,
         ItemCasts = map.ItemCasts, SpellEffects = map.SpellEffects, ItemTypes = map.ItemTypes, Limits = map.Limits, MapSeed = map.MapSeed, Subraces = map.Subraces, Destroyed = map.Destroyed, Tombs = map.Tombs,
-        IdNext = map.IdNext,
+        IdNext = map.IdNext, LandOwners = owners ?? map.LandOwners, LandOwnerIds = map.LandOwnerIds,
     };
+
+    /// <summary>Та же карта с хозяевами земли (<see cref="LandOwnership.Assign"/>).</summary>
+    public static MapState WithLandOwners(MapState map, byte[,] owners, IReadOnlyList<string> ids) => new()
+    {
+        Size = map.Size, Tiles = map.Tiles, Stacks = map.Stacks, Units = map.Units, Players = map.Players,
+        Objects = map.Objects, Plan = map.Plan, Fog = map.Fog, Turn = map.Turn, Rods = map.Rods, Sites = map.Sites,
+        Relations = map.Relations, TalismanCharges = map.TalismanCharges, SpellCasts = map.SpellCasts,
+        ItemCasts = map.ItemCasts, SpellEffects = map.SpellEffects, ItemTypes = map.ItemTypes, Limits = map.Limits, MapSeed = map.MapSeed, Subraces = map.Subraces, Destroyed = map.Destroyed, Tombs = map.Tombs,
+        IdNext = map.IdNext, LandOwners = owners, LandOwnerIds = ids,
+    };
+
+    /// <summary>Партия с хозяевами земли, если раса у двоих и больше (<see cref="LandOwnership"/>): на старте и у сохранения без них.</summary>
+    private static GameState WithLandOwners(GameState state, GameBook? book)
+    {
+        if (book is null || LandOwnership.Assign(state.Looks.Map, book.Economy) is not { } land) return state;
+        return state with { Looks = Retold(state.Looks, WithLandOwners(state.Looks.Map, land.Owners, land.Ids), state.Looks.Stacks) };
+    }
 
     /// <summary>План карты без объекта <paramref name="id"/> (подобранный мешок); клетки, где он был один, уходят из плана.</summary>
     public static IReadOnlyDictionary<(int X, int Y), IReadOnlyList<string>> PlanWithout(MapState map, string id) =>
@@ -1641,7 +1664,7 @@ public sealed partial class GameSession(GameState state, MapArtData art, GameBoo
         Turn = turn ?? map.Turn, Rods = map.Rods, Sites = sites ?? map.Sites, Relations = relations ?? map.Relations,
         TalismanCharges = talismanCharges ?? map.TalismanCharges, SpellCasts = spellCasts ?? map.SpellCasts, ItemCasts = itemCasts ?? map.ItemCasts,
         SpellEffects = spellEffects ?? map.SpellEffects, ItemTypes = itemTypes ?? map.ItemTypes, Limits = limits ?? map.Limits, MapSeed = map.MapSeed, Subraces = map.Subraces, Destroyed = map.Destroyed, Tombs = tombs ?? map.Tombs,
-        IdNext = idNext ?? map.IdNext,
+        IdNext = idNext ?? map.IdNext, LandOwners = map.LandOwners, LandOwnerIds = map.LandOwnerIds,
     };
 }
 

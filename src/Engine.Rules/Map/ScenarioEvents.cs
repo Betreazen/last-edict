@@ -159,13 +159,40 @@ public static class ScenarioEvents
         ArgumentNullException.ThrowIfNull(e);
         ArgumentNullException.ThrowIfNull(map);
         ArgumentNullException.ThrowIfNull(rules);
-        var flags = e.TriggerRaces is { Count: > 0 } t ? t : e.Races;
         foreach (var p in map.Players.Values.OrderBy(p => p.Id, StringComparer.OrdinalIgnoreCase))
         {
             if (triggerer is not null && !p.Id.Equals(triggerer.Owner, StringComparison.OrdinalIgnoreCase)) continue;
-            if (rules.Races.TryGetValue(p.RaceId, out var race) && RaceFlag(flags, race)) yield return p;
+            if (rules.Races.TryGetValue(p.RaceId, out var race) && Candidate(e, p, race)) yield return p;
         }
     }
+
+    /// <summary>Кандидат события: игрок из <see cref="ScenarioEvent.PlayerIds"/> (если они есть) и раса из <see cref="ScenarioEvent.TriggerRaceIds"/>,
+    /// иначе из <see cref="ScenarioEvent.RaceIds"/> (событие, назвавшее расы по id, и кандидатов берёт из них — флаги <c>VER…</c> у сценария,
+    /// пришедшего из оригинала, есть всегда), иначе из флагов <c>VER…</c>, а пустые — как <c>HUMAN…</c>.</summary>
+    private static bool Candidate(ScenarioEvent e, MapPlayer player, RaceInfo race) =>
+        Listed(e.PlayerIds, player.Id)
+        && ((e.TriggerRaceIds ?? e.RaceIds) is { } ids ? Listed(ids, race.Id)
+            : e.TriggerRaces is { Count: > 0 } flags ? RaceFlag(flags, race) : RaceFlag(e.Races, race));
+
+    /// <summary>Событие для расы: id рас события (<see cref="ScenarioEvent.RaceIds"/>), а без них — флаг расы оригинала
+    /// (<see cref="RaceInfo.EventFlag"/>; у расы мода без своего флага его нет — её называют по id).</summary>
+    public static bool ForRace(ScenarioEvent e, RaceInfo race)
+    {
+        ArgumentNullException.ThrowIfNull(e);
+        ArgumentNullException.ThrowIfNull(race);
+        return e.RaceIds is { } ids ? Listed(ids, race.Id) : RaceFlag(e.Races, race);
+    }
+
+    /// <summary>Событие для игрока: он в <see cref="ScenarioEvent.PlayerIds"/> (если они есть) и событие для его расы (<see cref="ForRace"/>).</summary>
+    public static bool ForPlayer(ScenarioEvent e, MapPlayer player, RaceInfo race)
+    {
+        ArgumentNullException.ThrowIfNull(e);
+        ArgumentNullException.ThrowIfNull(player);
+        return Listed(e.PlayerIds, player.Id) && ForRace(e, race);
+    }
+
+    private static bool Listed(IReadOnlyList<string>? ids, string id) =>
+        ids is null || ids.Contains(id, StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Флаг расы события. Порядок флагов — порядок полей записи <c>HUMAN, DWARF, UNDEAD, HERETIC, NEUTRAL, ELF</c>
@@ -210,7 +237,7 @@ public static class ScenarioEvents
         IEnumerable<MapPlayer> who = mode switch
         {
             1 => map.Players.Values.Where(Playable),
-            2 => map.Players.Values.Where(p => Playable(p) && RaceFlag(e.Races, rules.Races[p.RaceId])),
+            2 => map.Players.Values.Where(p => Playable(p) && ForPlayer(e, p, rules.Races[p.RaceId])),
             0 => map.Players.Values.Where(p => p.Id.Equals(candidate, StringComparison.OrdinalIgnoreCase)),
             _ => [],
         };

@@ -31,8 +31,8 @@ public sealed record BuildTreeTab(string Branch, UiRect Rect, string Name, bool 
 /// «Управление городом» разметки оригинала (выбранная постройка, <c>0x4ab5cc</c>), слева — дерево построек данными (<see cref="BuildTree"/>:
 /// ветки — содержимое, связи — требования, место — автораскладкой или из мода) в виде с зумом и сдвигом (<see cref="ZoomView"/>): колесо —
 /// зум к курсору, тащение средней кнопкой или левой по пустому месту — сдвиг, вид ограничен рамкой дерева; PageUp/PageDown (курки геймпада)
-/// и +/− — зум к середине. Ветки — вкладками над деревом и переключателями круга <c>RAD_BUILDING_TYPE</c> у веток, которым мод дал
-/// переключатель (<c>toggle</c>; у веток оригинала — пять кнопок круга). Рисует дерево вид Godot (<c>BuildTreeView</c>) по <see cref="Items"/>,
+/// и +/− — зум к середине. Ветки — только вкладками над деревом (кнопки круга <c>RAD_BUILDING_TYPE</c> оригинала спрятаны: в круге ровно
+/// пять гнёзд, а веток — сколько в данных; решение пользователя 24.10). Рисует дерево вид Godot (<c>BuildTreeView</c>) по <see cref="Items"/>,
 /// <see cref="Links"/>, <see cref="Tabs"/> и <see cref="View"/>; решения и попадания — здесь, обратным преобразованием вида.
 /// <para>Правила окна — как у оригинала. Значок — постройка (<c>IconBld</c>, подкраска по виду <c>0x5b6c9d</c>). «Построить» доступна у
 /// значка «можно строить»; нажатие проверяет казну (<c>X005TA0120</c>) и «раз в день» (<c>X005TA0239</c>), затем спрашивает <c>X005TA0240</c>.
@@ -196,7 +196,8 @@ public sealed class BuildLogic : IWindowLogic, IPadTargets, IBuildTreeSource
         ArgumentNullException.ThrowIfNull(ui);
         var remembered = Tree.Branch(_c.Memory.BuildBranch) ?? Tree.Branches.FirstOrDefault(b => b.Nodes.Count > 0) ?? Tree.Branches.FirstOrDefault();
         ui.SetText("TXT_CITY_DEVELOPMENT", _c.Text("X005TA0094"));
-        foreach (string toggle in Toggles(ui)) ui.SetHidden(toggle, !Tree.Branches.Any(b => b.Toggle == toggle));
+        // Ветки — только вкладками над деревом (решение пользователя 24.10): кнопки круга оригинала спрятаны.
+        foreach (string toggle in Toggles(ui)) ui.SetHidden(toggle, true);
         Show(remembered?.Id ?? "", ui);
     }
 
@@ -206,12 +207,10 @@ public sealed class BuildLogic : IWindowLogic, IPadTargets, IBuildTreeSource
     private static IReadOnlyList<string> Toggles(UiScreenState ui) =>
         ui.Screen.Elements.FirstOrDefault(e => e.Id == Group)?.Members ?? [];
 
-    /// <summary>Открыть ветку <paramref name="branch"/>: переключатель круга, если он у неё есть, вид — заново.</summary>
+    /// <summary>Открыть ветку <paramref name="branch"/>: вид — заново.</summary>
     private void Show(string branch, UiScreenState ui)
     {
         Branch = _c.Memory.BuildBranch = branch;
-        var toggles = Toggles(ui);
-        if (toggles.Count > 0) ui.SetGroupIndex(Group, toggles.ToList().IndexOf(Current?.Toggle ?? ""));
         _area = null;   // вид — заново по размеру содержимого ветки
         Refresh(ui);
     }
@@ -224,9 +223,6 @@ public sealed class BuildLogic : IWindowLogic, IPadTargets, IBuildTreeSource
         ArgumentNullException.ThrowIfNull(ui);
         switch (e)
         {
-            case UiGroupChanged { Element: Group } changed when Tree.Branches.FirstOrDefault(b => b.Toggle == changed.Member) is { } branch:
-                Show(branch.Id, ui);
-                return;
             case UiClicked { Element: "BTN_BUILD" }:
                 Build();
                 break;

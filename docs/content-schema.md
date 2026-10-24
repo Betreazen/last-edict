@@ -189,8 +189,7 @@ life, death, runic, grove) — поля `Bank` (на них стоят прав�
 
 Окно построек строится из содержимого, а не из разметки `.dlg` (`docs/ui-windows.md` §33).
 
-- **Ветка окна** — вид `building-branch` (`building-branches.json`, `BuildingBranchDef`): `nameText` (строка имени вкладки), `toggle`
-  (переключатель круга `RAD_BUILDING_TYPE`, который открывает ветку; нет — только вкладкой), `units` (ветки юнитов построек найма) и
+- **Ветка окна** — вид `building-branch` (`building-branches.json`, `BuildingBranchDef`): `nameText` (строка имени вкладки), `units` (ветки юнитов построек найма) и
   `categories` (категории прочих построек). Порядок вкладок — порядок содержимого. База — пять веток оригинала (импорт: `fighter`, `mage`,
   `archer`, `special`, `other`).
 - **Место постройки** — поле `tree` у `building` (`BuildingTreePlace`): `branch` (ветка), `column` (столбец сетки, можно дробный) и `row`

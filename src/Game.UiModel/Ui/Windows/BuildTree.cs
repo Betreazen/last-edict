@@ -8,7 +8,7 @@ namespace LastEdict.Data.Ui.Windows;
 public sealed record BuildTreeNode(string Building, double Column, int Row, string? Parent);
 
 /// <summary>Ветка окна построек: вкладка с постройками в клетках сетки.</summary>
-public sealed record BuildTreeBranch(string Id, string? NameText, string? Toggle, IReadOnlyList<BuildTreeNode> Nodes)
+public sealed record BuildTreeBranch(string Id, string? NameText, IReadOnlyList<BuildTreeNode> Nodes)
 {
     /// <summary>Столбцов и строк сетки (по крайней клетке).</summary>
     public double Columns => Nodes.Count == 0 ? 0 : Nodes.Max(n => n.Column) + 1;
@@ -57,7 +57,7 @@ public sealed class BuildTree
         var byId = defs.ToDictionary(b => b.Id, StringComparer.Ordinal);
         var branchOf = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var def in defs) branchOf[def.Id] = BranchId(def, branches, byId, branchOf, []);
-        return new BuildTree([.. branches.Select(b => new BuildTreeBranch(b.Id, b.NameText, b.Toggle,
+        return new BuildTree([.. branches.Select(b => new BuildTreeBranch(b.Id, b.NameText,
             Layout([.. defs.Where(d => branchOf[d.Id] == b.Id)])))]);
     }
 

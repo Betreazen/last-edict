@@ -1064,7 +1064,7 @@ def city_cases(repo: Path) -> list[tuple[Path, str, list[tuple[str, list[str]]]]
             ("panel click BTN_CAPITAL", ["панель=DLG_CAPITAL"]),
             ("cap 5,5", ["постройка=-", "пал=DLG_ISO_PAL"]),
             ("cap click", ["окна=DLG_BUILD_STRUCTURE "]),
-            ("ui click TOG_MAGE", ["ветка=base:building-branch/mage", "вкладок=5"]),
+            ("ui click 200,15", ["ветка=base:building-branch/mage", "вкладок=5"]),
             # Дерево построек данными (Э6): вкладка, зум колесом к курсору, тащение средней кнопкой, крестовина по значкам, A — выбор.
             ("ui click 30,15", ["ветка=base:building-branch/fighter"]),
             ("ui wheelup 200,300", ["зум=1.088"]),
@@ -1200,8 +1200,8 @@ def mod_reload(repo: Path) -> tuple[bool, str]:
                        capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=repo)
     threading.Thread(target=touch, daemon=True).start()
     code, out = godot(repo, ["--mods", str(mod), "--watch", "--state", str(save), "--check", "--player", STAND_PLAYER,
-                             "--clicks", "panel click BTN_CAPITAL;cap click;ui click TOG_OTHER;reloadwait"], "res://scenes/map/MapScreen.tscn")
-    before = next((l for l in out.splitlines() if l.startswith("ui click_TOG_OTHER")), "")
+                             "--clicks", "panel click BTN_CAPITAL;cap click;ui click 640,15;reloadwait"], "res://scenes/map/MapScreen.tscn")
+    before = next((l for l in out.splitlines() if l.startswith("ui click_640,15")), "")
     after = next((l for l in out.splitlines() if l.startswith("mapscreen ")), "")
     reload = next((l for l in out.splitlines() if l.startswith("reload revision=")), "")
     if code != 0 or "towers:building/spire@" not in before or "rules=1" not in reload:

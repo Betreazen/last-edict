@@ -732,6 +732,12 @@ public partial class MapScreen : Node
             }
             if (step == "reloadwait")   // перезагрузка модов (--watch): ждать до 30 с, пока файлы мода поменяют снаружи; сцена перезапустится
             {
+                // Отметка «жду» в служебном каталоге мода (наблюдатель его не видит): проверка правит мод только после неё.
+                foreach (var mod in GameData.Mods)
+                {
+                    System.IO.Directory.CreateDirectory(System.IO.Path.Combine(mod.Dir, ".studio"));
+                    System.IO.File.WriteAllText(System.IO.Path.Combine(mod.Dir, ".studio", "waiting"), "reloadwait");
+                }
                 var since = DateTime.UtcNow;
                 while (!_leaving && (DateTime.UtcNow - since).TotalSeconds < 30) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
                 if (_leaving) return;   // новая сцена карты допечатает итог сама

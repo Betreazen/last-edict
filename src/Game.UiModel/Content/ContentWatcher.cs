@@ -64,7 +64,9 @@ public sealed class ContentWatcher : IDisposable
     public void Note(string path)
     {
         ArgumentNullException.ThrowIfNull(path);
-        if (path.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase) || path.Replace('\\', '/').Contains("/.studio/", StringComparison.Ordinal)) return;
+        string slashed = path.Replace('\\', '/');
+        if (path.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase) || slashed.Contains("/.studio/", StringComparison.Ordinal)
+            || slashed.EndsWith("/.studio", StringComparison.Ordinal)) return;
         string full;
         try
         {
@@ -81,7 +83,8 @@ public sealed class ContentWatcher : IDisposable
         }
     }
 
-    /// <summary>Пачка изменений, если файлы перестали меняться; иначе null.</summary>
+    /// <summary>Пачка изменений, если файлы перестали меняться; иначе null. Пачка, что ничего не задевает (файлы вне содержимого, данных,
+    /// графики и плагинов мода), не отдаётся и ревизию не поднимает.</summary>
     public ContentReload? Take()
     {
         lock (_lock)
@@ -89,8 +92,10 @@ public sealed class ContentWatcher : IDisposable
             if (_pending.Count == 0 || _now() - _last < Quiet) return null;
             var files = _pending.ToList();
             _pending.Clear();
+            var changes = files.Aggregate(ContentChange.None, (c, f) => c | Classify(f));
+            if (changes == ContentChange.None) return null;
             Revision++;
-            return new ContentReload(files.Aggregate(ContentChange.None, (c, f) => c | Classify(f)), files, Revision);
+            return new ContentReload(changes, files, Revision);
         }
     }
 

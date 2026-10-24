@@ -16,6 +16,7 @@ using LastEdict.Rules.Map;
 //
 // По числам решается, нужна ли разбивка карты на зоны (рост стоимости хода ИИ и A* сверх площади).
 
+Console.OutputEncoding = System.Text.Encoding.UTF8;
 string content = Path.GetFullPath(Arg("--content") ?? Path.Combine(Repo(), "content", "test-pack"));
 int[] sizes = [.. (Arg("--sizes") ?? "256,512,1024").Split(',').Select(s => int.Parse(s, CultureInfo.InvariantCulture))];
 int seats = int.Parse(Arg("--seats") ?? "4", CultureInfo.InvariantCulture);

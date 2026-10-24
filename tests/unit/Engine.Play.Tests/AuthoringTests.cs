@@ -161,6 +161,7 @@ public sealed class AuthoringTests : IDisposable
         watcher.Note(Path.Combine(project.Dir, "content", "buildings", "spire", "entity.json"));
         watcher.Note(Path.Combine(project.Dir, "data", "ui", "strings.ru.json"));
         watcher.Note(Path.Combine(project.Dir, "content", "buildings.json.tmp"));   // временный файл записи — не в счёт
+        watcher.Note(Path.Combine(project.Dir, ".studio"));   // служебный каталог Студии — тоже
         Assert.Null(watcher.Take());   // ещё пишут
         now = now.AddMilliseconds(500);
         var batch = watcher.Take()!;
@@ -168,6 +169,10 @@ public sealed class AuthoringTests : IDisposable
         Assert.Equal(ContentChange.Rules | ContentChange.Screens, batch.Changes);
         Assert.Equal(1, batch.Revision);
         Assert.Null(watcher.Take());
+        watcher.Note(Path.Combine(project.Dir, "README.md"));   // файл вне содержимого мода — пачки нет
+        now = now.AddSeconds(1);
+        Assert.Null(watcher.Take());
+        Assert.Equal(1, watcher.Revision);
         Assert.Equal(ContentChange.Art, watcher.Classify(Path.Combine(project.Dir, "data", "gfx", "IconBld.json")));
         Assert.Equal(ContentChange.Code, watcher.Classify(Path.Combine(project.Dir, "plugins", "x.dll")));
     }

@@ -1166,8 +1166,9 @@ def city_cases(repo: Path) -> list[tuple[Path, str, list[tuple[str, list[str]]]]
 
 def mod_reload(repo: Path) -> tuple[bool, str]:
     """Горячая перезагрузка мода (Э6, Студия): мод собирается командами d2mod (постройка-каталог со строкой, лорды Кланов), игра с --watch
-    открывает окно построек на ветке «здания», через 12 с d2mod переносит постройку мода в другую клетку — игра перечитывает мод,
-    перезапускает карту со снимка партии (тот же день) и снова открывает окно на той же ветке с постройкой мода на новом месте."""
+    открывает окно построек на ветке «здания», затем d2mod переносит постройку мода в другую клетку — игра перечитывает мод,
+    перезапускает карту со снимка партии (тот же день) и снова открывает окно на той же ветке с постройкой мода на новом месте. Правка —
+    после отметки игры «жду» (шаг reloadwait), а не по часам."""
     save, _m, why = stand(repo, 30)
     if save is None:
         return True, f"перезагрузка мода: пропуск — {why}"
@@ -1190,7 +1191,11 @@ def mod_reload(repo: Path) -> tuple[bool, str]:
             return False, f"перезагрузка мода: d2mod {c[0]} — код {r.returncode}\n{r.stdout}{r.stderr}"
 
     def touch() -> None:
-        time.sleep(12)
+        # Правка — когда игра дошла до шага reloadwait (отметка .studio/waiting): под нагрузкой пула старт игры долгий.
+        mark, deadline = mod / ".studio" / "waiting", time.monotonic() + 120
+        while not mark.exists() and time.monotonic() < deadline:
+            time.sleep(0.2)
+        time.sleep(0.5)
         subprocess.run([*d2mod, "set", str(mod), "towers:building/spire", "tree", '{"column":3,"row":2}'],
                        capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=repo)
     threading.Thread(target=touch, daemon=True).start()

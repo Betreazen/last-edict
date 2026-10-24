@@ -83,23 +83,34 @@ public static class ImageScales
         return With(copy, scale);
     }
 
-    /// <summary>Текстура собранной картинки (портрет с ранами) в множителе <paramref name="scale"/>: логического размера, с mip-уровнями
-    /// (<see cref="Texture"/>); точки — свои, не сжатой копии файла.</summary>
-    public static ImageTexture Composed(Image image, int scale)
+    /// <summary>HD-картинка, текстура которой пойдёт из её точек (сжатой копии файла нет: собранная картинка — рамка с портретом, вырезка,
+    /// портрет с ранами), получит mip-уровни (<see cref="Texture"/>): окно показывает её мельче полного размера.</summary>
+    private static bool GetsMipmaps(Image image) =>
+        Of(image) > 1 && !(Scales.TryGetValue(image, out var info) && info.Dds is not null) && !image.IsCompressed() && !image.HasMipmaps();
+
+    /// <summary>Байт картинки вместе с mip-уровнями, которые ей добавит текстура (+⅓), — для предела кэша картинок (<see cref="UiArt"/>).</summary>
+    public static long Bytes(Image image)
     {
         System.ArgumentNullException.ThrowIfNull(image);
-        if (scale <= 1) return ImageTexture.CreateFromImage(image);
-        return Texture(Detach(With(image, scale)));
+        long size = image.GetDataSize();
+        return GetsMipmaps(image) ? size + (size / 3) : size;
     }
 
-    /// <summary>Текстура картинки: с множителем — логического размера (<c>SetSizeOverride</c>), точки — полные.</summary>
+    /// <summary>Текстура картинки: с множителем — логического размера (<c>SetSizeOverride</c>), точки — полные (сжатая копия файла, если
+    /// она есть и картинку не меняли, иначе свои с mip-уровнями).</summary>
     public static ImageTexture Texture(Image image)
     {
-        var source = Scales.TryGetValue(image, out var info) && info.Dds is { } dds && LoadDds(dds) is { } packed ? packed : image;
-        if (source != image) FromDds++;
-        // HD без сжатой копии (собранная картинка: рамка с портретом, вырезка) — mip-уровни здесь: окно показывает её мельче полного размера.
-        else if (Of(image) > 1 && !image.HasMipmaps()) image.GenerateMipmaps();
-        var texture = ImageTexture.CreateFromImage(source);
+        System.ArgumentNullException.ThrowIfNull(image);
+        if (Scales.TryGetValue(image, out var info) && info.Dds is { } dds && LoadDds(dds) is { } packed)
+        {
+            FromDds++;
+            var fromDds = ImageTexture.CreateFromImage(packed);
+            packed.Dispose();   // BC7 с mip-уровнями уже в видеопамяти — копия на процессоре не ждёт сборщика мусора
+            Mark(fromDds, Logical(image));
+            return fromDds;
+        }
+        if (GetsMipmaps(image)) image.GenerateMipmaps();
+        var texture = ImageTexture.CreateFromImage(image);
         if (Of(image) > 1) Mark(texture, Logical(image));
         return texture;
     }

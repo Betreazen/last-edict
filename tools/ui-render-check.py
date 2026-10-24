@@ -985,7 +985,7 @@ def hd_mods(repo: Path) -> Path | str:
     import hd_layer
     from PIL import Image
     export, up = base / "export", base / "up"
-    if hd_layer.export(export, ["ui", "faces"], None, repo / "data", hd_layer.assets_root()) != 0:
+    if hd_layer.export(export, ["ui", "faces"], repo / "data", hd_layer.assets_root()) != 0:
         return "выгрузка не прошла"
     up.mkdir(parents=True, exist_ok=True)
     for f in export.glob("*.png"):

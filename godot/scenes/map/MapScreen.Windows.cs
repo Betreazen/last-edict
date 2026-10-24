@@ -227,11 +227,8 @@ public partial class MapScreen
     }
 
     /// <summary>Доля масштаба окон меньше экрана оригинала (свитки, карточки, сообщения; <see cref="UiScreenView.SlotScale"/>): настройка
-    /// «Размер окон» (<see cref="MapSettings.WindowScale"/>), для снимков — ключ <c>--window-scale</c> в процентах.</summary>
-    private float WindowScale =>
-        (int.TryParse(MapSource.Arg(OS.GetCmdlineUserArgs(), "--window-scale"), out int percent)
-            ? Math.Clamp(percent, MapSettings.WindowScales[0], MapSettings.WindowScales[^1])
-            : _settings.Clamped().WindowScale) / 100f;
+    /// «Размер окон» (<see cref="MapSettings.WindowScale"/>).</summary>
+    private float WindowScale => _settings.Clamped().WindowScale / 100f;
 
     /// <summary>Окно размером с экран оригинала (800×600 и больше): в оригинале оно закрывало всё, на холсте шире — по середине.</summary>
     private static bool FullScreen(string screen) =>

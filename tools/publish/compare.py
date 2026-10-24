@@ -14,6 +14,8 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
+from screenshots import SMALL_MAX_BYTES, small_copy
+
 REPO = Path(__file__).resolve().parents[2]
 FONT = REPO / "data" / "fonts" / "EBGaramond-SemiBold.ttf"
 GAP = 16
@@ -21,8 +23,7 @@ BAND = 56                       # полоса подписи над снимк�
 FONT_SIZE = 34
 BACKGROUND = (24, 22, 20)
 INK = (232, 220, 196)
-SMALL_MAX_BYTES = 200_000
-SMALL_WIDTHS = (1280, 1120, 960, 800, 640)
+SMALL_WIDTHS = (1280, 1120, 960, 800, 640)   # пара снимков шире одного — и копия шире
 
 
 def fit(image: Image.Image, height: int) -> Image.Image:
@@ -45,15 +46,6 @@ def glue(left: Image.Image, right: Image.Image, left_text: str, right_text: str)
     return sheet
 
 
-def small_copy(image: Image.Image, path: Path) -> tuple[int, int] | None:
-    for width in SMALL_WIDTHS:
-        scaled = image.resize((width, width * image.height // image.width), Image.Resampling.LANCZOS)
-        scaled.quantize(colors=256, method=Image.Quantize.FASTOCTREE, dither=Image.Dither.NONE).save(path, optimize=True)
-        if path.stat().st_size <= SMALL_MAX_BYTES:
-            return scaled.size
-    return None
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("before", type=Path)
@@ -67,7 +59,7 @@ def main() -> int:
     args.out.parent.mkdir(parents=True, exist_ok=True)
     sheet.save(args.out, optimize=True)
     small = args.out.with_name(args.out.stem + "-small.png")
-    size = small_copy(sheet, small)
+    size = small_copy(sheet, small, SMALL_WIDTHS)
     if size is None:
         print(f"{small.name}: и в {SMALL_WIDTHS[-1]} точек больше {SMALL_MAX_BYTES} байт")
         return 1

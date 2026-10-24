@@ -27,7 +27,6 @@ public partial class CapitalView : Node2D
     public static Vector2 PictureSize => Size;
 
     private readonly List<(CapitalLayer Layer, Sprite2D Sprite, IReadOnlyList<string> Frames)> _layers = [];
-    private readonly Dictionary<string, Texture2D> _cache = [];
     private HashSet<string>? _buildings;
     private double _frameClock, _blinkClock;
     private int _frame, _blinkStep = BlinkSteps;
@@ -202,10 +201,8 @@ public partial class CapitalView : Node2D
         Hovered?.Invoke(building);
     }
 
-    private Texture2D Frame(string path)
-    {
-        if (!_cache.TryGetValue(path, out var texture))
-            _cache[path] = texture = ImageScales.Texture(GfxTextures.CanvasHd(path));   // HD — полной точности, логического размера
-        return texture;
-    }
+    /// <summary>Кадр слоя — общим кэшем графики (<see cref="GfxTextures"/>): в видеопамяти только занятая часть кадра (у HD — сжатая копия
+    /// BC7), холст 640×600 — полями вырезки; кэш с пределом по байтам. Прежде каждый кадр разворачивался в полный холст — у HD ×4 это
+    /// 2560×2400 RGBA с mip-уровнями (~33 МБ на кадр, анимация столицы гномов — ~2 ГБ; ревью 24.10).</summary>
+    private static Texture2D? Frame(string path) => GfxTextures.Of(path);
 }

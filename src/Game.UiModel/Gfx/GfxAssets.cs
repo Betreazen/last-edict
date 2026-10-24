@@ -113,6 +113,9 @@ public sealed class GfxAssets
 
     public IReadOnlyCollection<GfxArchive> Archives => _archives.Values;
 
+    /// <summary>Есть ли картинка или анимация с множителем файла больше 1 (HD-слой, Р19).</summary>
+    public bool AnyScaled => _archives.Values.Any(a => a.Images.Any(i => i.Scale > 1) || a.Anims.Any(n => n.Scale > 1));
+
     public GfxArchive? Archive(string name) => _archives.GetValueOrDefault(name);
 
     public GfxImage? Image(string archive, string name) => _images.GetValueOrDefault(Key(archive, name));

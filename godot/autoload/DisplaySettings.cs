@@ -33,8 +33,6 @@ public static class DisplaySettings
         settings = settings.Clamped();
         SetMode(settings.Display);
         SetSize(settings);
-        Antialiasing = settings.Antialiasing;
-        ScreenStage.Current?.SetAntialiasing(Antialiasing);
         ApplyLook(settings);
         DisplayServer.WindowSetVsyncMode(settings.VSync ? DisplayServer.VSyncMode.Enabled : DisplayServer.VSyncMode.Disabled);
         Engine.MaxFps = settings.MaxFps;
@@ -76,10 +74,6 @@ public static class DisplaySettings
 
     /// <summary>Резкость кадра из настроек (<see cref="MapSettings.Sharpness"/>, проценты): показ берёт её при запуске (<see cref="ScreenStage"/>).</summary>
     public static int Sharpness { get; private set; }
-
-    /// <summary>Сглаживание кадра из настроек (<see cref="MapSettings.Antialiasing"/>): буфер показа берёт его при запуске
-    /// (<see cref="ScreenStage"/>).</summary>
-    public static int Antialiasing { get; private set; }
 
     /// <summary>Разрешение, в котором корень рисует кадр в полном экране (<see cref="MapSettings.Resolution"/>); null — в размере окна.
     /// Растяжением корня распоряжается <see cref="ScreenStage"/> (<see cref="RootScale"/>): он же меняет его при смене вписывания.</summary>

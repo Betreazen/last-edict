@@ -1,0 +1,61 @@
+{
+  "content": "test-pack",
+  "seats": 4,
+  "days": 3,
+  "rows": [
+    {
+      "size": 256,
+      "cells": 65536,
+      "build_ms": 180,
+      "read_ms": 63,
+      "start_ms": 14,
+      "fog_bytes": 327680,
+      "fog_players": 5,
+      "astar_ms": 43.7,
+      "path_points": 219,
+      "astar_expanded": 30301,
+      "ai_day_ms": 260,
+      "heap_bytes": 7838224,
+      "working_set_bytes": 95969280,
+      "json_bytes": 902570,
+      "stacks": 132,
+      "sites": 36
+    },
+    {
+      "size": 512,
+      "cells": 262144,
+      "build_ms": 108,
+      "read_ms": 88,
+      "start_ms": 0,
+      "fog_bytes": 1310720,
+      "fog_players": 5,
+      "astar_ms": 83.5,
+      "path_points": 453,
+      "astar_expanded": 127405,
+      "ai_day_ms": 251,
+      "heap_bytes": 17283136,
+      "working_set_bytes": 150953984,
+      "json_bytes": 3566861,
+      "stacks": 516,
+      "sites": 132
+    },
+    {
+      "size": 1024,
+      "cells": 1048576,
+      "build_ms": 271,
+      "read_ms": 179,
+      "start_ms": 0,
+      "fog_bytes": 5242880,
+      "fog_players": 5,
+      "astar_ms": 389.4,
+      "path_points": 909,
+      "astar_expanded": 545957,
+      "ai_day_ms": 504,
+      "heap_bytes": 74208832,
+      "working_set_bytes": 329826304,
+      "json_bytes": 14210083,
+      "stacks": 2052,
+      "sites": 516
+    }
+  ]
+}

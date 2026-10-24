@@ -85,6 +85,14 @@ With an upscaled art layer (your own upscale of your own copy — the art never 
 window resolution: units, portraits and the capital at full detail, text in a vector font, an optional sharpening pass. Full-size
 pairs: [world map](https://github.com/Betreazen/last-edict/releases/download/media/compare-hd-map.png), [battle](https://github.com/Betreazen/last-edict/releases/download/media/compare-hd-battle.png), [hero window](https://github.com/Betreazen/last-edict/releases/download/media/compare-hd-hero.png).
 
+### Building window and Studio
+
+<a href="https://github.com/Betreazen/last-edict/releases/download/media/compare-build-tree.png"><img src="https://github.com/Betreazen/last-edict/releases/download/media/compare-build-tree-small.png" alt="The building window before and in Last Edict"></a>
+
+The building tree comes from data: branches are tabs, the tree zooms to the cursor and pans with the middle button or a gamepad, the
+chosen building opens as a card. Mods add branches and buildings without code — and the built-in
+[Studio](https://github.com/Betreazen/last-edict/releases/download/media/studio-tree.png) edits them with undo while a running game reloads the mod on save.
+
 ## Gallery
 
 <table>
@@ -116,8 +124,9 @@ pairs: [world map](https://github.com/Betreazen/last-edict/releases/download/med
 | E3 Separation — this repository, own test content, "port vs port" snapshots | ✅ done |
 | E4 Own rules — initiative a round ahead, separate random streams, five races, teams, more players, balance simulator | ✅ done |
 | E5 Screen and input — any aspect ratio, new settings window, gamepad and Steam Deck, HD art pipeline | ✅ done |
-| E6 Building tree window and the Studio | 📋 next |
-| E7 Play with friends | 📋 |
+| E6 Building tree window and the Studio | ✅ done |
+| Studio 2 — creating buildings, units, attacks and map objects in the Studio | 🚧 in progress |
+| E7 Play with friends | 🚧 in progress |
 
 Decisions and details: [`docs/own-version-roadmap.md`](docs/own-version-roadmap.md).
 
@@ -130,7 +139,8 @@ Decisions and details: [`docs/own-version-roadmap.md`](docs/own-version-roadmap.
   branches and buildings without code. A built-in Studio edits a mod with undo: the building tree, any content by its schema, a battle
   arena and an AI stand that compare the base game with the mod, and maps of any size; a running game reloads the mod on save.
   Maps up to 1024×1024 are measured and playable. Water, map spells and battle event pictures now use the HD art too.
-  Rules unchanged: the snapshots are identical. Screenshots will follow.
+  Rules unchanged: the snapshots are identical ([building window before / after](https://github.com/Betreazen/last-edict/releases/download/media/compare-build-tree.png),
+  [the Studio](https://github.com/Betreazen/last-edict/releases/download/media/studio-tree.png)).
 
 - **2026-10-24 — HD and crisp at any resolution.** An HD display mode draws the game at window resolution, so an upscaled art layer
   shows at full detail ([before / after](https://github.com/Betreazen/last-edict/releases/download/media/compare-hd-detail.png)); the map keeps its own pixel size and shows more of the world

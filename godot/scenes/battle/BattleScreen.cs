@@ -402,14 +402,14 @@ public partial class BattleScreen : Node
         string name = BaseUnit()(unit.Type.Id).ToUpperInvariant();
         if (GameData.Content.Gfx.Image("Events", name) is not { } info) return;
         if (GfxAssets.PathOf(info, GameData.GfxRoot) is not { } path || !File.Exists(path)) return;
-        var texture = ImageTexture.CreateFromImage(GfxTextures.Canvas(path));
+        if (GfxTextures.Of(path) is not { } texture) return;   // общий кэш графики мира: HD логического размера, не холст в логических точках
         // Без масштаба, по центру места: 350×450 в месте 330×430 — на 10 точек левее и выше угла, как у движка.
         const float k = 1f;
         var size = GetViewport().GetVisibleRect().Size;
         float view = Mathf.Min(size.X / _host.X, size.Y / _host.Y);
         _cardFace = new Sprite2D
         {
-            Texture = texture, Centered = false, TextureFilter = CanvasItem.TextureFilterEnum.Nearest,
+            Texture = texture, Centered = false, TextureFilter = ImageScales.Filter(texture, CanvasItem.TextureFilterEnum.Nearest),
             Position = ((size - (_host * view)) / 2f)
                        + (new Vector2(slot.X + ((slot.Width - (info.W * k)) / 2),
                                       slot.Y + ((slot.Height - (info.H * k)) / 2)) * view),

@@ -216,7 +216,7 @@ public partial class MapView
             if (frames.Length == 0) continue;
             var sprite = new Sprite2D
             {
-                Texture = frames[0], Centered = false, TextureFilter = TextureFilterEnum.Nearest,
+                Texture = frames[0], Centered = false, TextureFilter = ImageScales.Filter(frames[0], TextureFilterEnum.Nearest),
                 Position = centre - (frames[0].GetSize() / 2f),
             };
             GfxBlending.Apply(sprite, GfxAssets.BlendOf(part.Anim.Opacity));   // заклинания — 300 (сложение) и 400 (вычитание)
@@ -293,8 +293,9 @@ public partial class MapView
 
     private static Texture2D Texture(string path)
     {
+        // Кадр заклинания — общим кэшем графики мира (обрезка, DDS, HD логического размера), а не холстом в логических точках.
         if (!SpellTextures.TryGetValue(path, out var texture))
-            SpellTextures[path] = texture = ImageTexture.CreateFromImage(GfxTextures.Canvas(path));
+            SpellTextures[path] = texture = GfxTextures.Of(path) ?? ImageTexture.CreateFromImage(GfxTextures.Canvas(path));
         return texture;
     }
 }

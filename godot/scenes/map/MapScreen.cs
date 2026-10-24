@@ -74,6 +74,7 @@ public partial class MapScreen : Node
             viewport.AddChild(_map);
 
             var session = Session ?? LoadSession(args);
+            if (Session is null && args.Contains("--new-game")) NewGame = true;   // сцена сама: окно начала дня 1, как у новой партии
             var looks = session.Looks;
             string? viewer = Session is not null ? Viewer : MapSource.Arg(args, "--player") switch
             {
@@ -276,6 +277,7 @@ public partial class MapScreen : Node
             Flipped = _settings.FlippedBattle,   // «Поменяться сторонами» (MapScreen.AiTurn.cs — настройки)
             Speed = _settings.BattleSpeed, BattleAnim = _settings.BattleAnim,   // «Скорость битвы», «Дополнительная анимация в бою»
             QueueStrip = _settings.QueueStrip,   // полоса очереди ходов (своя настройка, MapSettings.QueueStrip)
+            Wide = _settings.WideBattle,   // широкий бой (своя настройка, MapSettings.WideBattle)
             OwnName = session.OwnName,   // подпись крупного портрета X100TA0608: у героя — своё имя, у прочих — имя типа (0x5e97dc)
             BackgroundVariant = variant ?? BackgroundDraw(session, state),
             CardLogic = BattleCard(),   // карточка юнита по правой кнопке — общая с картой

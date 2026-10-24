@@ -151,6 +151,13 @@ public static class UiArt
         }
         Error error = font.LoadDynamicFont(path);
         if (error != Error.Ok) throw new IOException($"шрифт {file}: {error}");
+        if (LastEdict.Data.Ui.VectorFonts.IsVector(file))
+        {
+            // Векторный текст (VectorFonts): поле расстояний — глиф чёткий при любом масштабе показа, без растеризации на каждый размер.
+            font.MultichannelSignedDistanceField = true;
+            font.MsdfPixelRange = 16;
+            font.MsdfSize = 48;
+        }
         return font;
     }
 

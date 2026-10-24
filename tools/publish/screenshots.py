@@ -102,7 +102,8 @@ SHOTS = (
 
 def window_position(size: tuple[int, int] = (WIDTH, HEIGHT)) -> list[str]:
     """Окно — в угол основного экрана подальше от мыши: курсор над окном дал бы подсветку клетки или кнопки на снимке. Мышь на
-    другом мониторе — угол любой, окно её и так не накроет."""
+    другом мониторе — угол любой, окно её и так не накроет. У Godot начало координат — левый верхний угол всех мониторов (у Windows —
+    угол основного): монитор левее или выше основного сдвигает его, иначе окно открылось бы на другом мониторе."""
     if sys.platform != "win32":
         return []
     try:
@@ -112,12 +113,14 @@ def window_position(size: tuple[int, int] = (WIDTH, HEIGHT)) -> list[str]:
         point = wintypes.POINT()
         ctypes.windll.user32.GetCursorPos(ctypes.byref(point))
         screen_w, screen_h = ctypes.windll.user32.GetSystemMetrics(0), ctypes.windll.user32.GetSystemMetrics(1)
+        # SM_XVIRTUALSCREEN, SM_YVIRTUALSCREEN: угол всех мониторов в точках Windows (≤ 0).
+        left, top = ctypes.windll.user32.GetSystemMetrics(76), ctypes.windll.user32.GetSystemMetrics(77)
     except (AttributeError, OSError):
         return []
     margin = 60
     x = margin if point.x > screen_w // 2 else max(margin, screen_w - size[0] - margin)
     y = margin if point.y > screen_h // 2 else max(margin, screen_h - size[1] - margin * 2)
-    return ["--position", f"{x},{y}"]
+    return ["--position", f"{x - left},{y - top}"]
 
 
 def godot_args(shot: Shot, raw: Path, menu_dirs: Path, corpus: Path, repo: Path = REPO) -> list[str]:

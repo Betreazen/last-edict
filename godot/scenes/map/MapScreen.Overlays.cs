@@ -317,7 +317,7 @@ public partial class MapScreen
             PlaceName = MapBattle.PlaceOf(session.Map, state.DefenderGroup), PlayerIsAttacker = playerAttacks,
             OwnsAttackerStack = MapBattle.OwnsAttackerStack(session.Map, state.AttackerGroup, _map.Viewer),   // «Меню героя» (0x4d77b8)
             OwnName = session.OwnName,   // подпись крупного портрета — как у боя с карты
-            QueueStrip = _settings.QueueStrip,
+            QueueStrip = _settings.QueueStrip, Wide = _settings.WideBattle,
             CardLogic = BattleCard(),
             LevelMarks = BattleLevelMarks(),
         };
@@ -415,6 +415,14 @@ public partial class MapScreen
     {
         var (screen, logic, close) = _overlayQueue.Dequeue();
         _overlay = new UiScreenView { Hosted = screen, Name = screen, SlotHost = _host, Logic = logic };
+        // По середине холста карты в его масштабе, как окна (MapScreen.Windows.cs): без места свиток вписывался во всё окно сам —
+        // 337×367 во всю высоту экрана (ответ пользователя 24.10).
+        if (Centered(screen) is { } at)
+        {
+            _overlay.SlotAt = at;
+            _overlay.Backdrop = FullScreen(screen);
+            if (!_overlay.Backdrop) _overlay.SlotScale = WindowScale;
+        }
         _overlayClose = close;
         var shown = _overlay;
         shown.Fired += events =>

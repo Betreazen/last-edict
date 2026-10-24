@@ -30,9 +30,15 @@ public enum BattleAction
 /// человека (a), <paramref name="Flipped"/> — «Поменяться сторонами» настроек (f), <see cref="Mirrored"/> m = !a ^ f. Нападающие стоят
 /// слева (места <c>IMG_AUNIT</c>, кадры «A») при !f. При m места обеих групп сдвинуты на +173, фон — с x = 0 (иначе −150), основная
 /// панель — слева (иначе справа), кнопка <c>TOG_RIGHTUNITS</c> и полоса <c>IMG_PUNITGROUP_SPOT</c> отражены (x' = 800 − x − ширина).
+/// <para>Широкий бой (<paramref name="Width"/> не меньше <see cref="WideBattle.MinWidth"/>, <see cref="WideBattle"/>): как у врапера —
+/// сдвига мест и зеркала нет, обе колонки отрядов на своих сторонах, фон 950 — по середине холста.</para>
 /// </summary>
-public sealed record BattleLayout(bool OwnAttacks = true, bool Flipped = false)
+public sealed record BattleLayout(bool OwnAttacks = true, bool Flipped = false, int Width = BattleLayout.ScreenWidth,
+                                  WideUnits Units = WideUnits.Wrapper)
 {
+    /// <summary>Широкий бой: разметка — на всю ширину холста (<see cref="WideBattle.Place"/>).</summary>
+    public bool Wide => WideBattle.Wide(Width);
+
     public const int ScreenWidth = 800, MirrorShift = 173, BackgroundLeft = -150;
 
     public static BattleLayout Default { get; } = new();
@@ -44,10 +50,13 @@ public sealed record BattleLayout(bool OwnAttacks = true, bool Flipped = false)
     public bool AttackersLeft => !Flipped;
 
     /// <summary>Сдвиг мест юнитов по x.</summary>
-    public int Shift => Mirrored ? MirrorShift : 0;
+    public int Shift => !Wide && Mirrored ? MirrorShift : 0;
 
     /// <summary>x фона (холст 950 шире экрана).</summary>
-    public int BackgroundX => Mirrored ? 0 : BackgroundLeft;
+    public int BackgroundX => Wide ? (Width - BackgroundWidth) / 2 : Mirrored ? 0 : BackgroundLeft;
+
+    /// <summary>Ширина холста фона места (<c>Battle.ff</c>, 950×600).</summary>
+    public const int BackgroundWidth = 950;
 
     /// <summary>Основная панель справа (<c>IMG_R*</c>) — иначе слева.</summary>
     public bool MainPanelRight => !Mirrored;
@@ -56,7 +65,7 @@ public sealed record BattleLayout(bool OwnAttacks = true, bool Flipped = false)
     public bool LeftSide(bool attacker) => attacker == AttackersLeft;
 
     /// <summary>Место элемента, отражённого при m (кнопка панели, полоса SPOT).</summary>
-    public UiRect Mirror(UiRect rect) => Mirrored ? rect with { X = ScreenWidth - rect.X - rect.Width } : rect;
+    public UiRect Mirror(UiRect rect) => !Wide && Mirrored ? rect with { X = ScreenWidth - rect.X - rect.Width } : rect;
 }
 
 /// <summary>
@@ -150,6 +159,7 @@ public sealed class BattleScene
     /// группу», и в ход лекаря свой отряд уезжал в правую панель, а враг — в левую (пометка 1 партии 14.10).</summary>
     public bool? PanelLeft(bool attacker)
     {
+        if (Layout.Wide) return Layout.LeftSide(attacker);   // широкий бой: колонка группы — на её стороне поля, обе видны всегда
         bool mainLeft = !Layout.MainPanelRight;
         if (BothPanels || SpotShown) return attacker == Layout.OwnAttacks ? !mainLeft : mainLeft;
         return attacker == MainShowsAttackers ? mainLeft : null;

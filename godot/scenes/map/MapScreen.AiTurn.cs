@@ -283,7 +283,7 @@ public partial class MapScreen
             Name = "Battle", Standalone = false, Prepared = state, Rules = session.Book!.Rules, Rng = session.BattleRng,   // Book проверен в OpenAiBattle
             PlaceName = MapBattle.PlaceOf(session.Map, state.DefenderGroup), PlayerIsAttacker = false, OwnsAttackerStack = false,
             Flipped = _settings.FlippedBattle, OwnName = session.OwnName, BackgroundVariant = BackgroundDraw(session, state),
-            QueueStrip = _settings.QueueStrip,
+            QueueStrip = _settings.QueueStrip, Wide = _settings.WideBattle,
             CardLogic = BattleCard(),
             LevelMarks = BattleLevelMarks(),
         };

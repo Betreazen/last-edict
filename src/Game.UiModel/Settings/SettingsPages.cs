@@ -99,8 +99,8 @@ public static class SettingsPages
         new("scaling", SettingsTab.Display, SettingKind.Choice, "LE_SET_SCALING", "LE_SET_SCALING_HELP", s => (int)s.ScreenScaling,
             (s, v) => s with { Scaling = ((ScreenScaling)v).ToString().ToLowerInvariant() })
         {
-            Choices = [new((int)ScreenScaling.Sharp, "LE_SET_SCALING_SHARP"), new((int)ScreenScaling.Integer, "LE_SET_SCALING_INTEGER"),
-                       new((int)ScreenScaling.Nearest, "LE_SET_SCALING_NEAREST")],
+            Choices = [new((int)ScreenScaling.Hd, "LE_SET_SCALING_HD"), new((int)ScreenScaling.Sharp, "LE_SET_SCALING_SHARP"),
+                       new((int)ScreenScaling.Integer, "LE_SET_SCALING_INTEGER"), new((int)ScreenScaling.Nearest, "LE_SET_SCALING_NEAREST")],
             Display = true,
         },
         // Сглаживание кадра (ответ пользователя 24.10): постобработка всего кадра — смягчает рваные края спрайтов оригинала.
@@ -110,6 +110,16 @@ public static class SettingsPages
             Choices = [new(MapSettings.AntialiasingOff, "LE_SET_AA_OFF"), new(MapSettings.AntialiasingFxaa, "FXAA"),
                        new(MapSettings.AntialiasingSmaa, "SMAA")],
             Display = true,
+        },
+        // Чёткость при любом разрешении (ответ пользователя 24.10): резкость кадра, векторный текст, размер окон над картой — сразу.
+        new("sharpness", SettingsTab.Display, SettingKind.Slider, "LE_SET_SHARPNESS", "LE_SET_SHARPNESS_HELP", s => s.Sharpness,
+            (s, v) => s with { Sharpness = v }) { Max = MapSettings.MaxSharpness, Step = 10 },
+        Toggle("vectorText", SettingsTab.Display, "LE_SET_VECTOR_TEXT", "LE_SET_VECTOR_TEXT_HELP", s => s.VectorText,
+            (s, v) => s with { VectorText = v }),
+        new("windowScale", SettingsTab.Display, SettingKind.Choice, "LE_SET_WINDOW_SCALE", "LE_SET_WINDOW_SCALE_HELP", s => s.WindowScale,
+            (s, v) => s with { WindowScale = v })
+        {
+            Choices = [.. MapSettings.WindowScales.Select(z => new SettingChoice(z, $"{z} %"))],
         },
         new("largeUi", SettingsTab.Display, SettingKind.Choice, "LE_SET_LARGE_UI", "LE_SET_LARGE_UI_HELP", s => s.LargeUi,
             (s, v) => s with { LargeUi = v })
@@ -166,6 +176,8 @@ public static class SettingsPages
         Toggle("battleAnimation", SettingsTab.Battle, "X005TA0701", "X005TA0850", s => s.BattleAnim, (s, v) => s with { BattleAnim = v }),
         Toggle("flipped", SettingsTab.Battle, "X160TA0015", "X160TA0016", s => s.FlippedBattle, (s, v) => s with { FlippedBattle = v }),
         Toggle("queueStrip", SettingsTab.Battle, "LE_SET_QUEUE_STRIP", "LE_SET_QUEUE_STRIP_HELP", s => s.QueueStrip, (s, v) => s with { QueueStrip = v }),
+        // Широкий бой (ответ пользователя 24.10, «как во врапере»): на окне 16:9 и шире колонки отрядов не закрывают поле.
+        Toggle("wideBattle", SettingsTab.Battle, "LE_SET_WIDE_BATTLE", "LE_SET_WIDE_BATTLE_HELP", s => s.WideBattle, (s, v) => s with { WideBattle = v }),
 
         // «Язык»: значение — номер в списке языков (Languages); 0 — по умолчанию (русский, если импортирован).
         new("language", SettingsTab.Language, SettingKind.Choice, "LE_SET_LANGUAGE", "LE_SET_LANGUAGE_HELP",

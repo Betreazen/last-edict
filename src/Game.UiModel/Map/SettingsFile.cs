@@ -48,6 +48,9 @@ public static class SettingsFile
         new(Display, "resolution", nameof(MapSettings.Resolution)),
         new(Display, "mapZoom", nameof(MapSettings.MapZoom)),
         new(Display, "antialiasing", nameof(MapSettings.Antialiasing)),
+        new(Display, "sharpness", nameof(MapSettings.Sharpness)),
+        new(Display, "vectorText", nameof(MapSettings.VectorText)),
+        new(Display, "windowScale", nameof(MapSettings.WindowScale)),
         new(Display, "vsync", nameof(MapSettings.VSync)),
         new(Display, "maxFps", nameof(MapSettings.MaxFps)),
         new(Display, "scaling", nameof(MapSettings.Scaling)),
@@ -80,6 +83,7 @@ public static class SettingsFile
         new(Battle, "animation", nameof(MapSettings.BattleAnim)),
         new(Battle, "flipped", nameof(MapSettings.FlippedBattle)),
         new(Battle, "queueStrip", nameof(MapSettings.QueueStrip)),
+        new(Battle, "wideBattle", nameof(MapSettings.WideBattle)),
         new(Interface, "language", nameof(MapSettings.Language)),
         new(Controls, "bindings", nameof(MapSettings.Bindings)),
     ];

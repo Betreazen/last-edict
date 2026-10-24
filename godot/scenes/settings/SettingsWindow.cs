@@ -277,6 +277,7 @@ public partial class SettingsWindow : Control
         DropCapture();
         if (!_logic.Apply())
         {
+            if (DisplaySettings.Allowed(OS.GetCmdlineUserArgs())) DisplaySettings.ApplyLook(_logic.Draft.Current);
             Refresh();
             return;
         }

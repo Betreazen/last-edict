@@ -163,6 +163,7 @@ public partial class MapScreen
             {
                 view.SlotAt = at;
                 view.Backdrop = FullScreen(want[i]);   // окно во весь экран оригинала — бока закрыты градиентом
+                if (!view.Backdrop) view.SlotScale = WindowScale;
             }
             view.Fired += events => OnWindowEvents(view, events);
             view.DragCursorChanged += cursor => DragCursor(view, cursor);
@@ -224,6 +225,13 @@ public partial class MapScreen
         else if (cursor is not null) Cursor.Show(cursor);
         else ShowWindowCursor(view);
     }
+
+    /// <summary>Доля масштаба окон меньше экрана оригинала (свитки, карточки, сообщения; <see cref="UiScreenView.SlotScale"/>): настройка
+    /// «Размер окон» (<see cref="MapSettings.WindowScale"/>), для снимков — ключ <c>--window-scale</c> в процентах.</summary>
+    private float WindowScale =>
+        (int.TryParse(MapSource.Arg(OS.GetCmdlineUserArgs(), "--window-scale"), out int percent)
+            ? Math.Clamp(percent, MapSettings.WindowScales[0], MapSettings.WindowScales[^1])
+            : _settings.Clamped().WindowScale) / 100f;
 
     /// <summary>Окно размером с экран оригинала (800×600 и больше): в оригинале оно закрывало всё, на холсте шире — по середине.</summary>
     private static bool FullScreen(string screen) =>

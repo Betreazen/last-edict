@@ -120,6 +120,9 @@ public partial class UiScreenView
         var design = _state.Screen.Design;
         if (SlotAt is not { } at) return design;
         at += SlotInset();   // экран по середине места больше разметки (UiScreenView.Layout.cs)
-        return new UiRect(design.X - (int)at.X, design.Y - (int)at.Y, (int)SlotHost.X, (int)SlotHost.Y);
+        // Окно в доле масштаба хозяина (SlotScale) с той же серединой: экран хозяина в точках окна — шире в 1/доля раз.
+        float f = SlotScale;
+        var origin = (at + (new Vector2(design.Width, design.Height) * (1f - f) / 2f)) / f;
+        return new UiRect(design.X - (int)origin.X, design.Y - (int)origin.Y, (int)(SlotHost.X / f), (int)(SlotHost.Y / f));
     }
 }

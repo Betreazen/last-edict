@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using LastEdict.Data.Gfx;
+using LastEdict.Data.Ui;
 using Godot;
 
 namespace LastEdict.Godot;
@@ -17,6 +18,7 @@ public partial class BattleView
     private Vector2I _margin;
     private readonly List<Sprite2D> _placeNodes = new();
     private Sprite2D? _ambient;
+    private readonly List<Sprite2D> _mirrors = new();
 
     /// <summary>Поле прироста холста с каждой стороны, в точках поля: поле сдвигается на него, края заполняются растяжкой фона.</summary>
     public Vector2I Margin
@@ -42,6 +44,13 @@ public partial class BattleView
     {
         _ambient?.QueueFree();
         _ambient = null;
+        foreach (var mirror in _mirrors) mirror.QueueFree();
+        _mirrors.Clear();
+        if (_scene?.Layout is { Wide: true } layout)
+        {
+            WideEdges(layout.Width);
+            return;
+        }
         bool wide = _margin != Vector2I.Zero;
         foreach (var node in _placeNodes)
         {
@@ -58,11 +67,61 @@ public partial class BattleView
         _layer.AddChild(_ambient);
     }
 
+    /// <summary>Нарисованная при любом месте полоса фона (x картинки 150…800): ниже неба остальное в картинках чёрное — его закрывали
+    /// панели оригинала.</summary>
+    private const int PaintedLeft = 150, PaintedRight = 800;
+
+    /// <summary>Чёрное картинки фона — прозрачное: под ним видна растяжка.</summary>
+    private const string KeyBlackShader = """
+        shader_type canvas_item;
+
+        void fragment() {
+            vec4 c = texture(TEXTURE, UV);
+            COLOR.a *= smoothstep(0.004, 0.03, max(c.r, max(c.g, c.b)));   // мягко: сжатие HD и фильтр дают «почти чёрный» край
+        }
+        """;
+
+    private static ShaderMaterial? _keyBlack;
+
+    /// <summary>Широкий бой (<see cref="WideBattle"/>): фон места целиком, по середине холста, его чёрное (за панелями оригинала) прозрачно;
+    /// под ним — зеркальное продолжение нарисованной полосы до колонок отрядов (поле между ними шире нарисованного) и растяжка на весь холст
+    /// с полями прироста.</summary>
+    private void WideEdges(int width)
+    {
+        foreach (var node in _placeNodes)
+        {
+            node.RegionEnabled = false;
+            node.Position = new Vector2(_background?.X ?? 0, node.Position.Y);
+            node.Material = _keyBlack ??= new ShaderMaterial { Shader = new Shader { Code = KeyBlackShader } };
+        }
+        if (_layer is null || _background is not { } bg || Frames(bg) is not [var texture, ..]) return;
+        var clear = new Rect2(PaintedLeft, 0, PaintedRight - PaintedLeft, BattleScene.CanvasHeight);
+        var canvas = new Vector2(width + (2 * _margin.X), BattleScene.CanvasHeight + (2 * _margin.Y));
+        _ambient = AmbientFill.Create(texture, clear, new Vector2(width / 2f, BattleScene.CanvasHeight / 2f), canvas, bg.Layer - 1);
+        _layer.AddChild(_ambient);
+        int gap = Mathf.Min(bg.X + PaintedLeft - WideBattle.LeftColumn, (PaintedRight - PaintedLeft) / 2);
+        if (gap <= 0) return;
+        Mirror(new Rect2(PaintedLeft, 0, gap, BattleScene.CanvasHeight), bg.X + PaintedLeft - gap);
+        Mirror(new Rect2(PaintedRight - gap, 0, gap, BattleScene.CanvasHeight), bg.X + PaintedRight);
+
+        void Mirror(Rect2 region, int x)
+        {
+            var node = new Sprite2D
+            {
+                Name = "Mirror", Texture = texture, RegionEnabled = true, RegionRect = region, FlipH = true, Centered = false,
+                Position = new Vector2(x, bg.Y), ZIndex = bg.Layer - 1,
+            };
+            _mirrors.Add(node);
+            _layer.AddChild(node);
+        }
+    }
+
     /// <summary>Запомнить фон и узлы слоёв места сборки (источник «фон», <see cref="BattleScene.PlaceLayers"/>) и поставить края (из
     /// <see cref="Build"/>).</summary>
     private void PlaceEdges(IReadOnlyList<BattleSprite> layers)
     {
-        _ambient = null;   // прежняя растяжка снята вместе со слоем
+        _ambient = null;   // прежние растяжка и зеркала сняты вместе со слоем
+        _mirrors.Clear();
         _placeNodes.Clear();
         _background = layers.FirstOrDefault(l => l.Name.EndsWith("_BG", System.StringComparison.OrdinalIgnoreCase));
         if (_background is not null && _byUnit.TryGetValue(_background.Source, out var nodes)) _placeNodes.AddRange(nodes.OfType<Sprite2D>());

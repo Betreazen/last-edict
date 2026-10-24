@@ -69,6 +69,10 @@ public partial class UiScreenView : Node2D
     /// <summary>Размер экрана хозяина, в который вписывается панель (<see cref="SlotAt"/>).</summary>
     public Vector2 SlotHost { get; set; } = new(800, 600);
 
+    /// <summary>Доля масштаба хозяина у окна на месте (<see cref="SlotAt"/>), с той же серединой: свитки и карточки над картой при 1 — почти
+    /// во весь экран, как в оригинале (ответ пользователя 24.10: «неудобно, что они на весь экран»).</summary>
+    public float SlotScale { get; set; } = 1f;
+
     /// <summary>Язык строк; хозяин передаёт свой.</summary>
     public string Language { get; set; } = GameData.Language;
 
@@ -323,6 +327,15 @@ public partial class UiScreenView : Node2D
             if (FrameImage(frame[PlatePrefix.Length..at], out problem) is { } source) image = Plate(source, x, y);
             return UiArt.Remember(frame, image, problem);
         }
+        // Широкая картинка (Widen:кадр@ширина/l,fl,c0,c1,fr,r): края и центр кадра на своих местах, между ними — вставки (нижняя панель
+        // широкого боя, WideBattle).
+        if (frame.StartsWith(WidenPrefix, StringComparison.Ordinal) && frame.IndexOf('@') is var wat && wat > WidenPrefix.Length
+            && frame[(wat + 1)..].Split('/') is [var w, var cuts] && int.TryParse(w, out int width)
+            && cuts.Split(',').Select(c => int.TryParse(c, out int v) ? v : -1).ToArray() is { Length: 6 } cut && cut.All(v => v >= 0))
+        {
+            if (FrameImage(frame[WidenPrefix.Length..wat], out problem) is { } source) image = Widen(source, width, cut);
+            return UiArt.Remember(frame, image, problem);
+        }
         if (GfxImage(frame) is { } gfx)
         {
             problem = gfx.Problem;
@@ -386,6 +399,44 @@ public partial class UiScreenView : Node2D
         for (int y = 0; y < h; y++) column.SetPixel(0, y, top.Lerp(bottom, y / (float)(h - 1)));
         column.Resize(w, h, Image.Interpolation.Nearest);
         return column;
+    }
+
+    private const string WidenPrefix = "Widen:";
+
+    /// <summary>Картинка шире своей: левый край <c>[0, l)</c> — слева, правый <c>[r, ширина)</c> — справа, центр <c>[c0, c1)</c> — по середине,
+    /// промежутки — вставками <c>[fl, l)</c> (слева) и <c>[fr, fr + l − fl)</c> (справа) зеркальной плиткой. В точках кадра (HD — гуще в его
+    /// множитель).</summary>
+    private static Image Widen(Image source, int width, int[] cut)
+    {
+        int s = ImageScales.Of(source);
+        var src = source.GetFormat() == Image.Format.Rgba8 ? source : Converted(source);
+        int w0 = ImageScales.Logical(source).X, h = src.GetHeight();
+        int l = cut[0], fl = cut[1], c0 = cut[2], c1 = cut[3], fr = cut[4], r = cut[5], strip = l - fl;
+        // Срезы — из имени кадра (его может дать мод): не по порядку — картинка как есть, без бесконечной плитки и отрицательных вырезок.
+        if (strip <= 0 || l > c0 || c0 >= c1 || c1 > r || r > w0 || fr + strip > w0 || width < w0)
+        {
+            GD.PushError($"Widen: срезы {string.Join(',', cut)} не по порядку для ширины {w0} → {width}");
+            return source;
+        }
+        var canvas = Image.CreateEmpty(width * s, h, false, Image.Format.Rgba8);
+        void Put(int from, int to, int at) => canvas.BlitRect(src, new Rect2I(from * s, 0, (to - from) * s, h), new Vector2I(at * s, 0));
+        // Вставка — полоса плиткой, каждая вторая копия отражена: соседние края совпадают, швов на пергаменте подписи нет (прямой повтор
+        // давал ступеньку яркости на каждом стыке, растяжка смазывала узор каймы).
+        void Tile(int from, int at, int length)
+        {
+            var piece = src.GetRegion(new Rect2I(from * s, 0, strip * s, h));
+            var flipped = (Image)piece.Duplicate();
+            flipped.FlipX();
+            for (int x = 0, i = 0; x < length; x += strip, i++)
+                canvas.BlitRect(i % 2 == 0 ? piece : flipped, new Rect2I(0, 0, Math.Min(strip, length - x) * s, h), new Vector2I((at + x) * s, 0));
+        }
+        int centre = (width - (c1 - c0)) / 2, rightAt = width - (w0 - r);
+        Put(0, l, 0);
+        Tile(fl, l, centre - l);
+        Tile(fr, centre + (c1 - c0), rightAt - (centre + (c1 - c0)));
+        Put(c0, c1, centre);
+        Put(r, w0, rightAt);
+        return ImageScales.With(canvas, s);
     }
 
     private const string PlatePrefix = "Plate:";
@@ -612,9 +663,9 @@ public partial class UiScreenView : Node2D
         Vector2 view = GetViewportRect().Size;
         if (SlotAt is { } at)
         {
-            float h = Mathf.Min(view.X / SlotHost.X, view.Y / SlotHost.Y);
-            _root.Scale = new Vector2(h, h);
-            _root.Position = ((view - (SlotHost * h)) / 2f) + ((at + SlotInset()) * h);
+            float h = Mathf.Min(view.X / SlotHost.X, view.Y / SlotHost.Y), s = h * SlotScale;
+            _root.Scale = new Vector2(s, s);
+            _root.Position = ((view - (SlotHost * h)) / 2f) + ((at + SlotInset()) * h) + (_design * (h - s) / 2f);
             SlotAmbient();
             PlaceOverlay();
             return;

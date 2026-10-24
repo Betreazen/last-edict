@@ -17,11 +17,9 @@ public partial class BattleScreen
 
     private BattleQueueStrip? _strip;
 
-    /// <summary>Полоса нужна: включена настройкой, а под проверкой (<c>--check</c>, сценарий <c>--input</c>) — только с ключом
-    /// <c>--queue-strip</c>: прежние проверки идут без неё, их числа и снимки не меняются.</summary>
-    private static bool StripWanted(bool setting, string[] args) => Wanted(setting, args, "--queue-strip");
-
-    /// <summary>Своя настройка вида боя (полоса очереди, широкий бой) — под проверкой только с её ключом <paramref name="key"/>.</summary>
+    /// <summary>Своя настройка вида боя (полоса очереди — ключ <c>--queue-strip</c>, широкий бой — <c>--wide-battle</c>): включена настройкой,
+    /// а под проверкой (<c>--check</c>, сценарий <c>--input</c>) — только с её ключом <paramref name="key"/>: прежние проверки идут без неё,
+    /// их числа и снимки не меняются.</summary>
     private static bool Wanted(bool setting, string[] args, string key) =>
         setting && (args.Contains(key) || !(args.Contains("--check") || args.Contains("--input")));
 

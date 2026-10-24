@@ -65,4 +65,4 @@ tools/synth-maps/out/
 .claude/worktrees/
 
 # HD-слой (tools/hd/hd_layer.py import): производная графики игры — в репозиторий не попадает (Р3)
-/mods/hd/
+/mods/hd*/

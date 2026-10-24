@@ -164,7 +164,7 @@ public partial class BattleScreen : Node
             _overlay = new Node2D { Name = "Panels" };
             AddChild(_overlay);   // после панели: портреты и полосы здоровья идут поверх разметки
             _field.BuildPanels(_overlay, _scene, state);
-            if (StripWanted(QueueStrip, args)) AddQueueStrip();   // полоса очереди ходов — над панелями, под окнами
+            if (Wanted(QueueStrip, args, "--queue-strip")) AddQueueStrip();   // полоса очереди ходов — над панелями, под окнами
             if (_checks)   // метки при открытии боя: первым ходит призыватель человека — круги на клетках и рамки в панели уже есть
                 GD.Print($"battle synth open ходит={_session.Current?.Id ?? "-"} клеток={_session.SummonSlots().Count} меток_поля={_field.EmptyMarks} " +
                          $"рамок_панели={_field.PanelFrames.Count(f => f.StartsWith("EMPTYSEL", StringComparison.OrdinalIgnoreCase))}");

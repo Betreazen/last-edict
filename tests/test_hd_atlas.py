@@ -36,7 +36,7 @@ def test_pack_unpack_round_trip(tmp_path: Path) -> None:
     for name, im in frames.items():
         with Image.open(out / name) as got:
             assert got.size == (im.width * 2, im.height * 2)
-            assert list(got.getdata()) == list(im.resize(got.size, Image.Resampling.NEAREST).getdata())
+            assert got.convert("RGBA").tobytes() == im.resize(got.size, Image.Resampling.NEAREST).tobytes()
 
 
 def test_frames_keep_gap_and_bounds() -> None:
@@ -64,3 +64,38 @@ def test_non_integer_scale_is_reported(tmp_path: Path) -> None:
     with Image.open(sheets / "sheet_0001.png") as im:
         im.resize((im.width * 3 + 1, im.height * 3)).save(up / "sheet_0001.png")
     assert atlas.unpack(sheets, up, tmp_path / "out") == 1
+
+
+def test_pack_refuses_folder_with_sheets(tmp_path: Path) -> None:
+    """Номера листов зависят от набора кадров: в папку с прежними листами новые не кладутся (иначе нарезка перепутала бы кадры)."""
+    src = tmp_path / "export"
+    src.mkdir()
+    Image.new("RGBA", (10, 10), (1, 2, 3, 255)).save(src / "a.png")
+    sheets = tmp_path / "sheets"
+    assert atlas.pack(sheets, [src], [], size=64, pad=2) == 0
+    assert atlas.pack(sheets, [src], [], size=64, pad=2) == 1
+
+
+def test_unreadable_sheet_is_noted_others_cut(tmp_path: Path) -> None:
+    """Лист, который апскейлер ещё пишет, — замечание; другие листы режутся."""
+    src = tmp_path / "export"
+    src.mkdir()
+    for i in range(3):
+        Image.new("RGBA", (40, 40), (i, 2, 3, 255)).save(src / f"f{i}.png")
+    sheets = tmp_path / "sheets"
+    atlas.pack(sheets, [src], [], size=48, pad=2)   # кадр на лист
+    up = tmp_path / "up"
+    up.mkdir()
+    for png in sheets.glob("sheet_*.png"):
+        with Image.open(png) as im:
+            im.resize((im.width * 2, im.height * 2)).save(up / png.name)
+    (up / "sheet_0002.png").write_bytes((up / "sheet_0002.png").read_bytes()[:60])
+    out = tmp_path / "out"
+    assert atlas.unpack(sheets, up, out) == 1
+    assert sorted(p.name for p in out.glob("*.png")) == ["f0.png", "f2.png"]
+
+
+def test_oversized_frame_keeps_gap() -> None:
+    sheets = atlas.shelves([("big", 100, 30), ("small", 10, 10)], size=64, pad=4)
+    big = next(p for s in sheets for p in s if p.flat == "big")
+    assert (big.x, big.y) == (4, 4)

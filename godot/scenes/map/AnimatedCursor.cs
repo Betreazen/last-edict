@@ -165,7 +165,9 @@ public partial class AnimatedCursor : Node
             && UiAssets.PathOf(asset, GameData.UiAssetsRoot) is var path && File.Exists(path))
         {
             // HD-кадр — в логических точках: курсор и горячая точка в размере кадра (крупнее — UiScale).
-            var full = ImageScales.ToLogical(ImageScales.With(Image.LoadFromFile(path), asset.Factor));
+            var file = ImageScales.With(Image.LoadFromFile(path), asset.Factor);
+            var full = ImageScales.ToLogical(file);
+            if (full != file) file.Dispose();   // HD-файл — уменьшенная копия взята; полный не ждёт сборщика мусора
             full.Convert(Image.Format.Rgba8);
             var used = full.GetUsedRect();
             var cropped = used.Size == Vector2I.Zero ? full : full.GetRegion(used);

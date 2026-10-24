@@ -106,6 +106,7 @@ public partial class CapitalView : Node2D
                 Name = $"L{layer.Z}_{layer.Image}", Centered = false, Position = new Vector2(layer.X, layer.Y),
                 Texture = Frame(frames[_frame % frames.Count]),
             };
+            sprite.TextureFilter = ImageScales.Filter(sprite.Texture, TextureFilterEnum.Nearest);   // HD — сглаживание с mip-уровнями
             AddChild(sprite);
             _layers.Add((layer, sprite, frames));
             drawn++;
@@ -204,7 +205,7 @@ public partial class CapitalView : Node2D
     private Texture2D Frame(string path)
     {
         if (!_cache.TryGetValue(path, out var texture))
-            _cache[path] = texture = ImageTexture.CreateFromImage(GfxTextures.Canvas(path));
+            _cache[path] = texture = ImageScales.Texture(GfxTextures.CanvasHd(path));   // HD — полной точности, логического размера
         return texture;
     }
 }

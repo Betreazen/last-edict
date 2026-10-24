@@ -203,15 +203,20 @@ public partial class UiScreenView : Node2D
     private static Image? Layered(Image? under, Image? over)
     {
         if (under is null || over is null) return null;
-        (under, over) = (ImageScales.ToLogical(under), ImageScales.ToLogical(over));   // HD: сложение — в логических точках
-        int w = Math.Max(under.GetWidth(), over.GetWidth()), h = Math.Max(under.GetHeight(), over.GetHeight());
-        var canvas = Image.CreateEmpty(w, h, false, Image.Format.Rgba8);
+        // HD: сложение — в большем множителе слоёв (портрет HD в рамке оригинала — рамка растянута), сдвиг — в логических точках × множитель:
+        // прежде слои сводились к логическим точкам, и портрет в рамке (окна построек, гарнизона, отряда) терял HD.
+        int s = Math.Max(ImageScales.Of(under), ImageScales.Of(over));
+        (under, over) = (ImageScales.AtScale(under, s), ImageScales.AtScale(over, s));
+        Vector2I lu = ImageScales.Logical(under), lo = ImageScales.Logical(over);
+        int w = Math.Max(lu.X, lo.X), h = Math.Max(lu.Y, lo.Y);
+        var canvas = Image.CreateEmpty(w * s, h * s, false, Image.Format.Rgba8);
         foreach (var layer in (Image[])[under, over])
         {
             var src = layer.GetFormat() == Image.Format.Rgba8 ? layer : Converted(layer);
-            canvas.BlendRect(src, new Rect2I(Vector2I.Zero, src.GetSize()), new Vector2I((w - src.GetWidth()) / 2, (h - src.GetHeight()) / 2));
+            var logical = ImageScales.Logical(layer);
+            canvas.BlendRect(src, new Rect2I(Vector2I.Zero, src.GetSize()), new Vector2I((w - logical.X) / 2, (h - logical.Y) / 2) * s);
         }
-        return canvas;
+        return ImageScales.With(canvas, s);
     }
 
     /// <summary>Копия картинки в RGBA8 (для вырезки из кадра другого формата).</summary>

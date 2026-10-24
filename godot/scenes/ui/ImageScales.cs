@@ -60,7 +60,7 @@ public static class ImageScales
         return scale <= 1 ? size : new Vector2I(Mathf.Max(1, size.X / scale), Mathf.Max(1, size.Y / scale));
     }
 
-    /// <summary>Картинка в логических точках: без множителя — она сама, иначе уменьшенная копия (для масок, сложения кадров, проверок точек;
+    /// <summary>Картинка в логических точках: без множителя — она сама, иначе уменьшенная копия (для масок, сложения кадров, проверок точек;
     /// показ идёт текстурой полной картинки, <see cref="Texture"/>).</summary>
     public static Image ToLogical(Image image)
     {
@@ -71,11 +71,34 @@ public static class ImageScales
         return copy;
     }
 
+    /// <summary>Картинка в множителе <paramref name="scale"/> (для сложения с картинкой этого множителя: маска, значок, рамка): свой
+    /// множитель — она сама, иначе копия, растянутая из логических точек (<paramref name="smooth"/> — билинейно, иначе ближайшим).</summary>
+    public static Image AtScale(Image image, int scale, bool smooth = true)
+    {
+        System.ArgumentNullException.ThrowIfNull(image);
+        if (Of(image) == scale) return image;
+        var logical = Logical(image);
+        var copy = (Image)image.Duplicate();
+        copy.Resize(logical.X * scale, logical.Y * scale, smooth ? Image.Interpolation.Bilinear : Image.Interpolation.Nearest);
+        return With(copy, scale);
+    }
+
+    /// <summary>Текстура собранной картинки (портрет с ранами) в множителе <paramref name="scale"/>: логического размера, с mip-уровнями
+    /// (<see cref="Texture"/>); точки — свои, не сжатой копии файла.</summary>
+    public static ImageTexture Composed(Image image, int scale)
+    {
+        System.ArgumentNullException.ThrowIfNull(image);
+        if (scale <= 1) return ImageTexture.CreateFromImage(image);
+        return Texture(Detach(With(image, scale)));
+    }
+
     /// <summary>Текстура картинки: с множителем — логического размера (<c>SetSizeOverride</c>), точки — полные.</summary>
     public static ImageTexture Texture(Image image)
     {
         var source = Scales.TryGetValue(image, out var info) && info.Dds is { } dds && LoadDds(dds) is { } packed ? packed : image;
         if (source != image) FromDds++;
+        // HD без сжатой копии (собранная картинка: рамка с портретом, вырезка) — mip-уровни здесь: окно показывает её мельче полного размера.
+        else if (Of(image) > 1 && !image.HasMipmaps()) image.GenerateMipmaps();
         var texture = ImageTexture.CreateFromImage(source);
         if (Of(image) > 1) Mark(texture, Logical(image));
         return texture;

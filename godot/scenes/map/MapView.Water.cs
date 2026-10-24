@@ -52,16 +52,18 @@ public partial class MapView
         _waterFrames = [.. GfxAssets.FramePaths(anim, GameData.GfxRoot).Where(File.Exists).Select(WaterFrame)];
         double waterMs = System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds;
         if (_waterFrames.Length == 0) return;
+        var filter = ImageScales.Filter(_waterFrames[0], TextureFilterEnum.Nearest);
         float left = MathF.Floor(_bounds.Position.X / WaterTile) * WaterTile, top = MathF.Floor(_bounds.Position.Y / WaterTile) * WaterTile;
         float width = MathF.Ceiling((_bounds.End.X - left) / WaterTile) * WaterTile, height = MathF.Ceiling((_bounds.End.Y - top) / WaterTile) * WaterTile;
         _water = new Sprite2D
         {
             Name = "Water", Texture = _waterFrames[0], Centered = false, Position = new Vector2(left, top),
             RegionEnabled = true, RegionRect = new Rect2(0, 0, width, height),
-            TextureRepeat = TextureRepeatEnum.Enabled, TextureFilter = ImageScales.Filter(_waterFrames[0], TextureFilterEnum.Nearest),
+            TextureRepeat = TextureRepeatEnum.Enabled, TextureFilter = filter,
         };
         AddChild(_water);
-        GameLog.Verbose($"water кадров={_waterFrames.Length} плитка={WaterTile} hd={(ImageScales.Filter(_waterFrames[0], TextureFilterEnum.Nearest) == TextureFilterEnum.LinearWithMipmaps ? 1 : 0)} мс={waterMs:F0}");
+        int hd = filter == TextureFilterEnum.LinearWithMipmaps ? 1 : 0;
+        GameLog.Verbose($"water кадров={_waterFrames.Length} плитка={WaterTile} hd={hd} мс={waterMs:F0}");
     }
 
     /// <summary>Кадр воды. У HD-кадра апскейл тёмнит края плитки — повторённая, она ложится сеткой (как туман и дороги, которые в слой не
@@ -70,9 +72,15 @@ public partial class MapView
     private static Texture2D WaterFrame(string path)
     {
         var image = GfxTextures.CanvasHd(path);
-        if (ImageScales.Of(image) <= 1) return ImageTexture.CreateFromImage(image);
-        Seamless(ImageScales.Detach(image));   // точки меняются — текстура из них, а не из DDS файла
-        return ImageScales.Texture(image);
+        Texture2D texture;
+        if (ImageScales.Of(image) <= 1) texture = ImageTexture.CreateFromImage(image);
+        else
+        {
+            Seamless(ImageScales.Detach(image));   // точки меняются — текстура из них, а не из DDS файла
+            texture = ImageScales.Texture(image);
+        }
+        image.Dispose();   // точки уже в текстуре: HD-кадр ×4 не ждёт сборки мусора
+        return texture;
     }
 
     /// <summary>Доля стороны плитки у каждого края, где она переходит в сдвинутую копию.</summary>

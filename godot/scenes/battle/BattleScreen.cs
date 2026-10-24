@@ -354,9 +354,7 @@ public partial class BattleScreen : Node
         }
         if (_cardFace is not null)
         {
-            var face = _cardFace.Texture;   // портрет карточки — своя текстура (CardPortrait): отпустить сразу, не сборкой мусора
-            _cardFace.QueueFree();
-            face?.Dispose();
+            _cardFace.QueueFree();   // текстура — общего кэша графики мира (CardPortrait): её отпускает GfxTextures.Release, не карточка
             _cardFace = null;
         }
         if (unit is null) return;

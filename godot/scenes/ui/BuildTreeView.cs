@@ -89,8 +89,11 @@ public partial class BuildTreeView : Control
         if (build.Card is { } card) DrawCard(card);
         var gold = build.GoldRect;
         if (build.Gold.Length > 0 && gold.Width > 0)
-            DrawString(Caption, new Vector2(gold.X - _corner.X, gold.Y - _corner.Y + ((gold.Height + Caption.GetAscent(TabSize) - Caption.GetDescent(TabSize)) / 2f)),
-                       build.Gold, HorizontalAlignment.Right, gold.Width - 6, TabSize, Gold);
+        {
+            int size = Shrink(Caption, build.Gold, gold.Width - 6, TabSize, MinSize);
+            DrawString(Caption, new Vector2(gold.X - _corner.X, gold.Y - _corner.Y + ((gold.Height + Caption.GetAscent(size) - Caption.GetDescent(size)) / 2f)),
+                       build.Gold, HorizontalAlignment.Right, gold.Width - 6, size, Gold);
+        }
         foreach (var button in build.Buttons) DrawButton(button);
     }
 
@@ -181,16 +184,22 @@ public partial class BuildTreeView : Control
             DrawCentered(item, text, plate, CaptionSize, color);
             return;
         }
-        int size = CaptionSize - 1;
-        float Widest(int s) => text.Split(' ', StringSplitOptions.RemoveEmptyEntries)
-                                   .Max(w => font.GetStringSize(w, HorizontalAlignment.Left, -1, s).X);
-        while (size > MinSize && Widest(size) > width) size--;
-        var block = font.GetMultilineStringSize(text, HorizontalAlignment.Center, width, size, -1, Wrap);
+        if (!LabelFits.TryGetValue((text, width), out var fit))
+        {
+            int s = CaptionSize - 1;
+            string[] words = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            while (s > MinSize && words.Max(w => font.GetStringSize(w, HorizontalAlignment.Left, -1, s).X) > width) s--;
+            LabelFits[(text, width)] = fit = (s, font.GetMultilineStringSize(text, HorizontalAlignment.Center, width, s, -1, Wrap));
+        }
+        var (size, block) = fit;
         var grown = plate with { Size = new Vector2(plate.Size.X, Mathf.Max(plate.Size.Y, block.Y + 6)) };
         item.DrawStyleBox(_plate, grown);
         var at = new Vector2(grown.Position.X + 4, grown.Position.Y + ((grown.Size.Y - block.Y) / 2f) + font.GetAscent(size));
         item.DrawMultilineString(font, at, text, HorizontalAlignment.Center, width, size, -1, color, Wrap);
     }
+
+    /// <summary>Шрифт и размер блока длинных подписей (по имени и ширине): вид перерисовывается на каждый сдвиг, зум и наведение.</summary>
+    private static readonly System.Collections.Generic.Dictionary<(string Text, float Width), (int Size, Vector2 Block)> LabelFits = new();
 
     /// <summary>Перенос подписи: по словам, а слово длиннее плашки — по буквам.</summary>
     private const TextServer.LineBreakFlag Wrap =

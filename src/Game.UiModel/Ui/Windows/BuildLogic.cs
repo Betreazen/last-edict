@@ -387,7 +387,7 @@ public sealed class BuildLogic : IWindowLogic, IPadTargets, IBuildTreeSource
     {
         if (!InArea(x, y) || _area is not { } area || (Card is { } card && Inside(card.Rect, x, y))) return null;
         var (cx, cy) = View.ToContent(x - area.X, y - area.Y);
-        return Items.LastOrDefault(i => Contains(i.Icon, cx, cy) || Contains(i.Plate, cx, cy));
+        return Items.LastOrDefault(i => Contains(i.Icon, cx, cy) || Contains(i.Plate with { Height = BuildTreeGeometry.LabelHeight }, cx, cy));
     }
 
     private static bool Contains(UiRect r, double x, double y) => x >= r.X && x < r.Right && y >= r.Y && y < r.Bottom;

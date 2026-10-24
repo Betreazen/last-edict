@@ -21,7 +21,6 @@ public partial class MapView
     private int _spellFrame = -1, _spellLength;
     private double _spellClock;
     private float _spellSpeed = 1f;
-    private static readonly Dictionary<string, Texture2D> SpellTextures = new();
 
     private double _spellSoundLeft;
 
@@ -212,7 +211,8 @@ public partial class MapView
         var centre = at ?? CellCentre(x, y);
         foreach (var part in parts)
         {
-            var frames = GfxAssets.FramePaths(part.Anim, GameData.GfxRoot).Where(File.Exists).Select(Texture).ToArray();
+            // Кадры — общим кэшем графики мира (обрезка, DDS, HD логического размера); свой словарь пережил бы GfxTextures.Release.
+            var frames = GfxAssets.FramePaths(part.Anim, GameData.GfxRoot).Select(p => GfxTextures.Of(p)).OfType<Texture2D>().ToArray();
             if (frames.Length == 0) continue;
             var sprite = new Sprite2D
             {
@@ -289,13 +289,5 @@ public partial class MapView
         AddChild(node);
         if (under) MoveChild(node, _objects.GetIndex());
         return node;
-    }
-
-    private static Texture2D Texture(string path)
-    {
-        // Кадр заклинания — общим кэшем графики мира (обрезка, DDS, HD логического размера), а не холстом в логических точках.
-        if (!SpellTextures.TryGetValue(path, out var texture))
-            SpellTextures[path] = texture = GfxTextures.Of(path) ?? ImageTexture.CreateFromImage(GfxTextures.Canvas(path));
-        return texture;
     }
 }

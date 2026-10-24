@@ -46,7 +46,12 @@ public partial class StudioTreeTab : VSplitContainer, IStudioTab
         _view = new BuildTreeView(ws.Preview, texture);
         _page.AddChild(_view);
         _page.Resized += () => { _ws.Preview.Resize((int)_page.Size.X, (int)_page.Size.Y); _view.Sync(Vector2I.Zero); };
-        _graph.Resized += () => { if (!_fitted) _graphRevision = -1; };
+        _graph.Resized += () =>
+        {
+            if (_fitted) return;
+            _graphRevision = -1;   // место графа известно — вписать его при первом показе
+            Sync();
+        };
         _page.GuiInput += PageInput;
         _graph.ConnectionRequest += (from, _, to, _) =>
         {

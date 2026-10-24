@@ -35,7 +35,15 @@ public static class MapFactory
     private sealed class Builder(ContentSet content, NewMapOptions o)
     {
         private readonly Random _rnd = new(o.Seed);
-        private readonly string _p = $"S{900 + (Math.Abs(o.Id.GetHashCode(StringComparison.Ordinal)) % 99):D3}";
+        /// <summary>Приставка id объектов (<c>S9NN</c>): номер — от id карты устойчивым хешем (FNV-1a), одна карта — одни id на любой машине.</summary>
+        private readonly string _p = $"S{900 + (int)(Fnv(o.Id) % 99):D3}";
+
+        private static uint Fnv(string text)
+        {
+            uint hash = 2166136261;
+            foreach (char c in text) hash = (hash ^ c) * 16777619;
+            return hash;
+        }
         private readonly JsonObject _units = [], _stacks = [], _objects = [];
         private readonly Dictionary<(int, int), List<string>> _plan = [];
         private readonly JsonArray _sites = [], _forts = [], _looksStacks = [];
@@ -172,22 +180,26 @@ public static class MapFactory
                 for (int dx = -w; dx <= w; dx++)
                     for (int dy = -h; dy <= h; dy++) Put(cx + dx, cy + dy, ground, Land(neutral));
             }
-            // Столицы — по кругу у краёв, вокруг — своя земля.
+            // Столицы — по кругу у краёв, вокруг — своя земля; места не перекрываются (с полем 3 клетки), иначе карта мала для стольких игроков.
             for (int s = 0; s < seats.Count; s++)
             {
                 double angle = (2 * Math.PI * s / seats.Count) + (Math.PI / 4);
                 int radius = (N / 2) - 10;
                 int x = Math.Clamp((N / 2) + (int)Math.Round(radius * Math.Cos(angle)) - 2, 4, N - CapitalSide - 4);
                 int y = Math.Clamp((N / 2) + (int)Math.Round(radius * Math.Sin(angle)) - 2, 4, N - CapitalSide - 4);
+                if (!Free(x, y, CapitalSide, 3))
+                    throw new ArgumentException($"карта {N}×{N} мала для {seats.Count} столиц: столицы налезают друг на друга — больше сторона или меньше игроков");
                 for (int yy = y - 3; yy < y + CapitalSide + 3; yy++)
                     for (int xx = x - 3; xx < x + CapitalSide + 3; xx++) Put(xx, yy, 0, Land(seats[s]));
                 var race = seats[s];
                 var hero = race.Leaders.Take(1).Concat(race.Soldiers.Take(2)).ToList();
                 Fort(players[s + 1], subraces[s + 1], x, y, true, $"{NameOf(race)} {s + 1}", race.Guardian is { } g ? [g] : [], hero.Count > 0 ? hero : null);
             }
+            int neutrals = (int)Math.Round(o.NeutralsPer64 * area);
             var wild = content.Units.Where(u => u.Race == neutral.Id && u.Level <= 2 && u.HitPoints > 0).Select(u => u.Id).Take(12).ToList();
             if (wild.Count == 0) wild = [.. content.Units.Where(u => u.HitPoints > 0).Select(u => u.Id).Take(4)];
-            int villages = (int)Math.Round(o.VillagesPer64 * area), neutrals = (int)Math.Round(o.NeutralsPer64 * area);
+            if (wild.Count == 0) neutrals = 0;   // юнитов нет вовсе — ни деревенской стражи, ни нейтральных отрядов
+            int villages = wild.Count == 0 ? 0 : (int)Math.Round(o.VillagesPer64 * area);
             for (int i = 0, tries = 0; i < villages && tries < villages * 50; tries++)
             {
                 int x = _rnd.Next(2, N - VillageSide - 2), y = _rnd.Next(2, N - VillageSide - 2);

@@ -37,11 +37,20 @@ public sealed class BalanceWorkspace(StudioSession session, string scenariosDir)
 {
     public StudioSession Session { get; } = session ?? throw new ArgumentNullException(nameof(session));
 
-    /// <summary>Сценарии (каталог базы или test-pack).</summary>
+    /// <summary>Каталог карт самого мода (карты вкладки «Карта»).</summary>
+    private string ModScenarios => Path.Combine(Session.Project.Dir, "data", "scenarios");
+
+    /// <summary>Сценарии: карты мода, затем базы (или test-pack).</summary>
     public IReadOnlyList<string> Scenarios =>
-        Directory.Exists(scenariosDir)
-            ? [.. Directory.GetFiles(scenariosDir, "*" + ScenarioFile.Extension).Select(Path.GetFileNameWithoutExtension).OfType<string>().Order(StringComparer.Ordinal)]
-            : [];
+        [.. new[] { ModScenarios, scenariosDir }.Where(Directory.Exists)
+            .SelectMany(d => Directory.GetFiles(d, "*" + ScenarioFile.Extension).Select(Path.GetFileNameWithoutExtension).OfType<string>().Order(StringComparer.Ordinal))
+            .Distinct(StringComparer.Ordinal)];
+
+    private ScenarioData Read(string scenario) =>
+        ScenarioFile.Read(File.Exists(ScenarioFile.PathOf(ModScenarios, scenario)) ? ScenarioFile.PathOf(ModScenarios, scenario) : ScenarioFile.PathOf(scenariosDir, scenario));
+
+    /// <summary>Потоков прогона: на один меньше ядер — окну Студии остаётся процессор.</summary>
+    private static ParallelOptions Threads => new() { MaxDegreeOfParallelism = Math.Max(1, Environment.ProcessorCount - 1) };
 
     public IReadOnlyList<ArenaRow> Arena { get; private set; } = [];
 
@@ -49,6 +58,12 @@ public sealed class BalanceWorkspace(StudioSession session, string scenariosDir)
 
     /// <summary>Время последнего прогона (мс).</summary>
     public long Millis { get; private set; }
+
+    /// <summary>Отказ последнего прогона (мод не накладывается, сценарий не читается, бой не собирается); нет — null. Прогон идёт в рабочем
+    /// потоке окна — отказ сессии окно ставит само, на своём потоке.</summary>
+    public string? Error { get; private set; }
+
+    private void Fail(string text) => Error = text;
 
     private (GameBook Base, GameBook Mod)? Books()
     {
@@ -61,23 +76,42 @@ public sealed class BalanceWorkspace(StudioSession session, string scenariosDir)
     public IReadOnlyList<ArenaRow> RunArena(string scenario, int pairs = 8, int seeds = 20)
     {
         var clock = Stopwatch.StartNew();
+        Error = null;
         if (Books() is not { } books)
         {
-            Session.Refuse("мод не накладывается на базу — арена без правил мода невозможна (см. ошибки)");
+            Fail("мод не накладывается на базу — арена без правил мода невозможна (см. ошибки)");
             return Arena = [];
         }
-        var map = ScenarioFile.Read(ScenarioFile.PathOf(scenariosDir, scenario)).Looks.Map;
+        MapState map;
+        try
+        {
+            map = Read(scenario).Looks.Map;
+        }
+        catch (Exception e) when (e is IOException or InvalidDataException or System.Text.Json.JsonException)
+        {
+            Fail($"сценарий «{scenario}» не читается — {e.Message}");
+            return Arena = [];
+        }
         var stacks = map.Stacks.Values.Where(s => s.Inside.Length == 0 && s.UnitIds.Count > 0 && s.LeaderAlive)
             .OrderBy(s => s.Id, StringComparer.Ordinal).ToList();
         var rows = new ConcurrentBag<(int Index, ArenaRow Row)>();
         var work = Enumerable.Range(0, Math.Min(pairs, stacks.Count / 2)).ToList();
-        Parallel.ForEach(work, i =>
+        try
         {
-            var (a, d) = (stacks[2 * i], stacks[(2 * i) + 1]);
-            var (bw, bt) = Fights(map, a.Id, d.Id, books.Base, seeds);
-            var (mw, mt) = Fights(map, a.Id, d.Id, books.Mod, seeds);
-            rows.Add((i, new ArenaRow(a.Id, d.Id, Leader(map, a, books.Mod), Leader(map, d, books.Mod), seeds, bw, bt, mw, mt)));
-        });
+            Parallel.ForEach(work, Threads, i =>
+            {
+                var (a, d) = (stacks[2 * i], stacks[(2 * i) + 1]);
+                var (bw, bt) = Fights(map, a.Id, d.Id, books.Base, seeds);
+                var (mw, mt) = Fights(map, a.Id, d.Id, books.Mod, seeds);
+                rows.Add((i, new ArenaRow(a.Id, d.Id, Leader(map, a, books.Mod), Leader(map, d, books.Mod), seeds, bw, bt, mw, mt)));
+            });
+        }
+        catch (AggregateException e)
+        {
+            // Мод убрал или поменял юнит отряда сценария — бой не собирается: отказ с текстом, а не падение окна.
+            Fail($"арена: {e.InnerExceptions[0].Message}");
+            return Arena = [];
+        }
         Millis = clock.ElapsedMilliseconds;
         return Arena = [.. rows.OrderBy(r => r.Index).Select(r => r.Row)];
     }
@@ -105,19 +139,37 @@ public sealed class BalanceWorkspace(StudioSession session, string scenariosDir)
     public IReadOnlyList<StandRow> RunStand(string scenario, int games = 24, int days = 30)
     {
         var clock = Stopwatch.StartNew();
+        Error = null;
         if (Books() is not { } books)
         {
-            Session.Refuse("мод не накладывается на базу — стенд без правил мода невозможен (см. ошибки)");
+            Fail("мод не накладывается на базу — стенд без правил мода невозможен (см. ошибки)");
             return Stand = [];
         }
-        var data = ScenarioFile.Read(ScenarioFile.PathOf(scenariosDir, scenario));
+        ScenarioData data;
+        try
+        {
+            data = Read(scenario);
+        }
+        catch (Exception e) when (e is IOException or InvalidDataException or System.Text.Json.JsonException)
+        {
+            Fail($"сценарий «{scenario}» не читается — {e.Message}");
+            return Stand = [];
+        }
         var baseRows = new ConcurrentBag<BalanceRow>();
         var modRows = new ConcurrentBag<BalanceRow>();
-        Parallel.For(0, games, i =>
+        try
         {
-            foreach (var row in BalanceStand.Play(data, books.Base, 1 + (uint)i, days)) baseRows.Add(row);
-            foreach (var row in BalanceStand.Play(data, books.Mod, 1 + (uint)i, days)) modRows.Add(row);
-        });
+            Parallel.For(0, games, Threads, i =>
+            {
+                foreach (var row in BalanceStand.Play(data, books.Base, 1 + (uint)i, days)) baseRows.Add(row);
+                foreach (var row in BalanceStand.Play(data, books.Mod, 1 + (uint)i, days)) modRows.Add(row);
+            });
+        }
+        catch (AggregateException e)
+        {
+            Fail($"стенд: {e.InnerExceptions[0].Message}");
+            return Stand = [];
+        }
         Millis = clock.ElapsedMilliseconds;
         var races = baseRows.Select(r => r.Race).Concat(modRows.Select(r => r.Race)).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal);
         return Stand = [.. races.Select(race => new StandRow(race, baseRows.Count(r => r.Race == race),

@@ -104,18 +104,35 @@ public sealed class StudioSession
     {
         var (written, deleted) = History.Current.Save(Project);
         History.MarkSaved();
+        _savedPrint = History.Current.Fingerprint();
         Revision++;
         Refreshed?.Invoke();
         return written + deleted;
     }
 
-    /// <summary>Мод поменяли снаружи (<c>d2mod</c>, редактор): перечитать, если на диске не то, что в окне. Правки окна, не записанные на
-    /// диск, тогда теряются — Студия сначала спрашивает (окно), без окна — перечитывает.</summary>
-    public bool ReloadFromDisk()
+    /// <summary>Отпечаток документа последней записи Студией: наблюдатель видит и её — свою запись не перечитываем.</summary>
+    private string? _savedPrint;
+
+    /// <summary>Мод поменяли снаружи (<c>d2mod</c>, редактор): перечитать, если на диске не то, что в окне. Свою запись (<see cref="Save"/>)
+    /// не перечитывает. Есть несохранённые правки — не перечитывает (иначе они пропали бы), а отказывает с текстом: автор решает сам
+    /// (<paramref name="force"/> — перечитать всё равно).</summary>
+    public bool ReloadFromDisk(bool force = false)
     {
-        var disk = ModDocument.Load(Project);
-        if (disk.Fingerprint() == History.Current.Fingerprint()) return false;
+        ModDocument disk;
+        try
+        {
+            disk = ModDocument.Load(Project);
+        }
+        catch (Exception e) when (e is InvalidDataException or IOException or System.Text.Json.JsonException)
+        {
+            return Refuse($"мод на диске не читается — {e.Message}");
+        }
+        string print = disk.Fingerprint();
+        if (print == History.Current.Fingerprint() || (!force && print == _savedPrint)) return false;
+        if (History.Dirty && !force)
+            return Refuse("мод изменён снаружи, а в окне есть несохранённые правки — сохраните их (перезапишут диск) или перечитайте мод");
         History.Reset(disk);
+        _savedPrint = print;
         Refresh();
         return true;
     }

@@ -139,4 +139,37 @@ public sealed class StudioWorkspaceTests : IDisposable
         for (int d = 0; d < 2; d++) game.Execute(new LastEdict.Data.Play.Commands.EndTurnCommand());
         Assert.True(game.Map.Turn >= 2);
     }
+
+    [Fact]
+    public void Map_RefusesBadIdsAndTooSmallMaps_KeepsTheOpenMap()
+    {
+        var session = Session();
+        var map = new MapWorkspace(session);
+        Assert.False(map.New("../x", 64, [new MapSeat("test:race/sun")]));
+        Assert.False(map.New("tiny", 24, [.. Enumerable.Range(0, 6).Select(_ => new MapSeat("test:race/sun"))]));   // столицы налезли бы
+        Assert.Contains("мала", session.Refusal, StringComparison.Ordinal);
+        Assert.True(map.New("ok", 64, [new MapSeat("test:race/sun"), new MapSeat("test:race/moon")]));
+        Assert.True(map.Save());
+        Assert.False(map.New("ok", 64, [new MapSeat("test:race/sun")]));   // занятый id
+        Assert.False(map.Open("none"));
+        Assert.Equal("ok", map.Id);   // прежняя карта на месте
+        File.WriteAllText(session.Project.PathOf(Path.Combine("data", "game", "scenarios.json")), "{}");
+        Assert.False(map.Save());   // каталог не список — отказ до записи
+    }
+
+    [Fact]
+    public void Session_IgnoresItsOwnSave_AndKeepsUnsavedEditsOnOutsideChange()
+    {
+        var session = Session();
+        session.Do(new LastEdict.Authoring.Commands.SetField("test:building/sun-guild", "cost.gold", 700));
+        session.Save();
+        Assert.False(session.ReloadFromDisk());   // своя запись
+        session.Do(new LastEdict.Authoring.Commands.SetField("test:building/sun-guild", "cost.gold", 800));
+        File.WriteAllText(session.Project.PathOf(Path.Combine("content", "buildings.json")),
+            """{ "buildings": [ { "id": "test:building/sun-guild", "cost": { "gold": 900 } } ] }""");
+        Assert.False(session.ReloadFromDisk());   // в окне несохранённое — не перечитывает
+        Assert.Contains("несохранённые", session.Refusal, StringComparison.Ordinal);
+        Assert.True(session.ReloadFromDisk(force: true));
+        Assert.Equal(900, session.Report.Content!.Buildings.First(b => b.Id == "test:building/sun-guild").Cost!["gold"]);
+    }
 }

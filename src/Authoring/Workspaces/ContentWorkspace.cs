@@ -147,7 +147,7 @@ public sealed class ContentWorkspace
     private static JsonNode? Parse(FieldRow row, string text)
     {
         text = text.Trim();
-        if (text.Length == 0) return null;
+        if (text.Length == 0) return row.Type == "string" && row.Enum.Count == 0 && row.Ref is null ? JsonValue.Create("") : null;
         return row.Type switch
         {
             "integer" => JsonValue.Create(long.Parse(text, NumberStyles.Integer, CultureInfo.InvariantCulture)),

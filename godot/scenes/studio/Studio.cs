@@ -163,8 +163,18 @@ public partial class Studio : Control
     public override void _UnhandledInput(InputEvent e)
     {
         if (e is not InputEventKey { Pressed: true, CtrlPressed: true } key || _session is null) return;
-        if (key.Keycode == Key.Z && !key.ShiftPressed) _session.Undo();
-        else if (key.Keycode == Key.Y || (key.Keycode == Key.Z && key.ShiftPressed)) _session.Redo();
+        bool undo = key.Keycode == Key.Z && !key.ShiftPressed, redo = key.Keycode == Key.Y || (key.Keycode == Key.Z && key.ShiftPressed);
+        if (_tabs.GetCurrentTabControl() == _mapTab && _mapWs is { } map)
+        {
+            // На вкладке «Карта» — отмена мазков и запись карты (у карты своя история).
+            if (undo) map.Undo();
+            else if (redo) map.Redo();
+            else if (key.Keycode == Key.S) Status(map.Save() ? "карта записана" : _session.Refusal ?? "");
+            else return;
+            _mapTab!.Sync();
+        }
+        else if (undo) _session.Undo();
+        else if (redo) _session.Redo();
         else if (key.Keycode == Key.S) Status($"записано файлов: {_session.Save()}");
         else return;
         Sync();
@@ -183,11 +193,41 @@ public partial class Studio : Control
     /// <summary>Сыграть на карте мода (вкладка «Карта»).</summary>
     private void PlayMap(string id) => Launch(id);
 
+    /// <summary>Файл доверенных сборок плагинов (хеши SHA-256): мод с кодом запускается с <c>--allow-plugins</c> только после подтверждения.</summary>
+    private const string TrustFile = "user://studio-trusted-plugins.txt";
+
+    private static string[] PluginHashes(LastEdict.Data.Content.ModInfo mod) =>
+        [.. mod.Plugins.Select(p => Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(p))))];
+
     private void Launch(string? scenario)
     {
         var ws = _session!;
+        if (ws.Project.ExecutesCode)
+        {
+            var hashes = PluginHashes(ws.Project.Info);
+            string trust = ProjectSettings.GlobalizePath(TrustFile);
+            var trusted = File.Exists(trust) ? File.ReadAllLines(trust).ToHashSet(StringComparer.Ordinal) : [];
+            if (!hashes.All(trusted.Contains))
+            {
+                var ask = new ConfirmationDialog
+                {
+                    Title = "Мод исполняет код",
+                    DialogText = $"Мод «{ws.Project.Info.Name}» несёт C#-плагин ({string.Join(", ", ws.Project.Info.Plugins.Select(Path.GetFileName))}).\n" +
+                                 "Игра выполнит его код без песочницы. Запускать только доверенный мод. Запустить?",
+                    OkButtonText = "Запустить", CancelButtonText = "Отмена",
+                };
+                ask.Confirmed += () =>
+                {
+                    File.AppendAllLines(trust, hashes.Where(h => !trusted.Contains(h)));
+                    Launch(scenario);
+                };
+                AddChild(ask);
+                ask.PopupCentered();
+                return;
+            }
+        }
         var args = new List<string> { "--path", ProjectSettings.GlobalizePath("res://"), "res://scenes/map/MapScreen.tscn", "--", "--mods", ws.Project.Dir, "--watch" };
-        if (ws.Project.ExecutesCode) args.Add("--allow-plugins");   // свой мод автора с кодом — доверенный
+        if (ws.Project.ExecutesCode) args.Add("--allow-plugins");   // подтверждено выше (хеши сборок — в доверенных)
         if (scenario is not null) args.AddRange(["--scenario", scenario]);
         int pid = OS.CreateProcess(OS.GetExecutablePath(), [.. args]);
         Status(pid > 0 ? $"игра запущена (процесс {pid}) с модом {ws.Project.Id} — сохранённые правки она подхватит сама" : "игра не запустилась");
@@ -225,8 +265,7 @@ public partial class Studio : Control
                     "content-set" => _content!.Set(step["field"]!.GetValue<string>(), step["text"]!.GetValue<string>()),
                     "content-reset" => _content!.Reset(step["field"]!.GetValue<string>()),
                     "content-add" => _content!.Add(step["name"]!.GetValue<string>()),
-                    "arena" => Do(() => _balanceTab!.Run(step["scenario"]!.GetValue<string>(), arena: true)),
-                    "stand" => Do(() => _balanceTab!.Run(step["scenario"]!.GetValue<string>(), arena: false)),
+                    "arena" or "stand" => true,   // прогон — в рабочем потоке, ждём ниже
                     "tab" => Do(() => _tabs.CurrentTab = step["index"]!.GetValue<int>()),
                     "map-new" => Do(() => _mapTab!.New(step["id"]!.GetValue<string>(), step["size"]!.GetValue<int>(), step["seats"]?.GetValue<int>() ?? 4)),
                     "map-stroke" => Do(() => { _mapWs!.Brush = Enum.Parse<MapBrush>(step["brush"]?.GetValue<string>() ?? "Forest"); _mapWs.Radius = step["radius"]?.GetValue<int>() ?? 1; _mapTab!.Stroke(step["x0"]!.GetValue<int>(), step["y0"]!.GetValue<int>(), step["x1"]!.GetValue<int>(), step["y1"]!.GetValue<int>()); }),
@@ -235,6 +274,7 @@ public partial class Studio : Control
                     "map-open" => Do(() => _mapTab!.Open(step["id"]!.GetValue<string>())),
                     _ => session.Do(EditCommands.Parse(step)),
                 };
+                if (op is "arena" or "stand") await _balanceTab!.Run(step["scenario"]!.GetValue<string>(), arena: op == "arena");
                 Sync();
                 for (int i = 0; i < 2; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
                 GD.Print($"step {op} ok={(ok ? 1 : 0)} {ws.Line()} {_treeTab!.Line()} {_content!.Line()} {_balance!.Line()} {_mapTab!.Line()}");

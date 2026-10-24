@@ -26,6 +26,11 @@ string output = Arg("--out") ?? Path.Combine(Repo(), "bench", "map-scale.json");
 var set = ContentSource.Open(content);
 var book = GameBook.Load(set);
 var races = set.Races.Where(r => r.Playable == true && r.Neutral != true).Select(r => r.Id).ToList();
+if (races.Count == 0)
+{
+    Console.Error.WriteLine($"в содержимом {content} нет играбельных рас");
+    return 1;
+}
 var rows = new JsonArray();
 Console.WriteLine("сторона | клеток | сборка мс | чтение мс | старт мс | туман МБ (игроков) | A* мс (клеток пути, раскрыто) | день ИИ мс | куча МБ | рабочий набор МБ");
 foreach (int size in sizes)

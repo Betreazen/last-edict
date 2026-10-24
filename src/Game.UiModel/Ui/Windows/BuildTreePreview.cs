@@ -192,6 +192,7 @@ public sealed class BuildTreePreview : IBuildTreeSource
         }
         if (Tabs.FirstOrDefault(t => Inside(t.Rect, x, y)) is { } tab)
         {
+            Selected = null;
             Open(tab.Branch);
             return null;
         }

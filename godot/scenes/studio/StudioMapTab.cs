@@ -20,7 +20,7 @@ public partial class StudioMapTab : HSplitContainer, IStudioTab
     private readonly Action<string> _play;
     private readonly OptionButton _maps = new() { CustomMinimumSize = new Vector2(220, 0) };
     private readonly LineEdit _id = new() { Text = "new-map", PlaceholderText = "id карты (латиница)" };
-    private readonly SpinBox _size = new() { MinValue = 24, MaxValue = 4096, Value = 256, Prefix = "сторона" };
+    private readonly SpinBox _size = new() { MinValue = 24, MaxValue = MapWorkspace.MaxNewSide, Value = 256, Prefix = "сторона" };
     private readonly SpinBox _seats = new() { MinValue = 1, MaxValue = 16, Value = 4, Prefix = "игроков" };
     private readonly OptionButton _brush = new();
     private readonly OptionButton _land = new();
@@ -52,7 +52,7 @@ public partial class StudioMapTab : HSplitContainer, IStudioTab
         var redo = new Button { Text = "Повторить" };
         redo.Pressed += () => { _ws.Redo(); _canvas!.Sync(); };
         var save = new Button { Text = "Записать в мод" };
-        save.Pressed += () => { _ws.Save(); Sync(); };
+        save.Pressed += () => { _ws.Save(); Sync(); };   // отказ — строкой статуса Студии (Session.Refusal)
         var playMap = new Button { Text = "Играть на карте" };
         playMap.Pressed += () => { if (_ws.Id is { } id) { _ws.Save(); _play(id); } };
         foreach (var c in new Control[]
@@ -71,14 +71,14 @@ public partial class StudioMapTab : HSplitContainer, IStudioTab
     {
         var races = (_ws.Session.Report.Content ?? _ws.Session.BaseContent).Races.Where(r => r.Playable == true && r.Neutral != true).Select(r => r.Id).ToList();
         if (races.Count == 0) return;
-        _ws.New(id, size, [.. Enumerable.Range(0, seats).Select(i => new MapSeat(races[i % races.Count]))]);
+        if (!_ws.New(id, size, [.. Enumerable.Range(0, seats).Select(i => new MapSeat(races[i % races.Count]))])) return;
         _canvas.Reset();
         Sync();
     }
 
     public void Open(string id)
     {
-        _ws.Open(id);
+        if (!_ws.Open(id)) return;
         _canvas.Reset();
         Sync();
     }
@@ -147,9 +147,18 @@ public partial class StudioMapTab : HSplitContainer, IStudioTab
                 uint c = MapWorkspace.Rgba(ws.Tiles[i]);
                 _image.SetPixel(i % ws.Size, i / ws.Size, Color.Color8((byte)(c >> 24), (byte)(c >> 16), (byte)(c >> 8)));
             }
-            _texture.Update(_image);
             _painted += dirty.Count;
+            _upload = true;   // текстура — раз за кадр (_Process), а не на каждое движение мыши: на 1024² это 4 МБ
             QueueRedraw();
+        }
+
+        private bool _upload;
+
+        public override void _Process(double delta)
+        {
+            if (!_upload || _image is null || _texture is null) return;
+            _texture.Update(_image);
+            _upload = false;
         }
 
         public override void _Notification(int what)

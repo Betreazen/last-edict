@@ -21,7 +21,6 @@ public sealed record MapStroke(IReadOnlyList<(int Index, byte Before, byte After
 public sealed class MapWorkspace(StudioSession session)
 {
     private readonly Stack<MapStroke> _undo = new(), _redo = new();
-    private readonly List<(int Index, byte Before, byte After)> _stroke = [];
     private readonly Dictionary<int, byte> _strokeBefore = [];
     private readonly HashSet<int> _dirty = [];
     private ScenarioData? _scenario;
@@ -66,15 +65,45 @@ public sealed class MapWorkspace(StudioSession session)
         }
     }
 
-    /// <summary>Новая карта стороны <paramref name="size"/> на содержимом мода (с несохранёнными правками).</summary>
-    public void New(string id, int size, IReadOnlyList<MapSeat> seats, int seed = 1)
+    /// <summary>Наибольшая сторона новой карты в Студии: сборка карты идёт в окне, а 2048² — уже ~4 млн клеток и десятки МБ сценария.</summary>
+    public const int MaxNewSide = 2048;
+
+    /// <summary>Новая карта стороны <paramref name="size"/> на содержимом мода (с несохранёнными правками). Неверный id, занятый id, карта мала
+    /// для игроков — отказ сессии (<see cref="StudioSession.Refusal"/>), прежняя карта остаётся.</summary>
+    public bool New(string id, int size, IReadOnlyList<MapSeat> seats, int seed = 1)
     {
+        if (!ValidId(id)) return Session.Refuse($"id карты «{id}» — только строчные латинские буквы, цифры и «-»");
+        if (Maps.Contains(id, StringComparer.OrdinalIgnoreCase)) return Session.Refuse($"карта «{id}» в моде уже есть — откройте её или возьмите другой id");
+        if (size > MaxNewSide) return Session.Refuse($"сторона {size} — больше {MaxNewSide} новая карта в Студии не собирается");
         var content = Session.Report.Content ?? Session.BaseContent;
-        Load(MapFactory.Create(content, new NewMapOptions(id, size, seats, seed)));
+        try
+        {
+            Load(MapFactory.Create(content, new NewMapOptions(id, size, seats, seed)));
+        }
+        catch (ArgumentException e)
+        {
+            return Session.Refuse(e.Message);
+        }
         Dirty = true;
+        return true;
     }
 
-    public void Open(string id) => Load(ScenarioFile.Read(Session.Project.PathOf(Path.Combine("data", "scenarios", id + ScenarioFile.Extension))));
+    /// <summary>Открыть карту мода; нет или не читается — отказ сессии, прежняя карта остаётся.</summary>
+    public bool Open(string id)
+    {
+        if (!ValidId(id)) return Session.Refuse($"id карты «{id}» — только строчные латинские буквы, цифры и «-»");
+        try
+        {
+            Load(ScenarioFile.Read(Session.Project.PathOf(Path.Combine("data", "scenarios", id + ScenarioFile.Extension))));
+            return true;
+        }
+        catch (Exception e) when (e is IOException or InvalidDataException or System.Text.Json.JsonException or UnauthorizedAccessException)
+        {
+            return Session.Refuse($"карта «{id}» не открылась — {e.Message}");
+        }
+    }
+
+    private static bool ValidId(string id) => id.Length > 0 && id.All(c => c is (>= 'a' and <= 'z') or (>= '0' and <= '9') or '-');
 
     private void Load(ScenarioData scenario)
     {
@@ -87,6 +116,7 @@ public sealed class MapWorkspace(StudioSession session)
         _undo.Clear();
         _redo.Clear();
         _dirty.Clear();
+        _strokeBefore.Clear();
         Changed = 0;
         Dirty = false;
         Revision++;
@@ -94,11 +124,8 @@ public sealed class MapWorkspace(StudioSession session)
 
     // ---- кисть
 
-    public void StrokeBegin()
-    {
-        _stroke.Clear();
-        _strokeBefore.Clear();
-    }
+    /// <summary>Начало мазка; незакрытый прежний (кнопку отпустили вне холста) закрывается — его клетки не теряются из отмены.</summary>
+    public void StrokeBegin() => StrokeEnd();
 
     /// <summary>Мазок в клетке: квадрат радиуса кисти.</summary>
     public void Paint(int x, int y)
@@ -116,6 +143,7 @@ public sealed class MapWorkspace(StudioSession session)
                 _strokeBefore.TryAdd(i, was);
                 Tiles[i] = now;
                 _dirty.Add(i);
+                Dirty = true;
             }
         Revision++;
     }
@@ -133,9 +161,17 @@ public sealed class MapWorkspace(StudioSession session)
         Revision++;
     }
 
-    public bool Undo() => Swap(_undo, _redo, back: true);
+    public bool Undo()
+    {
+        StrokeEnd();
+        return Swap(_undo, _redo, back: true);
+    }
 
-    public bool Redo() => Swap(_redo, _undo, back: false);
+    public bool Redo()
+    {
+        StrokeEnd();
+        return Swap(_redo, _undo, back: false);
+    }
 
     private bool Swap(Stack<MapStroke> from, Stack<MapStroke> to, bool back)
     {
@@ -179,15 +215,43 @@ public sealed class MapWorkspace(StudioSession session)
     }
 
     /// <summary>Записать карту в мод: сценарий и карточка в каталоге мода. Байт файла сценария — как у <see cref="ScenarioFile"/>.</summary>
-    public void Save(string? name = null)
+    public bool Save(string? name = null)
+    {
+        try
+        {
+            SaveCore(name);
+            return true;
+        }
+        catch (Exception e) when (e is InvalidDataException or IOException or UnauthorizedAccessException)
+        {
+            return Session.Refuse(e.Message);
+        }
+    }
+
+    private void SaveCore(string? name)
     {
         if (_scenario is not { } scenario) return;
+        StrokeEnd();
+        // Каталог мода — сначала разобрать и проверить: битый или не список — отказ до записи карты (ничего не записано наполовину).
+        string catalog = Path.Combine("data", "game", "scenarios.json");
+        JsonArray cards;
+        if (File.Exists(Session.Project.PathOf(catalog)))
+        {
+            try
+            {
+                cards = JsonNode.Parse(File.ReadAllText(Session.Project.PathOf(catalog))) as JsonArray
+                        ?? throw new InvalidDataException($"{catalog} мода — не список карточек: карта не записана");
+            }
+            catch (System.Text.Json.JsonException e)
+            {
+                throw new InvalidDataException($"{catalog} мода не читается — {e.Message}: карта не записана", e);
+            }
+        }
+        else cards = [];
         var root = JsonNode.Parse(ScenarioFile.ToJson(scenario))!;
         root[nameof(ScenarioData.Looks)]!["Map"]![nameof(Tiles)]!["data"] = Convert.ToBase64String(Tiles);
         Session.Project.Write(Path.Combine("data", "scenarios", scenario.Id + ScenarioFile.Extension), root.ToJsonString(new System.Text.Json.JsonSerializerOptions { WriteIndented = false }));
-        string catalog = Path.Combine("data", "game", "scenarios.json");
-        var cards = File.Exists(Session.Project.PathOf(catalog)) ? JsonNode.Parse(File.ReadAllText(Session.Project.PathOf(catalog))) as JsonArray ?? [] : [];
-        var card = cards.OfType<JsonObject>().FirstOrDefault(c => c[nameof(ScenarioData.Id)]?.GetValue<string>() == scenario.Id);
+        var card = cards.OfType<JsonObject>().FirstOrDefault(c => c[nameof(ScenarioData.Id)] is JsonValue v && v.TryGetValue<string>(out var id) && id == scenario.Id);
         if (card is null) cards.Add(card = new JsonObject { [nameof(ScenarioData.Id)] = scenario.Id });
         card["File"] = scenario.Id + ScenarioFile.Extension;
         card["Name"] = name ?? card["Name"]?.GetValue<string>() ?? scenario.Id;

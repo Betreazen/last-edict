@@ -63,3 +63,6 @@ tools/synth-maps/out/
 
 # рабочие копии подагентов Claude Code
 .claude/worktrees/
+
+# HD-слой (tools/hd/hd_layer.py import): производная графики игры — в репозиторий не попадает (Р3)
+/mods/hd/

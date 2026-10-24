@@ -19,8 +19,15 @@ public partial class BattleScreen
 
     /// <summary>Полоса нужна: включена настройкой, а под проверкой (<c>--check</c>, сценарий <c>--input</c>) — только с ключом
     /// <c>--queue-strip</c>: прежние проверки идут без неё, их числа и снимки не меняются.</summary>
-    private static bool StripWanted(bool setting, string[] args) =>
-        setting && (args.Contains("--queue-strip") || !(args.Contains("--check") || args.Contains("--input")));
+    private static bool StripWanted(bool setting, string[] args) => Wanted(setting, args, "--queue-strip");
+
+    /// <summary>Своя настройка вида боя (полоса очереди, широкий бой) — под проверкой только с её ключом <paramref name="key"/>.</summary>
+    private static bool Wanted(bool setting, string[] args, string key) =>
+        setting && (args.Contains(key) || !(args.Contains("--check") || args.Contains("--input")));
+
+    /// <summary>Широкий бой (<see cref="LastEdict.Data.Map.MapSettings.WideBattle"/>; задаёт хозяин боя по настройкам). Под проверкой — с
+    /// ключом <c>--wide-battle</c>: прежние проверки идут на раскладке 800×600.</summary>
+    public bool Wide { get; set; } = new LastEdict.Data.Map.MapSettings().WideBattle;
 
     /// <summary>Полоса над полем: портреты — те же кадры <c>Faces</c>, что у панели (<see cref="BattleView.PlainFace"/>); пересборка — по
     /// <see cref="BattleSession.QueueChanged"/>.</summary>

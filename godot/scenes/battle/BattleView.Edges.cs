@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using LastEdict.Data.Gfx;
+using LastEdict.Data.Ui;
 using Godot;
 
 namespace LastEdict.Godot;
@@ -42,6 +43,11 @@ public partial class BattleView
     {
         _ambient?.QueueFree();
         _ambient = null;
+        if (_scene?.Layout is { Wide: true } layout)
+        {
+            WideEdges(layout.Width);
+            return;
+        }
         bool wide = _margin != Vector2I.Zero;
         foreach (var node in _placeNodes)
         {
@@ -55,6 +61,39 @@ public partial class BattleView
         var clear = new Rect2(ClearLeft - bg.X, 0, ClearRight - ClearLeft, BattleScene.CanvasHeight);
         var canvas = new Vector2(BattleScene.CanvasWidth + (2 * _margin.X), BattleScene.CanvasHeight + (2 * _margin.Y));
         _ambient = AmbientFill.Create(texture, clear, new Vector2(BattleScene.CanvasWidth / 2f, BattleScene.CanvasHeight / 2f), canvas, bg.Layer - 1);
+        _layer.AddChild(_ambient);
+    }
+
+    /// <summary>Нарисованная при любом месте полоса фона (x картинки 150…800): ниже неба остальное в картинках чёрное — его закрывали
+    /// панели оригинала.</summary>
+    private const int PaintedLeft = 150, PaintedRight = 800;
+
+    /// <summary>Чёрное картинки фона — прозрачное: под ним видна растяжка.</summary>
+    private const string KeyBlackShader = """
+        shader_type canvas_item;
+
+        void fragment() {
+            vec4 c = texture(TEXTURE, UV);
+            COLOR.a *= smoothstep(0.004, 0.03, max(c.r, max(c.g, c.b)));   // мягко: сжатие HD и фильтр дают «почти чёрный» край
+        }
+        """;
+
+    private static ShaderMaterial? _keyBlack;
+
+    /// <summary>Широкий бой (<see cref="WideBattle"/>): фон места целиком, по середине холста, его чёрное (за панелями оригинала) прозрачно;
+    /// под ним — растяжка нарисованной полосы на весь холст с полями прироста.</summary>
+    private void WideEdges(int width)
+    {
+        foreach (var node in _placeNodes)
+        {
+            node.RegionEnabled = false;
+            node.Position = new Vector2(_background?.X ?? 0, node.Position.Y);
+            node.Material = _keyBlack ??= new ShaderMaterial { Shader = new Shader { Code = KeyBlackShader } };
+        }
+        if (_layer is null || _background is not { } bg || Frames(bg) is not [var texture, ..]) return;
+        var clear = new Rect2(PaintedLeft, 0, PaintedRight - PaintedLeft, BattleScene.CanvasHeight);
+        var canvas = new Vector2(width + (2 * _margin.X), BattleScene.CanvasHeight + (2 * _margin.Y));
+        _ambient = AmbientFill.Create(texture, clear, new Vector2(width / 2f, BattleScene.CanvasHeight / 2f), canvas, bg.Layer - 1);
         _layer.AddChild(_ambient);
     }
 

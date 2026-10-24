@@ -31,7 +31,11 @@ public partial class MapScreen
                                cell.X, cell.Y, (x, y) => _map.Scene.Hidden(x, y));
         if (card is null) return false;
         _card = new UiScreenView { Hosted = card.Screen, Name = "Card", SlotHost = _host, Logic = card.Logic };
-        if (Centered(card.Screen) is { } at) _card.SlotAt = at;
+        if (Centered(card.Screen) is { } at)
+        {
+            _card.SlotAt = at;
+            if (!FullScreen(card.Screen)) _card.SlotScale = WindowScale;
+        }
         AddChild(_card);
         _card.SetProcessUnhandledInput(false);
         GD.Print($"card {cell.X},{cell.Y} окно={card.Screen} объект={card.ObjectId}");

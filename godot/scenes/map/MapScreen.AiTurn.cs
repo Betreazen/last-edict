@@ -148,6 +148,7 @@ public partial class MapScreen
         _map.AnimatedIso = _settings.AnimatedIso;
         _map.Clouds = _settings.IsoClouds;
         _map.ScrollDelayMs = _settings.ScrollSpeed;
+        if (_placed) Place();   // масштаб карты — сразу
         _map.StackSmooth = _settings.StackSmoothScroll;
         _map.SmoothScroll = _settings.SmoothScroll;   // «Прокрутка между действиями» (TOG_SMOOTHSCROLL): вид к событию плавно или сразу
     }
@@ -282,7 +283,7 @@ public partial class MapScreen
             Name = "Battle", Standalone = false, Prepared = state, Rules = session.Book!.Rules, Rng = session.BattleRng,   // Book проверен в OpenAiBattle
             PlaceName = MapBattle.PlaceOf(session.Map, state.DefenderGroup), PlayerIsAttacker = false, OwnsAttackerStack = false,
             Flipped = _settings.FlippedBattle, OwnName = session.OwnName, BackgroundVariant = BackgroundDraw(session, state),
-            QueueStrip = _settings.QueueStrip,
+            QueueStrip = _settings.QueueStrip, Wide = _settings.WideBattle,
             CardLogic = BattleCard(),
             LevelMarks = BattleLevelMarks(),
         };

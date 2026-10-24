@@ -339,12 +339,13 @@ public class MapOptionsTests
         }
     }
 
-    /// <summary>Вписывание экрана в окно (прогон 3 от 11.10, пункт 1): по умолчанию чёткий билинейный; имя из файла — без учёта регистра,
-    /// неизвестное или пустое — чёткий; файл без поля (прежние настройки) — тоже чёткий.</summary>
+    /// <summary>Вписывание экрана в окно: по умолчанию HD (ответ пользователя 24.10; без HD-слоя показ сам берёт чёткий); имя из файла — без
+    /// учёта регистра, неизвестное или пустое — чёткий; файл без поля — умолчание.</summary>
     [Fact]
-    public void Settings_Scaling_DefaultsToSharp()
+    public void Settings_Scaling_DefaultsToHd()
     {
-        Assert.Equal(LastEdict.Data.Ui.ScreenScaling.Sharp, new MapSettings().ScreenScaling);
+        Assert.Equal(LastEdict.Data.Ui.ScreenScaling.Hd, new MapSettings().ScreenScaling);
+        Assert.Equal("hd", new MapSettings(Scaling: "HD").Clamped().Scaling);
         Assert.Equal(LastEdict.Data.Ui.ScreenScaling.Integer, new MapSettings(Scaling: "Integer").ScreenScaling);
         Assert.Equal("nearest", new MapSettings(Scaling: "NEAREST").Clamped().Scaling);
         Assert.Equal("sharp", new MapSettings(Scaling: "blurry").Clamped().Scaling);
@@ -355,7 +356,7 @@ public class MapOptionsTests
         {
             Directory.CreateDirectory(dir);
             File.WriteAllText(path, """{"PlayerSpeed": 2}""");
-            Assert.Equal(LastEdict.Data.Ui.ScreenScaling.Sharp, MapSettings.Load(path).ScreenScaling);
+            Assert.Equal(LastEdict.Data.Ui.ScreenScaling.Hd, MapSettings.Load(path).ScreenScaling);
             new MapSettings(Scaling: "integer").Save(path);
             Assert.Equal(LastEdict.Data.Ui.ScreenScaling.Integer, MapSettings.Load(path).ScreenScaling);
         }
@@ -363,5 +364,20 @@ public class MapOptionsTests
         {
             if (Directory.Exists(dir)) Directory.Delete(dir, recursive: true);
         }
+    }
+
+    /// <summary>Чёткость кадра (ответ пользователя 24.10): резкость 0…100, размер окон — из списка, иначе 100; векторный текст включён.</summary>
+    [Fact]
+    public void Settings_Crispness_Clamped()
+    {
+        var defaults = new MapSettings();
+        Assert.True(defaults.VectorText);
+        Assert.Equal(MapSettings.DefaultSharpness, defaults.Sharpness);
+        Assert.Equal(100, defaults.WindowScale);
+        var clamped = new MapSettings(Sharpness: 250, WindowScale: 55).Clamped();
+        Assert.Equal(MapSettings.MaxSharpness, clamped.Sharpness);
+        Assert.Equal(100, clamped.WindowScale);
+        Assert.Equal(0, new MapSettings(Sharpness: -5).Clamped().Sharpness);
+        Assert.Equal(80, new MapSettings(WindowScale: 80).Clamped().WindowScale);
     }
 }

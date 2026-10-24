@@ -33,6 +33,9 @@ public static class DisplaySettings
         settings = settings.Clamped();
         SetMode(settings.Display);
         SetSize(settings);
+        Antialiasing = settings.Antialiasing;
+        ScreenStage.Current?.SetAntialiasing(Antialiasing);
+        ApplyLook(settings);
         DisplayServer.WindowSetVsyncMode(settings.VSync ? DisplayServer.VSyncMode.Enabled : DisplayServer.VSyncMode.Disabled);
         Engine.MaxFps = settings.MaxFps;
         GD.Print($"display окно={DisplayModes.Name(settings.Display)} vsync={(settings.VSync ? 1 : 0)} fps={settings.MaxFps} " +
@@ -59,6 +62,24 @@ public static class DisplaySettings
         }
         GD.Print($"display окно={DisplayModes.Name(next)} (Alt+Enter)");
     }
+
+    /// <summary>Вид кадра без подтверждения (окно настроек, «Применить»): резкость (<see cref="ScreenStage.SetSharpness"/>) и векторный
+    /// текст (<see cref="GameData.VectorText"/>: окна, открытые после выбора).</summary>
+    public static void ApplyLook(MapSettings settings)
+    {
+        ArgumentNullException.ThrowIfNull(settings);
+        settings = settings.Clamped();
+        Sharpness = settings.LowEndVideoCard ? 0 : settings.Sharpness;   // «Слабая видеокарта» — без прохода по кадру
+        ScreenStage.Current?.SetSharpness(Sharpness);
+        GameData.VectorText = settings.VectorText;
+    }
+
+    /// <summary>Резкость кадра из настроек (<see cref="MapSettings.Sharpness"/>, проценты): показ берёт её при запуске (<see cref="ScreenStage"/>).</summary>
+    public static int Sharpness { get; private set; }
+
+    /// <summary>Сглаживание кадра из настроек (<see cref="MapSettings.Antialiasing"/>): буфер показа берёт его при запуске
+    /// (<see cref="ScreenStage"/>).</summary>
+    public static int Antialiasing { get; private set; }
 
     /// <summary>Разрешение, в котором корень рисует кадр в полном экране (<see cref="MapSettings.Resolution"/>); null — в размере окна.
     /// Растяжением корня распоряжается <see cref="ScreenStage"/> (<see cref="RootScale"/>): он же меняет его при смене вписывания.</summary>

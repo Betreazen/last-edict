@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using LastEdict.Data.Map;
 using LastEdict.Data.Ui;
 using Godot;
 
@@ -73,6 +74,59 @@ public partial class ScreenStage : Node
 
     private static ShaderMaterial? _area;
 
+    /// <summary>Резкость готового кадра окна — CAS (contrast adaptive sharpening, AMD FidelityFX, упрощённо: крест 3×3): вес соседей
+    /// отрицательный и тем слабее, чем ближе точка к пределам яркости, — детали резче без ореолов на контрастных краях. Читает кадр окна
+    /// (<c>hint_screen_texture</c>) поверх показа, поэтому одинакова в любом режиме вписывания.</summary>
+    private const string SharpenShader = """
+        shader_type canvas_item;
+        render_mode blend_disabled;
+        uniform sampler2D frame : hint_screen_texture, filter_nearest;
+        uniform float sharpness : hint_range(0.0, 1.0) = 0.4;
+
+        void fragment() {
+            vec2 px = SCREEN_PIXEL_SIZE;
+            vec3 c = texture(frame, SCREEN_UV).rgb;
+            vec3 n = texture(frame, SCREEN_UV + vec2(0.0, -px.y)).rgb;
+            vec3 s = texture(frame, SCREEN_UV + vec2(0.0, px.y)).rgb;
+            vec3 w = texture(frame, SCREEN_UV + vec2(-px.x, 0.0)).rgb;
+            vec3 e = texture(frame, SCREEN_UV + vec2(px.x, 0.0)).rgb;
+            vec3 lo = min(c, min(min(n, s), min(w, e)));
+            vec3 hi = max(c, max(max(n, s), max(w, e)));
+            vec3 amp = sqrt(clamp(min(lo, 1.0 - hi) / max(hi, vec3(1e-4)), 0.0, 1.0));
+            vec3 k = amp * (-1.0 / mix(8.0, 5.0, sharpness));
+            COLOR = vec4(clamp((c + (n + s + w + e) * k) / (1.0 + 4.0 * k), 0.0, 1.0), 1.0);
+        }
+        """;
+
+    private CanvasLayer? _sharpen;
+
+    /// <summary>Резкость кадра (<see cref="MapSettings.Sharpness"/>, проценты): 0 — прохода нет (ничего не стоит).</summary>
+    public void SetSharpness(int percent)
+    {
+        if (percent <= 0)
+        {
+            _sharpen?.QueueFree();
+            _sharpen = null;
+            return;
+        }
+        if (_sharpen is null)
+        {
+            var rect = new ColorRect
+            {
+                Name = "Sharpen", MouseFilter = Control.MouseFilterEnum.Ignore,
+                Material = new ShaderMaterial { Shader = new Shader { Code = SharpenShader } },
+            };
+            rect.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+            _sharpen = new CanvasLayer { Name = "SharpenLayer", Layer = 120 };
+            _sharpen.AddChild(rect);
+            AddChild(_sharpen);
+        }
+        ((ShaderMaterial)((ColorRect)_sharpen.GetChild(0)).Material).SetShaderParameter("sharpness", Math.Min(percent, 100) / 100f);
+    }
+
+    /// <summary>Режим, которым экраны на деле ложатся в окно: HD без HD-слоя — чёткий (<see cref="ScreenScaling.Hd"/>).</summary>
+    private ScreenScaling Effective => Mode == ScreenScaling.Hd && !GameData.HasHd ? ScreenScaling.Sharp : Mode;
+
     public ScreenFit Fit => _fit;
 
     public override void _Ready()
@@ -90,6 +144,13 @@ public partial class ScreenStage : Node
         Stage.Snap2DVerticesToPixel = root.Snap2DVerticesToPixel;
         Stage.GuiEmbedSubwindows = root.GuiEmbedSubwindows;
         Stage.Msaa2D = root.Msaa2D;
+        // Сглаживание кадра: из настроек, в проверке и снимках — ключ --aa fxaa|smaa.
+        SetAntialiasing(MapSource.Arg(OS.GetCmdlineUserArgs(), "--aa") switch
+        {
+            "fxaa" => MapSettings.AntialiasingFxaa, "smaa" => MapSettings.AntialiasingSmaa, _ => DisplaySettings.Antialiasing,
+        });
+        // Резкость: из настроек, в снимках — ключ --sharpen <проценты>.
+        SetSharpness(int.TryParse(MapSource.Arg(OS.GetCmdlineUserArgs(), "--sharpen"), out int sharpen) ? sharpen : DisplaySettings.Sharpness);
         Stage.TransparentBg = false;
         Stage.RenderTargetUpdateMode = SubViewport.UpdateMode.Always;
         Stage.AddChild(Hub);
@@ -170,6 +231,44 @@ public partial class ScreenStage : Node
         if (Current == this) Current = null;
     }
 
+    private Camera3D? _aaCamera;
+    private WorldEnvironment? _aaEnvironment;
+
+    /// <summary>Сглаживание всего кадра (FXAA, SMAA). Godot делает его в 3D-проходе, а 2D-экраны его не проходят: буфер получает
+    /// 3D-камеру и окружение, у которого фон — 2D-холст (<c>BGMode.Canvas</c>); тогда кадр экранов идёт через постобработку и
+    /// сглаживается. Выключено — ни камеры, ни прохода (ничего не стоит).</summary>
+    public void SetAntialiasing(int mode)
+    {
+        bool on = mode is MapSettings.AntialiasingFxaa or MapSettings.AntialiasingSmaa;
+        Stage.ScreenSpaceAA = mode switch
+        {
+            MapSettings.AntialiasingFxaa => Viewport.ScreenSpaceAAEnum.Fxaa,
+            MapSettings.AntialiasingSmaa => Viewport.ScreenSpaceAAEnum.Smaa,
+            _ => Viewport.ScreenSpaceAAEnum.Disabled,
+        };
+        if (on && _aaCamera is null)
+        {
+            _aaCamera = new Camera3D { Name = "AaCamera", Current = true };
+            _aaEnvironment = new WorldEnvironment
+            {
+                Name = "AaEnvironment",
+                Environment = new global::Godot.Environment
+                {
+                    BackgroundMode = global::Godot.Environment.BGMode.Canvas, BackgroundCanvasMaxLayer = int.MaxValue,
+                },
+            };
+            Stage.AddChild(_aaCamera);
+            Stage.AddChild(_aaEnvironment);
+        }
+        else if (!on && _aaCamera is not null)
+        {
+            _aaCamera.QueueFree();
+            _aaEnvironment?.QueueFree();
+            _aaCamera = null;
+            _aaEnvironment = null;
+        }
+    }
+
     /// <summary>Сменить режим вписывания на ходу (окно настроек, «Применить»): растяжение корня и раскладка показа заново.</summary>
     public void SetMode(ScreenScaling mode)
     {
@@ -190,7 +289,7 @@ public partial class ScreenStage : Node
     {
         if (!IsNodeReady()) return;
         Vector2 size = WindowSize() ?? GetViewport().GetVisibleRect().Size;
-        _fit = ScreenFit.For(Mathf.RoundToInt(size.X), Mathf.RoundToInt(size.Y), Mode);
+        _fit = ScreenFit.For(Mathf.RoundToInt(size.X), Mathf.RoundToInt(size.Y), Effective);
         Stage.Size = new Vector2I(_fit.StageWidth, _fit.StageHeight);
         _view.Position = new Vector2(_fit.X, _fit.Y);
         _view.Scale = new Vector2(_fit.Scale, _fit.Scale);

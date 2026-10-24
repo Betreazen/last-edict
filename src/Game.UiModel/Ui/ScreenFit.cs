@@ -13,6 +13,11 @@ public enum ScreenScaling
 
     /// <summary>Как до 11.10.2026: дробный масштаб узлом с фильтром Nearest — линии растра то в одну, то в две точки.</summary>
     Nearest,
+
+    /// <summary>HD (ответ пользователя 24.10: «чёткость при любом разрешении»): экраны рисуются сразу в точках окна, без промежуточного
+    /// буфера ×n и сжатия — HD-картинки (Р19) и векторный текст ложатся в окно один раз. Без HD-слоя — как <see cref="Sharp"/> (пиксельная
+    /// графика при дробном масштабе ближайшим соседом неровна).</summary>
+    Hd,
 }
 
 /// <summary>
@@ -40,7 +45,7 @@ public readonly record struct ScreenFit(int StageWidth, int StageHeight, float S
     public static ScreenFit For(int width, int height, ScreenScaling mode)
     {
         if (width <= 0 || height <= 0) return new ScreenFit(Math.Max(1, width), Math.Max(1, height), 1f, 0, 0, false);
-        if (mode == ScreenScaling.Nearest) return new ScreenFit(width, height, 1f, 0, 0, false);
+        if (mode is ScreenScaling.Nearest or ScreenScaling.Hd) return new ScreenFit(width, height, 1f, 0, 0, false);
         float k = Math.Min(width / (float)DesignWidth, height / (float)DesignHeight);
         // Окно меньше 800×600 целым масштабом не впишется (обрезалось бы) — тогда как чёткий: сжатие по площади.
         if (mode == ScreenScaling.Integer && k < 1 - Epsilon) mode = ScreenScaling.Sharp;
@@ -56,13 +61,14 @@ public readonly record struct ScreenFit(int StageWidth, int StageHeight, float S
         return new ScreenFit(stageW, stageH, scale, x, y, mode == ScreenScaling.Sharp && Math.Abs(scale - 1f) > Epsilon);
     }
 
-    /// <summary>Режим по имени (<c>sharp</c>, <c>integer</c>, <c>nearest</c>, регистр не важен); неизвестное или пустое — null.</summary>
+    /// <summary>Режим по имени (<c>sharp</c>, <c>integer</c>, <c>nearest</c>, <c>hd</c>, регистр не важен); неизвестное или пустое — null.</summary>
     public static ScreenScaling? Parse(string? name) =>
         name?.Trim().ToLowerInvariant() switch
         {
             "sharp" => ScreenScaling.Sharp,
             "integer" => ScreenScaling.Integer,
             "nearest" => ScreenScaling.Nearest,
+            "hd" => ScreenScaling.Hd,
             _ => null,
         };
 }

@@ -101,8 +101,20 @@ public partial class GameData : Node
     /// меню, карта и бой берут одну таблицу.</summary>
     public static IReadOnlyDictionary<string, string> Strings(string language) => Content.Strings(language);
 
-    /// <summary>Шрифты интерфейса — база и моды (<see cref="GameContent.Fonts"/>), читаются один раз.</summary>
-    public static LastEdict.Data.Ui.UiFonts Fonts => Content.Fonts;
+    /// <summary>Шрифты интерфейса — база и моды (<see cref="GameContent.Fonts"/>), читаются один раз; с <see cref="VectorText"/> — растровые
+    /// шрифты игры заменены векторными (<see cref="LastEdict.Data.Ui.VectorFonts"/>).</summary>
+    public static LastEdict.Data.Ui.UiFonts Fonts => VectorText ? _vectorFonts ??= LastEdict.Data.Ui.VectorFonts.Apply(Content.Fonts) : Content.Fonts;
+
+    private static LastEdict.Data.Ui.UiFonts? _vectorFonts;
+
+    /// <summary>Векторный текст (настройка «Чёткий текст», <see cref="DisplaySettings"/>; в сцене, запущенной инструментом, — ключ
+    /// <c>--vector-text</c>). Проверки (<c>--check</c>, <c>--input</c>) настроек не берут — их числа на растровых шрифтах игры.</summary>
+    public static bool VectorText { get; set; }
+
+    /// <summary>Подключён ли HD-слой (Р19): есть кадр с множителем файла больше 1.</summary>
+    public static bool HasHd => _hasHd ??= Content.Assets.Any(a => a.Factor > 1);
+
+    private static bool? _hasHd;
 
     /// <summary>Язык из аргументов: <c>--lang xx</c>, иначе <c>ru</c>, если импортированы русские строки (слой русификации), иначе <c>en</c>
     /// (копия игры GOG — английская).</summary>
@@ -161,10 +173,14 @@ public partial class GameData : Node
         UiAssetsRoot = Path.Combine(AssetsRoot, "ui");
         VideoRoot = Path.Combine(AssetsRoot, "video");
         GfxRoot = Path.Combine(AssetsRoot, "gfx");
+        // Нет графики импорта — земля карты не соберётся (её узоры в HD-слой не идут), без мода — пусто всё; сказать сразу, где искали.
+        if (!Directory.Exists(GfxRoot))
+            GD.PushError($"GameData: нет графики игры в {AssetsRoot} — задайте D2_ASSETS_DIR (каталог assets импорта) или запустите play.cmd");
         RulesDir = Directory.Exists(Path.Combine(GameDataDir, "content", "base")) ? Path.Combine(GameDataDir, "content", "base")
             : Path.Combine(GameDataDir, "rules");
         ScenariosDir = Path.Combine(GameDataDir, "scenarios");
         _content = null;
+        (_vectorFonts, _hasHd) = (null, null);
         _book = null;
         _rules = null;
         _language = null;
@@ -246,6 +262,7 @@ public partial class GameData : Node
             root.ContentScaleSize = window;
         }
         UseGameRoot(ResolveGameRoot(args));
+        if (args.Contains("--vector-text")) VectorText = true;
         int at = Array.IndexOf(args, "--mods");
         string[] roots =
             args.Contains("--no-mods") ? []

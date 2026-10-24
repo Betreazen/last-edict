@@ -3,6 +3,7 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
 from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools" / "hd"))
@@ -46,7 +47,8 @@ def test_export_flat_names_and_manifest(tmp_path: Path) -> None:
     assert (p1["w"], p1["h"], p1["fileW"], p1["fileH"], p1["at"]) == (10, 10, 4, 5, [2, 3])
 
 
-def test_import_writes_scaled_layer_restores_alpha_reports(tmp_path: Path) -> None:
+@pytest.mark.parametrize("jobs", [1, 2])   # 2 — пачками по процессам: опись та же
+def test_import_writes_scaled_layer_restores_alpha_reports(tmp_path: Path, jobs: int) -> None:
     data, assets = make(tmp_path)
     out, up, mod = tmp_path / "out", tmp_path / "up", tmp_path / "mod"
     hd.export(out, ["ui", "faces"], None, data, assets)
@@ -60,7 +62,7 @@ def test_import_writes_scaled_layer_restores_alpha_reports(tmp_path: Path) -> No
         im.resize((6, 6)).save(up / "gfx__Faces__A1~000_A.png")
     with Image.open(out / "gfx__Faces__A1~001_B.png") as im:
         im.resize((6, 9)).save(up / "gfx__Faces__A1~001_B.png")
-    assert hd.import_layer(out, up, mod, "hd-test") == 0
+    assert hd.import_layer(out, up, mod, "hd-test", jobs) == 0
 
     ui = json.loads((mod / "data" / "ui" / "assets.json").read_text(encoding="utf-8"))
     assert [(a["name"], a["w"], a["h"], a["scale"], a["file"]) for a in ui] == [("BTN_TEST", 8, 6, 2, "Interf/frames/BTN_TEST.png")]

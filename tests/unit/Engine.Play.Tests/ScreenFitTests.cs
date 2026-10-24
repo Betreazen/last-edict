@@ -71,6 +71,13 @@ public class ScreenFitTests
         Assert.Equal(new ScreenFit(1280, 720, 1f, 0, 0, false), fit);
     }
 
+    /// <summary>HD: экраны — сразу в точках окна, без буфера ×n и сжатия.</summary>
+    [Fact]
+    public void Hd_StageIsWindow()
+    {
+        Assert.Equal(new ScreenFit(1920, 1080, 1f, 0, 0, false), ScreenFit.For(1920, 1080, ScreenScaling.Hd));
+    }
+
     [Fact]
     public void SmallWindow_SharpShrinksFromDesign()
     {
@@ -92,6 +99,7 @@ public class ScreenFitTests
     [InlineData("sharp", ScreenScaling.Sharp)]
     [InlineData("Integer", ScreenScaling.Integer)]
     [InlineData(" NEAREST ", ScreenScaling.Nearest)]
+    [InlineData("HD", ScreenScaling.Hd)]
     public void Parse_KnownNames(string name, ScreenScaling expected) => Assert.Equal(expected, ScreenFit.Parse(name));
 
     [Theory]

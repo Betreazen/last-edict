@@ -2487,7 +2487,7 @@ FIT_SCREEN = re.compile(r"^fit screen=(?P<id>\S+) политика=(?P<fit>\S+) 
 
 def screen_fit(repo: Path) -> tuple[bool, str]:
     """Вписывание экранов в окно любой формы (Э5, Р13; ui/layout.json, UiLayout): на 16:9, 16:10, 21:9 и 4:3 — карта на холсте формы окна
-    (место карты IMG_MAIN растёт на весь прирост, вьюпорт карты — его размера, панели IMG_RESOURCE и IMG_PALETTE и их экраны — у правого
+    (место карты IMG_MAIN растёт на весь прирост, вьюпорт карты — его размера в точках окна, панели IMG_RESOURCE и IMG_PALETTE и их экраны — у правого
     края), бой (поле прироста — по половине с каждой стороны, края — растяжкой фона, на 4:3 — нет), главное меню — по центру в паспарту
     BORDER_1280 (дыра 800×600 точка в точку). Сценарий карты — Mercantile, бой — бой-образец."""
     runs = []
@@ -2501,13 +2501,17 @@ def screen_fit(repo: Path) -> tuple[bool, str]:
         (cm, om), (cb, ob), (cs, os_) = outs[3 * i:3 * i + 3]
         lay, bat, scr = FIT_LAYOUT.search(om), FIT_BATTLE.search(ob), FIT_SCREEN.search(os_)
         right = width - 160
-        want_map = (str(width), "600", f"0,0:{right}x600", f"{right}x600", f"{right},0:160x203", f"{right},203:160x397")
+        want_map = (str(width), "600", f"0,0:{right}x600", f"{right},0:160x203", f"{right},203:160x397")
         views = set(lay["views"].split(";")) if lay else set()
+        # Вьюпорт карты — в точках окна (масштаб карты, ответ пользователя 24.10): место карты × масштаб окна, до точки.
+        vw, vh = (int(v) for v in size.split("x"))
+        k = vh / 600
+        port = [int(v) for v in lay["viewport"].split("x")] if lay else [0, 0]
         if (cm != 0 or lay is None
-                or (lay["w"], lay["h"], lay["map"], lay["viewport"], lay["res"], lay["panel"]) != want_map
+                or (lay["w"], lay["h"], lay["map"], lay["res"], lay["panel"]) != want_map
+                or abs(port[0] - right * k) > 1.5 or abs(port[1] - 600 * k) > 1.5
                 or not {f"DLG_ISO_PAL@{right},0", f"DLG_STRATEGIC@{right},203", "DLG_ISO@0,0", "DLG_ISO_RESPOPUP@0,0"} <= views):
             return False, f"вписывание {name} ({size}): карта — код {cm}, {lay and lay.group(0)}\n{om.strip()[-2000:]}"
-        vw, vh = (int(v) for v in size.split("x"))
         margin = max(0, math.ceil((600 * vw / vh - 800) / 2 - 0.01))   # поле боя покрывает холст с запасом в точку
         if (cb != 0 or bat is None or (int(bat["mx"]), bat["my"], bat["h"]) != (margin, "0", "600")
                 or int(bat["w"]) != 800 + 2 * margin or bat["edges"] != ("1" if margin else "0")):

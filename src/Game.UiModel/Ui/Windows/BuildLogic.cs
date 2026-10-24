@@ -130,6 +130,9 @@ public sealed class BuildLogic : IWindowLogic, IPadTargets, IBuildTreeSource
     /// <summary>Вкладка под мышью; нет — null.</summary>
     private string? _hoveredTab;
 
+    /// <summary>Кнопка под мышью; нет — null.</summary>
+    private string? _hoveredButton;
+
     /// <summary>Постройки, временно показанные «другим путём» от текущего выбора.</summary>
     private readonly HashSet<string> _shaded = new(StringComparer.OrdinalIgnoreCase);
 
@@ -154,48 +157,99 @@ public sealed class BuildLogic : IWindowLogic, IPadTargets, IBuildTreeSource
         };
     }));
 
-    /// <summary>Окно на холсте формы окна (<c>ui/layout.json</c>: Anchors, фон вправо): панель «Управление городом» и её кнопки — к правому
-    /// краю, фон дерева — во всю ширину слева (на нём вкладки и вид дерева). Переключатели круга без ветки дерева спрятаны.</summary>
+    /// <summary>Окно на холсте формы окна (<c>ui/layout.json</c>: Anchors): панели «Управление городом» оригинала нет (решение пользователя
+    /// 24.10) — фон дерева во всё окно без картинки оригинала, вкладки веток сверху, справа в их полосе — золото (<c>IMG_MANA_GOLD</c>,
+    /// <c>TXT_GOLD</c>) и «Закрыть» (<c>BTN_CLOSE</c>: Esc, B геймпада, граф окон — как прежде); сведения о выбранной постройке — карточкой у
+    /// правого края (<see cref="Card"/>, место — <see cref="CardId"/>), её «Построить» — кнопка разметки <c>BTN_BUILD</c> (Enter, Y геймпада).
+    /// Кнопки круга веток, рамка панели и прочие её элементы убраны.</summary>
     public UiScreen Shape(UiScreen screen)
     {
         ArgumentNullException.ThrowIfNull(screen);
-        var elements = screen.Elements.ToList();
-        int at = elements.FindIndex(e => e.Id == "IMG_FRAME_DLG") + 1;
-        elements.Insert(at, new UiElement
+        int w = screen.Design.Width, h = screen.Design.Height;
+        UiElement? Of(string id) => screen.Elements.FirstOrDefault(e => e.Id == id);
+        var elements = new List<UiElement>
         {
-            Id = TreeBackground, Kind = UiKind.Image, Rect = new UiRect(0, 0, TreeWidth, screen.Design.Height), Stretch = UiStretch.Width,
-        });
-        // Большой воин постройки: место портрета — во всю ширину большой рамки от левого края, подпись правее на ту же величину
-        // (правый край на месте; 0x4abb08…0x4abbd7). Порт кладёт это вторым набором элементов рядом с первым.
-        if (elements.FindIndex(e => e.Id == Face) is var face and >= 0 && elements.FindIndex(e => e.Id == FaceInfo) is var info and >= 0)
-        {
-            int wider = BigFaceWidth - elements[face].Rect.Width;
-            elements.Insert(info + 1, elements[info] with
+            new() { Id = TreeBackground, Kind = UiKind.Image, Rect = new UiRect(0, 0, w, h), Stretch = UiStretch.Width, Anchor = UiAnchor.TopLeft },
+        };
+        int top = TabPad + TabHeight + TabGap;
+        var card = new UiRect(w - CardMargin - CardWidth, top, CardWidth, h - top - CardMargin);
+        elements.Add(new UiElement { Id = CardId, Kind = UiKind.Image, Rect = card, Anchor = UiAnchor.TopRight });
+        // «Назад» и «Построить» — кнопки разметки оригинала без его картинок (решение пользователя 24.10: в окне построек ничего от старого
+        // интерфейса): место щелчка, Esc/Enter, граф окон и геймпад — прежние, рисует их вид дерева в теме Last Edict (Buttons).
+        if (Of("BTN_CLOSE") is { } close)
+            elements.Add(close with
             {
-                Id = BigFaceInfo, Rect = elements[info].Rect with { X = elements[info].Rect.X + wider, Width = elements[info].Rect.Width - wider },
+                Rect = new UiRect(w - TabPad - CloseWidth, TabPad, CloseWidth, TabHeight), Anchor = UiAnchor.TopRight, Sprites = new UiSprites(),
             });
-            elements.Insert(face + 1, elements[face] with { Id = BigFace, Rect = elements[face].Rect with { Width = BigFaceWidth } });
-        }
-        // Якоря: фон дерева — от левого края с растяжением, панель справа — к правому краю.
-        elements = [.. elements.Select(e => e with
-        {
-            Anchor = e.Id == TreeBackground || e.Id == "IMG_FRAME_DLG" ? UiAnchor.TopLeft : UiAnchor.TopRight,
-        })];
-        return screen with { Elements = elements };
+        if (Of("BTN_BUILD") is { } build)
+            elements.Add(build with
+            {
+                Rect = new UiRect(card.X + 16, card.Bottom - 16 - BuildHeight, card.Width - 32, BuildHeight), Anchor = UiAnchor.TopRight,
+                Sprites = new UiSprites(),
+            });
+        return screen with { Elements = elements, Background = "" };
     }
 
-    /// <summary>Портрет воина постройки и подпись к нему; у большого воина — <see cref="BigFace"/>/<see cref="BigFaceInfo"/>.</summary>
-    private const string Face = "IMG_FACE", FaceInfo = "TXT_UNIT_INFO", BigFace = "IMG_FACE_BIG", BigFaceInfo = "TXT_UNIT_INFO_BIG";
+    /// <summary>Ширина малой рамки портрета <c>BORDERUNITSMALL</c> и большой <c>BORDERUNITLARGE</c> (<see cref="LastEdict.Data.Map.MapCards"/>,
+    /// 84×99 и 164×99): у большого воина место портрета — во всю ширину большой рамки (<c>0x4abb69</c>).</summary>
+    private const int FaceWidth = 84, BigFaceWidth = 164;
 
-    /// <summary>Ширина большой рамки <c>BORDERUNITLARGE</c> (<see cref="LastEdict.Data.Map.MapCards.LargeBorder"/>, 164×99): движок ставит место
-    /// портрета по ширине составной картинки (<c>0x4abb69</c>), а у большого её задаёт рамка.</summary>
-    private const int BigFaceWidth = 164;
+    /// <summary>Место карточки выбранной постройки (элемент без картинки: его рисует вид дерева).</summary>
+    public const string CardId = "BUILD_CARD";
+
+    /// <summary>Ширина карточки и её отступ от краёв (точки разметки).</summary>
+    public const int CardWidth = 290, CardMargin = 8;
+
+    /// <summary>Сколько точек полосы вкладок справа занято золотом и «Назад».</summary>
+    private const int TabReserve = 230;
+
+    /// <summary>Ширина «Назад» в полосе вкладок и высота «Построить» на карточке.</summary>
+    private const int CloseWidth = 96, BuildHeight = 32;
+
+    /// <summary>Кнопка окна в теме Last Edict (место — точки разметки): подпись, доступна ли, под мышью ли.</summary>
+    public sealed record BuildButton(string Id, UiRect Rect, string Label, bool Enabled, bool Hovered);
+
+    /// <summary>Кнопки окна («Назад», «Построить» — когда есть карточка), рисует вид дерева.</summary>
+    public IReadOnlyList<BuildButton> Buttons { get; private set; } = [];
+
+    /// <summary>Золото игрока строкой («Золото: 5000») — в полосе вкладок слева от «Назад».</summary>
+    public string Gold { get; private set; } = "";
+
+    /// <summary>Место строки золота (точки разметки).</summary>
+    public UiRect GoldRect => RectOf("BTN_CLOSE") is { } close ? new UiRect(close.X - 130, close.Y, 124, close.Height) : default;
+
+    /// <summary>Кнопки по состоянию экрана: подпись — своя строка Last Edict, доступность и наведение — из состояния.</summary>
+    private void CollectButtons(UiScreenState ui)
+    {
+        var buttons = new List<BuildButton>();
+        foreach (var (id, key) in (ReadOnlySpan<(string, string)>)[("BTN_CLOSE", "LE_BUILD_BACK"), ("BTN_BUILD", "LE_BUILD_BUILD")])
+        {
+            if (RectOf(id) is not { } rect || ui.Screen.Elements.All(e => e.Id != id) || ui.IsHidden(id)) continue;
+            buttons.Add(new BuildButton(id, rect, _c.Text(key), ui.IsEnabled(id), ui.Hovered == id));
+        }
+        Buttons = buttons;
+    }
+
+    /// <summary>Сведения о выбранной постройке для карточки: имя, цена, описание, портрет воина постройки (кадр; большой — шире), строки о
+    /// нём (живёт, тренируется, в армии, ждут повышения) и статус. Место — <see cref="Rect"/> (точки разметки).</summary>
+    public sealed record BuildCard(UiRect Rect, string Title, string Cost, string Description, string? Face, bool FaceBig,
+                                   IReadOnlyList<string> UnitLines, string Status, BuildIcon Kind);
+
+    /// <summary>Карточка выбранной постройки; ничего не выбрано — null (карточки нет).</summary>
+    public BuildCard? Card { get; private set; }
+
+    /// <summary>Место портрета на карточке (точки разметки): малый — 84×99, большой — шире (рамка 164×99).</summary>
+    public static UiRect FaceRect(BuildCard card)
+    {
+        ArgumentNullException.ThrowIfNull(card);
+        int width = card.FaceBig ? BigFaceWidth : FaceWidth;
+        return new UiRect(card.Rect.X + 14, card.Rect.Y + 196, width, 99);
+    }
 
     public void Open(UiScreenState ui)
     {
         ArgumentNullException.ThrowIfNull(ui);
         var remembered = Tree.Branch(_c.Memory.BuildBranch) ?? Tree.Branches.FirstOrDefault(b => b.Nodes.Count > 0) ?? Tree.Branches.FirstOrDefault();
-        ui.SetText("TXT_CITY_DEVELOPMENT", _c.Text("X005TA0094"));
         // Ветки — только вкладками над деревом (решение пользователя 24.10): кнопки круга оригинала спрятаны.
         foreach (string toggle in Toggles(ui)) ui.SetHidden(toggle, true);
         Show(remembered?.Id ?? "", ui);
@@ -256,8 +310,10 @@ public sealed class BuildLogic : IWindowLogic, IPadTargets, IBuildTreeSource
             }
         }
         string? hovered = NodeAt(x, y)?.Building, tab = TabAt(x, y)?.Branch;
-        if (hovered == _hovered && tab == _hoveredTab) return;
-        (_hovered, _hoveredTab) = (hovered, tab);
+        string? button = Buttons.FirstOrDefault(b => Inside(b.Rect, x, y))?.Id;
+        if (hovered == _hovered && tab == _hoveredTab && button == _hoveredButton) return;
+        (_hovered, _hoveredTab, _hoveredButton) = (hovered, tab, button);
+        Buttons = [.. Buttons.Select(b => b with { Hovered = b.Id == button })];
         Revision++;
     }
 
@@ -281,8 +337,7 @@ public sealed class BuildLogic : IWindowLogic, IPadTargets, IBuildTreeSource
     {
         ArgumentNullException.ThrowIfNull(ui);
         if (NodeAt(x, y) is { } node) _requests.Add(new UiOpen(BuildingCardLogic.Screen, new BuildingCardLogic(_c, node.Building, _texts)));
-        else if (_faceUnit is { } unit && ui.Screen.Elements.FirstOrDefault(e => e.Id == (_faceBig ? BigFace : Face)) is { } face
-                 && x >= face.Rect.X && x < face.Rect.Right && y >= face.Rect.Y && y < face.Rect.Bottom)
+        else if (_faceUnit is { } unit && Card is { } card && Inside(FaceRect(card), x, y))
             _requests.Add(new UiOpen(UnitCardLogic.Screen, UnitCardLogic.OfType(_c, unit)));
     }
 
@@ -330,7 +385,7 @@ public sealed class BuildLogic : IWindowLogic, IPadTargets, IBuildTreeSource
     /// уже отброшены) — мышь зовёт это на каждое движение, а вид значка считает правила.</summary>
     private BuildTreeItem? NodeAt(int x, int y)
     {
-        if (!InArea(x, y) || _area is not { } area) return null;
+        if (!InArea(x, y) || _area is not { } area || (Card is { } card && Inside(card.Rect, x, y))) return null;
         var (cx, cy) = View.ToContent(x - area.X, y - area.Y);
         return Items.LastOrDefault(i => Contains(i.Icon, cx, cy) || Contains(i.Plate, cx, cy));
     }
@@ -353,13 +408,15 @@ public sealed class BuildLogic : IWindowLogic, IPadTargets, IBuildTreeSource
     // ---- крестовина геймпада
 
     /// <summary>Приставки целей крестовины: значок постройки, вкладка ветки.</summary>
-    private const string PadNode = "TREE:", PadTab = "TAB:";
+    private const string PadNode = "TREE:", PadTab = "TAB:", PadButton = "BUTTON:";
 
     /// <summary>Значки открытой ветки (в точках разметки — по виду) и вкладки — цели крестовины рядом с кнопками панели.</summary>
     public IReadOnlyList<UiElement> PadTargets()
     {
         if (_area is not { } area) return [];
         var targets = Tabs.Select(t => new UiElement { Id = PadTab + t.Branch, Kind = UiKind.Button, Rect = t.Rect }).ToList();
+        // Кнопки без картинок экран крестовине не отдаёт (спрайт пуст) — их места даёт логика.
+        targets.AddRange(Buttons.Where(b => b.Enabled).Select(b => new UiElement { Id = PadButton + b.Id, Kind = UiKind.Button, Rect = b.Rect }));
         foreach (var item in Items)
         {
             var r = View.ToView(item.Icon);
@@ -418,8 +475,10 @@ public sealed class BuildLogic : IWindowLogic, IPadTargets, IBuildTreeSource
     private void Place(UiScreenState ui)
     {
         if (RectOf(TreeBackground) is not { } bg) return;
-        var (tabs, area) = TabsAndArea(bg, [.. Tree.Branches.Select(b => (b.Id, BranchName(b)))], Branch, _hoveredTab);
+        var (tabs, _) = TabsAndArea(bg with { Width = bg.Width - TabReserve }, [.. Tree.Branches.Select(b => (b.Id, BranchName(b)))], Branch,
+                                    _hoveredTab);
         Tabs = tabs;
+        var (_, area) = TabsAndArea(bg, [], Branch, null);
         var (cw, ch) = ContentSize;
         if (_area is not { } was) View.Reset(area.Width, area.Height, cw, ch);
         else if (was.Width != area.Width || was.Height != area.Height) View.Resize(area.Width, area.Height);
@@ -585,37 +644,41 @@ public sealed class BuildLogic : IWindowLogic, IPadTargets, IBuildTreeSource
         }
     }
 
-    /// <summary>Строки воина постройки: живущий в ней, тренирующийся, сколько их в армии и ждут повышения.</summary>
-    private void UnitLines(UiScreenState ui, string id)
+    /// <summary>Строки воина постройки: живущий в ней, тренирующийся, сколько их в армии и ждут повышения; воина нет — пусто.</summary>
+    private List<string> UnitLines(string id)
     {
+        var lines = new List<string>();
         var book = _c.Session.RequireBook();
         string? special = _c.Rules?.EnrollBuildings.FirstOrDefault(p => p.Value.Equals(id, StringComparison.OrdinalIgnoreCase)).Key;
         string? unit = special ?? book.UpgradeBuilding.FirstOrDefault(p => p.Value.Equals(id, StringComparison.OrdinalIgnoreCase)).Key;
-        if (unit is null) return;
+        if (unit is null) return lines;
         _faceUnit = unit;
-        // Портрет в рамке, как у карточки отряда (0x4abaa1 → 0x5b0bdd лицо, getSizeSmall типа 0x4abaa8: малый — 0x5b680b BORDERUNITSMALL,
-        // большой — 0x5b6870 BORDERUNITLARGE).
+        // Портрет без рамки оригинала (BORDERUNITSMALL/LARGE — старый интерфейс, решение пользователя 24.10): рамку рисует вид в теме Last
+        // Edict; большой воин — место шире (0x4abb69).
         _faceBig = book.Rules.Units.TryGetValue(unit, out var sized) && !sized.SizeSmall;
-        _faceFrame = UiFrameRef.Layered(_faceBig ? LastEdict.Data.Map.MapCards.LargeBorder : LastEdict.Data.Map.MapCards.SmallBorder, _c.Faces.Small(unit));
-        ui.SetImage(_faceBig ? BigFace : Face, _faceFrame, UiImageAlign.Center);
-        ui.SetText("TXT_UPGRADED", $"{_c.Text(special is null ? "X005TA0384" : "X005TA0677")} {_c.UnitName(unit)}");
-        ui.SetText(_faceBig ? BigFaceInfo : FaceInfo, _c.Text("X005TA0382"));
-        if (!book.Rules.Units.TryGetValue(unit, out var type) || type.PrevId.Length == 0) return;
+        _faceFrame = _c.Faces.Small(unit);
+        lines.Add($"{_c.Text(special is null ? "X005TA0384" : "X005TA0677")} {_c.UnitName(unit)}");
+        if (!book.Rules.Units.TryGetValue(unit, out var type) || type.PrevId.Length == 0)
+        {
+            lines.Add(_c.Text("X005TA0382"));
+            return lines;
+        }
         string prev = type.PrevId;
-        ui.SetText("TXT_UPGRADING", UiTemplate.Fill(_c.Text("X005TA0383"), ("NAME", _c.UnitName(prev))));
+        lines.Add(UiTemplate.Fill(_c.Text("X005TA0383"), ("NAME", _c.UnitName(prev))));
         var map = _c.Map;
         var ours = map.Stacks.Values.Where(s => s.Owner.Equals(_c.Viewer, StringComparison.OrdinalIgnoreCase)).SelectMany(s => s.UnitIds)
             .Concat(map.Sites.Where(s => s.Owner.Equals(_c.Viewer, StringComparison.OrdinalIgnoreCase)).SelectMany(s => s.Guards))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .Select(u => map.Units.GetValueOrDefault(u)).OfType<MapUnit>()
             .Where(u => u.TypeId.Equals(prev, StringComparison.OrdinalIgnoreCase)).ToList();
-        string info = UiTemplate.Fill(_c.Text("X005TA0282"), ("NUMBER", ours.Count));
+        lines.Add(UiTemplate.Fill(_c.Text("X005TA0282"), ("NUMBER", ours.Count)));
         if (Icon(id) is BuildIcon.Can or BuildIcon.NeedPrevious)
         {
             int urgent = ours.Count(u => book.XpNextOf(u.TypeId, u.Level) is var next and > 0 && u.Xp >= next - 1);
-            info += @"\n" + UiTemplate.Fill(_c.Text("X005TA0381"), ("URGENT", urgent));
+            lines.Add(UiTemplate.Fill(_c.Text("X005TA0381"), ("URGENT", urgent)));
         }
-        ui.SetText("TXT_UPGRADE_INFO", info);
+        lines.Add(_c.Text("X005TA0382"));
+        return lines;
     }
 
     private void Refresh(UiScreenState ui)
@@ -623,28 +686,32 @@ public sealed class BuildLogic : IWindowLogic, IPadTargets, IBuildTreeSource
         Shade();   // выбор мог стать недоступным (построили, новый день)
         var player = _c.Player;
         var book = _c.Session.RequireBook();
-        ui.SetText("TXT_GOLD", player.Bank.Gold.ToString(CultureInfo.InvariantCulture));
+        Gold = $"{_c.Text("LE_BUILD_GOLD")}: {player.Bank.Gold.ToString(CultureInfo.InvariantCulture)}";
         _placed = ui.Screen;
         Place(ui);
         Collect();
         Revision++;
-        ui.SetEnabled("BTN_BUILD", Selected is { } s && Icon(s) == BuildIcon.Can);
-        foreach (string t in (string[])["TXT_INFO", "TXT_COST", "TXT_STATUS", FaceInfo, BigFaceInfo, "TXT_UPGRADED", "TXT_UPGRADING", "TXT_UPGRADE_INFO"])
-            ui.SetText(t, "");
-        ui.SetImage(Face, null);
-        ui.SetImage(BigFace, null);
+        bool chosen = Selected is { } s && book.Economy.Buildings.ContainsKey(s);
+        ui.SetEnabled("BTN_BUILD", chosen && Icon(Selected!) == BuildIcon.Can);
+        ui.SetHidden("BTN_BUILD", !chosen);
+        CollectButtons(ui);
         _faceUnit = null;
         _faceBig = false;
         _faceFrame = null;
-        if (Selected is not { } id || !book.Economy.Buildings.TryGetValue(id, out var type)) return;
+        Card = null;
+        if (!chosen || Selected is not { } id || RectOf(CardId) is not { } rect) return;
+        var type = book.Economy.Buildings[id];
+        var icon = Icon(id);
         string cost = UiTemplate.Fill(_c.Text("X005TA0055"), ("QTY", type.Cost.Gold));
-        ui.SetText("TXT_COST", UiTemplate.Fill(_c.Text("X005TA0449"), ("NAME", Name(id)), ("COST", cost)));
-        ui.SetText("TXT_INFO", _texts.TryGetValue(id, out var text) ? _c.Text(text.DescTxt) : "");
-        ui.SetText("TXT_STATUS", _c.Text(Icon(id) switch
-        {
-            BuildIcon.Built => "X005TA0308", BuildIcon.NeedPrevious => "X005TA0310", BuildIcon.OtherPath => "X005TA0312", _ => "X005TA0307",
-        }));
-        UnitLines(ui, id);
+        var lines = UnitLines(id);
+        // Строки игры несут разметку шрифтов и цвета (MedBold; и т. п.) — карточка рисует свой шрифт, ей нужен текст без разметки.
+        static string Plain(string text) => UiTextStyle.Parse(text).Text;
+        Card = new BuildCard(rect, Plain(Name(id)), Plain(cost), _texts.TryGetValue(id, out var text) ? Plain(_c.Text(text.DescTxt)) : "",
+            _faceFrame, _faceBig, [.. lines.Select(Plain)],
+            Plain(_c.Text(icon switch
+            {
+                BuildIcon.Built => "X005TA0308", BuildIcon.NeedPrevious => "X005TA0310", BuildIcon.OtherPath => "X005TA0312", _ => "X005TA0307",
+            })), icon);
     }
 
     /// <summary>Разложенный экран сменился (окно растянули): место дерева и вид — заново по новому месту фона.</summary>

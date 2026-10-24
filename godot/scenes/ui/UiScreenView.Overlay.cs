@@ -57,6 +57,9 @@ public partial class UiScreenView
             _tree?.QueueFree();
             _tree = new BuildTreeView(build, FrameTexture);
             _root.AddChild(_tree);
+            // Вид дерева — сразу над фоном дерева: кнопки разметки («Закрыть», «Построить», золото) рисуются поверх него и его карточки.
+            if (_sprites.TryGetValue(LastEdict.Data.Ui.Windows.BuildLogic.TreeBackground, out var background) && background.GetParent() == _root)
+                _root.MoveChild(_tree, background.GetIndex() + 1);
         }
         _tree.Sync(Origin(_state.Screen));
     }

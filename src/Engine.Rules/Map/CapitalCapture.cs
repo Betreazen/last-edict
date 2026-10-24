@@ -125,6 +125,15 @@ public static class CapitalCapture
                                       && e.Effects.Any(x => x.Category == WinEffectCategory));
     }
 
+    /// <summary>То же для игрока-захватчика (<see cref="ScenarioEvents.ForPlayer"/>): раса — по флагу оригинала или по id содержимого, и
+    /// событие — для этого игрока. Второй игрок одной расы (сторона 10+) прежде флага не находил вовсе.</summary>
+    public static bool HasWinEvent(ScenarioEventSet events, MapPlayer captor, RaceInfo race)
+    {
+        ArgumentNullException.ThrowIfNull(events);
+        return events.Events.Any(e => ScenarioEvents.ForPlayer(e, captor, race)
+                                      && e.Effects.Any(x => x.Category == WinEffectCategory));
+    }
+
     /// <summary>
     /// Взятие столицы целиком: выбор между победой и гибелью игрока и всё, что делает
     /// <c>CEffectCaptureCapital::apply</c>. Состояние не меняется — что применить, лежит в ответе.
@@ -152,11 +161,11 @@ public static class CapitalCapture
                 : $"столица {capital.Id} не пала: внутри отряд {capital.StackId} " +
                   $"или живых в гарнизоне {LiveGuards(capital, map.Units)}");
 
-        if (RaceTypeOf(captor, rules) is not { } raceType)
+        if (RaceTypeOf(captor, rules) is null || !rules.Races.TryGetValue(captor.RaceId, out var captorRace))
             return Refuse(capital, $"расы {captor.RaceId} захватчика {captorId} нет в Grace.dbf");
 
         if (Treasury.CaptureEndsInVictory(LiveOpponents(map, captorId, rules),
-                                          HasWinEvent(events ?? ScenarioEventSet.Empty, raceType),
+                                          HasWinEvent(events ?? ScenarioEventSet.Empty, captor, captorRace),
                                           loser.IsHuman, multiplayer))
             return new CapitalCaptureOutcome(true, null, captor.Bank, loser.Bank, "", capital, [], []);
 

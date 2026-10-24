@@ -275,10 +275,13 @@ public class DiplomacyTests
         int[] withRod = [Rods.LeaderAbilityRod];
 
         Assert.Contains("земля союзника", Rods.PlaceRefusal(map, 5, 5, new Bank(1000, 0, 0, 0, 0, 0), rules,
-            withRod, Diplomacy.AllyTerrain(M15(100, ally: true), Players, Empire))!);
+            withRod, Cells(map, Diplomacy.AllyTerrain(M15(100, ally: true), Players, Empire)))!);
         Assert.Null(Rods.PlaceRefusal(map, 5, 5, new Bank(1000, 0, 0, 0, 0, 0), rules, withRod,
-            Diplomacy.AllyTerrain(M15(100), Players, Empire)));
+            Cells(map, Diplomacy.AllyTerrain(M15(100), Players, Empire))));
     }
+
+    /// <summary>Предикат по роду земли — как предикат по клеткам (карта без хозяев земли, <see cref="Diplomacy.AllyLand"/>).</summary>
+    private static Func<int, int, bool> Cells(MapState map, Func<int, bool> byTerrain) => (x, y) => byTerrain(map.At(x, y).Terrain);
 
     /// <summary>Равнина с террейном расы <paramref name="terrain"/> во всех клетках.</summary>
     private static Tile[,] Tiles(int terrain)

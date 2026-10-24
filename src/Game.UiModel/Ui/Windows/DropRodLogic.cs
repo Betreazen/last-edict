@@ -61,7 +61,7 @@ public static class DropRodLogic
         var book = session.RequireBook();
         if (!map.Stacks.TryGetValue(stackId, out var stack)) return "нет отряда";
         var player = map.Players[stack.Owner];
-        return Rods.PlaceRefusal(map, x, y, player.Bank, book.Treasury, [.. session.LeaderAbilitiesOf(stack)], AllyTerrain(c, player));
+        return Rods.PlaceRefusal(map, x, y, player.Bank, book.Treasury, [.. session.LeaderAbilitiesOf(stack)], AllyLandOf(c, player));
     }
 
     /// <summary>Курсор над клеткой: <c>DROPRODVAL</c> — годна, <c>DROPRODINV</c> — нет (достижимость курсор не смотрит).</summary>
@@ -76,7 +76,7 @@ public static class DropRodLogic
         var map = c.Session.Map;
         if (map.Rods.Values.Any(r => Math.Abs(r.X - x) <= Rods.RodKeepOut && Math.Abs(r.Y - y) <= Rods.RodKeepOut)) return RodNear;
         var player = map.Players[map.Stacks[stackId].Owner];
-        return map.Contains(x, y) && AllyTerrain(c, player) is { } ally && ally(map.At(x, y).Terrain) ? AllyLand : null;
+        return map.Contains(x, y) && AllyLandOf(c, player) is { } ally && ally(x, y) ? AllyLand : null;
     }
 
     /// <summary>Вопрос перед постановкой: <c>X005TA0265</c> с ценой <c>ROD_COST</c>.</summary>
@@ -99,11 +99,10 @@ public static class DropRodLogic
     public static bool AsksToday(StackPath? path, int x, int y, bool near) =>
         near || path is { Points.Count: > 2 } p && p.Points[^1].X == x && p.Points[^1].Y == y && p.Reachable >= p.Points.Count - 2;
 
-    private static Func<int, bool>? AllyTerrain(WindowContext c, MapPlayer player)
+    private static Func<int, int, bool>? AllyLandOf(WindowContext c, MapPlayer player)
     {
         var book = c.Session.RequireBook();
         var map = c.Session.Map;
-        return Diplomacy.PartyOf(player, book.Economy.Races) is { } party
-            ? Diplomacy.AllyTerrain(map.Relations, Diplomacy.PlayerParties(map, book.Economy), party, book.Economy, map) : null;
+        return Diplomacy.PartyOf(player, book.Economy.Races) is { } party ? Diplomacy.AllyLand(map, book.Economy, party) : null;
     }
 }

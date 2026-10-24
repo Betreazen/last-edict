@@ -93,7 +93,7 @@ public static class Rods
     /// не спрашивается. Наблюдений кода 8 — три (ai-q27: (19,30), (35,35), (35,34), 3/0, план §3 п. 27).</param>
     public static string? PlaceRefusal(MapState map, int x, int y, Bank purse, TreasuryRules rules,
                                        IReadOnlyList<int> leaderAbilities,
-                                       Func<int, bool>? allyTerrain = null)
+                                       Func<int, int, bool>? allyLand = null)
     {
         ArgumentNullException.ThrowIfNull(map);
         ArgumentNullException.ThrowIfNull(rules);
@@ -108,7 +108,7 @@ public static class Rods
         if (Foreign(map, x, y) is { } here) return $"в клетке ({x},{y}) стоит объект {here}";
         if (Near(map, x, y, FortKeepOut, FortKind) is { } fort)
             return $"укрепление {fort} ближе чем через клетку от ({x},{y})";
-        if (allyTerrain is not null && allyTerrain(map.At(x, y).Terrain))
+        if (allyLand is not null && allyLand(x, y))
             return $"клетка ({x},{y}) — земля союзника";
         if (Treasury.Affordable(purse, Treasury.RodPrice(rules)) < 1)
             return $"казны не хватает на жезл ({Treasury.RodPrice(rules)}, есть {purse})";
@@ -126,10 +126,10 @@ public static class Rods
     /// <param name="rodId">Id нового объекта <c>RD</c> — его выдаёт сценарий, не правило.</param>
     public static RodCommand Place(MapState map, MapStack stack, string rodId, int x, int y, Bank purse,
                                    TreasuryRules rules, IReadOnlyList<int> leaderAbilities,
-                                   Func<int, bool>? allyTerrain = null)
+                                   Func<int, int, bool>? allyLand = null)
     {
         ArgumentNullException.ThrowIfNull(stack);
-        if (PlaceRefusal(map, x, y, purse, rules, leaderAbilities, allyTerrain) is { } why)
+        if (PlaceRefusal(map, x, y, purse, rules, leaderAbilities, allyLand) is { } why)
             return new RodCommand(stack.Move, purse, Refused: why);
         return new RodCommand(Movement.WholeTurnSpent, Treasury.Pay(purse, Treasury.RodPrice(rules)),
                               Placed: new MapRod(rodId, stack.Owner, x, y));

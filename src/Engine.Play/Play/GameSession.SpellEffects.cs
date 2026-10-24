@@ -50,7 +50,8 @@ public sealed partial class GameSession
         var tiles = (Tile[,])Map.Tiles.Clone();
         foreach (var (cx, cy) in cells)
             tiles[cx, cy] = new Tile((byte)((tiles[cx, cy].Raw & ~0b111111) | ((spell.Ground & 0b111) << 3) | NeutralTerrain));
-        State = State with { Looks = Retold(Looks, WithTiles(Map, tiles), Looks.Stacks) };
+        var owners = Book is { } book ? LandOwnership.Retag(Map, tiles, cells, null, book.Economy) : null;   // нейтральная — без хозяина
+        State = State with { Looks = Retold(Looks, WithTiles(Map, tiles, owners), Looks.Stacks) };
     }
 
     /// <summary><c>Lterrain</c> <c>L_NE</c> — нейтральная земля.</summary>

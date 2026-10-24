@@ -224,7 +224,7 @@ public static class Economy
             if (!map.Contains(node.X, node.Y)) continue;
             var tile = map.At(node.X, node.Y);
             if (tile.Ground is not (Ground.Plain or Ground.Forest)) continue;
-            bool mine = ownLand is null ? tile.Terrain == ownTerrain : ownLand.Contains((node.X, node.Y));
+            bool mine = ownLand is null ? LandOwnership.IsOwn(map, node.X, node.Y, playerId, ownTerrain) : ownLand.Contains((node.X, node.Y));
             if (!mine) continue;
             total = Clamp(total + Currency(node.Resource, rules.CrystalProfit));
         }

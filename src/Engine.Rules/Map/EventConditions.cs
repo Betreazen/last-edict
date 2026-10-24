@@ -18,9 +18,10 @@ internal sealed class EventWorld(MapState map, EventRules rules, ScenarioEventSe
     public RaceInfo? Race(string playerId) =>
         Map.Players.TryGetValue(playerId, out var p) && Rules.Races.TryGetValue(p.RaceId, out var r) ? r : null;
 
-    /// <summary><c>AffectsPlayer</c> (<c>0x444b33</c>): раса игрока есть в <c>HUMAN…</c>-флагах события. Игрока нет — ложь.</summary>
+    /// <summary><c>AffectsPlayer</c> (<c>0x444b33</c>): раса игрока есть в <c>HUMAN…</c>-флагах события (или в id рас, и игрок — среди игроков
+    /// события, <see cref="ScenarioEvents.ForPlayer"/>). Игрока нет — ложь.</summary>
     public bool Affects(ScenarioEvent e, string playerId) =>
-        Race(playerId) is { } race && ScenarioEvents.RaceFlag(e.Races, race);
+        Map.Players.TryGetValue(playerId, out var player) && Race(playerId) is { } race && ScenarioEvents.ForPlayer(e, player, race);
 
     /// <summary>Нейтральный игрок (раса с признаком <see cref="RaceInfo.Neutral"/>) — убийца «никто» у <c>L_KILL_STACK</c>.</summary>
     public string NeutralPlayer =>
@@ -134,7 +135,7 @@ public static class EventConditions
                 counts[tile.Terrain]++;
             }
         long need = (long)plain * t.Percent / 100;
-        return w.Rules.Races.Values.Where(r => r.Playable && ScenarioEvents.RaceFlag(e.Races, r))
+        return w.Rules.Races.Values.Where(r => r.Playable && ScenarioEvents.ForRace(e, r))
                                    .Any(r => counts[r.Terrain] >= need);
     }
 

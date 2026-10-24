@@ -83,8 +83,8 @@ public class RodTests
     [Fact] public void Place_RefusedOnAllyLand_AndOnlyWhenAsked()
     {
         var map = Map();
-        Assert.Contains("союзника", Rods.PlaceRefusal(map, 5, 5, Rich, Rules, WithRod, _ => true)!);
-        Assert.Null(Rods.PlaceRefusal(map, 5, 5, Rich, Rules, WithRod, _ => false));
+        Assert.Contains("союзника", Rods.PlaceRefusal(map, 5, 5, Rich, Rules, WithRod, (_, _) => true)!);
+        Assert.Null(Rods.PlaceRefusal(map, 5, 5, Rich, Rules, WithRod, (_, _) => false));
         Assert.Null(Rods.PlaceRefusal(map, 5, 5, Rich, Rules, WithRod));
     }
 

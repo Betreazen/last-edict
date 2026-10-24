@@ -100,6 +100,8 @@ def main() -> int:
     ap.add_argument("--assets-before", type=Path, default=None, help="D2_ASSETS_DIR стороны «до» (графика другой сборки)")
     ap.add_argument("--assets-after", type=Path, default=None, help="D2_ASSETS_DIR стороны «после»")
     a = ap.parse_args()
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")   # консоль Windows (cp1251) не печатает «→» отчёта
     if a.report:
         return report(a.report, a.threshold)
     if not (a.before and a.after):

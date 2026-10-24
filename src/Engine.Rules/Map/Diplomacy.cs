@@ -368,6 +368,30 @@ public static class Diplomacy
         return terrain => allyTerrains.Contains(terrain);
     }
 
+    /// <summary>
+    /// Предикат «клетка (x, y) — земля союзника» по клеткам: у карты без хозяев земли — род земли клетки (<see cref="AllyTerrain"/>); при общей
+    /// расе (<see cref="LandOwnership"/>) клетка с хозяином — земля его стороны, союзной с <paramref name="ownParty"/> и не ею самой.
+    /// </summary>
+    public static Func<int, int, bool> AllyLand(MapState map, EconomyRules rules, int ownParty)
+    {
+        ArgumentNullException.ThrowIfNull(map);
+        ArgumentNullException.ThrowIfNull(rules);
+        var ally = AllyTerrain(map.Relations, PlayerParties(map, rules), ownParty, rules, map);
+        if (!LandOwnership.Tracked(map)) return (x, y) => ally(map.At(x, y).Terrain);
+        var shared = LandOwnership.SharedTerrains(map, rules);
+        // Союзна ли сторона хозяина — по слоту, один раз: предикат зовут на каждую клетку прохода.
+        var allyBySlot = LandOwnership.PartyBySlot(map, rules)
+            .Select(p => p is { } party && party != ownParty && AreAllies(map.Relations, ownParty, party)).ToArray();
+        var owners = map.LandOwners!;
+        return (x, y) =>
+        {
+            int slot = owners[x, y];
+            if (slot > 0) return slot < allyBySlot.Length && allyBySlot[slot];
+            int terrain = map.At(x, y).Terrain;
+            return !shared.ContainsKey(terrain) && ally(terrain);
+        };
+    }
+
     /// <summary>Стороны игроков карты по одной записи на игрока — материал цикла третьей стороны. Сторона — <see cref="PartyOf(MapPlayer,
     /// IReadOnlyDictionary{string, RaceInfo})"/>: у движка раса игрока <c>CMidPlayer.RACE_ID</c> → <c>Grace.RACE_TYPE</c> (та же цепочка,
     /// что <c>0x5e4727</c>). Игрок с расой вне <c>Grace.dbf</c> в список не идёт.</summary>

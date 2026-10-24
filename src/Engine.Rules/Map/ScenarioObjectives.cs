@@ -73,7 +73,7 @@ public static class ScenarioObjectives
 
     /// <summary><c>0x5f1d36</c>: событие-цель расы зрителя. Раса победителя сверяется по <c>RACE_TYPE</c> игрока <c>ID_PLAYER1</c>.</summary>
     private static bool IsGoal(ScenarioEvent e, EventProgress progress, EventWorld world, RaceInfo race, bool win) =>
-        progress.IsEnabled(e.Id) && ScenarioEvents.RaceFlag(e.Races, race)
+        progress.IsEnabled(e.Id) && ScenarioEvents.ForRace(e, race)
         && e.Effects.Count > 0 && e.Effects[^1] is WinEffect w && w.Win == win
         && (!win || world.RaceType(w.PlayerId) == race.RaceType);
 

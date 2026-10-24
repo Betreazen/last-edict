@@ -17,7 +17,7 @@ public sealed partial class GameSession
         var player = map.Players[stack.Owner];
         var ids = map.IdNext;
         string id = NewId(ref ids, map.Rods.Keys, stackId, "RD");
-        var cmd = Rods.Place(map, stack, id, x, y, player.Bank, book.Treasury, LeaderAbilities(stack), AllyTerrain(stack.Owner));
+        var cmd = Rods.Place(map, stack, id, x, y, player.Bank, book.Treasury, LeaderAbilities(stack), AllyLand(stack.Owner));
         if (cmd.Refused is { } why) return why;
         Unhide(stackId);   // невидимый показывается до CEffectDropRod (0x440cfc → CEffectShow с 1, 0x440e3b)
         var rod = cmd.Placed!;
@@ -43,14 +43,11 @@ public sealed partial class GameSession
         if (!map.Players.TryGetValue(rod.Owner, out var owner) || !book.Economy.Races.TryGetValue(owner.RaceId, out var race)
             || !race.Playable) return;
         int terrain = race.Terrain;
-        var owned = new HashSet<(int X, int Y)>();
-        for (int x = 0; x < map.Size; x++)
-            for (int y = 0; y < map.Size; y++)
-                if (map.Tiles[x, y].Terrain == terrain) owned.Add((x, y));
+        var owned = LandOwnership.OwnCells(map, owner.Id, terrain);   // при общей расе — только земля хозяина жезла
         var source = new LandSource(rod.Id, (rod.X, rod.Y), book.Land.RodRange, [(rod.X, rod.Y)]);
         var cells = LandModel.AcquisitionLand(map, owned, source, book.Land, LandModel.BlockedCells(map, map.Sites, book.MountainLandmarks, book.Economy.NeutralRaces));
         if (cells.Count == 0) return;
-        State = State with { Looks = Retold(Looks, Recolor(map, cells.ToHashSet(), terrain), Looks.Stacks) };
+        State = State with { Looks = Retold(Looks, Recolor(map, cells.ToHashSet(), terrain, owner.Id), Looks.Stacks) };
     }
 
     /// <summary>Отряд сносит жезл (<see cref="Rods.Break"/>): весь остаток хода; чужой — штраф отношений <c>D_ROD</c> с хозяином жезла
@@ -133,11 +130,11 @@ public sealed partial class GameSession
         Map.Units.TryGetValue(stack.LeaderId, out var leader) && RequireBook().LeaderCategoryOf(leader.TypeId) == 4
             ? [Rods.LeaderAbilityRod] : [];
 
-    private Func<int, bool>? AllyTerrain(string playerId)
+    private Func<int, int, bool>? AllyLand(string playerId)
     {
         var book = RequireBook();
         if (!Map.Players.TryGetValue(playerId, out var p) || !book.Economy.Races.TryGetValue(p.RaceId, out var race)) return null;
-        return Diplomacy.AllyTerrain(Map.Relations, Diplomacy.PlayerParties(Map, book.Economy), p.Party ?? race.RaceType, book.Economy, Map);
+        return Diplomacy.AllyLand(Map, book.Economy, p.Party ?? race.RaceType);
     }
 
     private bool RodOwnerAlly(string a, string b)

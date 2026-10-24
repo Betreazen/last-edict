@@ -48,6 +48,16 @@ MANIFEST = "manifest.json"
 # Эти архивы в слой не идут.
 LOGICAL_ONLY = {"Ground.ff", "GrBorder.ff"}
 
+# Плитки, что смыкаются точка в точку (туман войны, куски дорог): апскейл смягчает их жёсткий край, и стыки между соседними плитками
+# просвечивают сеткой (проба 24.10). В слой не идут — по архиву и началу имени.
+SEAMLESS = {("IsoTerrn.ff", "FOG"), ("IsoTerrn.ff", "ROAD")}
+
+
+def kept(e: dict) -> bool:
+    """Кадр идёт в HD-слой: не земля и не плитка, что смыкается с соседними."""
+    return e.get("archive") not in LOGICAL_ONLY and not any(
+        e.get("archive") == archive and e.get("name", "").upper().startswith(prefix) for archive, prefix in SEAMLESS)
+
 
 def assets_root() -> Path:
     env = os.environ.get("D2_ASSETS_DIR")
@@ -157,7 +167,7 @@ def load_json(path: Path, default):
 
 def import_one(e: dict, export_dir: Path, upscaled: Path, mod: Path) -> tuple[dict | None, list[str], bool]:
     """Один кадр: проверка множителя, прозрачность, запись в слой. (запись описи или None, замечания, восстановлена ли альфа)."""
-    if e.get("archive") in LOGICAL_ONLY:
+    if not kept(e):
         return None, [], False
     up_path = upscaled / e["flat"]
     if not up_path.exists():

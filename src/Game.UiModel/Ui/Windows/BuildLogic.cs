@@ -478,7 +478,8 @@ public sealed class BuildLogic : IWindowLogic, IPadTargets, IBuildTreeSource
         var (tabs, _) = TabsAndArea(bg with { Width = bg.Width - TabReserve }, [.. Tree.Branches.Select(b => (b.Id, BranchName(b)))], Branch,
                                     _hoveredTab);
         Tabs = tabs;
-        var (_, area) = TabsAndArea(bg, [], Branch, null);
+        // Место дерева — левее карточки: дерево по середине видимого и под карточку не уходит (замечание пользователя 24.10).
+        var (_, area) = TabsAndArea(bg with { Width = bg.Width - CardWidth - CardMargin }, [], Branch, null);
         var (cw, ch) = ContentSize;
         if (_area is not { } was) View.Reset(area.Width, area.Height, cw, ch);
         else if (was.Width != area.Width || was.Height != area.Height) View.Resize(area.Width, area.Height);

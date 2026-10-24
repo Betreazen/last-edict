@@ -47,11 +47,15 @@ public sealed record ModEntity(string Kind, string Id, JsonObject Node, EntitySo
 /// </summary>
 public sealed class ModDocument
 {
-    private ModDocument(string modId, ImmutableList<ModEntity> entities)
+    private ModDocument(string modId, ImmutableList<ModEntity> entities, ImmutableDictionary<string, string>? schemas = null)
     {
         ModId = modId;
         Entities = entities;
+        Schemas = schemas ?? ImmutableDictionary<string, string>.Empty;
     }
+
+    /// <summary>Ссылки <c>$schema</c> файлов видов мода (вид → ссылка): запись их сохраняет — подсказки редактора у автора не пропадают.</summary>
+    public ImmutableDictionary<string, string> Schemas { get; }
 
     public string ModId { get; }
 
@@ -68,13 +72,13 @@ public sealed class ModDocument
     {
         ArgumentNullException.ThrowIfNull(entity);
         int at = Entities.FindIndex(e => e.Id == entity.Id);
-        return new(ModId, at >= 0 ? Entities.SetItem(at, entity) : Entities.Add(entity));
+        return new(ModId, at >= 0 ? Entities.SetItem(at, entity) : Entities.Add(entity), Schemas);
     }
 
     public ModDocument Without(string id)
     {
         int at = Entities.FindIndex(e => e.Id == id);
-        return at < 0 ? this : new(ModId, Entities.RemoveAt(at));
+        return at < 0 ? this : new(ModId, Entities.RemoveAt(at), Schemas);
     }
 
     /// <summary>Вид по id сущности (<c>мод:вид/имя</c>).</summary>
@@ -97,9 +101,11 @@ public sealed class ModDocument
     {
         ArgumentNullException.ThrowIfNull(project);
         var entities = ImmutableList.CreateBuilder<ModEntity>();
+        var schemas = ImmutableDictionary.CreateBuilder<string, string>(StringComparer.Ordinal);
         foreach (var kind in ContentSet.Kinds)
         {
             string file = Path.Combine(project.ContentDir, kind.File);
+            if (File.Exists(file) && SchemaOf(file) is { } schema) schemas[kind.Name] = schema;
             if (File.Exists(file))
                 foreach (var node in ContentJson.ReadNodes(kind, File.ReadAllText(file), file))
                     entities.Add(new ModEntity(kind.Name, node["id"]?.GetValue<string>() ?? throw new InvalidDataException($"{file}: сущность без id"),
@@ -121,7 +127,23 @@ public sealed class ModDocument
                 entities.Add(new ModEntity(kind.Name, folder.Id, withId, EntitySource.Folder) { Strings = ReadStrings(folder.Dir) });
             }
         }
-        return new ModDocument(project.Id, entities.ToImmutable());
+        return new ModDocument(project.Id, entities.ToImmutable(), schemas.ToImmutable());
+    }
+
+    /// <summary><c>$schema</c> файла вида; нет или файл не читается как объект — null (ошибку разбора скажет чтение сущностей).</summary>
+    private static string? SchemaOf(string file)
+    {
+        try
+        {
+            return JsonNode.Parse(File.ReadAllText(file), documentOptions: new JsonDocumentOptions
+            {
+                CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true,
+            })?["$schema"]?.GetValue<string>();
+        }
+        catch (Exception e) when (e is JsonException or InvalidOperationException)
+        {
+            return null;
+        }
     }
 
     private static ImmutableSortedDictionary<string, ImmutableSortedDictionary<string, string>> ReadStrings(string dir)
@@ -188,7 +210,10 @@ public sealed class ModDocument
             if (inFile.Count > 0)
             {
                 var array = new JsonArray([.. inFile.Select(e => (JsonNode)e.Node.DeepClone())]);
-                files[$"content/{kind.File}"] = Text(new JsonObject { [ContentJson.ArrayName(kind)] = array });
+                var root = new JsonObject();
+                if (Schemas.TryGetValue(kind.Name, out var schema)) root["$schema"] = schema;
+                root[ContentJson.ArrayName(kind)] = array;
+                files[$"content/{kind.File}"] = Text(root);
             }
             foreach (var e in Entities.Where(e => e.Kind == kind.Name && e.Source == EntitySource.Folder))
             {

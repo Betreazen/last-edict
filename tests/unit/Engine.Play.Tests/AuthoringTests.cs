@@ -149,7 +149,7 @@ public sealed class AuthoringTests : IDisposable
         var withCode = ModProject.Open(project.Dir);
         Assert.True(withCode.ExecutesCode);
         Assert.Contains(ModCheck.Run(ModDocument.Empty("towers"), withCode, TestPackTests.Dir).Items, i => i.Rule == "MOD090");
-        Assert.Throws<InvalidDataException>(() => ModPlugins.Load([withCode.Info]));   // не сборка — внятный отказ
+        Assert.Contains("не сборка .NET", ModPlugins.Load([withCode.Info]).Single().Text, StringComparison.Ordinal);   // пропуск, не обрыв
     }
 
     [Fact]

@@ -62,7 +62,10 @@ public partial class UiScreenView
     }
 
     /// <summary>Текстура кадра по имени (как у спрайтов экрана, HD — логического размера); нет — null.</summary>
-    private Texture2D? FrameTexture(string frame) => FrameImage(frame, out _) is { } image ? UiArt.Texture(image) : null;
+    private static Texture2D? FrameTexture(string frame) => TextureOf(frame);
+
+    /// <summary>Текстура кадра интерфейса или графики игры по имени — вне экрана тоже (Студия: значки построек, в том числе модов).</summary>
+    public static Texture2D? TextureOf(string frame) => FrameImage(frame, out _) is { } image ? UiArt.Texture(image) : null;
 
     /// <summary>Значков дерева окна построек нарисовано (строка проверки); дерева нет — -1.</summary>
     public int TreeDrawn => _tree?.Drawn ?? -1;

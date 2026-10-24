@@ -106,13 +106,13 @@ public sealed class BuildTree
 
         void Place(BuildingDef def, int parentRow)
         {
-            int row = def.Tree?.Row ?? Math.Max(parentRow + 1, def.Level - minLevel);
+            int row = Math.Max(0, def.Tree?.Row ?? Math.Max(parentRow + 1, def.Level - minLevel));   // место мода — не левее и не выше сетки
             rows[def.Id] = row;
             var kids = children[def.Id];
             foreach (var kid in kids) Place(kid, row);
             double auto = kids.Count == 0 ? next++ : (columns[kids[0].Id] + columns[kids[^1].Id]) / 2;
-            columns[def.Id] = def.Tree?.Column ?? auto;
-            if (def.Tree?.Column is { } pinned) next = Math.Max(next, Math.Floor(pinned) + 1);
+            columns[def.Id] = Math.Max(0, def.Tree?.Column ?? auto);
+            if (def.Tree?.Column is { } pinned) next = Math.Max(next, Math.Floor(Math.Max(0, pinned)) + 1);
         }
     }
 }
@@ -144,6 +144,14 @@ public static class BuildTreeGeometry
         ArgumentNullException.ThrowIfNull(branch);
         return ((int)Math.Ceiling(branch.Columns * CellWidth) + (2 * Margin),
                 (branch.Rows * CellHeight) - (CellHeight - IconHeight - PlateGap - PlateHeight) + (2 * Margin));
+    }
+
+    /// <summary>Клетка сетки под точкой содержимого: столбец — с шагом в половину (между столбцами), строка — ближайшая; не меньше нуля.</summary>
+    public static (double Column, int Row) Cell(double x, double y)
+    {
+        double column = Math.Round(((x - Margin) / CellWidth - 0.5) * 2, MidpointRounding.AwayFromZero) / 2;
+        int row = (int)Math.Round((y - Margin - (IconHeight / 2.0)) / CellHeight, MidpointRounding.AwayFromZero);
+        return (Math.Max(0, column), Math.Max(0, row));
     }
 
     /// <summary>Постройка, чей значок или плашка под точкой содержимого; нет — null.</summary>

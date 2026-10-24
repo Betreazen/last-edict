@@ -28,6 +28,9 @@ public partial class GameData : Node
 
     /// <summary>Id подключённых модов по порядку загрузки (заголовок журнала команд — повтор берёт то же содержимое).</summary>
     public static IReadOnlyList<string> ModIds => [.. _mods.Select(m => m.Id)];
+
+    /// <summary>Включённые моды (Студия: моды под открытым).</summary>
+    public static IReadOnlyList<ModInfo> Mods => _mods;
     private static string _dataDir = "";
 
     /// <summary>Корень распакованных кадров интерфейса (<c>assets/ui</c>). Кадры модов лежат у модов, и путь
@@ -281,21 +284,17 @@ public partial class GameData : Node
             return;
         }
 
-        // Мод с C#-плагином исполняет код (Р21) — помечается в строке модов; плагины регистрируются до чтения правил.
-        GD.Print($"mods: {(_mods.Count == 0 ? "-" : string.Join(", ", _mods.Select(m => m.ExecutesCode ? $"{m.Id} (исполняет код)" : m.Id)))}");
+        // Мод с C#-плагином исполняет код (Р21): включается только с явным разрешением (--allow-plugins; Студия и d2mod run передают его
+        // для мода автора), иначе пропускается целиком — его правила без поведений плагина не загрузились бы. Плагины — до чтения правил.
+        bool allow = args.Contains("--allow-plugins");
+        var skipped = allow ? [] : _mods.Where(m => m.ExecutesCode).ToList();
+        _mods = [.. _mods.Except(skipped)];
+        GD.Print($"mods: {(_mods.Count == 0 ? "-" : string.Join(", ", _mods.Select(m => m.ExecutesCode ? $"{m.Id} (исполняет код)" : m.Id)))}" +
+                 (skipped.Count == 0 ? "" : $" пропущены={string.Join(",", skipped.Select(m => m.Id))} (исполняют код — нужен --allow-plugins)"));
+        foreach (var line in ModPlugins.Load(_mods))
+            if (line.Failed) GD.PrintErr($"plugin {line}");
+            else GD.Print($"plugin {line}");
         Watch();
-        if (_mods.Any(m => m.ExecutesCode))
-        {
-            try
-            {
-                foreach (string line in ModPlugins.Load(_mods)) GD.Print($"plugin {line}");
-            }
-            catch (InvalidDataException e)
-            {
-                GD.PrintErr($"GameData: {e.Message}");
-                GetTree().Quit(1);
-            }
-        }
     }
 
     // ---- горячая перезагрузка модов (Э6, --watch)
@@ -332,13 +331,36 @@ public partial class GameData : Node
         SetProcess(true);
     }
 
+    /// <summary>Сцена сейчас не может перезапуститься (идёт ход ИИ, бой): перезагрузка ждёт. Ставит карта.</summary>
+    public static Func<bool>? Busy { get; set; }
+
+    /// <summary>Пачка изменений, ждущая конца хода ИИ или боя (несколько пачек сливаются).</summary>
+    private static ContentReload? _waiting;
+
     public override void _Process(double delta)
     {
-        if (_watcher?.Take() is not { } reload) return;
-        // Прочитанное — заново при первом обращении: правила, книга, экраны, кадры, строки, шрифты.
-        _rules = null;
-        _book = null;
-        _content = null;
+        if (_watcher?.Take() is { } taken)
+            _waiting = _waiting is { } was ? new ContentReload(was.Changes | taken.Changes, [.. was.Files, .. taken.Files], taken.Revision) : taken;
+        if (_waiting is not { } reload || Busy?.Invoke() == true) return;
+        _waiting = null;
+        // Новое — сначала целиком: мод, который не читается (файл пишется, ошибка в данных), не роняет партию — играет прежнее.
+        ContentSet rules;
+        LastEdict.Data.Play.GameBook book;
+        GameContent content;
+        try
+        {
+            rules = LoadRules();
+            book = LastEdict.Data.Play.GameBook.Load(rules);
+            content = GameContent.Load(_dataDir, _mods, GameDataDir, () => rules);
+            _ = content.Screens;
+        }
+        catch (Exception e) when (e is InvalidDataException or IOException or System.Text.Json.JsonException or KeyNotFoundException
+                                       or FormatException or ArgumentException)
+        {
+            GD.PrintErr($"reload revision={reload.Revision}: мод не перечитан — {e.Message}; играет прежнее содержимое");
+            return;
+        }
+        (_rules, _book, _content) = (rules, book, content);
         (_vectorFonts, _hasHd) = (null, null);
         if ((reload.Changes & (ContentChange.Art | ContentChange.Screens)) != 0) UiArt.ForgetImages();
         GD.Print($"reload revision={reload.Revision} files={reload.Files.Count} rules={Flag(ContentChange.Rules)} screens={Flag(ContentChange.Screens)} " +

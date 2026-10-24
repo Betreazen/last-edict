@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using LastEdict.Data.Content;
 using LastEdict.Data.Ui.Windows;
@@ -13,9 +14,19 @@ namespace LastEdict.Godot;
 /// </summary>
 public partial class MapScreen
 {
-    private void HookReload() => GameData.Reloaded += OnModsReloaded;
+    private void HookReload()
+    {
+        GameData.Reloaded += OnModsReloaded;
+        GameData.Busy = ReloadBusy;   // ход ИИ в рабочем потоке читает правила, бой держит партию — перезапуск ждёт
+    }
 
-    private void UnhookReload() => GameData.Reloaded -= OnModsReloaded;
+    private void UnhookReload()
+    {
+        GameData.Reloaded -= OnModsReloaded;
+        if (GameData.Busy == ReloadBusy) GameData.Busy = null;
+    }
+
+    private bool ReloadBusy() => _map?.AiRunning == true || _battle is not null;
 
     private void OnModsReloaded(ContentReload reload)
     {
@@ -32,7 +43,17 @@ public partial class MapScreen
             return;
         }
         string snapshot = ProjectSettings.GlobalizePath("user://studio-reload.d2save");
-        LastEdict.Data.Play.GameSave.Write(snapshot, session.State, "studio reload");
+        try
+        {
+            LastEdict.Data.Play.GameSave.Write(snapshot, session.State, "studio reload");
+        }
+        catch (Exception e) when (e is System.IO.IOException or UnauthorizedAccessException)
+        {
+            GD.PrintErr($"reload map: снимок партии не записан — {e.Message}; партия продолжается без перезагрузки");
+            _leaving = false;
+            GameData.TakeReload();
+            return;
+        }
         LoadRequested?.Invoke(snapshot);
     }
 

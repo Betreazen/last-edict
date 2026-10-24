@@ -272,7 +272,7 @@ public partial class UiScreenView : Node2D
 
     /// <summary>Картинка кадра по имени из описи, по одному разу на имя за запуск (<see cref="UiArt"/>). <paramref name="problem"/> — пояснение
     /// к пропуску (нет файла на диске), запомненное вместе с картинкой; у кадра, которого нет в описи, пояснения нет.</summary>
-    private Image? FrameImage(string frame, out string? problem)
+    private static Image? FrameImage(string frame, out string? problem)
     {
         if (UiArt.TryImage(frame, out var cached, out problem)) return cached;
         problem = null;

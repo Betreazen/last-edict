@@ -18,11 +18,11 @@ public partial class BuildTreeView : Control
 {
     /// <summary>Цвета: подпись, приглушённая подпись, золото, тусклое золото, поле плашки, выбор (жёлтый контур движка), связь не построенной.</summary>
     private static readonly Color Light = SettingsTheme.Light, Muted = SettingsTheme.Muted, Gold = SettingsTheme.Gold, GoldSoft = SettingsTheme.GoldSoft,
-        PlateBack = new("#1b1510"), Pick = new("#e1e100"), Faint = new(0.56f, 0.45f, 0.25f, 0.55f);
+        PlateBack = new("#1b1510"), Pick = new("#e1e100"), Faint = new(0.56f, 0.45f, 0.25f, 0.55f), Mine = new("#9fd27a");
 
     private const int CaptionSize = 13, TabSize = 14;
 
-    private readonly BuildLogic _logic;
+    private readonly IBuildTreeSource _logic;
     private readonly Func<string, Texture2D?> _texture;
     private readonly Control _clip = new() { ClipContents = true, MouseFilter = MouseFilterEnum.Ignore };
     private readonly Canvas _canvas;
@@ -38,7 +38,7 @@ public partial class BuildTreeView : Control
 
     private static StyleBox? _plate, _tab, _tabOpen, _frame, _frameHover;
 
-    public BuildTreeView(BuildLogic logic, Func<string, Texture2D?> texture)
+    public BuildTreeView(IBuildTreeSource logic, Func<string, Texture2D?> texture)
     {
         _logic = logic ?? throw new ArgumentNullException(nameof(logic));
         _texture = texture ?? throw new ArgumentNullException(nameof(texture));
@@ -117,16 +117,19 @@ public partial class BuildTreeView : Control
             _frameHover ??= SettingsTheme.Plate(new Color(0, 0, 0, 0), Gold);
             foreach (var link in logic.Links) Link(link);
             int drawn = 0;
+            // Фильтр — один на узел: по первому значку (у слоя HD все значки дерева из одного архива — HD, иначе все ×1).
+            if (logic.Items.Count > 0 && owner._texture(logic.Items[0].Frame) is { } first)
+                TextureFilter = ImageScales.Filter(first, TextureFilterEnum.Nearest);
             foreach (var item in logic.Items)
             {
                 var icon = Rect(item.Icon);
                 if (owner._texture(item.Frame) is { } texture)
                 {
-                    TextureFilter = ImageScales.Filter(texture, TextureFilterEnum.Nearest);
                     DrawTextureRect(texture, icon, false);
                     drawn++;
                 }
                 DrawStyleBox(item.Hovered ? _frameHover : _frame, icon.Grow(5));
+                if (item.Marked) DrawRect(icon.Grow(8), Mine, false, 2f);   // постройка мода (живая страница Студии)
                 if (item.Selected) DrawRect(icon.Grow(1), Pick, false, 1.5f);
                 var plate = Rect(item.Plate);
                 DrawStyleBox(_plate, plate);

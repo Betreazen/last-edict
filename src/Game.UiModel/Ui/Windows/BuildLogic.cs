@@ -15,7 +15,9 @@ public sealed record BuildingText(string NameTxt, string DescTxt);
 public enum BuildIcon { Can, Built, NeedPrevious, OtherPath, Hidden }
 
 /// <summary>Значок постройки в дереве: место значка и плашки подписи (точки содержимого), кадр (с подкраской вида), подпись.</summary>
-public sealed record BuildTreeItem(string Building, UiRect Icon, UiRect Plate, string Frame, string Name, BuildIcon Kind, bool Selected, bool Hovered);
+/// <param name="Marked">Помечен (живая страница Студии: постройка мода).</param>
+public sealed record BuildTreeItem(string Building, UiRect Icon, UiRect Plate, string Frame, string Name, BuildIcon Kind, bool Selected, bool Hovered,
+                                   bool Marked = false);
 
 /// <summary>Связь «требуемая → постройка» в дереве (точки содержимого): от низа плашки требуемой к верху значка; <see cref="Built"/> —
 /// требуемая построена.</summary>
@@ -41,7 +43,7 @@ public sealed record BuildTreeTab(string Branch, UiRect Rect, string Name, bool 
 /// соседние постройки той же ветки со статусом «можно» и всё, что от них растёт (<c>0x4acf0d</c>) — что станет недоступно после постройки.
 /// Правая кнопка по значку — энциклопедия постройки (<see cref="BuildingCardLogic"/>, <c>0x4ac584</c>).</para>
 /// </summary>
-public sealed class BuildLogic : IWindowLogic, IPadTargets
+public sealed class BuildLogic : IWindowLogic, IPadTargets, IBuildTreeSource
 {
     public const string Screen = "DLG_BUILD_STRUCTURE";
     private const string Group = "RAD_BUILDING_TYPE", IconArchive = "IconBld";
@@ -328,13 +330,16 @@ public sealed class BuildLogic : IWindowLogic, IPadTargets
         return true;
     }
 
-    /// <summary>Постройка, чей значок или подпись под точкой разметки (скрытые не в счёт); нет — null.</summary>
-    private BuildTreeNode? NodeAt(int x, int y)
+    /// <summary>Постройка, чей значок или подпись под точкой разметки; нет — null. Ищется среди собранных значков (<see cref="Items"/>: скрытые
+    /// уже отброшены) — мышь зовёт это на каждое движение, а вид значка считает правила.</summary>
+    private BuildTreeItem? NodeAt(int x, int y)
     {
-        if (!InArea(x, y) || _area is not { } area || Current is not { } branch) return null;
+        if (!InArea(x, y) || _area is not { } area) return null;
         var (cx, cy) = View.ToContent(x - area.X, y - area.Y);
-        return BuildTreeGeometry.At(branch, cx, cy, b => Icon(b) != BuildIcon.Hidden);
+        return Items.LastOrDefault(i => Contains(i.Icon, cx, cy) || Contains(i.Plate, cx, cy));
     }
+
+    private static bool Contains(UiRect r, double x, double y) => x >= r.X && x < r.Right && y >= r.Y && y < r.Bottom;
 
     private BuildTreeTab? TabAt(int x, int y) => Tabs.FirstOrDefault(t => Inside(t.Rect, x, y));
 
@@ -399,16 +404,26 @@ public sealed class BuildLogic : IWindowLogic, IPadTargets
     private string BranchName(BuildTreeBranch branch) =>
         branch.NameText is { Length: > 0 } key && _c.Text(key) is { Length: > 0 } text && text != key ? text : branch.Id[(branch.Id.LastIndexOf('/') + 1)..];
 
+    /// <summary>Вкладки веток в полосе над деревом и место самого дерева в прямоугольнике <paramref name="bg"/> (окно построек и живая страница
+    /// Студии раскладываются одинаково).</summary>
+    public static (IReadOnlyList<BuildTreeTab> Tabs, UiRect Area) TabsAndArea(UiRect bg, IReadOnlyList<(string Id, string Name)> branches, string open,
+                                                                            string? hovered)
+    {
+        ArgumentNullException.ThrowIfNull(branches);
+        int count = Math.Max(1, branches.Count);
+        int width = Math.Max(1, Math.Min(TabMaxWidth, (bg.Width - (TabPad * 2) - (TabGap * (count - 1))) / count));
+        var tabs = branches.Select((b, i) => new BuildTreeTab(b.Id, new UiRect(bg.X + TabPad + (i * (width + TabGap)), bg.Y + TabPad, width, TabHeight),
+                                                            b.Name, b.Id == open, b.Id == hovered)).ToList();
+        int top = TabPad + TabHeight + TabGap;
+        return (tabs, new UiRect(bg.X, bg.Y + top, bg.Width, Math.Max(1, bg.Height - top)));
+    }
+
     /// <summary>Вкладки и место дерева по фону дерева на разложенном экране; вид — заново, если место сменило размер.</summary>
     private void Place(UiScreenState ui)
     {
         if (RectOf(TreeBackground) is not { } bg) return;
-        int count = Math.Max(1, Tree.Branches.Count);
-        int width = Math.Min(TabMaxWidth, (bg.Width - (TabPad * 2) - (TabGap * (count - 1))) / count);
-        Tabs = [.. Tree.Branches.Select((b, i) => new BuildTreeTab(b.Id, new UiRect(bg.X + TabPad + (i * (width + TabGap)), bg.Y + TabPad, width, TabHeight),
-                                                                  BranchName(b), b.Id == Branch, b.Id == _hoveredTab))];
-        int top = TabPad + TabHeight + TabGap;
-        var area = new UiRect(bg.X, bg.Y + top, bg.Width, bg.Height - top);
+        var (tabs, area) = TabsAndArea(bg, [.. Tree.Branches.Select(b => (b.Id, BranchName(b)))], Branch, _hoveredTab);
+        Tabs = tabs;
         var (cw, ch) = ContentSize;
         if (_area is not { } was) View.Reset(area.Width, area.Height, cw, ch);
         else if (was.Width != area.Width || was.Height != area.Height) View.Resize(area.Width, area.Height);
@@ -505,7 +520,25 @@ public sealed class BuildLogic : IWindowLogic, IPadTargets
     /// вниз по дереву (от предыдущих построек, <c>REQUIRED</c>).</summary>
     public BuildIcon Icon(string buildingId) => _shaded.Contains(buildingId) ? BuildIcon.OtherPath : BaseIcon(buildingId);
 
+    /// <summary>Вид значков за одно обновление окна: правила (казна, требования, потолок) по каждой постройке — раз, а не на каждый вопрос
+    /// (сбор значков, затемнение соседей, строки справа).</summary>
+    private readonly Dictionary<string, BuildIcon> _icons = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Состояние партии, для которого посчитан <see cref="_icons"/>: команда даёт новое — кэш заново.</summary>
+    private object? _iconsOf;
+
     private BuildIcon BaseIcon(string buildingId)
+    {
+        if (!ReferenceEquals(_iconsOf, _c.Map))
+        {
+            _icons.Clear();
+            _iconsOf = _c.Map;
+        }
+        if (_icons.TryGetValue(buildingId, out var known)) return known;
+        return _icons[buildingId] = ComputeIcon(buildingId);
+    }
+
+    private BuildIcon ComputeIcon(string buildingId)
     {
         var buildings = _c.Session.RequireBook().Economy.Buildings;
         if (!buildings.ContainsKey(buildingId)) return BuildIcon.Hidden;
@@ -591,6 +624,7 @@ public sealed class BuildLogic : IWindowLogic, IPadTargets
 
     private void Refresh(UiScreenState ui)
     {
+        Shade();   // выбор мог стать недоступным (построили, новый день)
         var player = _c.Player;
         var book = _c.Session.RequireBook();
         ui.SetText("TXT_GOLD", player.Bank.Gold.ToString(CultureInfo.InvariantCulture));

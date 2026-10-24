@@ -47,6 +47,8 @@ public sealed class ContentWatcher : IDisposable
             watcher.Created += (_, e) => Note(e.FullPath);
             watcher.Deleted += (_, e) => Note(e.FullPath);
             watcher.Renamed += (_, e) => Note(e.FullPath);
+            // Переполнение буфера наблюдателя теряет изменения — тогда перечитывается всё (отметка содержимого мода).
+            watcher.Error += (_, _) => Note(Path.Combine(dir, "content", "-"));
             watcher.EnableRaisingEvents = true;
             _watchers.Add(watcher);
         }
@@ -63,9 +65,18 @@ public sealed class ContentWatcher : IDisposable
     {
         ArgumentNullException.ThrowIfNull(path);
         if (path.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase) || path.Replace('\\', '/').Contains("/.studio/", StringComparison.Ordinal)) return;
+        string full;
+        try
+        {
+            full = Path.GetFullPath(path);
+        }
+        catch (Exception e) when (e is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            return;   // зовётся из потока наблюдателя: исключение здесь уронило бы процесс
+        }
         lock (_lock)
         {
-            _pending.Add(Path.GetFullPath(path));
+            _pending.Add(full);
             _last = _now();
         }
     }

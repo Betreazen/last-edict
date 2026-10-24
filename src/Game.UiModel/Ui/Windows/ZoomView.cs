@@ -22,8 +22,14 @@ public sealed class ZoomView
     public double X { get; private set; }
     public double Y { get; private set; }
 
-    /// <summary>Наименьший масштаб: всё содержимое в виде, но не мельче половины и не крупнее 1.</summary>
-    public double MinZoom => Math.Clamp(Fit, 0.5, 1);
+    /// <summary>Нижний предел наименьшего масштаба (окно построек — половина; карта Студии — сколько нужно, чтобы видеть её целиком).</summary>
+    public double Least { get; init; } = 0.5;
+
+    /// <summary>Наибольший масштаб этого вида.</summary>
+    public double Most { get; init; } = MaxZoom;
+
+    /// <summary>Наименьший масштаб: всё содержимое в виде, но не мельче <see cref="Least"/> и не крупнее 1.</summary>
+    public double MinZoom => Math.Clamp(Fit, Least, 1);
 
     /// <summary>Масштаб, при котором содержимое целиком входит в вид.</summary>
     public double Fit => ContentWidth <= 0 || ContentHeight <= 0 || Width <= 0 || Height <= 0 ? 1
@@ -44,9 +50,17 @@ public sealed class ZoomView
     {
         var (cx, cy) = ToContent(Width / 2, Height / 2);
         (Width, Height) = (width, height);
-        Zoom = Math.Clamp(Zoom, MinZoom, MaxZoom);
+        Zoom = Math.Clamp(Zoom, MinZoom, Most);
         X = (width / 2) - (cx * Zoom);
         Y = (height / 2) - (cy * Zoom);
+        Clamp();
+    }
+
+    /// <summary>Содержимое сменило размер (правка дерева): масштаб и сдвиг — прежние, насколько пускают пределы и рамка.</summary>
+    public void Refit(double contentWidth, double contentHeight)
+    {
+        (ContentWidth, ContentHeight) = (contentWidth, contentHeight);
+        Zoom = Math.Clamp(Zoom, MinZoom, Most);
         Clamp();
     }
 
@@ -54,7 +68,7 @@ public sealed class ZoomView
     /// остаётся на месте (если пускает рамка). true — масштаб изменился.</summary>
     public bool ZoomAt(double vx, double vy, double factor)
     {
-        double zoom = Math.Clamp(Zoom * factor, MinZoom, MaxZoom);
+        double zoom = Math.Clamp(Zoom * factor, MinZoom, Most);
         if (Math.Abs(zoom - Zoom) < 1e-9) return false;
         var (cx, cy) = ToContent(vx, vy);
         Zoom = zoom;

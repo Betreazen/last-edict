@@ -35,7 +35,8 @@ try
     {
         "new" => New(),
         "validate" => Validate(),
-        "add" => Edit(new AddEntity(args[2], args[3], Opt("--json") is { } body ? (JsonObject)JsonNode.Parse(body)! : [], Folder: !Has("--file"))),
+        "add" => Edit(new AddEntity(args[2], args[3], Opt("--json") is { } body
+            ? JsonNode.Parse(body) as JsonObject ?? throw new InvalidDataException("--json: ждали объект сущности { … }") : [], Folder: !Has("--file"))),
         "set" => Edit(new SetField(args[2], args[3], JsonNode.Parse(args[4]))),
         "unset" => Edit(new SetField(args[2], args[3], null, Unset: true)),
         "text" => Edit(new SetText(args[2], args[3], args[4], args[5])),
@@ -135,6 +136,7 @@ int Run()
     if (scenario is not null) arguments.AddRange(["--scenario", scenario]);
     if (Opt("--player") is { } player) arguments.AddRange(["--player", player]);
     if (Has("--watch")) arguments.Add("--watch");
+    if (project.ExecutesCode) arguments.Add("--allow-plugins");   // свой мод автора с кодом — доверенный
     var start = new ProcessStartInfo(godot) { UseShellExecute = false };
     foreach (string a in arguments) start.ArgumentList.Add(a);
     using var process = Process.Start(start) ?? throw new InvalidOperationException($"не запустился {godot}");

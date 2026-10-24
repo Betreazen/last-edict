@@ -1,0 +1,266 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text.Json.Nodes;
+using LastEdict.Authoring.Commands;
+using LastEdict.Authoring.Maps;
+using LastEdict.Authoring.Project;
+using LastEdict.Authoring.Workspaces;
+using LastEdict.Data.Content;
+using Godot;
+
+namespace LastEdict.Godot;
+
+/// <summary>
+/// Студия Last Edict (Э6, roadmap §3.4, <c>docs/tools/studio.md</c>): одно приложение на ядре <c>LastEdict.Authoring</c>, рабочие
+/// пространства — вкладками («Дерево построек», «Содержимое», «Баланс»). Открывает каталог мода (<c>--open</c>), правит его командами ядра
+/// (отмена, повтор), пишет только в мод; «Играть» запускает игру отдельным процессом с этим модом и <c>--watch</c> — сохранённая правка
+/// видна в идущей партии без перезапуска. Мод с C#-плагином помечен «исполняет код». Решений здесь нет — только узлы, ввод и вызовы
+/// пространств; без окна: <c>--check --script &lt;шаги.json&gt;</c> печатает строку пространства после каждого шага.
+/// </summary>
+public partial class Studio : Control
+{
+    private StudioSession? _session;
+    private TreeWorkspace? _tree;
+    private ContentWorkspace? _content;
+    private BalanceWorkspace? _balance;
+    private MapWorkspace? _mapWs;
+    private ContentWatcher? _watcher;
+
+    private readonly Label _title = new() { ThemeTypeVariation = SettingsTheme.Title };
+    private readonly Label _status = new() { ThemeTypeVariation = SettingsTheme.HelpLabel, SizeFlagsHorizontal = SizeFlags.ExpandFill };
+    private readonly OptionButton _lord = new() { CustomMinimumSize = new Vector2(260, 0) };
+    private readonly OptionButton _scenario = new() { CustomMinimumSize = new Vector2(220, 0) };
+    private readonly Button _undo = new() { Text = "Отменить" }, _redo = new() { Text = "Повторить" }, _save = new() { Text = "Сохранить" },
+        _play = new() { Text = "Играть", ThemeTypeVariation = SettingsTheme.Primary };
+    private readonly TabContainer _tabs = new() { SizeFlagsVertical = SizeFlags.ExpandFill };
+
+    private StudioTreeTab? _treeTab;
+    private StudioContentTab? _contentTab;
+    private StudioBalanceTab? _balanceTab;
+    private StudioMapTab? _mapTab;
+    private int _shown = -1, _contentShown = -1;
+
+    public override void _Ready()
+    {
+        Theme = SettingsTheme.Theme;
+        SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        string[] args = OS.GetCmdlineUserArgs();
+        string? dir = Arg(args, "--open");
+        if (dir is null)
+        {
+            GD.PrintErr("Studio: нужен --open <каталог мода> (новый мод — d2mod new <каталог> --id <id>)");
+            GetTree().Quit(2);
+            return;
+        }
+        try
+        {
+            var project = ModProject.Open(GameData.FromProject(dir));
+            _session = new StudioSession(project, GameData.RulesDir, key => GameData.Strings(GameData.Language).GetValueOrDefault(key),
+                                         [.. GameData.Mods.Where(m => !m.Dir.Equals(project.Dir, StringComparison.OrdinalIgnoreCase))], GameData.Language);
+            _tree = new TreeWorkspace(_session);
+            _content = new ContentWorkspace(_session);
+            _balance = new BalanceWorkspace(_session, Arg(args, "--scenarios") is { } scenarios ? GameData.FromProject(scenarios) : GameData.ScenariosDir);
+            _mapWs = new MapWorkspace(_session);
+            if (Arg(args, "--lord") is { } lord) _tree.SelectLord(lord);
+        }
+        catch (Exception e) when (e is IOException or InvalidDataException or UnauthorizedAccessException)
+        {
+            GD.PrintErr($"Studio: {e.Message}");
+            GetTree().Quit(1);
+            return;
+        }
+        Build();
+        Sync();
+        if (args.Contains("--check")) Callable.From(() => RunCheck(Arg(args, "--script"), Arg(args, "--shot"))).CallDeferred();
+        else
+        {
+            _watcher = new ContentWatcher([_session.Project.Dir]);
+            SetProcess(true);
+        }
+    }
+
+    private void Build()
+    {
+        var back = new Panel { ThemeTypeVariation = SettingsTheme.Inner };
+        back.AddThemeStyleboxOverride("panel", new StyleBoxFlat { BgColor = SettingsTheme.Field });
+        AddChild(back);
+        back.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        var root = new VBoxContainer();
+        root.AddThemeConstantOverride("separation", 6);
+        AddChild(root);
+        root.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        var bar = new HBoxContainer();
+        bar.AddThemeConstantOverride("separation", 8);
+        root.AddChild(Margin(bar, 8));
+        bar.AddChild(_title);
+        bar.AddChild(new Label { Text = "Лорд:", ThemeTypeVariation = SettingsTheme.GroupLabel });
+        bar.AddChild(_lord);
+        bar.AddChild(_undo);
+        bar.AddChild(_redo);
+        bar.AddChild(_save);
+        bar.AddChild(_scenario);
+        bar.AddChild(_play);
+        root.AddChild(Margin(_tabs, 8));
+        root.AddChild(Margin(_status, 8));
+
+        _treeTab = new StudioTreeTab(_tree!, FrameTexture) { Name = "Дерево построек" };
+        _contentTab = new StudioContentTab(_content!) { Name = "Содержимое" };
+        _balanceTab = new StudioBalanceTab(_balance!) { Name = "Баланс" };
+        _tabs.AddChild(_treeTab);
+        _tabs.AddChild(_contentTab);
+        _tabs.AddChild(_balanceTab);
+        _mapTab = new StudioMapTab(_mapWs!, PlayMap) { Name = "Карта" };
+        _tabs.AddChild(_mapTab);
+
+        _lord.ItemSelected += i => { _tree!.SelectLord(_tree.Lords[(int)i].Id); Sync(); };
+        _undo.Pressed += () => { _session!.Undo(); Sync(); };
+        _redo.Pressed += () => { _session!.Redo(); Sync(); };
+        _save.Pressed += () => { Status($"записано файлов: {_session!.Save()}"); Sync(); };
+        _play.Pressed += Play;
+        foreach (var s in GameData.Catalog.Scenarios) _scenario.AddItem(s.Name.Length > 0 ? s.Name : s.Id);
+    }
+
+    private static MarginContainer Margin(Control inner, int m)
+    {
+        var box = new MarginContainer { SizeFlagsVertical = inner.SizeFlagsVertical };
+        foreach (string side in new[] { "margin_left", "margin_right", "margin_top", "margin_bottom" }) box.AddThemeConstantOverride(side, m);
+        box.AddChild(inner);
+        return box;
+    }
+
+    /// <summary>Перенести состояние пространства в окно: заголовок, лорды, кнопки, вкладки.</summary>
+    private void Sync()
+    {
+        var session = _session!;
+        var tree = _tree!;
+        _title.Text = $"Студия — {session.Project.Info.Name}" + (session.Project.ExecutesCode ? "  ⚠ исполняет код" : "") + (session.History.Dirty ? " *" : "");
+        _lord.Clear();
+        foreach (var l in tree.Lords) _lord.AddItem(session.NameOf(l.Id));
+        int at = tree.Lords.ToList().FindIndex(l => l.Id == tree.Lord);
+        if (at >= 0) _lord.Select(at);
+        _undo.Disabled = !session.History.CanUndo;
+        _undo.TooltipText = session.History.UndoName ?? "";
+        _redo.Disabled = !session.History.CanRedo;
+        _redo.TooltipText = session.History.RedoName ?? "";
+        _save.Disabled = !session.History.Dirty;
+        if (session.Refusal is { } refusal) Status(refusal);
+        foreach (var tab in _tabs.GetChildren().OfType<IStudioTab>()) tab.Sync();
+        _shown = session.Revision + tree.Revision;
+    }
+
+    private void Status(string text) => _status.Text = text;
+
+    public override void _Process(double delta)
+    {
+        if (_session is null || _tree is null || _content is null) return;
+        if (_watcher?.Take() is not null && _session.ReloadFromDisk()) Status("мод изменён снаружи — перечитан");
+        if (_session.Revision + _tree.Revision != _shown || _content.Revision != _contentShown) Sync();
+        _contentShown = _content.Revision;
+    }
+
+    public override void _UnhandledInput(InputEvent e)
+    {
+        if (e is not InputEventKey { Pressed: true, CtrlPressed: true } key || _session is null) return;
+        if (key.Keycode == Key.Z && !key.ShiftPressed) _session.Undo();
+        else if (key.Keycode == Key.Y || (key.Keycode == Key.Z && key.ShiftPressed)) _session.Redo();
+        else if (key.Keycode == Key.S) Status($"записано файлов: {_session.Save()}");
+        else return;
+        Sync();
+        GetViewport().SetInputAsHandled();
+    }
+
+    /// <summary>Игра отдельным процессом с этим модом и горячей перезагрузкой (<c>--watch</c>): падение партии не роняет Студию.</summary>
+    private void Play()
+    {
+        var ws = _session!;
+        if (ws.History.Dirty) Status($"записано файлов: {ws.Save()}");
+        var scenarios = GameData.Catalog.Scenarios;
+        Launch(_scenario.Selected >= 0 && _scenario.Selected < scenarios.Count ? scenarios[_scenario.Selected].Id : null);
+    }
+
+    /// <summary>Сыграть на карте мода (вкладка «Карта»).</summary>
+    private void PlayMap(string id) => Launch(id);
+
+    private void Launch(string? scenario)
+    {
+        var ws = _session!;
+        var args = new List<string> { "--path", ProjectSettings.GlobalizePath("res://"), "res://scenes/map/MapScreen.tscn", "--", "--mods", ws.Project.Dir, "--watch" };
+        if (ws.Project.ExecutesCode) args.Add("--allow-plugins");   // свой мод автора с кодом — доверенный
+        if (scenario is not null) args.AddRange(["--scenario", scenario]);
+        int pid = OS.CreateProcess(OS.GetExecutablePath(), [.. args]);
+        Status(pid > 0 ? $"игра запущена (процесс {pid}) с модом {ws.Project.Id} — сохранённые правки она подхватит сама" : "игра не запустилась");
+    }
+
+    /// <summary>Текстура кадра интерфейса или графики игры (значки построек, в том числе модов).</summary>
+    private static Texture2D? FrameTexture(string frame) => UiScreenView.TextureOf(frame);
+
+    // ---- проверка без окна
+
+    private async void RunCheck(string? script, string? shot)
+    {
+        var ws = _tree!;
+        var session = _session!;
+        GD.Print(ws.Line());
+        if (script is not null)
+        {
+            var steps = JsonNode.Parse(File.ReadAllText(GameData.FromProject(script))) as JsonArray ?? [];
+            foreach (var step in steps.OfType<JsonObject>())
+            {
+                string op = step["op"]?.GetValue<string>() ?? "";
+                bool ok = op switch
+                {
+                    "lord" => Do(() => ws.SelectLord(step["id"]!.GetValue<string>())),
+                    "connect" => ws.Connect(step["from"]!.GetValue<string>(), step["to"]!.GetValue<string>()),
+                    "disconnect" => ws.Disconnect(step["to"]!.GetValue<string>()),
+                    "drag" => _treeTab!.Drag(step["building"]!.GetValue<string>(), step["column"]!.GetValue<double>(), step["row"]!.GetValue<int>()),
+                    "add-building" => ws.AddBuilding(step["name"]!.GetValue<string>(), step["title"]?.GetValue<string>() ?? "", step["requires"]?.GetValue<string>()),
+                    "undo" => session.Undo(),
+                    "redo" => session.Redo(),
+                    "save" => session.Save() >= 0,
+                    "reload" => session.ReloadFromDisk(),
+                    "content-open" => Do(() => _content!.Open(step["kind"]!.GetValue<string>())),
+                    "content-select" => Do(() => _content!.Select(step["id"]!.GetValue<string>())),
+                    "content-set" => _content!.Set(step["field"]!.GetValue<string>(), step["text"]!.GetValue<string>()),
+                    "content-reset" => _content!.Reset(step["field"]!.GetValue<string>()),
+                    "content-add" => _content!.Add(step["name"]!.GetValue<string>()),
+                    "arena" => Do(() => _balanceTab!.Run(step["scenario"]!.GetValue<string>(), arena: true)),
+                    "stand" => Do(() => _balanceTab!.Run(step["scenario"]!.GetValue<string>(), arena: false)),
+                    "tab" => Do(() => _tabs.CurrentTab = step["index"]!.GetValue<int>()),
+                    "map-new" => Do(() => _mapTab!.New(step["id"]!.GetValue<string>(), step["size"]!.GetValue<int>(), step["seats"]?.GetValue<int>() ?? 4)),
+                    "map-stroke" => Do(() => { _mapWs!.Brush = Enum.Parse<MapBrush>(step["brush"]?.GetValue<string>() ?? "Forest"); _mapWs.Radius = step["radius"]?.GetValue<int>() ?? 1; _mapTab!.Stroke(step["x0"]!.GetValue<int>(), step["y0"]!.GetValue<int>(), step["x1"]!.GetValue<int>(), step["y1"]!.GetValue<int>()); }),
+                    "map-undo" => Do(() => { _mapWs!.Undo(); _mapTab!.Sync(); }),
+                    "map-save" => Do(() => _mapWs!.Save()),
+                    "map-open" => Do(() => _mapTab!.Open(step["id"]!.GetValue<string>())),
+                    _ => session.Do(EditCommands.Parse(step)),
+                };
+                Sync();
+                for (int i = 0; i < 2; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+                GD.Print($"step {op} ok={(ok ? 1 : 0)} {ws.Line()} {_treeTab!.Line()} {_content!.Line()} {_balance!.Line()} {_mapTab!.Line()}");
+            }
+        }
+        for (int i = 0; i < 3; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        if (shot is not null) GetViewport().GetTexture().GetImage().SavePng(GameData.FromProject(shot));
+        GD.Print($"studio done {ws.Line()} {_treeTab!.Line()}" + (shot is null ? "" : $" shot={shot}"));
+        GetTree().Quit(0);
+    }
+
+    private static bool Do(Action action)
+    {
+        action();
+        return true;
+    }
+
+    private static string? Arg(string[] args, string name)
+    {
+        int at = Array.IndexOf(args, name);
+        return at >= 0 && at + 1 < args.Length ? args[at + 1] : null;
+    }
+}
+
+/// <summary>Вкладка Студии, которая перерисовывается по ревизии пространства.</summary>
+public interface IStudioTab
+{
+    void Sync();
+}

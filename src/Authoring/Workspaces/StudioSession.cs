@@ -1,0 +1,148 @@
+using LastEdict.Authoring.Commands;
+using LastEdict.Authoring.Documents;
+using LastEdict.Authoring.Project;
+using LastEdict.Authoring.Validation;
+using LastEdict.Data.Content;
+using LastEdict.Data.Content.Schema;
+
+namespace LastEdict.Authoring.Workspaces;
+
+/// <summary>
+/// Открытый в Студии мод: документ с историей правок (<see cref="EditHistory"/>), проверка поверх базы (<see cref="ModCheck"/>) и имена
+/// сущностей. Общая для рабочих пространств («Дерево построек», «Содержимое», «Баланс»): все правят один документ, отмена — одна;
+/// после каждой перемены пространства пересчитываются (<see cref="Refreshed"/>).
+/// </summary>
+public sealed class StudioSession
+{
+    private readonly Func<string, string?> _strings;
+    private ContentSet? _base;
+
+    /// <param name="strings">Строка по ключу на языке окна (строки игры и модов на диске).</param>
+    /// <param name="others">Моды под этим (его зависимости) — их слои накладываются раньше.</param>
+    public StudioSession(ModProject project, string baseDir, Func<string, string?> strings, IReadOnlyList<ModInfo>? others = null,
+                         string language = "ru")
+    {
+        Project = project ?? throw new ArgumentNullException(nameof(project));
+        BaseDir = baseDir ?? throw new ArgumentNullException(nameof(baseDir));
+        _strings = strings ?? throw new ArgumentNullException(nameof(strings));
+        Others = others ?? [];
+        Language = language;
+        History = new EditHistory(ModDocument.Load(project));
+        Report = ModCheck.Run(History.Current, Project, BaseDir, Others);
+    }
+
+    public ModProject Project { get; }
+
+    public string BaseDir { get; }
+
+    public IReadOnlyList<ModInfo> Others { get; }
+
+    public string Language { get; }
+
+    public EditHistory History { get; }
+
+    /// <summary>Итог проверки текущего документа и содержимое мода поверх базы.</summary>
+    public CheckReport Report { get; private set; }
+
+    /// <summary>Содержимое без этого мода (база и моды под ним) — «было» для сравнения.</summary>
+    public ContentSet BaseContent => _base ??= Others.Count == 0 ? ContentSource.Open(BaseDir) : ContentLayers.Load(BaseDir, Others);
+
+    /// <summary>Номер перемены: растёт с каждой правкой, отменой, перечитыванием, отказом.</summary>
+    public int Revision { get; private set; }
+
+    /// <summary>Последний отказ (круг требований, неверное значение); нет — null.</summary>
+    public string? Refusal { get; private set; }
+
+    /// <summary>Документ поменялся — пространства пересчитываются.</summary>
+    public event Action? Refreshed;
+
+    /// <summary>Проверить заново и известить пространства.</summary>
+    public void Refresh()
+    {
+        Report = ModCheck.Run(History.Current, Project, BaseDir, Others);
+        Revision++;
+        Refreshed?.Invoke();
+    }
+
+    /// <summary>Правка командой; отказ команды — <see cref="Refusal"/>, документ прежний.</summary>
+    public bool Do(IEditCommand command)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+        try
+        {
+            History.Do(command);
+        }
+        catch (Exception e) when (e is InvalidOperationException or ArgumentException or InvalidDataException or FormatException)
+        {
+            return Refuse(e.Message);
+        }
+        Refusal = null;
+        Refresh();
+        return true;
+    }
+
+    public bool Refuse(string text)
+    {
+        Refusal = text;
+        Revision++;
+        Refreshed?.Invoke();
+        return false;
+    }
+
+    public bool Undo() => Changed(History.Undo());
+
+    public bool Redo() => Changed(History.Redo());
+
+    private bool Changed(bool done)
+    {
+        if (done) Refresh();
+        return done;
+    }
+
+    /// <summary>Записать мод (игра с <c>--watch</c> перечитает его сама). Сколько файлов записано и удалено.</summary>
+    public int Save()
+    {
+        var (written, deleted) = History.Current.Save(Project);
+        History.MarkSaved();
+        Revision++;
+        Refreshed?.Invoke();
+        return written + deleted;
+    }
+
+    /// <summary>Мод поменяли снаружи (<c>d2mod</c>, редактор): перечитать, если на диске не то, что в окне. Правки окна, не записанные на
+    /// диск, тогда теряются — Студия сначала спрашивает (окно), без окна — перечитывает.</summary>
+    public bool ReloadFromDisk()
+    {
+        var disk = ModDocument.Load(Project);
+        if (disk.Fingerprint() == History.Current.Fingerprint()) return false;
+        History.Reset(disk);
+        Refresh();
+        return true;
+    }
+
+    /// <summary>Имя сущности: строка несохранённого документа, строка игры, иначе хвост id.</summary>
+    public string NameOf(string id)
+    {
+        ArgumentNullException.ThrowIfNull(id);
+        if (History.Current.Find(id) is { Source: EntitySource.Folder } folder
+            && (folder.Strings.GetValueOrDefault(Language) ?? folder.Strings.GetValueOrDefault("en")) is { } map && map.TryGetValue("name", out var own))
+            return own;
+        string? key = (Report.Content?.Find(id) ?? BaseContent.Find(id)) switch
+        {
+            BuildingDef b => b.NameText,
+            UnitDef u => u.NameText,
+            LordDef l => l.NameText,
+            SpellDef s => s.NameText,
+            ItemDef i => i.NameText,
+            BuildingBranchDef br => br.NameText,
+            _ => null,
+        };
+        return key is not null && Text(key) is { Length: > 0 } text ? text : id[(id.LastIndexOf('/') + 1)..];
+    }
+
+    /// <summary>Строка по ключу; нет — null.</summary>
+    public string? Text(string key) => _strings(key);
+
+    /// <summary>Сущность мода (своя: id в пространстве имён мода).</summary>
+    public bool IsMine(string id) => id.StartsWith(Project.Id + ":", StringComparison.Ordinal);
+}

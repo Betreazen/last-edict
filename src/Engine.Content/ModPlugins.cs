@@ -10,6 +10,12 @@ public interface IModPlugin
     void Register(ModInfo mod);
 }
 
+/// <summary>Строка отчёта загрузки плагинов; <see cref="Failed"/> — сборка не загружена.</summary>
+public sealed record PluginLine(string Text, bool Failed)
+{
+    public override string ToString() => Text;
+}
+
 /// <summary>
 /// Загрузка C#-плагинов модов, которые <b>исполняют код</b> (<see cref="ModInfo.ExecutesCode"/>). Сборка грузится в контекст сборок
 /// самой игры (<see cref="AssemblyLoadContext.GetLoadContext(Assembly)"/>), чтобы плагин видел те же типы ядра, что игра (одна
@@ -18,25 +24,33 @@ public interface IModPlugin
 /// </summary>
 public static class ModPlugins
 {
-    /// <summary>Загрузить плагины модов по порядку; строки отчёта «мод: сборка → типов N».</summary>
-    public static IReadOnlyList<string> Load(IEnumerable<ModInfo> mods)
+    /// <summary>Загрузить плагины модов по порядку; строки отчёта «мод: сборка → типов N» (<see cref="PluginLine.Failed"/> — сборка не
+    /// грузится или её точка входа упала: остальные плагины грузятся дальше, запуск не обрывается). Сборка без точек входа (помощник
+    /// плагина) — 0 типов; не сборка .NET (родная библиотека рядом) — пропуск со строкой.</summary>
+    public static IReadOnlyList<PluginLine> Load(IEnumerable<ModInfo> mods)
     {
         ArgumentNullException.ThrowIfNull(mods);
         var context = AssemblyLoadContext.GetLoadContext(typeof(ModPlugins).Assembly) ?? AssemblyLoadContext.Default;
-        var lines = new List<string>();
+        var lines = new List<PluginLine>();
         foreach (var mod in mods)
             foreach (string dll in mod.Plugins)
             {
-                Assembly assembly;
+                string name = Path.GetFileName(dll);
                 try
                 {
-                    assembly = context.LoadFromAssemblyPath(Path.GetFullPath(dll));
+                    var assembly = context.LoadFromAssemblyPath(Path.GetFullPath(dll));
+                    lines.Add(new($"{mod.Id}: {name} → типов {Register(assembly, mod)}", false));
                 }
-                catch (Exception e) when (e is BadImageFormatException or FileLoadException or FileNotFoundException)
+                catch (BadImageFormatException)
                 {
-                    throw new InvalidDataException($"мод {mod.Id}: плагин {dll} не грузится — {e.Message}", e);
+                    lines.Add(new($"{mod.Id}: {name} — не сборка .NET, пропущена", false));
                 }
-                lines.Add($"{mod.Id}: {Path.GetFileName(dll)} → типов {Register(assembly, mod)}");
+#pragma warning disable CA1031 // плагин — чужой код: любое его исключение — строка отчёта, а не обрыв запуска игры
+                catch (Exception e)
+#pragma warning restore CA1031
+                {
+                    lines.Add(new($"{mod.Id}: {name} не загружен — {e.GetType().Name}: {e.Message}", true));
+                }
             }
         return lines;
     }

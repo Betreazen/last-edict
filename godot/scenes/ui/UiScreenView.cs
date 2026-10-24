@@ -301,8 +301,11 @@ public partial class UiScreenView : Node2D
                 var src = new Rect2I(region.X * s, region.Y * s, region.Width * s, region.Height * s)
                     .Intersection(new Rect2I(Vector2I.Zero, full.GetSize()));
                 if (src.HasArea())
-                    image.BlitRect(full.GetFormat() == Image.Format.Rgba8 ? full : Converted(full), src,
-                                   src.Position - (new Vector2I(region.X, region.Y) * s));
+                {
+                    var rgba = full.GetFormat() == Image.Format.Rgba8 ? full : Converted(full);
+                    image.BlitRect(rgba, src, src.Position - (new Vector2I(region.X, region.Y) * s));
+                    if (rgba != full) rgba.Dispose();
+                }
             }
             return UiArt.Remember(frame, image, problem);
         }
@@ -434,6 +437,8 @@ public partial class UiScreenView : Node2D
             flipped.FlipX();
             for (int x = 0, i = 0; x < length; x += strip, i++)
                 canvas.BlitRect(i % 2 == 0 ? piece : flipped, new Rect2I(0, 0, Math.Min(strip, length - x) * s, h), new Vector2I((at + x) * s, 0));
+            piece.Dispose();
+            flipped.Dispose();
         }
         int centre = (width - (c1 - c0)) / 2, rightAt = width - (w0 - r);
         Put(0, l, 0);
@@ -473,16 +478,12 @@ public partial class UiScreenView : Node2D
 
     /// <summary>Маска поверх кадра (<see cref="UiFrameRef.Mask"/>): точки смешиваются наполовину по всей картинке, прозрачность —
     /// у кадра (павший воин: <c>MASKDEADS</c>/<c>MASKDEADL</c>, <c>0x5b1698</c>).</summary>
-    private static void Blend(Image image, Image mask)
+    private static void Blend(Image image, Image source)
     {
         image.Convert(Image.Format.Rgba8);
+        var mask = ImageScales.AtScale(source, ImageScales.Of(image), smooth: false);   // HD: маска — в точках кадра
+        if (mask != source) source.Dispose();
         mask.Convert(Image.Format.Rgba8);
-        if (ImageScales.Of(mask) != ImageScales.Of(image))   // HD: маска — в точках кадра
-        {
-            var logical = ImageScales.Logical(mask);
-            int scale = ImageScales.Of(image);
-            mask.Resize(logical.X * scale, logical.Y * scale, Image.Interpolation.Nearest);
-        }
         int w = Math.Min(image.GetWidth(), mask.GetWidth()), h = Math.Min(image.GetHeight(), mask.GetHeight());
         byte[] data = image.GetData(), over = mask.GetData();
         int iw = image.GetWidth(), mw = mask.GetWidth();
@@ -494,6 +495,7 @@ public partial class UiScreenView : Node2D
                 for (int k = 0; k < 3; k++) data[i + k] = UiFrameRef.Blend(data[i + k], over[m + k]);
             }
         image.SetData(iw, image.GetHeight(), false, Image.Format.Rgba8, data);
+        mask.Dispose();   // маска — своя копия файла (CanvasHd), больше не нужна
     }
 
     /// <summary>Подкраска кадра (<see cref="UiFrameRef"/>): непрозрачные точки строк ниже доли высоты — наполовину цветом.</summary>

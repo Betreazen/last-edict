@@ -111,8 +111,9 @@ public partial class GameData : Node
     /// <c>--vector-text</c>). Проверки (<c>--check</c>, <c>--input</c>) настроек не берут — их числа на растровых шрифтах игры.</summary>
     public static bool VectorText { get; set; }
 
-    /// <summary>Подключён ли HD-слой (Р19): есть кадр с множителем файла больше 1.</summary>
-    public static bool HasHd => _hasHd ??= Content.Assets.Any(a => a.Factor > 1);
+    /// <summary>Подключён ли HD-слой (Р19): есть кадр интерфейса или картинка графики мира (портреты, карта, бой) с множителем файла больше 1
+    /// — слой только с графикой мира тоже включает показ «HD».</summary>
+    public static bool HasHd => _hasHd ??= Content.Assets.Any(a => a.Factor > 1) || Content.Gfx.AnyScaled;
 
     private static bool? _hasHd;
 

@@ -193,9 +193,9 @@ def verify(image: Image.Image, size: tuple[int, int] = (WIDTH, HEIGHT), min_luma
     return None, line
 
 
-def small_copy(image: Image.Image, path: Path) -> tuple[int, int] | None:
+def small_copy(image: Image.Image, path: Path, widths: tuple[int, ...] = SMALL_WIDTHS) -> tuple[int, int] | None:
     """Уменьшенная копия ≤ SMALL_MAX_BYTES: палитра 256 цветов, ширина по убыванию, пока не влезет; не влезла и самая узкая — None."""
-    for width in SMALL_WIDTHS:
+    for width in widths:
         height = width * image.height // image.width
         scaled = image.resize((width, height), Image.Resampling.LANCZOS)
         # Октодерево без размытия ошибки: при той же палитре файл на треть меньше медианного сечения (640×480 влезает).

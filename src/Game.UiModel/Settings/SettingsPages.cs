@@ -103,14 +103,6 @@ public static class SettingsPages
                        new((int)ScreenScaling.Integer, "LE_SET_SCALING_INTEGER"), new((int)ScreenScaling.Nearest, "LE_SET_SCALING_NEAREST")],
             Display = true,
         },
-        // Сглаживание кадра (ответ пользователя 24.10): постобработка всего кадра — смягчает рваные края спрайтов оригинала.
-        new("antialiasing", SettingsTab.Display, SettingKind.Choice, "LE_SET_AA", "LE_SET_AA_HELP", s => s.Antialiasing,
-            (s, v) => s with { Antialiasing = v })
-        {
-            Choices = [new(MapSettings.AntialiasingOff, "LE_SET_AA_OFF"), new(MapSettings.AntialiasingFxaa, "FXAA"),
-                       new(MapSettings.AntialiasingSmaa, "SMAA")],
-            Display = true,
-        },
         // Чёткость при любом разрешении (ответ пользователя 24.10): резкость кадра, векторный текст, размер окон над картой — сразу.
         new("sharpness", SettingsTab.Display, SettingKind.Slider, "LE_SET_SHARPNESS", "LE_SET_SHARPNESS_HELP", s => s.Sharpness,
             (s, v) => s with { Sharpness = v }) { Max = MapSettings.MaxSharpness, Step = 10 },

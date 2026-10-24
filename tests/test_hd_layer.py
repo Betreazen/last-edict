@@ -38,7 +38,7 @@ def make(tmp: Path) -> tuple[Path, Path]:
 def test_export_flat_names_and_manifest(tmp_path: Path) -> None:
     data, assets = make(tmp_path)
     out = tmp_path / "out"
-    assert hd.export(out, ["ui", "faces"], None, data, assets) == 0
+    assert hd.export(out, ["ui", "faces"], data, assets) == 0
     files = sorted(p.name for p in out.iterdir())
     assert files == ["gfx__Faces__A1~000_A.png", "gfx__Faces__A1~001_B.png", "gfx__Faces__P1.png", "manifest.json",
                      "ui__Interf__BTN_TEST.png"]
@@ -51,7 +51,7 @@ def test_export_flat_names_and_manifest(tmp_path: Path) -> None:
 def test_import_writes_scaled_layer_restores_alpha_reports(tmp_path: Path, jobs: int) -> None:
     data, assets = make(tmp_path)
     out, up, mod = tmp_path / "out", tmp_path / "up", tmp_path / "mod"
-    hd.export(out, ["ui", "faces"], None, data, assets)
+    hd.export(out, ["ui", "faces"], data, assets)
     up.mkdir()
     # Topaz: ×2 без прозрачности; портрет — на точку уже (подгоняется); второй кадр анимации — не той пропорции.
     with Image.open(out / "ui__Interf__BTN_TEST.png") as im:
@@ -84,3 +84,124 @@ def test_fit_rejects_non_integer_scale() -> None:
     assert hd.fit(src, Image.new("RGB", (15, 15)))[0] is None
     assert hd.fit(src, Image.new("RGB", (40, 41)))[0] == 4
     assert hd.fit(src, Image.new("RGB", (20, 30)))[0] is None
+
+
+def upscale_all(out: Path, up: Path, scale: int = 2) -> None:
+    """«Апскейл» ×scale ближайшим соседом всех выгруженных кадров."""
+    up.mkdir(exist_ok=True)
+    for f in out.glob("*.png"):
+        with Image.open(f) as im:
+            im.resize((im.width * scale, im.height * scale), Image.Resampling.NEAREST).save(up / f.name)
+
+
+def test_export_skips_frames_not_kept(tmp_path: Path) -> None:
+    """Земля, туман и дороги в слой не идут (kept) — и в выгрузку под апскейл тоже."""
+    data, assets = make(tmp_path)
+    (assets / "gfx" / "IsoTerrn" / "plain").mkdir(parents=True)
+    for name in ("FOG01", "ROAD02", "WATER03"):
+        Image.new("RGBA", (4, 4), (5, 5, 5, 255)).save(assets / "gfx" / "IsoTerrn" / "plain" / f"{name}.webp", lossless=True)
+    (data / "gfx" / "IsoTerrn.json").write_text(json.dumps({"archive": "IsoTerrn.ff", "images": [
+        {"name": n, "file": f"IsoTerrn/plain/{n}.webp", "w": 4, "h": 4} for n in ("FOG01", "ROAD02", "WATER03")], "anims": []}),
+        encoding="utf-8")
+    out = tmp_path / "out"
+    assert hd.export(out, ["map"], data, assets) == 0
+    assert sorted(p.name for p in out.glob("*.png")) == ["gfx__IsoTerrn__WATER03.png"]
+
+
+def test_reimport_prunes_entries_no_longer_kept(tmp_path: Path) -> None:
+    """Слой, импортированный до исключения земли и тумана: повторный импорт вычищает их записи, PNG и DDS."""
+    data, assets = make(tmp_path)
+    out, up, mod = tmp_path / "out", tmp_path / "up", tmp_path / "mod"
+    hd.export(out, ["faces"], data, assets)
+    upscale_all(out, up)
+    gfx = mod / "assets" / "gfx"
+    (gfx / "Ground").mkdir(parents=True)
+    (gfx / "IsoTerrn").mkdir(parents=True)
+    for f in ("Ground/G1.png", "Ground/G1.dds", "IsoTerrn/FOG1.png", "IsoTerrn/FOG1.dds", "IsoTerrn/LAVA.png"):
+        (gfx / f).write_bytes(b"x")
+    (mod / "data" / "gfx").mkdir(parents=True)
+    (mod / "data" / "gfx" / "Ground.json").write_text(json.dumps({"archive": "Ground.ff", "images": [
+        {"name": "G1", "file": "Ground/G1.png", "w": 1, "h": 1, "scale": 2}], "anims": []}), encoding="utf-8")
+    (mod / "data" / "gfx" / "IsoTerrn.json").write_text(json.dumps({"archive": "IsoTerrn.ff", "images": [
+        {"name": "FOG1", "file": "IsoTerrn/FOG1.png", "w": 1, "h": 1, "scale": 2},
+        {"name": "LAVA", "file": "IsoTerrn/LAVA.png", "w": 1, "h": 1, "scale": 2}], "anims": []}), encoding="utf-8")
+    assert hd.import_layer(out, up, mod, "hd-test") == 0
+    assert not (mod / "data" / "gfx" / "Ground.json").exists()
+    terrain = json.loads((mod / "data" / "gfx" / "IsoTerrn.json").read_text(encoding="utf-8"))
+    assert [i["name"] for i in terrain["images"]] == ["LAVA"]
+    assert sorted(str(p.relative_to(gfx)).replace("\\", "/") for p in gfx.rglob("*") if p.is_file() and "Faces" not in p.parts) \
+        == ["IsoTerrn/LAVA.png"]
+    assert "вычищено не идущих в слой 2" in (mod / "import-report.txt").read_text(encoding="utf-8")
+
+
+def test_unreadable_frame_is_noted_not_fatal(tmp_path: Path) -> None:
+    """Оборванный файл апскейлера — замечание; прочие кадры принимаются, прогон не встаёт."""
+    data, assets = make(tmp_path)
+    out, up, mod = tmp_path / "out", tmp_path / "up", tmp_path / "mod"
+    hd.export(out, ["ui", "faces"], data, assets)
+    upscale_all(out, up)
+    (up / "gfx__Faces__P1.png").write_bytes((up / "gfx__Faces__P1.png").read_bytes()[:40])   # обрыв посреди файла
+    assert hd.import_layer(out, up, mod, "hd-test") == 0
+    report = (mod / "import-report.txt").read_text(encoding="utf-8")
+    assert "gfx__Faces__P1.png: не принят" in report
+    ui = json.loads((mod / "data" / "ui" / "assets.json").read_text(encoding="utf-8"))
+    assert [a["name"] for a in ui] == ["BTN_TEST"]
+
+
+def test_reimport_resumes_without_rewriting(tmp_path: Path) -> None:
+    """Повторный импорт (прерванный прогон): кадр в слое не старше апскейла не пересчитывается, опись — та же."""
+    data, assets = make(tmp_path)
+    out, up, mod = tmp_path / "out", tmp_path / "up", tmp_path / "mod"
+    hd.export(out, ["ui", "faces"], data, assets)
+    upscale_all(out, up)
+    assert hd.import_layer(out, up, mod, "hd-test") == 0
+    target = mod / "assets" / "ui" / "Interf" / "frames" / "BTN_TEST.png"
+    stamp = target.stat().st_mtime_ns
+    before = (mod / "data" / "ui" / "assets.json").read_text(encoding="utf-8")
+    assert hd.import_layer(out, up, mod, "hd-test") == 0
+    assert target.stat().st_mtime_ns == stamp
+    assert (mod / "data" / "ui" / "assets.json").read_text(encoding="utf-8") == before
+
+
+def test_import_with_no_upscale_fails(tmp_path: Path) -> None:
+    data, assets = make(tmp_path)
+    out, up = tmp_path / "out", tmp_path / "up"
+    hd.export(out, ["ui"], data, assets)
+    up.mkdir()
+    assert hd.import_layer(out, up, tmp_path / "mod", "hd-test") == 1
+
+
+def test_manifest_path_outside_layer_is_refused(tmp_path: Path) -> None:
+    """Опись — данные пользователя: «..» в пути кадра не выводит запись за пределы слоя."""
+    data, assets = make(tmp_path)
+    out, up, mod = tmp_path / "out", tmp_path / "up", tmp_path / "mod"
+    hd.export(out, ["ui"], data, assets)
+    upscale_all(out, up)
+    manifest = json.loads((out / "manifest.json").read_text(encoding="utf-8"))
+    manifest["entries"][0]["file"] = "../../../escaped.webp"
+    (out / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    hd.import_layer(out, up, mod, "hd-test")
+    assert not any(tmp_path.rglob("escaped.png"))
+    assert "не принят" in (mod / "import-report.txt").read_text(encoding="utf-8")
+
+
+def test_guard_output_refuses_tracked_repo_paths() -> None:
+    """Р3: графика игры внутри репозитория — только там, где её не берёт git."""
+    with pytest.raises(SystemExit):
+        hd.guard_output(hd.REPO / "docs" / "hd-export")
+    hd.guard_output(hd.REPO / "mods" / "hd-test")   # mods/hd*/ — в .gitignore
+    hd.guard_output(hd.REPO.parent / "le-hd")        # вне репозитория — можно
+
+
+def test_same_name_in_two_folders_gets_unique_flat_names(tmp_path: Path) -> None:
+    """Две разные картинки архива с одним именем (IsoTerrn: MOMNE0507 в frames/ и plain/): вторая — с папкой в плоском имени, первая —
+    прежняя (её апскейл годится); обе выгружаются."""
+    data, assets = make(tmp_path)
+    for folder, colour in (("frames", 10), ("plain", 20)):
+        (assets / "gfx" / "IsoTerrn" / folder).mkdir(parents=True)
+        Image.new("RGBA", (4, 4), (colour, 0, 0, 255)).save(assets / "gfx" / "IsoTerrn" / folder / "M1.webp", lossless=True)
+    (data / "gfx" / "IsoTerrn.json").write_text(json.dumps({"archive": "IsoTerrn.ff", "images": [
+        {"name": "M1", "file": f"IsoTerrn/{f}/M1.webp", "w": 4, "h": 4} for f in ("frames", "plain")], "anims": []}), encoding="utf-8")
+    out = tmp_path / "out"
+    assert hd.export(out, ["map"], data, assets) == 0
+    assert sorted(p.name for p in out.glob("*.png")) == ["gfx__IsoTerrn__M1.png", "gfx__IsoTerrn__M1~plain.png"]

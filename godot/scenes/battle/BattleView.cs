@@ -325,7 +325,7 @@ public partial class BattleView : Node2D
         {
             if (scene.Portrait(unit) is not { } portrait) continue;
             PanelUnits.Add(unit.Alive ? unit.Id : unit.Id + ":павший");
-            if (BattlePanel.DeadMask(unit, !unit.Type.SizeSmall) is { } skull && Mask(skull, 1) is not null) DeadMasks++;
+            if (BattlePanel.DeadMask(unit, !unit.Type.SizeSmall) is { } skull && GfxTextures.FaceMask(skull, 1) is not null) DeadMasks++;
             var faceRect = scene.PanelFace(unit, unit.Type.SizeSmall ? 70 : BattlePanel.BigWidth);
             var face = PanelFace(portrait, unit);
             bool big = face is not null && face.GetWidth() >= BattlePanel.BigWidth;
@@ -416,12 +416,13 @@ public partial class BattleView : Node2D
         if (h != info.H) kept = wounds ? BattlePanel.KeptRows(unit, h) : h;   // HD: точки гуще в scale раз — доля ран по ним же
         // Точки портрета разобраны один раз на файл (Pixels): вспышка перекрашивает портрет дважды (начало и срок), без разбора PNG.
         byte[] data = (byte[])source.Clone();
-        var mask = maskName is null ? null : Mask(maskName, scale);
+        var mask = maskName is null ? null : GfxTextures.FaceMask(maskName, scale);
         BattlePanel.Shade(data, w, whole, kept, mask?.Data, mask?.W ?? 0, mask?.H ?? 0, look.Alpha);
         var image = Image.CreateFromData(w, h, false, Image.Format.Rgba8, data);
         int center = (((h / 2) * w) + (w / 2)) * 4;
         if (center + 2 < data.Length) FaceCenters[unit.Id] = $"{data[center]};{data[center + 1]};{data[center + 2]}";
-        var texture = ImageScales.Composed(image, scale);   // HD — логического размера, точки полные
+        var texture = ImageScales.Texture(ImageScales.With(image, scale));   // HD — логического размера, точки полные
+        image.Dispose();
         // Прежняя подкраска больше не нужна: спрайт панели, если он ещё жив, держит её ссылкой движка.
         if (_faces.TryGetValue(unit.Id, out var old)) old.Texture.Dispose();
         _faces[unit.Id] = (key, texture);
@@ -445,25 +446,6 @@ public partial class BattleView : Node2D
 
     /// <summary>Портретов павших с маской-черепом (<see cref="BattlePanel.DeadMask"/>) в последней сборке панелей — для проверок.</summary>
     public int DeadMasks { get; private set; }
-
-    /// <summary>Точки маски павшего (<c>Faces</c>, <c>MASKDEADS</c>/<c>MASKDEADL</c>) — разбираются один раз на запуск; нет в графике — null
-    /// (портрет павшего тогда — чёрным наполовину, как прежде).</summary>
-    private static (byte[] Data, int W, int H)? Mask(string name, int scale)
-    {
-        string key = $"{name}@{scale}";
-        if (_masks.TryGetValue(key, out var cached)) return cached;
-        (byte[], int, int)? mask = null;
-        if (GameData.Content.Gfx.Image("Faces", name) is { } info && GfxAssets.PathOf(info, GameData.GfxRoot) is var path && File.Exists(path)
-            && ImageScales.AtScale(GfxTextures.CanvasHd(path), scale, smooth: false) is { } image)
-        {
-            image.Convert(Image.Format.Rgba8);
-            mask = (image.GetData(), image.GetWidth(), image.GetHeight());
-            image.Dispose();
-        }
-        return _masks[key] = mask;
-    }
-
-    private static readonly Dictionary<string, (byte[] Data, int W, int H)?> _masks = new(StringComparer.OrdinalIgnoreCase);
 
     private readonly Dictionary<string, (string Key, Texture2D Texture)> _faces = new(StringComparer.OrdinalIgnoreCase);
 

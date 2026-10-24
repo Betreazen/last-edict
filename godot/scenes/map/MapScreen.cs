@@ -74,7 +74,6 @@ public partial class MapScreen : Node
             viewport.AddChild(_map);
 
             var session = Session ?? LoadSession(args);
-            if (Session is null && args.Contains("--new-game")) NewGame = true;   // сцена сама: окно начала дня 1, как у новой партии
             var looks = session.Looks;
             string? viewer = Session is not null ? Viewer : MapSource.Arg(args, "--player") switch
             {
@@ -481,10 +480,11 @@ public partial class MapScreen : Node
             return;
         }
         // HD — полной точности (прежде Canvas сводил портрет к логическим точкам): раны и значки — в его множителе.
+        // Портрет как есть — текстура из сжатой копии файла; с ранами и значками — из своих точек (With без файла забывает копию).
         var canvas = GfxTextures.CanvasHd(path);
-        int scale = ImageScales.Of(canvas);
-        var built = state.Face is { } look ? PanelFaceImage(canvas, look) : canvas;
-        var texture = ImageScales.Composed(built, scale);
+        var texture = state.Face is { } look ? ImageScales.Texture(ImageScales.With(PanelFaceImage(canvas, look), ImageScales.Of(canvas)))
+            : ImageScales.Texture(canvas);
+        canvas.Dispose();   // точки уже в текстуре: HD-холст портрета не ждёт сборщика мусора
         var old = _face.Texture;
         _face.Texture = texture;
         _face.TextureFilter = ImageScales.Filter(texture, CanvasItem.TextureFilterEnum.Nearest);
@@ -506,7 +506,7 @@ public partial class MapScreen : Node
         face.Convert(Image.Format.Rgba8);
         int w = face.GetWidth(), h = face.GetHeight();
         byte[] data = face.GetData();
-        var mask = look.Mask is { } name ? FaceMask(name, s) : null;
+        var mask = look.Mask is { } name ? GfxTextures.FaceMask(name, s) : null;
         BattlePanel.Shade(data, w, null, look.KeptRows(h / s) * s, mask?.Data, mask?.W ?? 0, mask?.H ?? 0);
         face.SetData(w, h, false, Image.Format.Rgba8, data);
         if (PanelFace.Mirrored) face.FlipX();
@@ -515,7 +515,9 @@ public partial class MapScreen : Node
         {
             if (gfx.Image("Battle", icon.Name) is not { } info || GfxAssets.PathOf(info, GameData.GfxRoot) is not { } path || !File.Exists(path))
                 continue;
-            var image = ImageScales.AtScale(GfxTextures.CanvasHd(path), s);
+            var source = GfxTextures.CanvasHd(path);
+            var image = ImageScales.AtScale(source, s);
+            if (image != source) source.Dispose();
             image.Convert(Image.Format.Rgba8);
             int x = icon.Centered ? (w / 2) - (image.GetWidth() / 2) : icon.X * s;   // 0x48dbd4…0x48dbf5: половина ширины − половина значка
             face.BlendRect(image, new Rect2I(Vector2I.Zero, image.GetSize()), new Vector2I(x, icon.Y * s));
@@ -559,25 +561,6 @@ public partial class MapScreen : Node
             return n == 0 ? 0 : (double)sum / n;
         }
     }
-
-    /// <summary>Точки маски павшего (<c>Faces</c>, <c>MASKDEADS</c>/<c>MASKDEADL</c>) в множителе портрета <paramref name="scale"/> — по одному
-    /// разу на запуск; нет в графике — null.</summary>
-    private static (byte[] Data, int W, int H)? FaceMask(string name, int scale)
-    {
-        string key = $"{name}@{scale}";
-        if (_faceMasks.TryGetValue(key, out var cached)) return cached;
-        (byte[], int, int)? mask = null;
-        if (GameData.Content.Gfx.Image("Faces", name) is { } info && GfxAssets.PathOf(info, GameData.GfxRoot) is { } path && File.Exists(path))
-        {
-            var image = ImageScales.AtScale(GfxTextures.CanvasHd(path), scale, smooth: false);
-            image.Convert(Image.Format.Rgba8);
-            mask = (image.GetData(), image.GetWidth(), image.GetHeight());
-            image.Dispose();
-        }
-        return _faceMasks[key] = mask;
-    }
-
-    private static readonly Dictionary<string, (byte[] Data, int W, int H)?> _faceMasks = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Портрет — над панелью команд: панель, вернувшаяся после столицы, дипломатии или режима с панелью на её месте, встаёт в
     /// конец детей и закрывала портрет своим фоном (замечание 11 прогона 11.10: «нет портрета у отряда, выведенного из столицы»).</summary>

@@ -6,21 +6,27 @@
       Кадры выгрузки (плоские имена hd_layer.py) — в листы <листы>/sheet_0001.png… не больше size×size, между кадрами — прозрачный
       зазор pad точек (апскейлер смотрит на соседние точки: без зазора край одного кадра подмешался бы к другому). Рядом с каждым листом —
       sheet_0001.json: плоское имя → место в листе. Кадры одной анимации идут подряд (имена по порядку), лист заполняется полками.
-      --skip — кадры, что уже есть в этой папке (апскейл по одному), в листы не идут.
+      --skip — кадры, что уже есть в этой папке (апскейл по одному), в листы не идут. Папка листов — пустая: номера листов зависят от
+      набора кадров, и прежний увеличенный sheet_0001.png резался бы по новой раскладке (кадры перемешались бы молча).
   py tools/hd/hd_atlas.py unpack <листы> <увеличенные листы> <папка апскейла> [--new]
       Увеличенный лист (то же имя, PNG) режется обратно на кадры под их плоскими именами — в папку апскейла, откуда их берёт
-      hd_layer.py import. Множитель — по размеру листа (целый, одинаковый по сторонам); лист, которого ещё нет, пропускается;
-      --new — и лист, все кадры которого уже нарезаны (дорезать листы, что пришли позже).
+      hd_layer.py import. Множитель — по размеру листа (целый, ≥ 2, одинаковый по сторонам); лист, которого ещё нет, пропускается;
+      --new — и лист, все кадры которого уже нарезаны (дорезать листы, что пришли позже). Лист, который не читается (апскейлер
+      ещё пишет его), — замечание: прочие режутся, повторный --new дорежет его.
 """
 from __future__ import annotations
 
 import argparse
 import json
 import sys
+from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
+from itertools import repeat
 from pathlib import Path
 
 from PIL import Image
+
+from hd_layer import guard_output, inside
 
 SHEET = "sheet_{:04d}"
 
@@ -35,13 +41,14 @@ class Placed:
 
 
 def shelves(sizes: list[tuple[str, int, int]], size: int, pad: int) -> list[list[Placed]]:
-    """Полки слева направо, сверху вниз; кадр не влезает в лист — новый лист. Кадр больше листа — свой лист его размера."""
+    """Полки слева направо, сверху вниз; кадр не влезает в лист — новый лист. Кадр больше листа — свой лист его размера (с тем же
+    зазором вокруг)."""
     sheets: list[list[Placed]] = []
     current: list[Placed] = []
     x = y = shelf = 0
     for flat, w, h in sizes:
         if w + (2 * pad) > size or h + (2 * pad) > size:
-            sheets.append([Placed(flat, 0, 0, w, h)])
+            sheets.append([Placed(flat, pad, pad, w, h)])
             continue
         # Зазор — и перед кадром, и после последнего: лист не шире size.
         if x + w + (2 * pad) > size:
@@ -62,6 +69,10 @@ def find(flat: str, sources: list[Path]) -> Path | None:
 
 
 def pack(out: Path, sources: list[Path], match: list[str], size: int, pad: int, skip: list[Path] | None = None) -> int:
+    guard_output(out)
+    if out.is_dir() and any(out.glob("sheet_*")):
+        print(f"{out}: уже есть листы — раскладка новых не совпала бы с ними (номера зависят от набора кадров); нужна пустая папка")
+        return 1
     names = sorted({p.name for s in sources for p in s.glob("*.png")})
     ready = {p.name for d in skip or [] for p in d.glob("*.png")}
     names = [n for n in names if n not in ready]
@@ -90,39 +101,39 @@ def pack(out: Path, sources: list[Path], match: list[str], size: int, pad: int, 
 
 def cut(meta_path: Path, upscaled: Path, out: Path, new_only: bool) -> tuple[str, int, str | None]:
     """Один лист: («нарезан» | «пропущен», кадров, замечание). Кадр пишется во временный файл и переименовывается — оборванная запись
-    не выглядит готовым кадром (--new)."""
+    не выглядит готовым кадром (--new). Лист, который не читается (апскейлер ещё пишет его), — замечание, а не остановка прогона."""
     meta = json.loads(meta_path.read_text(encoding="utf-8"))
     up_path = upscaled / f"{meta_path.stem}.png"
-    if not up_path.is_file() or (new_only and all((out / f["flat"]).is_file() for f in meta["frames"])):
+    if not up_path.is_file() or (new_only and all(inside(out, f["flat"]).is_file() for f in meta["frames"])):
         return "пропущен", 0, None
-    with Image.open(up_path) as up:
-        sx, sy = up.width / meta["w"], up.height / meta["h"]
-        scale = round(sx)
-        if scale < 1 or abs(sx - scale) > 0.01 or abs(sy - scale) > 0.01:
-            return "пропущен", 0, f"{up_path.name}: {up.width}×{up.height} — не целый множитель от {meta['w']}×{meta['h']}"
-        up = up.convert("RGBA")
-        for f in meta["frames"]:
-            box = (f["x"] * scale, f["y"] * scale, (f["x"] + f["w"]) * scale, (f["y"] + f["h"]) * scale)
-            tmp = out / f"{f['flat']}.part"
-            up.crop(box).save(tmp, format="PNG", optimize=False, compress_level=1)
-            tmp.replace(out / f["flat"])
+    try:
+        with Image.open(up_path) as up:
+            sx, sy = up.width / meta["w"], up.height / meta["h"]
+            scale = round(sx)
+            if scale < 2 or abs(sx - scale) > 0.01 or abs(sy - scale) > 0.01:
+                return "пропущен", 0, f"{up_path.name}: {up.width}×{up.height} — не целый множитель ≥ 2 от {meta['w']}×{meta['h']}"
+            up = up.convert("RGBA")
+            for f in meta["frames"]:
+                box = (f["x"] * scale, f["y"] * scale, (f["x"] + f["w"]) * scale, (f["y"] + f["h"]) * scale)
+                target = inside(out, f["flat"])
+                tmp = target.with_name(target.name + ".part")
+                up.crop(box).save(tmp, format="PNG", optimize=False, compress_level=1)
+                tmp.replace(target)
+    except (OSError, ValueError) as error:
+        return "пропущен", 0, f"{up_path.name}: не читается — {type(error).__name__}: {error}"
     return "нарезан", len(meta["frames"]), None
 
 
-def _cut(args: tuple[Path, Path, Path, bool]) -> tuple[str, int, str | None]:
-    return cut(*args)
-
-
 def unpack(sheets: Path, upscaled: Path, out: Path, new_only: bool = False, jobs: int = 1) -> int:
+    guard_output(out)
     out.mkdir(parents=True, exist_ok=True)
     metas = sorted(sheets.glob("sheet_*.json"))
-    tasks = [(m, upscaled, out, new_only) for m in metas]
+    args = (metas, repeat(upscaled), repeat(out), repeat(new_only))
     if jobs > 1:
-        from concurrent.futures import ProcessPoolExecutor
         with ProcessPoolExecutor(max_workers=jobs) as pool:
-            results = list(pool.map(_cut, tasks))
+            results = list(pool.map(cut, *args))
     else:
-        results = [cut(*t) for t in tasks]
+        results = list(map(cut, *args))
     done = sum(1 for r in results if r[0] == "нарезан")
     frames = sum(r[1] for r in results)
     problems = [r[2] for r in results if r[2]]

@@ -27,31 +27,22 @@ namespace LastEdict.Godot;
 /// стоят там же, что и без HD, а точки берутся из полной картинки. Кто смотрит точки картинки (маски, попадания, мини-карта, курсоры),
 /// получает холст логического размера (<see cref="Canvas"/>); HD-холст для окон — <see cref="CanvasHd"/>.</para>
 ///
-/// <para>Освобождение: <see cref="Release"/> при выходе из партии в меню (текстуры отпускаются сразу, а не сборкой мусора); сверх
-/// <see cref="LimitBytes"/> кэш забывает давно не нужные текстуры (LRU, Э5 — для HD: прежде он сбрасывался целиком, и следующий кадр
-/// боя разбирал заново всё) без <c>Dispose</c> — кто ещё держит текстуру (кадры живого спрайта), держит её дальше. Все вызовы — из
-/// главного потока.</para></summary>
+/// <para>Освобождение: <see cref="Release"/> при выходе из партии в меню (текстуры — и текстура под вырезкой — отпускаются сразу, а не
+/// сборкой мусора); сверх <see cref="LimitBytes"/> кэш забывает давно не нужные текстуры (<see cref="ByteLru{TKey,TValue}"/>, Э5 — для
+/// HD: прежде он сбрасывался целиком, и следующий кадр боя разбирал заново всё) без <c>Dispose</c> — кто ещё держит текстуру (кадры
+/// живого спрайта), держит её дальше. Все вызовы — из главного потока.</para></summary>
 public static class GfxTextures
 {
     /// <summary>Предел кэша по байтам разобранных картинок; дальше кэш начинается заново.</summary>
     public const long LimitBytes = 1L << 30;
 
-    private static readonly Dictionary<string, LinkedListNode<Cached>> _cache = new(StringComparer.Ordinal);
-
-    /// <summary>Порядок давности: в начале — последняя нужная текстура, с конца забываются.</summary>
-    private static readonly LinkedList<Cached> _order = new();
-    private static long _bytes;
-
-    private sealed record Cached(string Path, Texture2D Texture, long Bytes);
-
-    /// <summary>Текстур, забытых по давности (LRU) с начала партии, — для проверок и замеров.</summary>
-    public static int Evicted { get; private set; }
+    private static readonly ByteLru<string, Texture2D> _cache = new(LimitBytes, StringComparer.Ordinal);
 
     /// <summary>Текстур в кэше — для проверок и замеров.</summary>
     public static int Count => _cache.Count;
 
-    /// <summary>Байт разобранных картинок в кэше — для проверок и замеров.</summary>
-    public static long Bytes => _bytes;
+    /// <summary>Байт разобранных картинок в кэше (с mip-уровнями) — для проверок и замеров.</summary>
+    public static long Bytes => _cache.Bytes;
 
     /// <summary>Текстуры файлов по порядку; файла нет — пропуск (как прежде: <c>File.Exists</c>, затем
     /// <c>ImageTexture.CreateFromImage(Image.LoadFromFile(path))</c>).</summary>
@@ -67,12 +58,7 @@ public static class GfxTextures
     /// файла нет — null.</summary>
     public static Texture2D? Of(string path)
     {
-        if (_cache.TryGetValue(path, out var cached))
-        {
-            _order.Remove(cached);
-            _order.AddFirst(cached);
-            return cached.Value.Texture;
-        }
+        if (_cache.TryGet(path, out var cached)) return cached;
         if (Warmed(path) is { } image) return Add(path, image);
         return File.Exists(path) ? Add(path, Load(path)) : null;
     }
@@ -256,11 +242,13 @@ public static class GfxTextures
         Interlocked.Increment(ref _generation);   // очереди Warm(…, threads) дальше не разбирают
         _queued.Clear();
         _pending.Clear();   // начатые разборы доделает пул потоков, картинки заберёт сборщик мусора
-        foreach (var cached in _order) cached.Texture.Dispose();
+        foreach (var texture in _cache.Values)
+        {
+            var inner = (texture as AtlasTexture)?.Atlas;   // вырезка держит текстуру занятой части — её тоже сразу
+            texture.Dispose();
+            inner?.Dispose();
+        }
         _cache.Clear();
-        _order.Clear();
-        _bytes = 0;
-        Evicted = 0;
     }
 
     /// <summary>Разобранная картинка, обрезанная по непрозрачным точкам: сама обрезка, полный размер холста и угол обрезки в нём — в
@@ -284,11 +272,16 @@ public static class GfxTextures
     }
 
     /// <summary>HD-файл (<c>scale</c> &gt; 1): с углом в описи — обрезка в логическом месте холста, без угла — весь холст (занятую часть у
-    /// HD не ищем: угол в точках файла не делится на множитель).</summary>
+    /// HD не ищем: угол в точках файла не делится на множитель). PNG без сжатой копии получает mip-уровни здесь же (в рабочем потоке):
+    /// фильтр HD — с mip-уровнями, а без них уменьшение в 4 раза рябит.</summary>
     private static Loaded? Scaled(Image? image, GfxPlace? place, int scale)
     {
         if (image is null) return null;
-        if (!image.IsCompressed() && image.GetFormat() != Image.Format.Rgba8) image.Convert(Image.Format.Rgba8);
+        if (!image.IsCompressed())
+        {
+            if (image.GetFormat() != Image.Format.Rgba8) image.Convert(Image.Format.Rgba8);
+            if (!image.HasMipmaps()) image.GenerateMipmaps();
+        }
         var part = image.GetSize() / scale;
         if (place is { } p && Fits(part, p)) return new Loaded(image, new Vector2I(p.W, p.H), new Vector2I(p.X, p.Y), scale);
         return new Loaded(image, part, Vector2I.Zero, scale);
@@ -392,23 +385,32 @@ public static class GfxTextures
     {
         var image = loaded?.Image;
         long size = image?.GetDataSize() ?? 0;
-        // Сверх предела — забыть самые давние (без Dispose: текстуры у живых спрайтов остаются, остальные заберёт сборщик мусора).
-        while (_bytes + size > LimitBytes && _order.Last is { } oldest)
-        {
-            _order.RemoveLast();
-            _cache.Remove(oldest.Value.Path);
-            _bytes -= oldest.Value.Bytes;
-            Evicted++;
-        }
         var texture = Texture(loaded);
         image?.Dispose();   // данные уже в текстуре; разобранная картинка не ждёт сборщика мусора (их тут сотни мегабайт разом)
-        if (_cache.Remove(path, out var stale))
-        {
-            _order.Remove(stale);
-            _bytes -= stale.Value.Bytes;
-        }
-        _cache[path] = _order.AddFirst(new Cached(path, texture, size));
-        _bytes += size;
+        // Сверх предела кэш забывает самые давние — без Dispose: текстуры у живых спрайтов остаются, остальные заберёт сборщик мусора.
+        _cache.Add(path, texture, size);
         return texture;
     }
+
+    /// <summary>Точки RGBA8 маски портрета (<c>Faces</c>: череп павшего <c>MASKDEADS</c>/<c>MASKDEADL</c>) в множителе портрета
+    /// <paramref name="scale"/> — для подкраски точек портрета (панель карты, панели боя); разбор — один раз на маску и множитель за
+    /// запуск. Нет в графике — null.</summary>
+    public static (byte[] Data, int W, int H)? FaceMask(string name, int scale)
+    {
+        string key = $"{name}@{scale}";
+        if (FaceMasks.TryGetValue(key, out var cached)) return cached;
+        (byte[], int, int)? mask = null;
+        if (GameData.Content.Gfx.Image("Faces", name) is { } info && GfxAssets.PathOf(info, GameData.GfxRoot) is var path && File.Exists(path))
+        {
+            var source = CanvasHd(path);
+            var image = ImageScales.AtScale(source, scale, smooth: false);
+            if (image != source) source.Dispose();
+            image.Convert(Image.Format.Rgba8);
+            mask = (image.GetData(), image.GetWidth(), image.GetHeight());
+            image.Dispose();
+        }
+        return FaceMasks[key] = mask;
+    }
+
+    private static readonly Dictionary<string, (byte[] Data, int W, int H)?> FaceMasks = new(StringComparer.OrdinalIgnoreCase);
 }

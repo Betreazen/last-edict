@@ -65,7 +65,7 @@ public sealed record MapSettings(int PlayerSpeed = 1, int OpponentSpeed = 1, boo
                                  int MasterVolume = 100, int AmbientVolume = 100, string WindowMode = "windowed", bool VSync = true,
                                  int MaxFps = 0, string Language = "", LastEdict.Data.Input.KeyBindings? Bindings = null,
                                  int LargeUi = MapSettings.LargeUiAuto, int WindowSize = 0, int Resolution = 0, int MapZoom = 100,
-                                 int Antialiasing = MapSettings.AntialiasingOff, bool VectorText = true,
+                                 bool VectorText = true,
                                  int Sharpness = MapSettings.DefaultSharpness, int WindowScale = 100, bool WideBattle = true)
 {
     /// <summary>Режим вписывания экрана в окно; неизвестное имя в файле — чёткий (<see cref="LastEdict.Data.Ui.ScreenScaling.Sharp"/>).</summary>
@@ -145,7 +145,6 @@ public sealed record MapSettings(int PlayerSpeed = 1, int OpponentSpeed = 1, boo
         WindowSize = LastEdict.Data.Ui.DisplaySizes.Known(WindowSize),
         Resolution = LastEdict.Data.Ui.DisplaySizes.Known(Resolution),
         MapZoom = MapZooms.Contains(MapZoom) ? MapZoom : 100,
-        Antialiasing = Math.Clamp(Antialiasing, AntialiasingOff, AntialiasingSmaa),
         Sharpness = Math.Clamp(Sharpness, 0, MaxSharpness),
         WindowScale = WindowScales.Contains(WindowScale) ? WindowScale : 100,
     };
@@ -157,9 +156,6 @@ public sealed record MapSettings(int PlayerSpeed = 1, int OpponentSpeed = 1, boo
     /// <summary>Размер окон меньше экрана оригинала над картой (<see cref="WindowScale"/>, проценты масштаба карты): свитки, карточки,
     /// сообщения.</summary>
     public static readonly int[] WindowScales = [70, 80, 90, 100];
-
-    /// <summary>Сглаживание кадра (<see cref="Antialiasing"/>): нет, FXAA, SMAA — постобработка всего кадра (ответ пользователя 24.10).</summary>
-    public const int AntialiasingOff = 0, AntialiasingFxaa = 1, AntialiasingSmaa = 2;
 
     /// <summary>Масштаб карты «по окну» (как в оригинале) и допустимые значения <see cref="MapZoom"/>.</summary>
     public const int MapZoomFit = 0;

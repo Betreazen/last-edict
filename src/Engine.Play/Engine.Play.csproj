@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Game.UiModel" />
+    <InternalsVisibleTo Include="Net" />
     <InternalsVisibleTo Include="Import.Legacy" />
     <InternalsVisibleTo Include="Engine.Play.Tests" />
     <InternalsVisibleTo Include="Engine.Rules.Tests" />

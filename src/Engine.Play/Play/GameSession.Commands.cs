@@ -58,6 +58,7 @@ public sealed partial class GameSession
     public CommandResult Execute(GameCommand command)
     {
         ArgumentNullException.ThrowIfNull(command);
+        if (Remote is { } remote && _executing == 0 && !_here) return remote(command);
         var outer = _outerRecorder;
         if (_executing > 0 && outer?.InCall != true)
             throw new InvalidOperationException($"команда {command.GetType().Name} подана во время другой не на вызове наблюдателя");

@@ -11,6 +11,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Engine.Play\Engine.Play.csproj" />
     <ProjectReference Include="..\..\src\Game.UiModel\Game.UiModel.csproj" />
+    <ProjectReference Include="..\..\src\Net\Net.csproj" />
   </ItemGroup>
 
 </Project>

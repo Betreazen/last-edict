@@ -5,7 +5,10 @@ using LastEdict.Data.Play.Commands;
 // Повтор журнала команд партии (docs/game-commands.md §3): сохранение начала и журнал (их пишет сцена карты с D2_COMMAND_JOURNAL) → та же
 // партия заново, хеш состояния после каждой команды сверяется с записанным. Баг-репорт игрока — эти два файла.
 //
-//   dotnet run --project tools/JournalReplay -- <журнал.jsonl> [--start <сохранение>] [--data <каталог data>]
+//   dotnet run --project tools/JournalReplay -- <журнал.jsonl> [--start <сохранение>] [--data <каталог data>] [--view <игрок>]
+//
+// --view — ещё и хеш вида игрока сети (LastEdict.Net.PlayerView) после повтора: строка «вид <игрок> <хеш>» (tools/net-duo.py сверяет его
+// с видом клиента).
 //
 // Сохранение по умолчанию — <журнал>.start.d2save; данные — data/ репозитория (содержимое base без модов, как у проверок).
 // Код возврата 0 — повтор сошёлся; 1 — расхождение (первая команда с другим хешем); 2 — нет файлов.
@@ -24,9 +27,14 @@ if (!File.Exists(start))
 }
 string data = Arg("--data") ?? Path.Combine(RepoRoot(), "data");
 
-if (CommandJournal.FromJsonLines(File.ReadAllText(journalPath)).Mods is { Count: > 0 } mods)
+// Моды без файлов правил (HD-слой, звук, строки) повтору не мешают; моды с правилами — нужны, а повтор берёт содержимое base без модов.
+var known = Directory.Exists(Path.Combine(RepoRoot(), "mods"))
+    ? GameContent.Discover([Path.Combine(RepoRoot(), "mods")]).ToDictionary(m => m.Id, StringComparer.OrdinalIgnoreCase)
+    : new Dictionary<string, ModInfo>(StringComparer.OrdinalIgnoreCase);
+if (CommandJournal.FromJsonLines(File.ReadAllText(journalPath)).Mods.Where(id => !known.TryGetValue(id, out var m) || RulesetHash.HasRules(m))
+        .ToList() is { Count: > 0 } mods)
 {
-    Console.WriteLine($"повтор невозможен: партия с модами {string.Join(", ", mods)}, а повтор берёт содержимое base без модов");
+    Console.WriteLine($"повтор невозможен: партия с модами правил {string.Join(", ", mods)}, а повтор берёт содержимое base без модов");
     return 2;
 }
 var content = GameContent.Load(data);
@@ -46,6 +54,8 @@ catch (Exception e) when (e is InvalidDataException or InvalidOperationException
     return 1;
 }
 Console.WriteLine($"повтор сошёлся: команд {journal.Entries.Count}, решений снаружи {answers}, хеш {StateHash.Of(session)}; {string.Join(", ", kinds)}");
+if (Arg("--view") is { } viewer)
+    Console.WriteLine($"вид {viewer} {LastEdict.Net.ViewPatch.Hash(LastEdict.Net.NetView.Of(session.SnapshotWithoutSummaries(), viewer))}");
 return 0;
 
 string? Arg(string name) => Array.IndexOf(args, name) is >= 0 and var i && i + 1 < args.Length ? args[i + 1] : null;

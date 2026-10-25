@@ -52,6 +52,8 @@
     <ProjectReference Include="..\..\..\src\Game.UiModel\Game.UiModel.csproj" />
     <ProjectReference Include="..\..\..\src\Import.Legacy\Import.Legacy.csproj" />
     <ProjectReference Include="..\..\..\src\Authoring\Authoring.csproj" />
+    <ProjectReference Include="..\..\..\src\Net\Net.csproj" />
+    <ProjectReference Include="..\..\..\tools\Relay\Relay.csproj" />
   </ItemGroup>
 
   <ItemGroup>

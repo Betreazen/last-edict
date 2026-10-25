@@ -133,8 +133,12 @@ public sealed class NetClient
     public bool Online { get; private set; }
 
     /// <summary>Связь пропала: ждущие команды получают отказ «нет связи» (окно покажет; после возвращения вид придёт заново).</summary>
-    public void Disconnected()
+    public void Disconnected() => Disconnected("");
+
+    /// <summary>То же с причиной (в журнал): своё соединение с посредником или уход хоста.</summary>
+    public void Disconnected(string reason)
     {
+        if (reason.Length > 0) Log?.Invoke($"net: связь с хостом потеряна — {reason}");
         lock (_gate)
         {
             Online = false;
@@ -318,6 +322,7 @@ public sealed class NetClient
             token = Turn?.Token ?? "";
             _waiting[id] = waiting;
         }
+        long sent = System.Diagnostics.Stopwatch.GetTimestamp();
         _send(new CommandRequest(id, seq, token, command));
         var timeout = command is EndTurnCommand ? _options.EndTurnTimeout : _options.CommandTimeout;
         if (!waiting.Task.Wait(timeout))
@@ -325,7 +330,26 @@ public sealed class NetClient
             lock (_gate) _waiting.Remove(id);
             return new Receipt(id, NetErrors.Lost, "хост не ответил");
         }
+        // Задержка команды (без конца хода — в нём ходы ИИ у хоста): от отправки до ответа, с видом перед ним.
+        if (command is not EndTurnCommand)
+            lock (_gate) _latencies.Add(System.Diagnostics.Stopwatch.GetElapsedTime(sent).TotalMilliseconds);
         return waiting.Task.Result;
+    }
+
+    private readonly List<double> _latencies = [];
+
+    /// <summary>Задержка команд, мс (кроме конца хода): число, средняя, 95-я доля, наибольшая — замер Э7 (<c>docs/perf-log.md</c>).</summary>
+    public (int Count, double Mean, double P95, double Max) Latency
+    {
+        get
+        {
+            lock (_gate)
+            {
+                if (_latencies.Count == 0) return (0, 0, 0, 0);
+                var sorted = _latencies.Order().ToList();
+                return (sorted.Count, sorted.Average(), sorted[Math.Min(sorted.Count - 1, (int)Math.Ceiling(sorted.Count * 0.95) - 1)], sorted[^1]);
+            }
+        }
     }
 
     /// <summary>Бой хода ИИ по запросу хоста — собрать у себя (<see cref="GameSession.BuildBattleHere"/>) и поставить генератор боя хоста;

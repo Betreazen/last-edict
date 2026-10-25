@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Nodes;
+using System.Threading;
 using System.Threading.Tasks;
 using System.IO;
 using LastEdict.Data.Menu;
@@ -15,7 +16,8 @@ namespace LastEdict.Godot;
 /// посредник и имя, вкладки «Создать» (сценарий, места «я / друг / ИИ», таймер хода, асинхронная партия → код комнаты, вошедшие друзья,
 /// «Начать»), «Войти по коду», «Мои комнаты» (асинхронные — с «ваш ход»), внизу — строка состояния и «Закрыть». Выбор держит модель
 /// (<see cref="LobbyLogic"/>), сетевые шаги — здесь (<see cref="NetSession"/>, <see cref="AsyncRoom"/>, <see cref="AsyncPlay"/>); партия
-/// начинается через <see cref="Started"/> (хозяин — поток меню).
+/// начинается через <see cref="Started"/> (хозяин — поток меню). Продолжения после <c>await</c> — на главном потоке; окно закрыли посреди
+/// подключения — шаги отменяются (<see cref="_cancel"/>), а дошедшая партия закрывается, не открываясь.
 /// </summary>
 public partial class LobbyWindow : Control
 {
@@ -35,8 +37,13 @@ public partial class LobbyWindow : Control
     private Button _create = null!, _start = null!, _join = null!;
     private TabContainer _tabs = null!;
     private RelayLink? _link;
-    private readonly List<string> _friends = [];
-    private bool _busy;
+    /// <summary>Вошедшие друзья по порядку входа: соединение у посредника и ник (ники могут совпадать).</summary>
+    private readonly List<(string Peer, string Nick)> _friends = [];
+    private readonly CancellationTokenSource _cancel = new();
+    private bool _busy, _refreshing;
+
+    /// <summary>Окно ещё открыто: продолжение после сети может трогать узлы и открывать партию.</summary>
+    private bool Alive => !_cancel.IsCancellationRequested && IsInstanceValid(this) && IsInsideTree();
 
     public LobbyWindow(LobbyLogic logic, Func<string, string> text, Action<string> emit)
     {
@@ -83,7 +90,7 @@ public partial class LobbyWindow : Control
         tabs.TabChanged += index =>
         {
             _logic.Tab = (LobbyTab)(int)index;
-            if (_logic.Tab == LobbyTab.Rooms) _ = RefreshRooms();
+            if (_logic.Tab == LobbyTab.Rooms) _ = Guard(RefreshRooms);
         };
         column.AddChild(tabs);
         column.AddChild(new ColorRect { Color = SettingsTheme.Gold with { A = 0.35f }, CustomMinimumSize = new Vector2(0, 1) });
@@ -121,9 +128,9 @@ public partial class LobbyWindow : Control
         _async.Toggled += on => _logic.Async = on;
         page.AddChild(Row("LE_NET_ASYNC", _async));
         var actions = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
-        _create = Command("LE_NET_CREATE", () => _ = Create());
+        _create = Command("LE_NET_CREATE", () => _ = Guard(Create));
         _create.ThemeTypeVariation = SettingsTheme.Primary;
-        _start = Command("LE_NET_START", () => _ = Begin());
+        _start = Command("LE_NET_START", () => _ = Guard(Begin));
         _start.Visible = false;
         _start.ThemeTypeVariation = SettingsTheme.Primary;
         actions.AddChild(_create);
@@ -141,10 +148,10 @@ public partial class LobbyWindow : Control
         var page = Page("LE_NET_TAB_JOIN");
         _code = new LineEdit { CustomMinimumSize = new Vector2(160, 0), MaxLength = 8, Name = "Code", PlaceholderText = "ABC234" };
         _code.TextChanged += t => _logic.Code = LobbyLogic.NormalizeCode(t);
-        _code.TextSubmitted += _ => { if (!_busy) Join().ContinueWith(_ => { }, TaskScheduler.Default); };
+        _code.TextSubmitted += submitted => { if (!_busy) _ = Guard(Join); };
         page.AddChild(Row("LE_NET_CODE", _code));
         var actions = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
-        _join = Command("LE_NET_JOIN", () => _ = Join());
+        _join = Command("LE_NET_JOIN", () => _ = Guard(Join));
         _join.ThemeTypeVariation = SettingsTheme.Primary;
         actions.AddChild(_join);
         page.AddChild(actions);
@@ -158,7 +165,7 @@ public partial class LobbyWindow : Control
         _rooms.AddThemeConstantOverride("separation", 3);
         page.AddChild(_rooms);
         var actions = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
-        actions.AddChild(Command("LE_NET_REFRESH", () => _ = RefreshRooms()));
+        actions.AddChild(Command("LE_NET_REFRESH", () => _ = Guard(RefreshRooms)));
         page.AddChild(actions);
         return Scroll(page, "LE_NET_TAB_ROOMS");
     }
@@ -202,17 +209,25 @@ public partial class LobbyWindow : Control
                 var humans = _logic.HumansFor(_logic.Friends.Count);
                 var start = NetGames.NewGame(scenario.Id, humans, (uint)System.Environment.TickCount, Names(humans));
                 Say(T("LE_NET_CONNECTING"));
-                var room = await AsyncRoom.CreateAsync(Relay(), start, me.Player, _logic.Nick, scenario.Name);
-                NetRooms.Remember(NetGames.RoomsPath, new NetRoomEntry(room.Key, Added: DateTime.UtcNow));
-                _room.Text = string.Format(System.Globalization.CultureInfo.InvariantCulture, T("LE_NET_ROOM_CODE"), room.Key.Room);
-                var play = await AsyncPlay.OpenAsync(room, NetGames.ViewSession);
-                Launch(play);
+                var room = await AsyncRoom.CreateAsync(Relay(), start, me.Player, _logic.Nick, scenario.Name, _cancel.Token);
+                try
+                {
+                    NetRooms.Remember(NetGames.RoomsPath, new NetRoomEntry(room.Key, Added: DateTime.UtcNow));
+                    if (Alive) _room.Text = string.Format(System.Globalization.CultureInfo.InvariantCulture, T("LE_NET_ROOM_CODE"), room.Key.Room);
+                    await Launch(await AsyncPlay.OpenAsync(room, NetGames.ViewSession, _cancel.Token));
+                }
+                catch
+                {
+                    await room.DisposeAsync();   // партия не открылась — соединение не держать
+                    throw;
+                }
                 return;
             }
             Say(T("LE_NET_CONNECTING"));
             _link = new RelayLink(Relay());
-            await _link.ConnectAsync();
-            var key = await _link.CreateAsync(scenario.Name, _logic.Nick, async: false, seat: me.Player);
+            await _link.ConnectAsync(_cancel.Token);
+            var key = await _link.CreateAsync(scenario.Name, _logic.Nick, async: false, seat: me.Player, _cancel.Token);
+            if (!Alive) return;   // окно закрыли — соединение сносит _ExitTree
             _link.Notice += notice => Callable.From(() => OnPeer(notice)).CallDeferred();
             _room.Text = string.Format(System.Globalization.CultureInfo.InvariantCulture, T("LE_NET_ROOM_CODE"), key.Room);
             _create.Visible = false;
@@ -226,7 +241,7 @@ public partial class LobbyWindow : Control
                                       or System.Net.Http.HttpRequestException or OperationCanceledException or UriFormatException)
         {
             Say(T("LE_NET_FAILED") + " " + e.Message);
-            await DropLink();
+            if (Alive) await DropLink();
         }
         finally
         {
@@ -236,10 +251,12 @@ public partial class LobbyWindow : Control
 
     private void OnPeer(JsonObject notice)
     {
+        if (!Alive) return;
         string op = notice["op"]?.GetValue<string>() ?? "";
-        string nick = notice["nick"]?.GetValue<string>() is { Length: > 0 } n ? n : notice["peer"]?.GetValue<string>() ?? "?";
-        if (op == "peer" && notice["back"]?.GetValue<bool>() != true && !_friends.Contains(nick)) _friends.Add(nick);
-        if (op == "gone") _friends.Remove(nick);
+        string peer = notice["peer"]?.GetValue<string>() ?? "";
+        string nick = notice["nick"]?.GetValue<string>() is { Length: > 0 } n ? n : peer.Length > 0 ? peer : "?";
+        if (op == "peer" && notice["back"]?.GetValue<bool>() != true && _friends.All(f => f.Peer != peer)) _friends.Add((peer, nick));
+        if (op == "gone") _friends.RemoveAll(f => f.Peer == peer);
         RefreshJoined();
     }
 
@@ -249,7 +266,7 @@ public partial class LobbyWindow : Control
         var friends = _logic.Friends;
         for (int i = 0; i < friends.Count; i++)
         {
-            string who = i < _friends.Count ? _friends[i] : T("LE_NET_SEAT_EMPTY");
+            string who = i < _friends.Count ? _friends[i].Nick : T("LE_NET_SEAT_EMPTY");
             _joined.AddChild(new Label { Text = $"{friends[i].RaceName}: {who}", ThemeTypeVariation = SettingsTheme.RowLabel });
         }
         _start.Disabled = _friends.Count == 0;
@@ -268,8 +285,7 @@ public partial class LobbyWindow : Control
             NetRooms.Remember(NetGames.RoomsPath, new NetRoomEntry(_link.Key!, Added: DateTime.UtcNow));
             _link = null;   // соединение теперь у партии
             GD.Print($"lobby start humans={string.Join(",", humans)} timer={_logic.TurnSeconds ?? 0}");
-            Launch(net);
-            await Task.CompletedTask;
+            await Launch(net);
         }
         catch (InvalidOperationException e)
         {
@@ -286,7 +302,7 @@ public partial class LobbyWindow : Control
     {
         var names = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         if (_logic.Nick.Length > 0) names[humans[0]] = _logic.Nick;
-        for (int i = 1; i < humans.Count && i - 1 < _friends.Count; i++) names[humans[i]] = _friends[i - 1];
+        for (int i = 1; i < humans.Count && i - 1 < _friends.Count; i++) names[humans[i]] = _friends[i - 1].Nick;
         return names;
     }
 
@@ -307,41 +323,41 @@ public partial class LobbyWindow : Control
         {
             Say(T("LE_NET_CONNECTING"));
             link = new RelayLink(Relay());
-            await link.ConnectAsync();
-            var key = await link.JoinAsync(code, _logic.Nick);
+            await link.ConnectAsync(_cancel.Token);
+            var key = await link.JoinAsync(code, _logic.Nick, cancel: _cancel.Token);
             if (key.Async)
             {
                 // Асинхронная: место выбирается по партии — первое свободное место человека.
                 var room = AsyncRoom.FromLink(link);
-                var stored = await room.LoadAsync();
+                var stored = await room.LoadAsync(_cancel.Token);
                 var free = stored.State is { } state ? AsyncRoom.FreeSeats(state, link.Peers) : [];
                 if (free.Count == 0)
                 {
                     Say(T("LE_NET_NO_SEAT"));
-                    await link.DisposeAsync();
-                    return;
+                    return;   // соединение закроет finally
                 }
-                await link.ClaimSeatAsync(free[0]);
+                await link.ClaimSeatAsync(free[0], _cancel.Token);
                 NetRooms.Remember(NetGames.RoomsPath, new NetRoomEntry(link.Key!, Added: DateTime.UtcNow));
-                Launch(await AsyncPlay.OpenAsync(room, NetGames.ViewSession));
+                var play = await AsyncPlay.OpenAsync(room, NetGames.ViewSession, _cancel.Token);
                 link = null;
+                await Launch(play);
                 return;
             }
             Say(T("LE_NET_WAIT_HOST"));
             var join = new NetJoin(Relay(), _logic.Nick, NetGames.Ruleset(), "", NetGames.ViewSession, AutoApply: false);
-            var net = await NetSession.JoinOn(link, join, null, null, TimeSpan.FromMinutes(30));
+            var net = await NetSession.JoinOn(link, join, null, null, TimeSpan.FromMinutes(30), _cancel.Token);
             NetRooms.Remember(NetGames.RoomsPath, new NetRoomEntry(link.Key!, net.Client?.Token, DateTime.UtcNow));
             link = null;
-            Launch(net);
+            await Launch(net);
         }
         catch (Exception e) when (e is RelayException or NetCommandException or System.Net.WebSockets.WebSocketException or InvalidOperationException
                                       or InvalidDataException or System.Net.Http.HttpRequestException or OperationCanceledException or UriFormatException)
         {
             Say(T("LE_NET_FAILED") + " " + e.Message);
-            if (link is not null) await link.DisposeAsync();
         }
         finally
         {
+            if (link is not null) await link.DisposeAsync();   // не дошли до партии — соединение не держать
             _busy = false;
         }
     }
@@ -349,6 +365,20 @@ public partial class LobbyWindow : Control
     // ---- мои комнаты
 
     private async Task RefreshRooms()
+    {
+        if (_refreshing) return;   // одно обновление за раз: два подряд задвоили бы строки
+        _refreshing = true;
+        try
+        {
+            await FillRooms();
+        }
+        finally
+        {
+            _refreshing = false;
+        }
+    }
+
+    private async Task FillRooms()
     {
         foreach (var child in _rooms.GetChildren()) child.QueueFree();
         var entries = NetRooms.Load(NetGames.RoomsPath);
@@ -360,14 +390,16 @@ public partial class LobbyWindow : Control
         JsonArray list;
         try
         {
-            list = await AsyncRoom.ListAsync(Relay(), entries.Select(e => e.Key));
+            list = await AsyncRoom.ListAsync(Relay(), entries.Select(e => e.Key), _cancel.Token);
         }
         catch (Exception e) when (e is RelayException or System.Net.WebSockets.WebSocketException or OperationCanceledException or UriFormatException)
         {
             Say(T("LE_NET_FAILED") + " " + e.Message);
             return;
         }
-        var live = list.OfType<JsonObject>().ToDictionary(r => r["room"]!.GetValue<string>(), StringComparer.OrdinalIgnoreCase);
+        if (!Alive) return;
+        var live = list.OfType<JsonObject>().Where(r => r["room"] is not null)
+                       .ToDictionary(r => r["room"]!.GetValue<string>(), StringComparer.OrdinalIgnoreCase);
         int row = 0;
         foreach (var entry in entries)
         {
@@ -377,7 +409,7 @@ public partial class LobbyWindow : Control
                           + (entry.Key.Async ? $" · {string.Format(System.Globalization.CultureInfo.InvariantCulture, T("LE_NET_DAY"), info["day"]?.GetValue<int>() ?? 0)}" : "")
                           + (mine ? $" · {T("LE_NET_YOUR_TURN")}" : "");
             var open = new Button { Text = T("LE_NET_OPEN"), FocusMode = FocusModeEnum.All };
-            open.Pressed += () => _ = Open(entry);
+            open.Pressed += () => _ = Guard(() => Open(entry));
             _rooms.AddChild(Row(text, open, raw: true, alternate: row++ % 2 == 1));
         }
         if (row == 0) _rooms.AddChild(new Label { Text = T("LE_NET_NO_ROOMS"), ThemeTypeVariation = SettingsTheme.RowLabel });
@@ -392,12 +424,20 @@ public partial class LobbyWindow : Control
             Say(T("LE_NET_CONNECTING"));
             if (entry.Key.Async)
             {
-                var room = await AsyncRoom.OpenAsync(Relay(), entry.Key);
-                Launch(await AsyncPlay.OpenAsync(room, NetGames.ViewSession));
+                var room = await AsyncRoom.OpenAsync(Relay(), entry.Key, cancel: _cancel.Token);
+                try
+                {
+                    await Launch(await AsyncPlay.OpenAsync(room, NetGames.ViewSession, _cancel.Token));
+                }
+                catch
+                {
+                    await room.DisposeAsync();
+                    throw;
+                }
                 return;
             }
             var join = new NetJoin(Relay(), _logic.Nick, NetGames.Ruleset(), "", NetGames.ViewSession, AutoApply: false);
-            Launch(await NetSession.JoinAsync(join, entry.Key.Room, rejoin: entry.Key, token: entry.Token));
+            await Launch(await NetSession.JoinAsync(join, entry.Key.Room, rejoin: entry.Key, token: entry.Token, cancel: _cancel.Token));
         }
         catch (Exception e) when (e is RelayException or NetCommandException or System.Net.WebSockets.WebSocketException or InvalidOperationException
                                       or InvalidDataException or OperationCanceledException or UriFormatException)
@@ -428,20 +468,43 @@ public partial class LobbyWindow : Control
         return uri;
     }
 
-    private void Launch(INetPlay play)
+    /// <summary>Партия готова: окно открыто — в игру; закрыли, пока шло подключение, — партию закрыть (игрок ушёл из лобби).</summary>
+    private async Task Launch(INetPlay play)
     {
+        if (!Alive)
+        {
+            GD.Print($"lobby: окно закрыто — партия {play.Room} не открывается");
+            if (play is IAsyncDisposable disposable) await disposable.DisposeAsync();
+            return;
+        }
         GD.Print($"lobby launch room={play.Room} me={play.Me} {(play is AsyncPlay ? "async" : "sync")}");
         Started?.Invoke(play);
+    }
+
+    /// <summary>Шаг кнопки: исключение, не разобранное самим шагом, — в строку состояния и журнал, а не в ничейную задачу.</summary>
+    private async Task Guard(Func<Task> step)
+    {
+        try
+        {
+            await step();
+        }
+        catch (Exception e) when (e is not OutOfMemoryException)
+        {
+            GD.PrintErr($"lobby: {e.GetType().Name}: {e.Message}");
+            if (Alive) Say(T("LE_NET_FAILED") + " " + e.Message);
+            _busy = false;
+        }
     }
 
     private void Say(string text)
     {
         _logic.Status = text;
-        if (_status is not null) _status.Text = text;
+        if (IsInstanceValid(_status)) _status.Text = text;
     }
 
     private void Leave()
     {
+        _cancel.Cancel();   // идущие подключения — прочь
         _ = DropLink();
         _emit(LobbyLogic.Close);
     }
@@ -453,6 +516,7 @@ public partial class LobbyWindow : Control
             _link = null;
             await link.DisposeAsync();
         }
+        if (!IsInstanceValid(this) || !IsInsideTree()) return;
         _create.Visible = true;
         _start.Visible = false;
         _room.Text = "";
@@ -463,6 +527,7 @@ public partial class LobbyWindow : Control
 
     public override void _ExitTree()
     {
+        _cancel.Cancel();
         if (_link is { } link)
         {
             _link = null;

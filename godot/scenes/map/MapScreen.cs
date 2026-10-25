@@ -280,6 +280,7 @@ public partial class MapScreen : Node
     {
         var session = _map.Session;
         if (_battle is not null || session.Book is null) return;
+        _netSteps.Clear();   // бой людей: решения другой стороны придут после его запроса — старые не к этому бою
         var state = (LastEdict.Rules.Battle.BattleState)session.Execute(new LastEdict.Data.Play.Commands.StartBattleCommand(attackerId, defenderId)).Value!;
         NoteAttack(attackerId, defenderId);   // нападение — в итоги хода других людей (MapScreen.Windows.cs)
         // Стороны — по собранному бою: цель-невидимка нападает сама (GameSession.StartBattle, CEffectBattle 0x433a57).
@@ -297,7 +298,8 @@ public partial class MapScreen : Node
             QueueStrip = _settings.QueueStrip,   // полоса очереди ходов (своя настройка, MapSettings.QueueStrip)
             Wide = _settings.WideBattle,   // широкий бой (своя настройка, MapSettings.WideBattle)
             OwnName = session.OwnName,   // подпись крупного портрета X100TA0608: у героя — своё имя, у прочих — имя типа (0x5e97dc)
-            RemoteSide = remoteSide, Scripted = _netScript is not null,   // драйвер двух машин: решения своей стороны — сам (BattleScreen.Net.cs)
+            RemoteSide = remoteSide, RecordsBattle = remoteSide is not null,   // бой людей: этот экран подал startBattle — его действия итог
+            Scripted = _netScript is not null,   // драйвер двух машин: решения своей стороны — сам (BattleScreen.Net.cs)
             BackgroundVariant = variant ?? BackgroundDraw(session, state),
             CardLogic = BattleCard(),   // карточка юнита по правой кнопке — общая с картой
             LevelMarks = BattleLevelMarks(),
@@ -337,6 +339,7 @@ public partial class MapScreen : Node
         }
         _battleEnded = false;
         _battle = null;
+        _netSteps.Clear();
         Callable.From(() =>
         {
             if (!IsInstanceValid(battle)) return;

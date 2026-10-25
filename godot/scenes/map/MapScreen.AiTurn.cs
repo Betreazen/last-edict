@@ -278,13 +278,15 @@ public partial class MapScreen
         ShowMap(false);
         if (_waitView is not null) _waitView.Visible = false;
         // Как у боя человека (OpenBattle): зеркало из настроек, фон — два rand() CRT при открытии экрана, собственные имена лидеров.
-        // Сеть: бой по запросу хоста — на копиях его генератора боя и CRT; бой людей — своя сторона та, что не у другого человека.
+        // Сеть: бой по запросу хоста — на копиях его генератора боя и CRT, место и фон — по виду на миг сборки; бой людей — своя
+        // сторона та, что не у другого человека.
+        var map = request.Map ?? session.Map;
         _battle = new BattleScreen
         {
             Name = "Battle", Standalone = false, Prepared = state, Rules = session.Book!.Rules, Rng = request.Rng ?? session.BattleRng,   // Book проверен в OpenAiBattle
-            PlaceName = MapBattle.PlaceOf(session.Map, state.DefenderGroup), PlayerIsAttacker = request.RemoteSide is { } remote && !remote,
+            PlaceName = MapBattle.PlaceOf(map, state.DefenderGroup), PlayerIsAttacker = request.RemoteSide is { } remote && !remote,
             OwnsAttackerStack = false, RemoteSide = request.RemoteSide, Scripted = _netScript is not null && request.RemoteSide is not null,
-            Flipped = _settings.FlippedBattle, OwnName = session.OwnName, BackgroundVariant = BackgroundDraw(request.Crt ?? session.Crt, session.Map, state),
+            Flipped = _settings.FlippedBattle, OwnName = session.OwnName, BackgroundVariant = BackgroundDraw(request.Crt ?? session.Crt, map, state),
             QueueStrip = _settings.QueueStrip, Wide = _settings.WideBattle,
             CardLogic = BattleCard(),
             LevelMarks = BattleLevelMarks(),
@@ -297,7 +299,11 @@ public partial class MapScreen
             return screen.Session.Log;
         };
         request.Played = () => screen.Session.Played(BackgroundDraws);
-        if (request.RemoteSide is not null) _battle.LocalDecision += input => Net?.SendBattleStep(input);
+        if (request.RemoteSide is not null)
+        {
+            _battle.LocalDecision += input => Net?.SendBattleStep(input);
+            FlushNetSteps(_battle);   // решения записывающего, пришедшие раньше экрана
+        }
         _battle.Closed += CloseAiBattle;
         _battle.EndReached += CloseAiBattle;   // бой кончился — журнал ядру сразу, конец боя модели и его показ — до «Закрыть»
         AddChild(_battle);
@@ -317,6 +323,7 @@ public partial class MapScreen
         if (_battle is not { } battle || _aiBattle is not { } request) return;
         _battle = null;
         _aiBattle = null;
+        if (battle.RemoteSide is not null) _netSteps.Clear();
         battle.Closed -= CloseAiBattle;
         battle.EndReached -= CloseAiBattle;
         GameLog.Verbose($"aibattle end winner={battle.Session.Winner ?? "-"} turns={battle.Session.Log.Count}");

@@ -75,7 +75,7 @@ public sealed class AsyncRoom : IAsyncDisposable
     public async Task<AsyncState> LoadAsync(CancellationToken cancel = default)
     {
         var (rev, next, day, hash, text) = await Link.LoadAsync(cancel).ConfigureAwait(false);
-        Rev = rev;
+        Rev = Math.Max(Rev, rev);   // ответ, отправленный до своей записи, ревизию назад не двигает
         if (text is null) return new AsyncState(rev, next, day, hash, null);
         var state = GameSave.FromJson(text);
         if (hash.Length > 0 && StateHash.Of(state) != hash)
@@ -91,9 +91,19 @@ public sealed class AsyncRoom : IAsyncDisposable
         string next = session.Over ? "" : session.ActiveHuman;
         // Хеш — того, что прочтёт следующий: чтение сохранения кое-что упорядочивает (известные заклинания — как движок при загрузке),
         // и партия «сходил — записал — прочёл» — это партия с чтением между ходами (повтор журналов — так же, ReplayTurns).
-        await Link.StoreAsync(Rev + 1, next, session.Map.Turn, StateHash.Of(GameSave.FromJson(json)), json, turn?.ToJsonLines() ?? "", cancel)
-                  .ConfigureAwait(false);
-        Rev++;
+        long target = Rev + 1;
+        string hash = StateHash.Of(GameSave.FromJson(json));
+        try
+        {
+            await Link.StoreAsync(target, next, session.Map.Turn, hash, json, turn?.ToJsonLines() ?? "", cancel).ConfigureAwait(false);
+        }
+        catch (RelayException)
+        {
+            // Отказ ревизии после повтора: ответ на прошлую попытку пропал, а посредник её принял — там уже эта партия.
+            var (rev, _, _, stored, _) = await Link.LoadAsync(cancel).ConfigureAwait(false);
+            if (rev != target || stored != hash) throw;
+        }
+        Rev = Math.Max(Rev, target);
     }
 
     /// <summary>Ход ли места этой машины в записанной партии.</summary>

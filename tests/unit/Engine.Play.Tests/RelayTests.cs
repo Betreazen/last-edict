@@ -242,6 +242,30 @@ public sealed class RelayTests : IAsyncLifetime
         Assert.Equal(7, final.Rev);
     }
 
+    /// <summary>Запись хода асинхронной партии: ответ на прошлую попытку пропал, а посредник её принял — повтор не ошибка (там уже эта
+    /// партия), чужая партия той же ревизии — ошибка; опросы партии наперегонки с записью не крадут её ответ (запросы — по одному).</summary>
+    [Fact]
+    public async Task AsyncRoom_RetriedStore_IsAccepted_AndPollsDoNotStealReplies()
+    {
+        var first = new GameSession(NetTestGame.Copy(NetTestGame.Start()), MapArtData.Empty, NetTestGame.Book) { EventBattlesOnScreen = false };
+        await using var room = await AsyncRoom.CreateAsync(_url, first, NetTestGame.HostPlayer, "первый");
+        var stored = await room.LoadAsync();
+        var session = new GameSession(stored.State!, MapArtData.Empty, NetTestGame.Book) { EventBattlesOnScreen = false };
+        session.Journal = CommandJournal.Start(session);
+        ScriptedHuman.Turn(session, NetTestGame.HostPlayer, c => session.Execute(c), new Random(3));
+        string json = GameSave.ToJson(session.SnapshotWithoutSummaries(), "", DateTime.UnixEpoch);
+        await room.Link.StoreAsync(2, session.ActiveHuman, session.Map.Turn, StateHash.Of(GameSave.FromJson(json)), json, "");   // ответ «пропал»
+
+        var polls = Enumerable.Range(0, 8).Select(_ => Task.Run(() => room.LoadAsync())).ToList();
+        await room.StoreAsync(session, session.Journal);   // повтор: ревизия 2 уже эта партия
+        await Task.WhenAll(polls);
+        Assert.Equal(2, room.Rev);
+
+        var other = new GameSession(NetTestGame.Copy(NetTestGame.Start()), MapArtData.Empty, NetTestGame.Book);
+        await using var stale = await AsyncRoom.OpenAsync(_url, room.Key);
+        await Assert.ThrowsAsync<RelayException>(() => stale.StoreAsync(other, null));   // ревизия 1 — уже не та, партия — чужая
+    }
+
     /// <summary>Асинхронная комната: партию пишет тот, чей ход, следующей ревизией; следующему — «ваш ход» (на связи — сразу, иначе — в
     /// списке комнат); партия переживает перезапуск посредника.</summary>
     [Fact]

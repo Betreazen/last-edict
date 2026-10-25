@@ -141,6 +141,10 @@ public partial class MapView
 
         public LastEdict.Rules.Rng.CrtRand? Crt { get; init; }
 
+        /// <summary>Сеть: карта вида на миг сборки боя — место и фон по ней (пока экран открывается, вид может уйти вперёд: бой людей у
+        /// записывающего кончился раньше); null — карта партии.</summary>
+        public LastEdict.Rules.Map.MapState? Map { get; init; }
+
         /// <summary>Сеть, бой людей: сторона другого человека (её решения — по сети); null — боя людей нет.</summary>
         public bool? RemoteSide { get; init; }
 

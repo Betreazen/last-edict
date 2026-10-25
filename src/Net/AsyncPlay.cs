@@ -16,8 +16,10 @@ public sealed class AsyncPlay : INetPlay, IAsyncDisposable
 {
     private readonly AsyncRoom _room;
     private readonly ConcurrentQueue<Action> _work = new();
-    private bool _playing;
-    private int _loading;
+    private volatile bool _playing;
+    private volatile bool _storing;
+    private long _storedRev;
+    private int _loading, _failures;
     private DateTime _polled = DateTime.UtcNow;
 
     private AsyncPlay(AsyncRoom room, GameSession session, string me)
@@ -32,6 +34,9 @@ public sealed class AsyncPlay : INetPlay, IAsyncDisposable
 
     /// <summary>Как часто спрашивать посредника, не мой ли ход (на случай, если «ваш ход» не дошёл).</summary>
     public static readonly TimeSpan PollEvery = TimeSpan.FromSeconds(20);
+
+    /// <summary>Сколько раз пробовать записать ход, прежде чем сказать игроку.</summary>
+    public const int MaxStoreAttempts = 10;
 
     public AsyncRoom RoomLink => _room;
 
@@ -84,6 +89,7 @@ public sealed class AsyncPlay : INetPlay, IAsyncDisposable
     {
         if (_playing && !MyTurn)
         {
+            _storing = true;    // пока пишется — партию не брать (её ответ мог уйти раньше записи)
             _playing = false;   // ход сделан: записать (один раз)
             _work.Enqueue(Store);
         }
@@ -98,13 +104,25 @@ public sealed class AsyncPlay : INetPlay, IAsyncDisposable
         {
             _room.StoreAsync(Session, journal).GetAwaiter().GetResult();
         }
-        catch (Exception e) when (e is RelayException or OperationCanceledException or InvalidOperationException)
+        catch (Exception e) when (e is RelayException or OperationCanceledException or InvalidOperationException or IOException
+                                      or System.Net.WebSockets.WebSocketException or ObjectDisposedException or System.Text.Json.JsonException)
         {
+            if (++_failures >= MaxStoreAttempts)
+            {
+                _storing = false;
+                Notice?.Invoke($"ход не записан: {e.Message} — партия у посредника прежняя, откройте комнату снова");
+                Log?.Invoke($"async: запись не удалась {_failures} раз: {e.Message}");
+                return;
+            }
             Notice?.Invoke($"ход не записан: {e.Message} — пробую снова");
-            _playing = true;   // следующая попытка — тем же журналом
             Thread.Sleep(2000);
+            _work.Enqueue(Store);   // следующая попытка — тем же журналом
             return;
         }
+        _failures = 0;
+        Interlocked.Exchange(ref _storedRev, _room.Rev);
+        _polled = DateTime.UtcNow;
+        _storing = false;
         string hash = StateHash.Of(GameSave.FromJson(GameSave.ToJson(Session.SnapshotWithoutSummaries(), "", DateTime.UnixEpoch)));
         Stored?.Invoke(_room.Rev, hash, journal?.ToJsonLines() ?? "");
         Notice?.Invoke(Session.Over ? "партия кончилась — записано" : $"ход передан: {Session.ActiveHuman} — игру можно закрыть");
@@ -115,15 +133,17 @@ public sealed class AsyncPlay : INetPlay, IAsyncDisposable
     /// <summary>Посредник сказал «ваш ход» — взять партию (в фоне), подменить сессию на рабочем потоке карты.</summary>
     private void Fetch()
     {
-        if (_playing || Interlocked.Exchange(ref _loading, 1) == 1) return;
+        if (_playing || _storing || Interlocked.Exchange(ref _loading, 1) == 1) return;
         _ = Task.Run(async () =>
         {
             try
             {
                 var stored = await _room.LoadAsync().ConfigureAwait(false);
-                if (!_room.Mine(stored) || stored.State is not { } state) return;
+                // Ответ мог уйти до своей записи хода: ревизия не новее записанной этой машиной — не наш ход.
+                if (!_room.Mine(stored) || stored.State is not { } state || stored.Rev <= Interlocked.Read(ref _storedRev)) return;
                 _work.Enqueue(() =>
                 {
+                    if (_playing || _storing) return;
                     Session.Replace(state);
                     BeginTurn();
                     Changed?.Invoke();
@@ -145,7 +165,7 @@ public sealed class AsyncPlay : INetPlay, IAsyncDisposable
     /// <summary>Кадр: не свой ход — изредка спросить посредника.</summary>
     public void Pump()
     {
-        if (_playing || DateTime.UtcNow - _polled < PollEvery) return;
+        if (_playing || _storing || DateTime.UtcNow - _polled < PollEvery) return;
         _polled = DateTime.UtcNow;
         Fetch();
     }

@@ -106,7 +106,12 @@ public sealed class NetHost : IDisposable
     public event Action<BattleStep>? StepReceived;
 
     /// <summary>Идущий бой людей: кто его записывает (подал <c>startBattle</c>) и другая сторона — игроки партии.</summary>
-    private (string Recorder, string Other)? _lockstep;
+    private volatile LockstepBattle? _lockstep;   // пишет поток хоста, читает и главный (SendStep): ссылка — целиком
+
+    private sealed record LockstepBattle(string Recorder, string Other)
+    {
+        public bool Has(string player) => Recorder.Equals(player, StringComparison.OrdinalIgnoreCase) || Other.Equals(player, StringComparison.OrdinalIgnoreCase);
+    }
 
     /// <summary>Чей ход сейчас.</summary>
     public string Active => _session.ActiveHuman;
@@ -210,7 +215,7 @@ public sealed class NetHost : IDisposable
                 }
                 break;
             case BattleStep step:
-                if (SeatOf(peer) is { } stepper && _lockstep is { } battle)
+                if (SeatOf(peer) is { } stepper && _lockstep is { } battle && battle.Has(stepper.Player))   // шаг — только от стороны боя
                 {
                     string other = stepper.Player.Equals(battle.Recorder, StringComparison.OrdinalIgnoreCase) ? battle.Other : battle.Recorder;
                     if (IsRemote(other)) Forward(other, step);
@@ -241,6 +246,7 @@ public sealed class NetHost : IDisposable
         string? peer;
         lock (_seatsLock) peer = _seats.GetValueOrDefault(player)?.Peer;
         if (peer is not null) Send(peer, message);
+        else Log?.Invoke($"net: {message.GetType().Name} для {player} — он не на связи");
     }
 
     /// <summary>Бой собран (<c>startBattle</c> игрока <paramref name="issuer"/>): обе стороны — люди разных игроков — бой людей: другая сторона
@@ -254,7 +260,7 @@ public sealed class NetHost : IDisposable
         if (!humans.Contains(attacker, StringComparer.OrdinalIgnoreCase) || !humans.Contains(defender, StringComparer.OrdinalIgnoreCase)
             || attacker.Equals(defender, StringComparison.OrdinalIgnoreCase)) return;
         string other = issuer.Equals(attacker, StringComparison.OrdinalIgnoreCase) ? defender : attacker;
-        _lockstep = (issuer, other);
+        _lockstep = new LockstepBattle(issuer, other);
         var request = new BattleRequest(NewToken(), state.AttackerGroup, state.DefenderGroup, BattleFingerprint.Of(state), BattleSeed(),
                                         other.Equals(attacker, StringComparison.OrdinalIgnoreCase) ? "attacker" : "defender", Lockstep: true);
         Log?.Invoke($"net: бой людей {issuer} и {other}");
@@ -331,7 +337,11 @@ public sealed class NetHost : IDisposable
                 foreach (var delta in seat.Deltas.Where(d => d.BaseSeq >= hello.Seq)) Send(peer, delta);
         }
         if (resumed) Log?.Invoke($"net: {seat.Player} вернулся, дослано дельт {seat.Seq - hello.Seq}");
-        else Snapshot(seat);
+        else
+        {
+            Log?.Invoke($"net: {seat.Player} вошёл");
+            Snapshot(seat);
+        }
         SendTurn(seat);
     }
 

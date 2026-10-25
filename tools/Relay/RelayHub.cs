@@ -249,6 +249,11 @@ public sealed class RelayHub
             return;
         }
         string seat = Text(frame, "seat", 32);
+        if (!room.Async)
+        {
+            connection.Send(Error("seat", "место в комнате сразу раздаёт хост"));   // выбор места — только асинхронной партии
+            return;
+        }
         lock (room)
         {
             if (seat.Length == 0 || member.Seat.Length > 0)

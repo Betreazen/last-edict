@@ -36,7 +36,9 @@ public static class NetGames
     /// <summary>Новая партия сценария с людьми на местах <paramref name="humans"/> (игроки сценария), как из лобби: раса — игрока сценария,
     /// лорд — воин, имя — <paramref name="names"/> (нет — id игрока). Начинается с записанного и прочитанного состояния: чтение кое-что
     /// упорядочивает (известные заклинания — как движок при загрузке), и журнал, асинхронная комната и возвращение видят ту же партию.</summary>
-    public static GameSession NewGame(string scenarioId, IReadOnlyList<string> humans, uint seed, IReadOnlyDictionary<string, string>? names = null)
+    /// <remarks><paramref name="meet"/> — драйвер боя людей: отряд второго человека ставится рядом с отрядом первого.</remarks>
+    public static GameSession NewGame(string scenarioId, IReadOnlyList<string> humans, uint seed, IReadOnlyDictionary<string, string>? names = null,
+                                      bool meet = false)
     {
         var catalog = GameData.Catalog;
         var scenario = catalog.Scenario(scenarioId) ?? throw new InvalidOperationException($"сценария «{scenarioId}» нет");
@@ -50,7 +52,15 @@ public static class NetGames
                 : throw new InvalidOperationException($"в сценарии нет игрока {id}"))],
         };
         var begun = LastEdict.Data.Play.NewGame.Begin(data, setup, catalog, GameData.Book, GameData.Content.MapArt, reseed: seed);
+        if (meet && humans.Count >= 2 && FirstStack(begun, humans[1]) is { } guest && FirstStack(begun, humans[0]) is { } host)
+            global::Godot.GD.Print($"net meet {guest}→{host} moved={begun.MoveBeside(guest, host)}");
         var read = GameSave.FromJson(GameSave.ToJson(begun.SnapshotWithoutSummaries(), "", DateTime.UnixEpoch));
         return new GameSession(read, GameData.Content.MapArt, GameData.Book) { EventBattlesOnScreen = false };
     }
+
+    /// <summary>Отряд игрока для встречи: вне крепостей, самый большой (у обеих сторон боя — ходы), по id.</summary>
+    private static string? FirstStack(GameSession session, string player) =>
+        session.Map.Stacks.Values.Where(s => s.Owner.Equals(player, StringComparison.OrdinalIgnoreCase))
+               .OrderBy(s => s.Inside.Length > 0).ThenByDescending(s => s.UnitIds.Count).ThenBy(s => s.Id, StringComparer.Ordinal)
+               .FirstOrDefault()?.Id;
 }

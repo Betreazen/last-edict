@@ -31,7 +31,7 @@ public partial class MapScreen
     private bool _netScriptRunning;
 
     /// <summary>Драйвер: ход по сценарию идёт к отряду другого человека (<c>--net-hunt</c>) — проверка боя людей.</summary>
-    private bool _netHunt;
+    private bool _netHunt, _netHold;
 
     /// <summary>Драйвер, сценарий обрыва: в этот день посреди своего хода оборвать связь с посредником (как пропавшая сеть) — дальше
     /// переподключение и resync сами.</summary>
@@ -49,16 +49,35 @@ public partial class MapScreen
         }
         if (MapSource.Arg(args, "--net-days") is { } days) _netDays = int.Parse(days, System.Globalization.CultureInfo.InvariantCulture);
         _netHunt = args.Contains("--net-hunt");
+        _netHold = args.Contains("--net-hold");   // драйвер боя людей: стоять (нападает другой — его экран записывает бой)
         if (MapSource.Arg(args, "--net-drop-at") is { } drop) _netDropAt = int.Parse(drop, System.Globalization.CultureInfo.InvariantCulture);
         net.Changed += () => Callable.From(() => { if (IsInsideTree()) _map.NetChanged(); }).CallDeferred();
         net.TurnChanged += () => Callable.From(OnNetTurn).CallDeferred();
         net.Notice += text => Callable.From(() => Chat(text)).CallDeferred();
         net.Log += text => GD.Print(text);
         _map.AiTurnFinished += () => Callable.From(OnNetTurn).CallDeferred();
-        net.BattleStepReceived += input => Callable.From(() => _battle?.PushRemote(input)).CallDeferred();   // бой людей: решение другой стороны
+        net.BattleStepReceived += input => Callable.From(() => NetStep(input)).CallDeferred();   // бой людей: решение другой стороны
         string role = net is NetSession room ? room.IsHost ? "host" : "client" : "async";
         GD.Print($"net {role} room={net.Room} me={net.Me} day={net.Session.Map.Turn} active={net.Active}");
         Callable.From(OnNetTurn).CallDeferred();
+    }
+
+    /// <summary>Решения другой стороны боя людей, пришедшие раньше, чем открылся этот экран боя (запрос боя ещё на рабочем потоке).</summary>
+    private readonly System.Collections.Generic.Queue<LastEdict.Data.Battle.BattleInput> _netSteps = new();
+
+    /// <summary>Сколько решений держать до экрана боя: больше — не бой, а мусор.</summary>
+    private const int MaxNetSteps = 4096;
+
+    private void NetStep(LastEdict.Data.Battle.BattleInput input)
+    {
+        if (_battle is { RemoteSide: not null } battle) battle.PushRemote(input);
+        else if (_netSteps.Count < MaxNetSteps) _netSteps.Enqueue(input);
+    }
+
+    /// <summary>Экран боя людей открыт — отдать ему решения, пришедшие раньше.</summary>
+    private void FlushNetSteps(BattleScreen battle)
+    {
+        while (_netSteps.TryDequeue(out var input)) battle.PushRemote(input);
     }
 
     /// <summary>Бой людей по сети («каждый своих»): сторона боя, которую ведёт другой человек партии; не бой людей или не сеть — null.</summary>
@@ -80,9 +99,9 @@ public partial class MapScreen
         if (Net is not { } net) return;
         net.Pump();
         if (_netFinished) return;   // итог напечатан — партия стоит до выхода
-        if (_netDays is { } last && net.Session.Map.Turn > last && (net is NetSession { IsHost: false } || net.MyTurn || net.Over))
+        if (_netDays is { } last && (net.Session.Over || net.Session.Map.Turn > last && (net is NetSession { IsHost: false } || net.MyTurn || net.Over)))
         {
-            FinishNet(net);   // каждый кадр: смена хода могла прийти раньше дельты нового дня
+            FinishNet(net);   // каждый кадр: смена хода могла прийти раньше дельты нового дня; конец игры — итог сразу
             return;
         }
         var client = (net as NetSession)?.Client;
@@ -99,6 +118,7 @@ public partial class MapScreen
             return;
         }
         if (_netScript is null || _netScriptRunning || _battle is not null) return;
+        if (net is NetSession { Host: { } host } && host.Seats.Values.Any(online => !online)) return;   // драйвер: ходить, когда все вошли
         if (TurnWindowsPending)
         {
             // Окна начала хода (попапы событий, имя героя, навыки) — как шаг проверки «ok».
@@ -146,6 +166,12 @@ public partial class MapScreen
         try
         {
             var session = _map.Session;
+            if (_netHold)
+            {
+                GD.Print($"net script day={session.Map.Turn} me={net.Me} стоит");
+                EndTurn();
+                return;
+            }
             if (_netDropAt is { } dropDay && session.Map.Turn >= dropDay)
             {
                 _netDropAt = null;
@@ -190,8 +216,10 @@ public partial class MapScreen
             return;
         }
         string result = net.IsHost
-            ? $"net-done host day={net.Session.Map.Turn} hash={LastEdict.Data.Play.Commands.StateHash.Of(net.Session)} commands={net.Session.Journal?.Entries.Count ?? 0}"
-            : $"net-done client day={net.Session.Map.Turn} player={net.Me} view={net.Client!.ViewHash} bytes={net.Link.BytesReceived}";
+            ? $"net-done host day={net.Session.Map.Turn} hash={LastEdict.Data.Play.Commands.StateHash.Of(net.Session)} commands={net.Session.Journal?.Entries.Count ?? 0}" +
+              $" sent={net.Link.BytesSent} received={net.Link.BytesReceived} ws_mb={System.Environment.WorkingSet >> 20}"
+            : $"net-done client day={net.Session.Map.Turn} player={net.Me} view={net.Client!.ViewHash} bytes={net.Link.BytesReceived}" +
+              $" sent={net.Link.BytesSent} {Latency(net.Client)} ws_mb={System.Environment.WorkingSet >> 20}";
         if (_netFinished) return;
         _netFinished = true;
         GD.Print(result);
@@ -201,6 +229,13 @@ public partial class MapScreen
     }
 
     private bool _netFinished;
+
+    private static string Latency(NetClient client)
+    {
+        var (count, mean, p95, max) = client.Latency;
+        var c = System.Globalization.CultureInfo.InvariantCulture;
+        return $"latency_n={count} latency_ms={mean.ToString("F1", c)} p95_ms={p95.ToString("F1", c)} max_ms={max.ToString("F1", c)}";
+    }
 
     // ---- запуск без меню (драйвер)
 
@@ -220,7 +255,7 @@ public partial class MapScreen
             var seats = (MapSource.Arg(args, "--net-seats") ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries);
             if (seats.Length < 2) throw new InvalidOperationException("--net-seats: хозяин и хотя бы один гость");
             uint seed = uint.TryParse(MapSource.Arg(args, "--net-seed"), out uint s) ? s : (uint)System.Environment.TickCount;
-            var session = NewNetGame(hosted, seats, seed);
+            var session = NetGames.NewGame(hosted, seats, seed, meet: args.Contains("--net-meet"));
             int? turn = int.TryParse(MapSource.Arg(args, "--net-turn-seconds"), out int t) ? t : null;
             var net = NetSession.HostAsync(relay, session, seats[0], seats[1..], nick, ruleset, turnSeconds: turn).GetAwaiter().GetResult();
             if (MapSource.Arg(args, "--net-room-out") is { } file) File.WriteAllText(file, net.Room);

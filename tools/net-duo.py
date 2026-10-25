@@ -172,7 +172,7 @@ def main() -> int:
         env = dict(os.environ, D2_ASSETS_DIR=assets_dir(), D2_COMMAND_JOURNAL=str(work / "host.journal"))
         room_file = work / "room.txt"
         host_role = ["--net-host", args.scenario, "--net-seats", args.seats, "--net-seed", str(args.seed), "--net-relay", relay_url,
-                     "--net-room-out", str(room_file), "--net-nick", "host", *(["--net-hunt"] if args.case == "duel" else [])]
+                     "--net-room-out", str(room_file), "--net-nick", "host", *(["--net-hold", "--net-meet"] if args.case == "duel" else [])]
         started = time.time()
         host = subprocess.Popen([GODOT, *game_args(host_role, args.days, 1)], cwd=REPO, env=env,
                                 stdout=open(work / "host.log", "w", encoding="utf-8"), stderr=subprocess.STDOUT)
@@ -186,7 +186,7 @@ def main() -> int:
         room = room_file.read_text().strip()
         log(f"net-duo: комната {room}, посредник {relay_url}")
         client_role = ["--net-join", room, "--net-nick", "client"]
-        if args.case == "duel":   # бой людей: обе стороны идут к отрядам друг друга
+        if args.case == "duel":   # бой людей: отряд гостя — рядом с большим отрядом хоста (стоит), гость нападает: записывает бой он
             client_role += ["--net-hunt"]
         if args.case == "drop":
             client_role += ["--net-drop-at", "2"]
@@ -308,6 +308,8 @@ def verify(work: Path, args, elapsed: float) -> int:
     client_log = (work / "client.log").read_text(encoding="utf-8", errors="replace") if (work / "client.log").exists() else ""
     host_done = last(r"^net-done host day=(\d+) hash=(\w+) commands=(\d+)", host_log)
     client_done = last(r"^net-done client day=(\d+) player=(\w+) view=(\w+) bytes=(\d+)", client_log)
+    lat = last(r"latency_n=(\d+) latency_ms=([\d.]+) p95_ms=([\d.]+) max_ms=([\d.]+) ws_mb=(\d+)", client_log)
+    host_ws = last(r"ws_mb=(\d+)", host_log)
     if not host_done or not client_done:
         log(f"net-duo: FAIL — партия не доиграна (хост {'да' if host_done else 'нет'}, клиент {'да' if client_done else 'нет'}); логи {work}")
         return 1
@@ -323,7 +325,10 @@ def verify(work: Path, args, elapsed: float) -> int:
           and view_m is not None and view_m.group(2) == client_done.group(3))
     summary = (f"день {host_done.group(1)}, команд {host_done.group(3)}, хеш {host_done.group(2)[:12]}, "
                f"вид клиента {client_done.group(3)[:12]}, боёв на экране {battles}, resync {resyncs}, "
-               f"трафик клиента {int(client_done.group(4)) // 1024} КиБ, {elapsed:.0f} с")
+               f"трафик клиента {int(client_done.group(4)) // 1024} КиБ ({int(client_done.group(4)) // 1024 // max(1, int(host_done.group(1)) - 1)} КиБ/день), "
+               + (f"задержка команды {lat.group(2)} мс (p95 {lat.group(3)}, наиб. {lat.group(4)}, n={lat.group(1)}), память хост {host_ws.group(1) if host_ws else '?'} / "
+                  f"клиент {lat.group(5)} МБ, " if lat else "")
+               + f"{elapsed:.0f} с")
     log(("net-duo: ok — " if ok else "net-duo: FAIL — ") + summary + ("" if ok else f"; повтор: {out.stdout.strip()[-300:]}"))
     (work / "result.json").write_text(json.dumps({"ok": ok, "summary": summary}, ensure_ascii=False), encoding="utf-8")
     return 0 if ok else 1

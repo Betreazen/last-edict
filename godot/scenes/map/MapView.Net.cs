@@ -51,13 +51,16 @@ public partial class MapView
     private void ClientBattle(INetPlay net, BattleRequest request)
     {
         var kit = net.BuildBattle(request);
+        var map = Session.Map;   // вид, по которому бой собран
+        global::Godot.GD.Print($"net battle request lockstep={(request.Lockstep ? 1 : 0)} side={request.Side} собран={(kit is null ? 0 : 1)} " +
+                               $"экран={(AiBattleRequested is null ? 0 : 1)}");
         if (kit is null || AiBattleRequested is null)
         {
             if (!request.Lockstep) net.ReplyBattle(request, null, []);   // бой хода ИИ без экрана — автобой у хоста
             return;
         }
         _aiShown = Session.State;   // вид после хода до боя — пришёл раньше запроса
-        var battle = new AiBattle(kit.State, this) { Rng = kit.Rng, Crt = kit.Crt, RemoteSide = kit.RemoteSide };
+        var battle = new AiBattle(kit.State, this) { Rng = kit.Rng, Crt = kit.Crt, RemoteSide = kit.RemoteSide, Map = map };
         AskOnWorker(new AiBattleRequest(battle));
         if (request.Lockstep) return;   // бой людей записывает экран подавшего, этот экран вёл только свои юниты
         var log = battle.Log ?? (_aiCancel ? battle.ResolveOnce() : null);

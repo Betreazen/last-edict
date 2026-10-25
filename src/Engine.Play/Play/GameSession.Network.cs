@@ -106,4 +106,9 @@ public sealed partial class GameSession
         battle.ProcessRand = crt ?? Crt;   // хост, бой людей: копия CRT — настоящий возьмёт повтор боя по действиям
         return battle;
     }
+
+    /// <summary>Драйвер боя людей (<c>tools/net-duo.py --case duel</c>): до начала партии отряд <paramref name="stackId"/> встаёт рядом с
+    /// <paramref name="nearId"/> — как эффект события «переместить рядом» (<see cref="MoveByEvent"/>). Не команда: журнал начинается после.</summary>
+    public bool MoveBeside(string stackId, string nearId) =>
+        Map.Stacks.TryGetValue(nearId, out var near) && Map.Stacks.ContainsKey(stackId) && MoveByEvent(stackId, near.X, near.Y, beside: true);
 }

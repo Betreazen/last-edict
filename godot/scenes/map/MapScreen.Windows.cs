@@ -32,7 +32,8 @@ public partial class MapScreen
     private UnitFaces? _faces;
 
     /// <summary>Портреты юнитов по базовому типу (<c>Gunits.BASE_UNIT</c>) — общие у окон и панели команд.</summary>
-    private UnitFaces Faces => _faces ??= UnitFaces.Load(GameData.Rules, name => GameData.Content.Gfx.Image(UnitFaces.Archive, name) is not null);
+    private UnitFaces Faces => _faces ??= UnitFaces.Load(GameData.Rules, name => GameData.Content.Gfx.Image(UnitFaces.Archive, name) is not null,
+                                                          GameData.Content.EntityFrames.Contains);
 
     private UiNavigator Dialogs => _dialogs ??= new UiNavigator(GameData.Content.Flow, "DLG_ISO_PAL", UiPhase.Game);
 

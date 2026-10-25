@@ -152,6 +152,8 @@ public sealed class StudioSession
             SpellDef s => s.NameText,
             ItemDef i => i.NameText,
             BuildingBranchDef br => br.NameText,
+            RaceDef race => race.NameText,
+            AttackDef attack => attack.NameText,
             _ => null,
         };
         return key is not null && Text(key) is { Length: > 0 } text ? text : id[(id.LastIndexOf('/') + 1)..];

@@ -89,6 +89,10 @@ public sealed class GameContent
     /// <summary>Графика карты и боя (<c>gfx/*.json</c>, файлы — <c>assets/gfx</c>). Нет описей — пусто.</summary>
     public GfxAssets Gfx { get; }
 
+    /// <summary>Кадры картинок сущностей модов («Архив:ИМЯ», <see cref="EntityArt"/>): свой портрет юнита мода главнее графики базового
+    /// юнита (<see cref="EntityArt.Prefer"/>), графика оригинала так не подменяется.</summary>
+    public IReadOnlySet<string> EntityFrames { get; private init; } = new HashSet<string>();
+
     /// <summary>Данные отрисовки карты (<c>map/*.json</c>): слои, следы ориентиров, бонусы хода. Нет файлов — пусто.</summary>
     public MapArtData MapArt { get; }
 
@@ -250,6 +254,7 @@ public sealed class GameContent
         IReadOnlyList<UiVideo> videos = File.Exists(videosJson) ? UiVideos.Load(videosJson) : [];
         var gfx = GfxAssets.Load(Path.Combine(gameDir, "gfx"));
         var mapArt = MapArtData.Load(Path.Combine(gameDir, "map"));
+        var entityFrames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         var layers = mods?.ToList() ?? [];
         foreach (var mod in layers)
@@ -272,7 +277,10 @@ public sealed class GameContent
                     transitions = UiTransitions.Merge(transitions, modTransitions);
                 gfx = GfxAssets.Merge(gfx, GfxAssets.Load(Path.Combine(mod.Dir, "data", "gfx")),
                                       Path.Combine(mod.Dir, "assets", "gfx"));
-                gfx = GfxAssets.Merge(gfx, EntityIcons(mod), mod.Dir);
+                var entityArt = EntityIcons(mod);
+                gfx = GfxAssets.Merge(gfx, entityArt, mod.Dir);
+                foreach (var archive in entityArt.Archives)
+                    foreach (var image in archive.Images) entityFrames.Add($"{archive.Name}:{image.Name}");
                 mapArt = MapArtData.Merge(mapArt, MapArtData.Load(Path.Combine(mod.Dir, "data", "map")));
                 string modVideos = Path.Combine(mod.Dir, "data", "video", "videos.json");
                 if (File.Exists(modVideos))
@@ -293,7 +301,7 @@ public sealed class GameContent
         screens = UiLayouts.Apply(screens, layout);
         return new GameContent(screens, assets, flow, defaults, catalog, transitions, videos, gfx, mapArt, layers, dataDir, gameDir, input)
         {
-            Rules = rules,
+            Rules = rules, EntityFrames = entityFrames,
         };
     }
 

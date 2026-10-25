@@ -1240,6 +1240,13 @@ STUDIO_STEPS = [
     {"op": "building-rename", "id": "towers:building/bashnya-maga", "name": "mage-tower"},
     {"op": "building-form", "title": "Башня магов", "level": 5},
     {"op": "building-apply"},
+    {"op": "unit-select", "id": "base:unit/squire-empire"},
+    {"op": "unit-new", "title": "Алебардщик"},
+    {"op": "unit-form", "hp": 150, "damage": 40, "initiative": 55, "hireable": True},
+    {"op": "unit-apply"},
+    {"op": "unit-picture", "file": "face.png", "path": "{face}"},
+    {"op": "undo"},
+    {"op": "redo"},
     {"op": "content-open", "kind": "unit"},
     {"op": "content-select", "id": "base:unit/axe-thrower"},
     {"op": "content-set", "field": "hitPoints", "text": "200"},
@@ -1269,6 +1276,13 @@ STUDIO_WANTS = [
     ("building-rename", ["ok=1", "форма: постройка=towers:building/mage-tower"]),
     ("building-form", ["ok=1", "уровень=5"]),
     ("building-apply", ["ok=1", "уровень=5", "errors=0"]),
+    ("unit-select", ["ok=1", "units: selected=base:unit/squire-empire", "картинок=3"]),
+    ("unit-new", ["ok=1", "selected=towers:unit/alebardshchik", "own=1", "errors=0"]),
+    ("unit-form", ["ok=1", "форма_жизнь=150"]),
+    ("unit-apply", ["ok=1", "errors=0"]),
+    ("unit-picture", ["ok=1", "errors=0"]),
+    ("undo", ["ok=1", "own=1"]),
+    ("redo", ["ok=1", "own=1"]),
     ("content-open", ["ok=1", "kind=unit"]),
     ("content-select", ["ok=1", "selected=base:unit/axe-thrower"]),
     ("content-set", ["ok=1", "patched=1"]),
@@ -1318,7 +1332,10 @@ def studio(repo: Path) -> tuple[bool, str]:
     script = mod.parent / "steps.json"
     picture = mod.parent / "picture.png"
     write_png(picture, 300, 300)   # своя картинка (не графика игры): Студия впишет её в значок 77×74 ×3
-    steps = [{k: (str(picture) if v == "{picture}" else v) for k, v in step.items()} for step in STUDIO_STEPS]
+    face = mod.parent / "face.png"
+    write_png(face, 140, 170)   # своё лицо ×2
+    files = {"{picture}": str(picture), "{face}": str(face)}
+    steps = [{k: files.get(v, v) if isinstance(v, str) else v for k, v in step.items()} for step in STUDIO_STEPS]
     script.write_text(json.dumps(steps, ensure_ascii=False), encoding="utf-8")
     code, out = godot(repo, ["--open", str(mod), "--check", "--script", str(script)], "res://scenes/studio/Studio.tscn")
     lines = [l for l in out.splitlines() if l.startswith("step ")]
@@ -1329,11 +1346,18 @@ def studio(repo: Path) -> tuple[bool, str]:
             return False, f"Студия: шаг «{op}» — нет {missing if line.startswith(f'step {op} ') else op}\n{line[:1500]}"
     if not (mod / "content" / "buildings" / "spire" / "entity.json").is_file() or not (mod / "data" / "scenarios" / "big.json").is_file():
         return False, "Студия: запись мода — нет каталога постройки или карты"
+    unit = json.loads((mod / "content" / "units" / "alebardshchik" / "entity.json").read_text(encoding="utf-8"))
+    attack = mod / "content" / "attacks" / "alebardshchik" / "entity.json"
+    if unit.get("hitPoints") != 150 or unit.get("baseUnit") != "base:unit/squire-empire" or not attack.is_file() \
+            or json.loads(attack.read_text(encoding="utf-8")).get("damage") != 40 \
+            or png_size(mod / "content" / "units" / "alebardshchik" / "face.png") != (140, 170):
+        return False, f"Студия: юнит формой — {unit}"
     icon = mod / "content" / "buildings" / "mage-tower" / "icon.png"
     if not icon.is_file() or (size := png_size(icon)) != (231, 222):
         return False, f"Студия: значок постройки формой — {icon} {'нет' if not icon.is_file() else size}, ждали 231×222 (77×74 ×3)"
     shutil.rmtree(mod.parent, ignore_errors=True)
-    return True, f"Студия: {len(lines)} шагов — дерево, постройка формой со значком (HD ×3), содержимое, арена, карта 1024², запись мода"
+    return True, (f"Студия: {len(lines)} шагов — дерево, постройка формой со значком (HD ×3), юнит на основе сквайра (своя атака, лицо ×2), "
+                  "содержимое, арена, карта 1024², запись мода")
 
 
 def city_windows(repo: Path) -> tuple[bool, str]:

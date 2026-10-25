@@ -26,6 +26,7 @@ public partial class Studio : Control
     private ContentWorkspace? _content;
     private BalanceWorkspace? _balance;
     private MapWorkspace? _mapWs;
+    private UnitWorkspace? _units;
     private ContentWatcher? _watcher;
 
     private readonly Label _title = new() { ThemeTypeVariation = SettingsTheme.Title };
@@ -40,7 +41,8 @@ public partial class Studio : Control
     private StudioContentTab? _contentTab;
     private StudioBalanceTab? _balanceTab;
     private StudioMapTab? _mapTab;
-    private int _shown = -1, _contentShown = -1;
+    private StudioUnitsTab? _unitsTab;
+    private int _shown = -1, _contentShown = -1, _unitsShown = -1;
 
     public override void _Ready()
     {
@@ -63,6 +65,7 @@ public partial class Studio : Control
             _content = new ContentWorkspace(_session);
             _balance = new BalanceWorkspace(_session, Arg(args, "--scenarios") is { } scenarios ? GameData.FromProject(scenarios) : GameData.ScenariosDir);
             _mapWs = new MapWorkspace(_session);
+            _units = new UnitWorkspace(_session);
             if (Arg(args, "--lord") is { } lord) _tree.SelectLord(lord);
         }
         catch (Exception e) when (e is IOException or InvalidDataException or UnauthorizedAccessException)
@@ -109,6 +112,8 @@ public partial class Studio : Control
         _contentTab = new StudioContentTab(_content!) { Name = "Содержимое" };
         _balanceTab = new StudioBalanceTab(_balance!) { Name = "Баланс" };
         _tabs.AddChild(_treeTab);
+        _unitsTab = new StudioUnitsTab(_units!, FrameTexture) { Name = "Юниты" };
+        _tabs.AddChild(_unitsTab);
         _tabs.AddChild(_contentTab);
         _tabs.AddChild(_balanceTab);
         _mapTab = new StudioMapTab(_mapWs!, PlayMap) { Name = "Карта" };
@@ -156,8 +161,9 @@ public partial class Studio : Control
     {
         if (_session is null || _tree is null || _content is null) return;
         if (_watcher?.Take() is not null && _session.ReloadFromDisk()) Status("мод изменён снаружи — перечитан");
-        if (_session.Revision + _tree.Revision != _shown || _content.Revision != _contentShown) Sync();
+        if (_session.Revision + _tree.Revision != _shown || _content.Revision != _contentShown || _units?.Revision != _unitsShown) Sync();
         _contentShown = _content.Revision;
+        _unitsShown = _units?.Revision ?? 0;
     }
 
     public override void _UnhandledInput(InputEvent e)
@@ -257,6 +263,14 @@ public partial class Studio : Control
                     "connect" => ws.Connect(step["from"]!.GetValue<string>(), step["to"]!.GetValue<string>()),
                     "disconnect" => ws.Disconnect(step["to"]!.GetValue<string>()),
                     "drag" => _treeTab!.Drag(step["building"]!.GetValue<string>(), step["column"]!.GetValue<double>(), step["row"]!.GetValue<int>()),
+                    "unit-select" => Do(() => _units!.Select(step["id"]?.GetValue<string>())),
+                    "unit-new" => Do(() => { _unitsTab!.NewTitle(step["title"]?.GetValue<string>() ?? ""); _unitsTab.PressCreate(); }),
+                    "unit-form" => Do(() => _unitsTab!.Fill(step["hp"]?.GetValue<int>(), step["damage"]?.GetValue<int>(), step["initiative"]?.GetValue<int>(),
+                        step["hireable"]?.GetValue<bool>(), step["title"]?.GetValue<string>())),
+                    "unit-apply" => Do(() => _unitsTab!.Press()),
+                    "unit-picture" => _unitsTab!.Picked(step["file"]!.GetValue<string>(), GameData.FromProject(step["path"]!.GetValue<string>())),
+                    "unit-rename" => _units!.Rename(step["id"]!.GetValue<string>(), step["name"]!.GetValue<string>()),
+                    "unit-remove" => _units!.Remove(step["id"]!.GetValue<string>()),
                     "building-select" => Do(() => ws.Select(step["id"]?.GetValue<string>())),
                     "building-form" => Do(() => _treeTab!.Form.Fill(step["title"]?.GetValue<string>() ?? "", step["requires"]?.GetValue<string>(),
                         step["level"]?.GetValue<int>(), step["gold"]?.GetValue<long>())),
@@ -286,7 +300,7 @@ public partial class Studio : Control
                 if (op is "arena" or "stand") await _balanceTab!.Run(step["scenario"]!.GetValue<string>(), arena: op == "arena");
                 Sync();
                 for (int i = 0; i < 2; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-                GD.Print($"step {op} ok={(ok ? 1 : 0)} {ws.Line()} {_treeTab!.Line()} {_content!.Line()} {_balance!.Line()} {_mapTab!.Line()}");
+                GD.Print($"step {op} ok={(ok ? 1 : 0)} {ws.Line()} {_treeTab!.Line()} {_content!.Line()} {_balance!.Line()} {_mapTab!.Line()} {_unitsTab!.Line()}");
             }
         }
         for (int i = 0; i < 3; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);

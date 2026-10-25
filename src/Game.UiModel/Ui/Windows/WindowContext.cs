@@ -15,16 +15,20 @@ public sealed class UnitFaces(IReadOnlyDictionary<string, string> baseUnits)
     /// (<see cref="PanelName"/> берёт <c>FACE</c>).</summary>
     public Func<string, bool>? Has { get; init; }
 
+    /// <summary>Кадр — картинка сущности мода («Архив:ИМЯ», <see cref="GameContent.EntityFrames"/>): у юнита мода свои лицо, портрет и картина
+    /// главнее картинок базового юнита (<see cref="EntityArt.Prefer"/>). Не задано — только базовый.</summary>
+    public Func<string, bool>? Own { get; init; }
+
     /// <summary>Портреты по <c>Gunits</c>; <paramref name="has"/> — проверка картинки <c>Faces.ff</c> (<see cref="Has"/>).</summary>
     public static UnitFaces Load(string rulesDir, Func<string, bool>? has) => Load(ContentSource.Open(rulesDir), has);
 
-    public static UnitFaces Load(ContentSet content, Func<string, bool>? has)
+    public static UnitFaces Load(ContentSet content, Func<string, bool>? has, Func<string, bool>? own = null)
     {
         ArgumentNullException.ThrowIfNull(content);
         var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var unit in content.Units)
             if (unit.BaseUnit is not null) map[unit.Key] = content.KeyOf(unit.BaseUnit);
-        return new UnitFaces(map) { Has = has };
+        return new UnitFaces(map) { Has = has, Own = own };
     }
 
     public static UnitFaces Load(string rulesDir) => Load(rulesDir, null);
@@ -35,7 +39,11 @@ public sealed class UnitFaces(IReadOnlyDictionary<string, string> baseUnits)
     /// <summary>Имя малого портрета в <c>Faces.ff</c> без архива — <c>{база}FACE</c> (панели берут <see cref="PanelName"/>). Движок берёт картинку у <c>0x5b1e6a</c> (вызов из <c>0x48da55</c> панели отряда <c>0x48d8f3</c>): у типа —
     /// базовый (<c>vtable+0x2c</c>), пустой базовый (<c>[0x8372f4]</c>) — сам тип. Лидер, выданный сценарием, бывает обычным воином с
     /// <c>BASE_UNIT</c> (ассасин <c>G000UU5354</c> → <c>G000UU0154</c>), своего <c>FACE</c> у него нет (пометка 1 прогона 14.10).</summary>
-    public string SmallName(string type) => $"{Base(type)}FACE";
+    public string SmallName(string type) => Art(type, Archive, "FACE");
+
+    /// <summary>Имя картинки юнита: своя картинка юнита мода (<see cref="Own"/>), иначе — базового типа с приставкой.</summary>
+    private string Art(string type, string archive, string suffix) =>
+        EntityArt.Prefer(archive, ArtNames.Of(type) + suffix, Base(type) + suffix, Own);
 
     /// <summary>Портрет панелей — команд карты (<c>IMG_LEADER</c>, <c>0x48da55</c>), столицы (гость, <c>0x486a46</c>) и окна имени героя
     /// (<c>0x4aff40</c>): <c>0x5b1e6a</c> → <c>0x5c6718</c> грузит <c>{база}FACES</c> (<c>[0x7b0400]</c> + <c>[0x7b040c]</c>) — у большого
@@ -54,14 +62,14 @@ public sealed class UnitFaces(IReadOnlyDictionary<string, string> baseUnits)
     public string Small(string type) => $"{Archive}:{SmallName(type)}";
 
     /// <summary>Крупный портрет — <c>Faces:{база}FACEB</c>.</summary>
-    public string Large(string type) => $"{Archive}:{Base(type)}FACEB";
+    public string Large(string type) => $"{Archive}:{Art(type, Archive, "FACEB")}";
 
     /// <summary>Картина юнита во весь рост — кадр <c>Events</c> базового типа (350×450): её ставят карточка воина
     /// <c>DLG_R_C_UNIT</c> (<c>IMG_UNIT_ICON</c>, <c>0x574feb</c> → <c>0x576d51</c>) и карточка отряда <c>DLG_R_C_STACK</c>
     /// (<c>IMG_LEADER</c>, <c>0x57c0a9</c>): обе берут имя у <c>0x5b891e</c> (тип, выросший — базовый) и грузят из архива реестра
     /// <c>+0x48</c> (<c>0x5ae087</c>; порядок загрузки <c>0x5adab0</c>: <c>Events.ff</c>) без отражения, кладут по центру места
     /// (флаги 9 <c>setImage</c> <c>0x530e29</c>, <see cref="UiImageAlign.Center"/>).</summary>
-    public string Picture(string type) => $"gfx:Events/{Base(type)}";
+    public string Picture(string type) => $"gfx:Events/{Art(type, "Events", "")}";
 }
 
 /// <summary>Что нужно окнам партии: партия, чьими глазами, строки языка и портреты.</summary>

@@ -25,7 +25,16 @@ public static class EntityArt
     public static IReadOnlyList<EntityArtSlot> Slots { get; } =
     [
         new("building", EntityFolders.IconFile, "IconBld.ff", "", 77, 74, "значок"),
+        new("unit", "face.png", "Faces.ff", "FACE", 70, 85, "лицо (панели, отряд, бой)"),
+        new("unit", "portrait.png", "Faces.ff", "FACEB", 130, 142, "портрет (крупный, бой)"),
+        new("unit", "picture.png", "Events.ff", "", 350, 450, "картина (карточка юнита)"),
     ];
+
+    /// <summary>Своя картинка сущности мода главнее графики, на которую она ссылается (юнит мода рисуется базовым — <c>baseUnit</c>,
+    /// но лицо, портрет и картина — свои, если они есть): имя кадра <paramref name="own"/>, если такой кадр — картинка сущности мода
+    /// (<paramref name="isEntityFrame"/>: «Архив:ИМЯ»), иначе <paramref name="fallback"/>. Графика оригинала так не подменяется.</summary>
+    public static string Prefer(string archive, string own, string fallback, Func<string, bool>? isEntityFrame) =>
+        isEntityFrame?.Invoke($"{archive}:{own}") == true ? own : fallback;
 
     public static IEnumerable<EntityArtSlot> Of(string kind) => Slots.Where(s => s.Kind == kind);
 

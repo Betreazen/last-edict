@@ -61,9 +61,10 @@ public sealed partial class UnitWorkspace
         if (form.Effect is { } e && Content.Find(e) is not EffectDef) return Session.Refuse($"эффекта «{e}» нет");
         var was = AttackFormOf(unitId, second);
         string field = second ? "secondAttack" : "attack";
-        var (commands, attackId) = OwnAttack(unitId, second ? unit.SecondAttack : unit.Attack, field);
-        bool fresh = Content.Find(attackId) is null;
-        if (fresh) was = new AttackForm { Initiative = -1, Accuracy = -1 };   // новая — пишется всё
+        string? source = second ? unit.SecondAttack : unit.Attack;
+        var (commands, attackId) = OwnAttack(unitId, source, field);
+        // Атаки не было — новая пустая, пишется всё; копия общей или базы уже несёт поля основы — сравнение с ними (форма основы).
+        if (source is null || Content.Find(source) is not AttackDef) was = new AttackForm { Initiative = -1, Accuracy = -1, Title = form.Title + "~" };
         void Set<T>(string path, T now, T then, Func<T, JsonNode?> json)
         {
             if (!EqualityComparer<T>.Default.Equals(now, then)) commands.Add(FormJson.Field(Session, attackId, path, json(now)));
@@ -90,8 +91,11 @@ public sealed partial class UnitWorkspace
     private (List<IEditCommand> Commands, string AttackId) OwnAttack(string unitId, string? attackId, string field)
     {
         var commands = new List<IEditCommand>();
+        // Своя и только этой атакой этого юнита (не другого и не второй атакой его же) — правится на месте.
+        string otherField = field == "secondAttack" ? "attack" : "secondAttack";
         bool exclusive = attackId is not null && Session.IsMine(attackId)
-                         && !Content.Units.Any(u => u.Id != unitId && (u.Attack == attackId || u.SecondAttack == attackId));
+                         && !Content.Units.Any(u => u.Id != unitId && (u.Attack == attackId || u.SecondAttack == attackId))
+                         && (Content.Find(unitId) as UnitDef) is { } self && (otherField == "attack" ? self.Attack : self.SecondAttack) != attackId;
         if (exclusive) return (commands, attackId!);
         string name = EntityNames.Free(Session.History.Current, Session.Report.Content, "attack",
                                        unitId[(unitId.LastIndexOf('/') + 1)..] + (field == "secondAttack" ? "-2nd" : ""));
@@ -115,8 +119,9 @@ public sealed partial class UnitWorkspace
         ArgumentNullException.ThrowIfNull(classes);
         if (Content.Find(unitId) is not UnitDef unit) return Session.Refuse($"юнита «{unitId}» нет");
         var commands = new List<IEditCommand>();
-        if (!sources.SequenceEqual(unit.Immunities)) commands.Add(FormJson.Field(Session, unitId, "immunities", Array(sources)));
-        if (!classes.SequenceEqual(unit.ClassImmunities)) commands.Add(FormJson.Field(Session, unitId, "classImmunities", Array(classes)));
+        // Порядок записи не важен: те же иммунитеты в другом порядке — не правка.
+        if (!sources.ToHashSet().SetEquals(unit.Immunities)) commands.Add(FormJson.Field(Session, unitId, "immunities", Array(sources)));
+        if (!classes.ToHashSet().SetEquals(unit.ClassImmunities)) commands.Add(FormJson.Field(Session, unitId, "classImmunities", Array(classes)));
         return commands.Count == 0 || Session.Do(new Batch($"иммунитеты «{Session.NameOf(unitId)}»", commands));
     }
 
@@ -126,9 +131,32 @@ public sealed partial class UnitWorkspace
         ArgumentNullException.ThrowIfNull(auras);
         if (Content.Find(unitId) is not UnitDef unit) return Session.Refuse($"юнита «{unitId}» нет");
         foreach (var a in auras)
-            if (Content.Find(a.Modifier) is not ModifierDef) return Session.Refuse($"модификатора «{a.Modifier}» нет");
+        {
+            if (Content.Find(a.Modifier) is not ModifierDef modifier) return Session.Refuse($"модификатора «{a.Modifier}» нет");
+            if (AuraProblem(modifier) is { } problem) return Session.Refuse($"модификатор «{a.Modifier}» аурой не годится: {problem}");
+        }
         if (auras.SequenceEqual(unit.Auras)) return true;
         return Session.Do(new Batch($"ауры «{Session.NameOf(unitId)}»", [FormJson.Field(Session, unitId, "auras", Array(auras))]));
+    }
+
+    /// <summary>Годится ли модификатор аурой: правила боя читают его элементы без отказа (<see cref="LastEdict.Rules.Units.EffectiveStats"/>:
+    /// у брони — число, у урона — проценты…); нет — текст причины. Иначе битая аура роняла бы бой.</summary>
+    private string? AuraProblem(ModifierDef modifier)
+    {
+        try
+        {
+            var rules = LastEdict.Data.Battle.ModifierLoader.Load(Content).Modifiers;
+            if (!rules.TryGetValue(modifier.Key, out var m)) return "его нет в правилах";
+            var probe = new LastEdict.Rules.Battle.UnitType("probe", 1, 100, 0, "", "", false, true, 0, 0);
+            _ = LastEdict.Rules.Units.EffectiveStats.Of(probe, [m]);
+            _ = LastEdict.Rules.Units.EffectiveStats.OfAttack(new LastEdict.Rules.Battle.AttackType("probe", 50, LastEdict.Rules.Battle.AttackClass.Damage,
+                80, 3, 10, 0, false, 0), [m]);
+            return null;
+        }
+        catch (Exception e) when (e is InvalidDataException or InvalidOperationException or NotSupportedException or KeyNotFoundException)
+        {
+            return e.Message;
+        }
     }
 
     /// <summary>Свой модификатор каталогом: элементы и подпись (комментарий). Возвращает id или null (отказ).</summary>

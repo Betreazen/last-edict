@@ -77,7 +77,8 @@ public partial class StudioPicker : Button
             _list.SetItemMetadata(at, item.Id ?? "");
             if (item.Id == Selected) _list.Select(at);
         }
-        if (_list.ItemCount > 0 && _list.GetSelectedItems().Length == 0) _list.Select(0);
+        // С поиском — верхний найденный (Enter берёт его), без поиска — выбранный.
+        if (_list.ItemCount > 0 && (q.Length > 0 || _list.GetSelectedItems().Length == 0)) _list.Select(0);
     }
 
     private void Choose(int index)

@@ -45,9 +45,13 @@ public partial class StudioUnitCombat : VBoxContainer
     private List<string> _wardIds = [], _summonIds = [];
     private string? _unit;
 
-    public StudioUnitCombat(UnitWorkspace ws)
+    private readonly Action _accepted;
+
+    /// <param name="accepted">Своя правка принята — вкладка не перезаполняет форму (набранное в других блоках не стирается).</param>
+    public StudioUnitCombat(UnitWorkspace ws, Action accepted)
     {
         _ws = ws ?? throw new ArgumentNullException(nameof(ws));
+        _accepted = accepted ?? throw new ArgumentNullException(nameof(accepted));
         AddThemeConstantOverride("separation", 6);
         _which.AddItem("первая атака");
         _which.AddItem("вторая атака");
@@ -75,7 +79,7 @@ public partial class StudioUnitCombat : VBoxContainer
         AddChild(Row(new Label { Text = "Свой модификатор:", ThemeTypeVariation = SettingsTheme.HelpLabel }, _modifierTitle, _elementType, _elementValue,
                      Button("Создать", CreateModifier)));
 
-        _which.ItemSelected += _ => ShowUnit(_unit);
+        _which.ItemSelected += _ => ShowAttack();   // только поля атаки: строки аур и иммунитеты — как набраны
     }
 
     /// <summary>Имя эффекта класса атаки — строкой содержимого (эффект с этим поведением), иначе имя класса.</summary>
@@ -137,6 +141,17 @@ public partial class StudioUnitCombat : VBoxContainer
         _unit = unit;
         Visible = unit is not null;
         if (unit is null) return;
+        ShowAttack();
+        _modifierItems = [.. _ws.Modifiers.Select(m => new PickItem(m.Id, ModifierName(m.Id)))];
+        _wardPick.SetItems(_modifierItems, null);
+        _summonPick.SetItems([.. _ws.Units().Select(u => new PickItem(u.Id, $"{u.Name} · {u.Id[(u.Id.LastIndexOf('/') + 1)..]}"))], null);
+        ShowRest(unit);
+    }
+
+    /// <summary>Поля атаки (первой или второй) выбранного юнита.</summary>
+    private void ShowAttack()
+    {
+        if (_unit is not { } unit) return;
         bool second = _which.Selected == 1;
         var a = _ws.AttackFormOf(unit, second);
         _effect.SetItems([.. _ws.Effects.Select(e => new PickItem(e.Id, $"{_ws.Session.NameOf(e.Id)} · {e.Behavior}"))], a.Effect);
@@ -145,10 +160,12 @@ public partial class StudioUnitCombat : VBoxContainer
         (_initiative.Value, _accuracy.Value, _damage.Value, _heal.Value, _level.Value) = (a.Initiative, a.Accuracy, a.Damage ?? 0, a.Heal ?? 0, a.Level ?? 0);
         (_infinite.ButtonPressed, _crit.ButtonPressed, _attackTitle.Text) = (a.Infinite, a.CriticalHit, a.Title);
         (_wardIds, _summonIds) = ([.. a.Wards], [.. a.Units]);
-        _modifierItems = [.. _ws.Modifiers.Select(m => new PickItem(m.Id, ModifierName(m.Id)))];
-        _wardPick.SetItems(_modifierItems, null);
-        _summonPick.SetItems([.. _ws.Units().Select(u => new PickItem(u.Id, $"{u.Name} · {u.Id[(u.Id.LastIndexOf('/') + 1)..]}"))], null);
         ShowLists();
+    }
+
+    /// <summary>Иммунитеты и ауры выбранного юнита.</summary>
+    private void ShowRest(string unit)
+    {
         var def = _ws.Session.Report.Content?.Find(unit) as UnitDef;
         for (int i = 0; i < 8; i++)
             _sourceImmunity[i].Selected = def?.Immunities.FirstOrDefault(x => (int)x.Source == i) is { } s ? (int)s.Level - 1 : 0;
@@ -201,7 +218,7 @@ public partial class StudioUnitCombat : VBoxContainer
 
     private void ApplyAttack()
     {
-        if (_unit is { } id) _ws.EditAttack(id, CurrentAttack(), second: _which.Selected == 1);
+        if (_unit is { } id && _ws.EditAttack(id, CurrentAttack(), second: _which.Selected == 1)) _accepted();
     }
 
     private void ApplyImmunities()
@@ -211,7 +228,7 @@ public partial class StudioUnitCombat : VBoxContainer
             .Select(i => new SourceImmunity((AttackSource)i, (ImmunityLevel)(_sourceImmunity[i].Selected + 1))).ToList();
         var classes = _classImmunity.Where(p => p.Value.Selected > 0)
             .Select(p => new ClassImmunity(p.Key, (ImmunityLevel)(p.Value.Selected + 1))).ToList();
-        _ws.SetImmunities(id, sources, classes);
+        if (_ws.SetImmunities(id, sources, classes)) _accepted();
     }
 
     /// <summary>Ауры по строкам.</summary>
@@ -223,7 +240,7 @@ public partial class StudioUnitCombat : VBoxContainer
 
     private void ApplyAuras()
     {
-        if (_unit is { } id) _ws.SetAuras(id, CurrentAuras());
+        if (_unit is { } id && _ws.SetAuras(id, CurrentAuras())) _accepted();
     }
 
     private void CreateModifier()
@@ -232,6 +249,7 @@ public partial class StudioUnitCombat : VBoxContainer
         string title = _modifierTitle.Text.Trim();
         if (_ws.CreateModifier(title.Length > 0 ? title : _elementType.Text, [UnitWorkspace.Element(type, (int)_elementValue.Value)]) is { } created)
         {
+            _accepted();   // строки аур, набранные до создания, остаются
             _modifierItems = [.. _ws.Modifiers.Select(m => new PickItem(m.Id, ModifierName(m.Id)))];
             AddAuraRow(created, AuraReach.Group);   // новый — сразу строкой ауры (её можно убрать)
         }

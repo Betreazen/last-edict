@@ -14,7 +14,9 @@ public static class StudioMarks
     public static void Mark(Control field, IReadOnlyList<CheckItem> problems)
     {
         field.Modulate = problems.Count > 0 ? Bad : Colors.White;
-        field.TooltipText = problems.Count > 0 ? string.Join("\n", problems.Select(p => $"{p.Rule}: {p.Message}")) : "";
+        // Без находок — прежняя подсказка поля (у выбора ссылки — id выбранного).
+        field.TooltipText = problems.Count > 0 ? string.Join("\n", problems.Select(p => $"{p.Rule}: {p.Message}"))
+            : field is StudioPicker picker ? picker.Selected ?? "" : "";
     }
 
     /// <summary>Строка заголовка о находках сущности; нет — пусто.</summary>

@@ -265,7 +265,14 @@ public partial class StudioBuildingForm : ScrollContainer
     {
         var (png, problem) = StudioPictures.FromFile(path, EntityArt.Find("building", EntityFolders.IconFile)!);
         if (png is not { } bytes) return _ws.Session.Refuse(problem ?? "картинка не читается");
-        if (Editing is { } id) return _ws.SetIcon(id, bytes);
+        if (Editing is { } id)
+        {
+            if (!_ws.SetIcon(id, bytes)) return false;
+            _shown = (id, _ws.Session.History.Revision, _ws.Lord);   // только картинка — набранное в полях остаётся
+            _picture.Texture = StudioPictures.Texture(bytes);
+            _pictureNote.Text = Note(bytes);
+            return true;
+        }
         _pendingIcon = bytes;
         _picture.Texture = StudioPictures.Texture(bytes);
         _pictureNote.Text = Note(bytes);

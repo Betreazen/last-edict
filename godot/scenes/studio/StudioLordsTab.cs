@@ -168,18 +168,17 @@ public partial class StudioLordsTab : HSplitContainer, IStudioTab
         if (_ws.Selected is not { } source) return;
         string title = _newTitle.Text.Trim();
         if (title.Length == 0) title = $"{_ws.Session.NameOf(source)} (новый)";
-        _ws.CreateFrom(source, _ws.NameFor(title), title);
-        _newTitle.Text = "";
+        if (_ws.CreateFrom(source, _ws.NameFor(title), title)) _newTitle.Text = "";
     }
 
     private void Apply()
     {
         if (_ws.Selected is not { } id) return;
-        _ws.Edit(id, _ws.FormOf(id) with
+        if (_ws.Edit(id, _ws.FormOf(id) with
         {
             Title = _title.Text.Trim(), Description = _description.Text.Trim(), Race = _race.Selected, Category = Kinds[Math.Max(0, _kind.Selected)].Kind,
             Research = Research(),
-        });
+        })) _filled = (_filled.Id, _ws.Session.History.Revision);   // своя правка — форма уже такая
     }
 
     /// <summary>Шаги проверки без окна.</summary>

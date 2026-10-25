@@ -151,6 +151,30 @@ public sealed class StudioUnitTests : IDisposable
     }
 
     [Fact]
+    public void EditAttack_OfABaseAttack_CopiesIt_AndWritesFieldsBackToDefaults()
+    {
+        var session = Session();
+        var units = new UnitWorkspace(session);
+        // Атака юнита базы: огонь, оберег, «до конца боя» — правкой мода.
+        string attack = ((UnitDef)session.Report.Content!.Find(Footman)!).Attack!;
+        Assert.True(session.Do(new LastEdict.Authoring.Commands.Batch("подготовка", [
+            new LastEdict.Authoring.Commands.SetField(attack, "source", System.Text.Json.Nodes.JsonValue.Create("fire")),
+            new LastEdict.Authoring.Commands.SetField(attack, "wards", System.Text.Json.Nodes.JsonNode.Parse("""["test:modifier/charm"]""")),
+            new LastEdict.Authoring.Commands.SetField(attack, "infinite", System.Text.Json.Nodes.JsonValue.Create(true))])));
+        // Форма возвращает значения по умолчанию — копия атаки юниту, у копии они и записаны.
+        var form = units.AttackFormOf(Footman) with { Source = AttackSource.Weapon, Wards = [], Infinite = false };
+        Assert.True(units.EditAttack(Footman, form));
+        var own = (AttackDef)session.Report.Content!.Find(((UnitDef)session.Report.Content.Find(Footman)!).Attack!)!;
+        Assert.StartsWith("towers:attack/", own.Id, StringComparison.Ordinal);
+        Assert.Equal((AttackSource.Weapon, 0, false), (own.Source, own.Wards.Count, own.Infinite ?? false));
+        Assert.Equal(AttackSource.Fire, ((AttackDef)session.Report.Content.Find(attack)!).Source);   // общая атака — как была в моде
+        // Аура из модификатора, который правила не прочтут (броня процентами), — отказ, а не падение боя.
+        string? bad = units.CreateModifier("Кривой", [new ModifierElementDef { Type = LastEdict.Rules.Units.ModifierElementType.Armor, Percent = 10 }]);
+        Assert.False(units.SetAuras(Footman, [new UnitAuraDef { Modifier = bad! }]));
+        Assert.Contains("не годится", session.Refusal, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void BrokenReference_IsReportedAtTheEntityAndField()
     {
         var session = Session();

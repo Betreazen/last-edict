@@ -710,7 +710,15 @@ public sealed class BattleSim(BattleState state, IRng rng, RulesConstants consta
     /// <see cref="Log"/>.</summary>
     public IReadOnlyList<TurnRecord> Act(int round, BattleUnit unit, BattleUnit? target = null)
     {
+        // Ауры — до удара и после: павший, призванный, превращённый — сразу (у базы аур нет — ничего).
         Auras.Refresh(state);
+        var records = ActCore(round, unit, target);
+        Auras.Refresh(state);
+        return records;
+    }
+
+    private IReadOnlyList<TurnRecord> ActCore(int round, BattleUnit unit, BattleUnit? target)
+    {
         var attack = Striking(unit, unit.Attack, target);
         // Summon в пару «атакующий — цель» не укладывается вовсе: движок целится в ПОЗИЦИЮ в отряде
         // атакующего, а не в юнита (потому у него и method17 свой — 0x66386f, единственный на 23

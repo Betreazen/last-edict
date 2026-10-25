@@ -137,7 +137,7 @@ public partial class StudioItemsTab : HSplitContainer, IStudioTab
             if (row.Id == _ws.Selected) _list.Select(i);
         }
         string? id = _ws.Selected is { } s && _ws.Session.Report.Content?.Find(s) is ItemDef ? s : null;
-        if (_filled == (id, _ws.Session.History.Revision)) return;
+        if (_filled == (id, _ws.Session.History.Revision)) return;   // своя правка (Accepted) — набранное не стирается
         _filled = (id, _ws.Session.History.Revision);
         Fill(id);
     }
@@ -171,8 +171,7 @@ public partial class StudioItemsTab : HSplitContainer, IStudioTab
     {
         string title = _newTitle.Text.Trim();
         if (title.Length == 0) title = _ws.Selected is { } s ? $"{_ws.Session.NameOf(s)} (новый)" : "Новый предмет";
-        _ws.Create(_ws.NameFor(title), title, _ws.Selected);
-        _newTitle.Text = "";
+        if (_ws.Create(_ws.NameFor(title), title, _ws.Selected)) _newTitle.Text = "";
     }
 
     private void Apply()
@@ -182,12 +181,19 @@ public partial class StudioItemsTab : HSplitContainer, IStudioTab
         long gold = (long)_gold.Value;
         var value = was.Value.Where(c => c.Key != "gold").ToDictionary(c => c.Key, c => c.Value);
         if (gold > 0) value["gold"] = gold;
-        _ws.Edit(id, was with
+        if (_ws.Edit(id, was with
         {
             Title = _title.Text.Trim(), Description = _description.Text.Trim(), Category = (ItemCategory)Math.Max(0, _category.Selected), Value = value,
             EquipModifier = _equip.Selected, PotionModifier = _potion.Selected, PotionHeal = _heal.Value > 0 ? (int)_heal.Value : was.PotionHeal is null ? null : 0,
             Spell = _spell.Selected, Attack = _attack.Selected,
-        });
+        })) Accepted();
+    }
+
+    private void Accepted() => _filled = (_filled.Id, _ws.Session.History.Revision);
+
+    private void ShowIcon(string id)
+    {
+        _icon.Texture = _ws.IconOf(id) is { } png ? StudioPictures.Texture(png, EntityArt.Find("item", EntityFolders.IconFile)) : Icon(id);
     }
 
     /// <summary>Выбран файл значка: вписать в место 70×85 и положить командой.</summary>
@@ -195,7 +201,11 @@ public partial class StudioItemsTab : HSplitContainer, IStudioTab
     {
         if (_ws.Selected is not { } id) return false;
         var (png, problem) = StudioPictures.FromFile(path, EntityArt.Find("item", EntityFolders.IconFile)!);
-        return png is { } bytes ? _ws.SetIcon(id, bytes) : _ws.Session.Refuse(problem ?? "картинка не читается");
+        if (png is not { } bytes) return _ws.Session.Refuse(problem ?? "картинка не читается");
+        if (!_ws.SetIcon(id, bytes)) return false;
+        Accepted();
+        ShowIcon(id);
+        return true;
     }
 
     /// <summary>Шаги проверки без окна.</summary>

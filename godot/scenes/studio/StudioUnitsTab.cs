@@ -100,7 +100,7 @@ public partial class StudioUnitsTab : HSplitContainer, IStudioTab
         buttons.AddChild(_apply);
         buttons.AddChild(_remove);
         main.AddChild(buttons);
-        _combat = new StudioUnitCombat(ws) { Name = "Бой и ауры" };
+        _combat = new StudioUnitCombat(ws, Accepted) { Name = "Бой и ауры" };
         _pages.AddChild(_combat);   // бой юнита: атака, иммунитеты, ауры — свои кнопки «Применить»
         AddChild(_dialog);
 
@@ -226,11 +226,10 @@ public partial class StudioUnitsTab : HSplitContainer, IStudioTab
         Pictures(id, own);
         _combat.ShowUnit(id);
         // Ошибки проверки — у полей-ссылок и в заголовке.
-        if (id is null) return;
         foreach (var (field, path) in new (Control, string)[] { (_race, "race"), (_hireBuilding, "hireBuilding"), (_previous, "previousLevel"),
                                                                  (_upgradeBuilding, "upgradeBuilding"), (_graphics, "baseUnit") })
-            StudioMarks.Mark(field, session.ProblemsOf(id, path));
-        _head.Text += StudioMarks.Head(session.ProblemsOf(id));
+            StudioMarks.Mark(field, id is null ? [] : session.ProblemsOf(id, path));
+        if (id is not null) _head.Text += StudioMarks.Head(session.ProblemsOf(id));
     }
 
     /// <summary>Пункты выбора ссылок (юниты с лицом, постройки со значком, расы) — раз на правку документа.</summary>
@@ -276,7 +275,12 @@ public partial class StudioUnitsTab : HSplitContainer, IStudioTab
                 if (png is not null)
                 {
                     var clear = new Button { Text = "Убрать (графика основы)" };
-                    clear.Pressed += () => _ws.SetPicture(id, file, null);
+                    clear.Pressed += () =>
+                    {
+                        if (!_ws.SetPicture(id, file, null)) return;
+                        Accepted();
+                        Pictures(id, own);
+                    };
                     buttons.AddChild(clear);
                 }
             }
@@ -291,7 +295,11 @@ public partial class StudioUnitsTab : HSplitContainer, IStudioTab
     {
         if (_ws.Selected is not { } id || EntityArt.Find("unit", file) is not { } slot) return false;
         var (png, problem) = StudioPictures.FromFile(path, slot);
-        return png is { } bytes ? _ws.SetPicture(id, file, bytes) : _ws.Session.Refuse(problem ?? "картинка не читается");
+        if (png is not { } bytes) return _ws.Session.Refuse(problem ?? "картинка не читается");
+        if (!_ws.SetPicture(id, file, bytes)) return false;
+        Accepted();
+        Pictures(id, _ws.IsOwnFolder(id));   // только картинки — набранное в полях остаётся
+        return true;
     }
 
     private void Create()
@@ -324,8 +332,11 @@ public partial class StudioUnitsTab : HSplitContainer, IStudioTab
 
     private void Apply()
     {
-        if (_ws.Selected is { } id) _ws.Edit(id, Current(id));
+        if (_ws.Selected is { } id && _ws.Edit(id, Current(id))) Accepted();
     }
+
+    /// <summary>Своя правка формы принята: форма уже показывает набранное — перезаполнять её (и стирать ввод в других блоках) не нужно.</summary>
+    private void Accepted() => _filled = (_filled.Id, _ws.Session.History.Revision);
 
     /// <summary>Шаги проверки без окна: числа формы и «Применить».</summary>
     public void Fill(int? hp, bool? hireable, string? title)

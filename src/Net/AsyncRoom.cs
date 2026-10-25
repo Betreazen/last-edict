@@ -75,10 +75,12 @@ public sealed class AsyncRoom : IAsyncDisposable
     public async Task StoreAsync(GameSession session, CommandJournal? turn, CancellationToken cancel = default)
     {
         ArgumentNullException.ThrowIfNull(session);
-        var snapshot = session.SnapshotWithoutSummaries();
+        string json = GameSave.ToJson(session.SnapshotWithoutSummaries(), "", DateTime.UnixEpoch);
         string next = session.Over ? "" : session.ActiveHuman;
-        await Link.StoreAsync(Rev + 1, next, session.Map.Turn, StateHash.Of(snapshot), GameSave.ToJson(snapshot, "", DateTime.UnixEpoch),
-                              turn?.ToJsonLines() ?? "", cancel).ConfigureAwait(false);
+        // Хеш — того, что прочтёт следующий: чтение сохранения кое-что упорядочивает (известные заклинания — как движок при загрузке),
+        // и партия «сходил — записал — прочёл» — это партия с чтением между ходами (повтор журналов — так же, ReplayTurns).
+        await Link.StoreAsync(Rev + 1, next, session.Map.Turn, StateHash.Of(GameSave.FromJson(json)), json, turn?.ToJsonLines() ?? "", cancel)
+                  .ConfigureAwait(false);
         Rev++;
     }
 
@@ -87,6 +89,32 @@ public sealed class AsyncRoom : IAsyncDisposable
     {
         ArgumentNullException.ThrowIfNull(state);
         return state.Next.Length > 0 && state.Next.Equals(Key.Seat, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>Повтор асинхронной партии: с начала <paramref name=start/> журналы ходов по порядку, между ходами — запись и чтение
+    /// партии (как у игроков). Итог — партия после последнего хода; расхождение — <see cref="InvalidDataException"/> с номером хода и команды.</summary>
+    public static GameState ReplayTurns(GameState start, IEnumerable<string> journals, Func<GameState, GameSession> session)
+    {
+        ArgumentNullException.ThrowIfNull(start);
+        ArgumentNullException.ThrowIfNull(journals);
+        ArgumentNullException.ThrowIfNull(session);
+        var state = GameSave.FromJson(GameSave.ToJson(start, "", DateTime.UnixEpoch));
+        int turn = 0;
+        foreach (string journal in journals)
+        {
+            var game = session(state);
+            try
+            {
+                CommandJournal.FromJsonLines(journal).Replay(game);
+            }
+            catch (InvalidDataException e)
+            {
+                throw new InvalidDataException($"ход {turn}: {e.Message}", e);
+            }
+            state = GameSave.FromJson(GameSave.ToJson(game.SnapshotWithoutSummaries(), "", DateTime.UnixEpoch));
+            turn++;
+        }
+        return state;
     }
 
     /// <summary>Мои асинхронные комнаты по ключам: где мой ход.</summary>

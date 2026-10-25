@@ -161,6 +161,49 @@ public sealed class RelayTests : IAsyncLifetime
         }
     }
 
+    /// <summary>Асинхронная партия двух людей: каждый в свой ход открывает комнату, берёт партию у посредника, ходит у себя (ходы ИИ после
+    /// него — у него же), записывает и «закрывает игру»; друг узнаёт о своём ходе списком комнат. Журналы ходов, повторённые подряд с
+    /// начала, дают тот же хеш, что последняя записанная партия.</summary>
+    [Fact]
+    public async Task AsyncGame_TurnsSurviveClosingTheGame()
+    {
+        var start = NetTestGame.Start();
+        var keys = new Dictionary<string, RoomKey>();
+        var first = new GameSession(NetTestGame.Copy(start), MapArtData.Empty, NetTestGame.Book) { EventBattlesOnScreen = false };
+        await using (var created = await AsyncRoom.CreateAsync(_url, first, NetTestGame.HostPlayer, "первый"))
+            keys[NetTestGame.HostPlayer] = created.Key;   // создал комнату и закрыл игру
+        string code = keys[NetTestGame.HostPlayer].Room;
+        var random = new Random(9);
+        var journals = new List<string>();
+        for (int turn = 0; turn < 6; turn++)
+        {
+            string me = turn % 2 == 0 ? NetTestGame.HostPlayer : NetTestGame.ClientPlayer;
+            string other = me == NetTestGame.HostPlayer ? NetTestGame.ClientPlayer : NetTestGame.HostPlayer;
+            await using (var room = keys.TryGetValue(me, out var key) ? await AsyncRoom.OpenAsync(_url, key)
+                                    : await AsyncRoom.OpenAsync(_url, null, code, me, "второй"))
+            {
+                keys[me] = room.Key;
+                var stored = await room.LoadAsync();
+                Assert.True(room.Mine(stored), $"ход {turn}: записан ход {stored.Next}, а открыл {me}");
+                var session = new GameSession(stored.State!, MapArtData.Empty, NetTestGame.Book) { EventBattlesOnScreen = false };
+                session.Journal = CommandJournal.Start(session);
+                ScriptedHuman.Turn(session, me, c => session.Execute(c), random);
+                Assert.Equal(other, session.ActiveHuman);
+                await room.StoreAsync(session, session.Journal);
+                journals.Add(session.Journal.ToJsonLines());
+            }
+            // Игра закрыта; друг открывает меню — его комната с «ваш ход».
+            if (keys.TryGetValue(other, out var theirs))
+                Assert.True((await AsyncRoom.ListAsync(_url, [theirs])).OfType<JsonObject>().Single()["yourTurn"]!.GetValue<bool>());
+        }
+
+        var replayed = AsyncRoom.ReplayTurns(start, journals, s => new GameSession(s, MapArtData.Empty, NetTestGame.Book));
+        await using var last = await AsyncRoom.OpenAsync(_url, keys[NetTestGame.HostPlayer]);
+        var final = await last.LoadAsync();
+        Assert.Equal(final.Hash, StateHash.Of(replayed));
+        Assert.Equal(7, final.Rev);
+    }
+
     /// <summary>Асинхронная комната: партию пишет тот, чей ход, следующей ревизией; следующему — «ваш ход» (на связи — сразу, иначе — в
     /// списке комнат); партия переживает перезапуск посредника.</summary>
     [Fact]

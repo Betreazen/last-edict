@@ -137,7 +137,7 @@ public sealed class ModDocument
                 foreach (var (key, value) in node) withId[key] = value?.DeepClone();
                 entities.Add(new ModEntity(kind.Name, folder.Id, withId, EntitySource.Folder)
                 {
-                    Strings = ReadStrings(folder.Dir), Files = ReadFiles(folder.Dir),
+                    Strings = ReadStrings(folder.Dir), Files = ReadFiles(folder.Dir, kind.Name),
                 });
             }
         }
@@ -172,10 +172,19 @@ public sealed class ModDocument
         return result.ToImmutable();
     }
 
-    /// <summary>Картинки каталога сущности (<c>*.png</c> рядом с <c>entity.json</c>).</summary>
-    private static ImmutableSortedDictionary<string, ImmutableArray<byte>> ReadFiles(string dir) =>
-        Directory.EnumerateFiles(dir, "*.png").ToImmutableSortedDictionary(f => Path.GetFileName(f), f => ImmutableArray.Create(File.ReadAllBytes(f)),
-                                                                             StringComparer.Ordinal);
+    /// <summary>Картинки каталога сущности — файлы мест вида (<see cref="EntityArt"/>), имя без учёта регистра (<c>Icon.PNG</c> — это
+    /// <c>icon.png</c>); прочие файлы каталога документ не держит.</summary>
+    private static ImmutableSortedDictionary<string, ImmutableArray<byte>> ReadFiles(string dir, string kind)
+    {
+        var files = ImmutableSortedDictionary.CreateBuilder<string, ImmutableArray<byte>>(StringComparer.Ordinal);
+        foreach (string file in Directory.EnumerateFiles(dir))
+            if (EntityArt.Find(kind, Path.GetFileName(file)) is { } slot) files[slot.File] = ImmutableArray.Create(File.ReadAllBytes(file));
+        return files.ToImmutable();
+    }
+
+    /// <summary>Картинка каталога сущности на диске (расширение ровно <c>.png</c>: маска Windows «*.png» берёт и «x.pngfoo»).</summary>
+    private static IEnumerable<string> Pictures(string dir) =>
+        Directory.EnumerateFiles(dir).Where(f => Path.GetExtension(f).Equals(".png", StringComparison.OrdinalIgnoreCase));
 
     /// <summary>Записать документ в мод: файлы видов, каталоги сущностей, строки, картинки. Меняются только файлы с другим содержимым; файлы и
     /// каталоги сущностей, которых в документе больше нет, удаляются (только внутри <c>content/</c> мода). Сколько файлов записано и удалено.</summary>
@@ -212,7 +221,7 @@ public sealed class ModDocument
             foreach (var folder in EntityFolders.Scan(project.Info, kind).Where(f => Find(f.Id) is not { Source: EntitySource.Folder }))
             {
                 string dir = project.PathOf(Path.GetRelativePath(project.Dir, folder.Dir));
-                foreach (string file in Directory.EnumerateFiles(dir, "*.json").Concat(Directory.EnumerateFiles(dir, "*.png"))) File.Delete(file);
+                foreach (string file in Directory.EnumerateFiles(dir, "*.json").Concat(Pictures(dir))) File.Delete(file);
                 if (!Directory.EnumerateFileSystemEntries(dir).Any()) Directory.Delete(dir);
                 deleted++;
             }
@@ -224,8 +233,8 @@ public sealed class ModDocument
                         File.Delete(file);
                         deleted++;
                     }
-                foreach (string file in Directory.EnumerateFiles(folder.Dir, "*.png"))
-                    if (!binaries.ContainsKey(Norm(Path.GetRelativePath(project.Dir, file))))
+                foreach (string file in Pictures(folder.Dir))
+                    if (!binaries.Keys.Contains(Norm(Path.GetRelativePath(project.Dir, file)), StringComparer.OrdinalIgnoreCase))
                     {
                         File.Delete(file);
                         deleted++;

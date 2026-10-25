@@ -170,7 +170,7 @@ public sealed class UnitWorkspace
     public bool Edit(string id, UnitForm form)
     {
         ArgumentNullException.ThrowIfNull(form);
-        if (Content.Find(id) is not UnitDef unit) return Session.Refuse($"юнита «{id}» нет");
+        if (Content.Find(id) is not UnitDef) return Session.Refuse($"юнита «{id}» нет");
         var was = FormOf(id);
         var commands = new List<IEditCommand>();
         void Set<T>(string path, T now, T then, Func<T, JsonNode?> json)
@@ -199,19 +199,22 @@ public sealed class UnitWorkspace
             if (form.Title != was.Title) commands.Add(new SetText(id, Session.Language, "name", form.Title.Length > 0 ? form.Title : null));
             if (form.Description != was.Description) commands.Add(new SetText(id, Session.Language, "description", form.Description.Length > 0 ? form.Description : null));
         }
-        if (form.Hireable != was.Hireable) commands.AddRange(HireList(id, unit, form.Hireable, form.Race ?? unit.Race));
+        if (form.Hireable != was.Hireable || form.Race != was.Race || form.Role != was.Role) commands.AddRange(HireLists(id, form));
         if (form.Attack != was.Attack) commands.Add(FormJson.Field(Session, id, "attack", form.Attack is null ? null : JsonValue.Create(form.Attack)));
-        else if (form.Initiative != was.Initiative || form.Accuracy != was.Accuracy || form.Damage != was.Damage || form.Heal != was.Heal)
-            commands.AddRange(AttackNumbers(id, unit, form, was));
+        // Числа — у атаки, которой юнит бьёт после правки (сменили атаку и числа — числа идут к новой).
+        if (form.Initiative != was.Initiative || form.Accuracy != was.Accuracy || form.Damage != was.Damage || form.Heal != was.Heal)
+            commands.AddRange(AttackNumbers(id, form.Attack, form, was));
         if (commands.Count == 0) return true;
         return Session.Do(new Batch($"юнит «{Session.NameOf(id)}»", commands));
     }
 
-    /// <summary>Числа атаки: своя атака — правкой, атака базы — своей копией (юнит переходит на неё).</summary>
-    private IEnumerable<IEditCommand> AttackNumbers(string id, UnitDef unit, UnitForm form, UnitForm was)
+    /// <summary>Числа атаки: своя атака, которой бьёт только этот юнит, — правкой; атака базы или общая — своей копией (юнит переходит на неё),
+    /// другие юниты не меняются.</summary>
+    private IEnumerable<IEditCommand> AttackNumbers(string id, string? attackId, UnitForm form, UnitForm was)
     {
-        if (unit.Attack is not { } attackId || Content.Find(attackId) is not AttackDef attack) yield break;
-        if (!Session.IsMine(attackId))
+        if (attackId is null || Content.Find(attackId) is not AttackDef attack) yield break;
+        bool exclusive = Session.IsMine(attackId) && !Content.Units.Any(u => u.Id != id && (u.Attack == attackId || u.SecondAttack == attackId));
+        if (!exclusive)
         {
             string name = EntityNames.Free(Session.History.Current, Session.Report.Content, "attack", id[(id.LastIndexOf('/') + 1)..]);
             foreach (var c in CopyAttack(attack, name)) yield return c;
@@ -224,17 +227,21 @@ public sealed class UnitWorkspace
         if (form.Heal != was.Heal) yield return FormJson.Field(Session, attackId, "heal", form.Heal is { } h ? JsonValue.Create(h) : null);
     }
 
-    /// <summary>Найм: юнит в списке расы (лидер — лидеров, прочие — солдат) или вне его.</summary>
-    private IEnumerable<IEditCommand> HireList(string id, UnitDef unit, bool hire, string? raceId)
+    /// <summary>Найм: юнит в одном списке — расы формы (лидер — лидеров, прочие — солдат), если нанимается; из прочих списков рас вычеркнут
+    /// (смена расы или роли переносит его). Меняются только списки, которые стали другими; ставший как у базы — снимается со слоя.</summary>
+    private IEnumerable<IEditCommand> HireLists(string id, UnitForm form)
     {
-        if (raceId is null || Content.Find(raceId) is not RaceDef race) yield break;
-        bool leader = unit.Role == UnitRole.Leader;
-        var list = (leader ? race.Leaders : race.Soldiers).Where(u => u != id).ToList();
-        if (hire) list.Add(id);
-        string path = leader ? "leaders" : "soldiers";
-        var node = new JsonArray([.. list.Select(u => (JsonNode)JsonValue.Create(u)!)]);
-        bool asBase = ModReferences.BaseValue(Session, race.Id, path) is { } b && JsonNode.DeepEquals(b, node);
-        yield return asBase ? new SetField(race.Id, path, null, Unset: true) : new SetField(race.Id, path, node);
+        foreach (var race in Races)
+            foreach (var (path, list) in new[] { ("soldiers", race.Soldiers), ("leaders", race.Leaders) })
+            {
+                bool wanted = form.Hireable && race.Id == form.Race && (path == "leaders") == (form.Role == UnitRole.Leader);
+                if (list.Contains(id) == wanted) continue;
+                var next = list.Where(u => u != id).ToList();
+                if (wanted) next.Add(id);
+                var node = new JsonArray([.. next.Select(u => (JsonNode)JsonValue.Create(u)!)]);
+                bool asBase = ModReferences.BaseValue(Session, race.Id, path) is { } b && JsonNode.DeepEquals(b, node);
+                yield return asBase ? new SetField(race.Id, path, null, Unset: true) : new SetField(race.Id, path, node);
+            }
     }
 
     /// <summary>Картинка своего юнита (<c>face.png</c>, <c>portrait.png</c>, <c>picture.png</c> — <see cref="EntityArt"/>), уже вписанная в
@@ -248,15 +255,20 @@ public sealed class UnitWorkspace
         return true;
     }
 
-    /// <summary>Удалить свой юнит: из списков найма — вычеркнуть, повышения из него — снять; своя атака, которой больше никто не бьёт, — тоже.</summary>
+    /// <summary>Удалить свой юнит: из списков найма — вычеркнуть, повышения из него — снять, у юнитов с его графикой — графика его основы; своя
+    /// атака, которой больше никто не бьёт, — тоже (и ссылки на неё).</summary>
     public bool Remove(string id)
     {
         if (!Session.IsMine(id) || Session.History.Current.Find(id) is null) return Session.Refuse($"удалить можно только свой юнит; «{id}» не он");
-        var commands = ModReferences.Detach(Session, id).ToList();
+        var removed = Content.Find(id) as UnitDef;
+        var commands = ModReferences.Detach(Session, id, r => r.Path == "baseUnit" ? removed?.BaseUnit : null).ToList();
         commands.Add(new RemoveEntity(id));
-        if ((Content.Find(id) as UnitDef)?.Attack is { } attack && Session.IsMine(attack)
+        if (removed?.Attack is { } attack && Session.IsMine(attack)
             && !Content.Units.Any(u => u.Id != id && (u.Attack == attack || u.SecondAttack == attack)))
+        {
+            commands.AddRange(ModReferences.Detach(Session, attack, ignore: id));
             commands.Add(new RemoveEntity(attack));
+        }
         if (!Session.Do(new Batch($"удалить юнит «{Session.NameOf(id)}»", commands))) return false;
         if (Selected == id) Select(null);
         return true;

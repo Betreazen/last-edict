@@ -67,10 +67,10 @@ public static class EntityArt
         return (slot.W * k, slot.H * k, k);
     }
 
-    /// <summary>Размер PNG по заголовку (IHDR); не PNG — 0×0.</summary>
+    /// <summary>Размер PNG по заголовку (первый блок — IHDR); не PNG — 0×0.</summary>
     public static (int W, int H) PngSize(ReadOnlySpan<byte> head)
     {
-        if (head.Length < 24 || !IsPng(head)) return (0, 0);
+        if (head.Length < 24 || !IsPng(head) || !head[12..16].SequenceEqual("IHDR"u8)) return (0, 0);
         return (System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(head[16..]), System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(head[20..]));
     }
 

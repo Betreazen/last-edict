@@ -83,6 +83,8 @@ public sealed record AddEntity(string Kind, string EntityName, JsonObject Body, 
     {
         if (string.IsNullOrEmpty(name) || !name.All(c => c is (>= 'a' and <= 'z') or (>= '0' and <= '9') or '-'))
             throw new InvalidOperationException($"имя «{name}» — только строчные латинские буквы, цифры и «-» (оно же каталог и часть id)");
+        if (LegacyIds.LooksLegacy(name))
+            throw new InvalidOperationException($"имя «{name}» похоже на id оригинала — графика такой сущности назвалась бы как графика оригинала");
     }
 }
 
@@ -133,7 +135,9 @@ public sealed record SetFile(string Id, string FileName, ImmutableArray<byte>? B
         if (EntityArt.Find(entity.Kind, FileName) is not { } slot)
             throw new InvalidOperationException($"у {entity.Kind} нет картинки «{FileName}» (есть: {string.Join(", ", EntityArt.Of(entity.Kind).Select(s => s.File))})");
         if (Bytes is not { } bytes) return entity.Files.ContainsKey(slot.File) ? doc.With(entity with { Files = entity.Files.Remove(slot.File) }) : doc;
-        if (!EntityArt.IsPng(bytes.AsSpan())) throw new InvalidOperationException($"{FileName}: это не PNG");
+        var (w, h) = EntityArt.PngSize(bytes.AsSpan());
+        if (w <= 0 || h <= 0 || bytes.Length < 45)   // подпись, IHDR, IDAT и IEND — не меньше 45 байт
+            throw new InvalidOperationException($"{FileName}: это не PNG (или файл оборван)");
         return doc.With(entity with { Files = entity.Files.SetItem(slot.File, bytes) });
     }
 

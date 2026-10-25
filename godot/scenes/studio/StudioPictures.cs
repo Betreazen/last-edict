@@ -46,7 +46,8 @@ public static class StudioPictures
     /// <summary>Текстура по байтам PNG (кэш по хешу) с размером логического места, если картинка — его кратное (HD).</summary>
     public static ImageTexture? Texture(ImmutableArray<byte> png, EntityArtSlot? slot = null)
     {
-        string key = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(png.AsSpan()));
+        // Ключ — байты и место: одна и та же картинка с местом и без него — разные текстуры (размер логического места у HD).
+        string key = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(png.AsSpan())) + (slot is null ? "" : $"|{slot.Kind}/{slot.File}");
         if (_textures.TryGetValue(key, out var cached)) return cached;
         var image = new Image();
         if (image.LoadPngFromBuffer([.. png]) != Error.Ok) return null;

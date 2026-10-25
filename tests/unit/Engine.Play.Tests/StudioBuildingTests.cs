@@ -146,6 +146,43 @@ public sealed class StudioBuildingTests : IDisposable
     }
 
     [Fact]
+    public void Detach_DropsRecordsThatMentionTheEntity_PicturesReadByTheirSlotName()
+    {
+        var session = Session();
+        var tree = new TreeWorkspace(session);
+        tree.SelectLord(Lord);
+        Assert.True(tree.CreateBuilding("spire", tree.NewForm(Tower) with { Title = "Шпиль" }, TestPng.Make(77, 74)));
+        // Запись-объект в списке, где упомянута постройка (как исследование лорда), — вычёркивается при удалении целиком.
+        Assert.True(session.Do(new SetField(Lord, "research",
+            JsonNode.Parse("""[{"spell":"test:spell/sun-bolt","cost":{"gold":1}},{"spell":"towers:building/spire"}]"""))));
+        var refs = ModReferences.To(session.History.Current, "towers:building/spire");
+        Assert.Contains(refs, r => r.Entity == Lord && r.Path == "research");
+        var detached = ModReferences.Detach(session, "towers:building/spire").OfType<SetField>().Single(c => c.Path == "research");
+        Assert.Single(detached.Value!.AsArray());
+        // Картинка с именем в другом регистре читается под именем места.
+        session.Save();
+        string dir = Path.Combine(session.Project.ContentDir, "buildings", "spire");
+        File.Move(Path.Combine(dir, "icon.png"), Path.Combine(dir, "Icon.PNG"));
+        File.WriteAllText(Path.Combine(dir, "notes.pngold"), "-");
+        var doc = ModDocument.Load(session.Project);
+        Assert.Equal(["icon.png"], doc.Find("towers:building/spire")!.Files.Keys);
+        doc.Save(session.Project);
+        Assert.True(File.Exists(Path.Combine(dir, "notes.pngold")));   // не картинка — не удаляется
+    }
+
+    [Fact]
+    public void RaceLords_GetTheBuildingOnlyWhereTheRequiredOneIs()
+    {
+        var session = Session();
+        var tree = new TreeWorkspace(session);
+        tree.SelectLord(Lord);
+        var race = ((LordDef)session.Report.Content!.Find(Lord)!).Race;
+        Assert.True(tree.CreateBuilding("spire", tree.NewForm(Tower) with { Title = "Шпиль" }));
+        foreach (var lord in session.Report.Content!.Lords.Where(l => l.Race == race))
+            Assert.Equal(lord.Buildings.Contains(Tower), lord.Buildings.Contains("towers:building/spire"));
+    }
+
+    [Fact]
     public void SetFile_RefusesNotPng_UnknownSlots_AndBaseEntities()
     {
         var doc = new AddEntity("building", "spire", new JsonObject { ["level"] = 1 }).Apply(ModDocument.Empty("towers"));
@@ -153,6 +190,8 @@ public sealed class StudioBuildingTests : IDisposable
         Assert.Throws<InvalidOperationException>(() => new SetFile("towers:building/spire", "face.png", TestPng.Make(70, 85)).Apply(doc));
         Assert.Throws<InvalidOperationException>(() => new SetFile(Tower, "icon.png", TestPng.Make(77, 74)).Apply(doc));
         Assert.Throws<InvalidOperationException>(() => new RenameEntity("towers:building/spire", "Шпиль").Apply(doc));
+        Assert.Throws<InvalidOperationException>(() => new SetFile("towers:building/spire", "icon.png", [.. TestPng.Make(77, 74).Take(30)]).Apply(doc));   // оборван
+        Assert.Throws<InvalidOperationException>(() => new RenameEntity("towers:building/spire", "g000bb0001").Apply(doc));   // вид id оригинала
         Assert.Equal((154, 148, 2), EntityArt.Fit(EntityArt.Find("building", "icon.png")!, 200, 160));
         Assert.Equal((77, 74, 1), EntityArt.Fit(EntityArt.Find("building", "icon.png")!, 30, 30));
         Assert.Null(EntityArt.ScaleOf(EntityArt.Find("building", "icon.png")!, 100, 74));

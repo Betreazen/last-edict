@@ -67,6 +67,10 @@ public sealed partial class LegacyIds : IComparer<string>
         return slash >= 0 && key.Contains(':', StringComparison.Ordinal) && LegacyShape().IsMatch(key.AsSpan(slash + 1)) ? key[(slash + 1)..] : null;
     }
 
+    /// <summary>Имя вида id оригинала (<c>g000uu0154</c>): у сущности с таким именем графика называется именем кадра оригинала
+    /// (<see cref="OriginalOf"/>) — Студия таких имён новым сущностям не даёт, иначе картинка мода подменила бы графику оригинала.</summary>
+    public static bool LooksLegacy(string name) => name is not null && LegacyShape().IsMatch(name);
+
     /// <summary>Вид id оригинала: <c>g000uu0002</c> — категория, номер, тип из двух букв, номер из четырёх.</summary>
     [System.Text.RegularExpressions.GeneratedRegex("^[a-z][0-9a-f]{3}[a-z]{2}[0-9a-f]{4}$", System.Text.RegularExpressions.RegexOptions.IgnoreCase)]
     private static partial System.Text.RegularExpressions.Regex LegacyShape();

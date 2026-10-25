@@ -98,7 +98,7 @@ public sealed partial class TreeWorkspace
         if (form.Title.Length > 0) commands.Add(new SetText(id, Session.Language, "name", form.Title));
         if (form.Description.Length > 0) commands.Add(new SetText(id, Session.Language, "description", form.Description));
         if (icon is { } png) commands.Add(new SetFile(id, EntityFolders.IconFile, png));
-        foreach (var lord in LordsFor(raceLords))
+        foreach (var lord in LordsFor(raceLords, form.Requires))
             commands.Add(new SetField(lord.Id, "buildings", new JsonArray([.. lord.Buildings.Append(id).Select(b => (JsonNode)JsonValue.Create(b)!)])));
         if (!Session.Do(new Batch($"новая постройка «{(form.Title.Length > 0 ? form.Title : name)}»", commands))) return false;
         Select(id);
@@ -106,11 +106,14 @@ public sealed partial class TreeWorkspace
     }
 
     /// <summary>Открытый лорд и (если <paramref name="raceLords"/>) прочие лорды его расы.</summary>
-    private IEnumerable<LordDef> LordsFor(bool raceLords)
+    private IEnumerable<LordDef> LordsFor(bool raceLords, string? requires)
     {
         var content = Session.Report.Content;
         if (content?.Find(Lord) is not LordDef open) return [];
-        return raceLords && open.Race is { } race ? content.Lords.Where(l => l.Id == open.Id || l.Race == race) : [open];
+        // Прочие лорды расы — только те, у кого есть требуемая: иначе постройка висела бы у них без родителя.
+        return raceLords && open.Race is { } race
+            ? content.Lords.Where(l => l.Id == open.Id || (l.Race == race && (requires is null || l.Buildings.Contains(requires))))
+            : [open];
     }
 
     /// <summary>Правка постройки по форме: изменившиеся поля — правками слоя (у чужой — поверх базы), название и описание — строками своей.

@@ -79,6 +79,40 @@ public sealed class StudioUnitTests : IDisposable
     }
 
     [Fact]
+    public void ReviewFixes_RaceChangeMovesHire_DerivedKeepGraphics_LegacyNamesRefused()
+    {
+        var session = Session();
+        var units = new UnitWorkspace(session);
+        Assert.True(units.CreateFrom(Footman, "alebardshchik", "Алебардщик"));
+        Assert.True(units.Edit(Halberdier, units.FormOf(Halberdier) with { Hireable = true }));
+        // Смена расы: из солдат Солнца — в солдаты Луны; смена роли — в лидеры.
+        Assert.True(units.Edit(Halberdier, units.FormOf(Halberdier) with { Race = "test:race/moon" }));
+        var content = session.Report.Content!;
+        Assert.DoesNotContain(Halberdier, ((RaceDef)content.Find("test:race/sun")!).Soldiers);
+        Assert.Contains(Halberdier, ((RaceDef)content.Find("test:race/moon")!).Soldiers);
+        Assert.True(units.Edit(Halberdier, units.FormOf(Halberdier) with { Role = UnitRole.Leader }));
+        Assert.Contains(Halberdier, ((RaceDef)session.Report.Content!.Find("test:race/moon")!).Leaders);
+        Assert.DoesNotContain(Halberdier, ((RaceDef)session.Report.Content.Find("test:race/moon")!).Soldiers);
+        // Производный от своего юнита: удаление основы — графика производного остаётся графикой основы основы.
+        Assert.True(units.CreateFrom(Halberdier, "sergeant", "Сержант"));
+        Assert.Equal(Footman, ((UnitDef)session.Report.Content!.Find("towers:unit/sergeant")!).BaseUnit);
+        Assert.True(units.Edit("towers:unit/sergeant", units.FormOf("towers:unit/sergeant") with { GraphicsFrom = Halberdier }));
+        Assert.True(units.Remove(Halberdier));
+        Assert.Equal(Footman, ((UnitDef)session.Report.Content!.Find("towers:unit/sergeant")!).BaseUnit);
+        Assert.Equal(0, session.Report.Errors);
+        // Числа атаки, общей с другим своим юнитом, — своей копией.
+        Assert.True(units.CreateFrom(Footman, "twin", "Близнец"));
+        Assert.True(units.Edit("towers:unit/twin", units.FormOf("towers:unit/twin") with { Attack = "towers:attack/sergeant" }));
+        Assert.True(units.Edit("towers:unit/twin", units.FormOf("towers:unit/twin") with { Initiative = 77 }));
+        var twin = (UnitDef)session.Report.Content!.Find("towers:unit/twin")!;
+        Assert.NotEqual("towers:attack/sergeant", twin.Attack);
+        Assert.NotEqual(77, ((AttackDef)session.Report.Content.Find("towers:attack/sergeant")!).Initiative);
+        // Имя вида id оригинала — отказ: графика назвалась бы именем кадра оригинала.
+        Assert.False(units.CreateFrom(Footman, "g000uu0154", "Двойник"));
+        Assert.Contains("id оригинала", session.Refusal, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void OwnFace_WinsOverTheBaseGraphics_RemoveCleansTheRaceList()
     {
         var session = Session();

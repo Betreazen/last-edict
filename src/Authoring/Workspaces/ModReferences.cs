@@ -11,17 +11,17 @@ public sealed record ModReference(string Entity, string Path, JsonNode Value);
 
 /// <summary>
 /// Ссылки на сущность внутри слоя мода. Удалить свою сущность — значит убрать и ссылки на неё, иначе мод не наложится (висячая ссылка —
-/// ошибка загрузки): из списков (постройки лорда) её вычеркнуть, поле-ссылку снять. Правка чужой сущности, ставшая такой же, как база, из
-/// слоя уходит (поле снимается, а не пишется равным базе).
+/// ошибка загрузки): из списков (постройки лорда, исследования) её вычеркнуть — и строку-ссылку, и запись-объект, где она упомянута; поле-ссылку
+/// снять. Правка чужой сущности, ставшая такой же, как база, из слоя уходит (поле снимается, а не пишется равным базе).
 /// </summary>
 public static class ModReferences
 {
-    /// <summary>Все ссылки на <paramref name="id"/> в документе (кроме самой сущности).</summary>
-    public static IReadOnlyList<ModReference> To(ModDocument doc, string id)
+    /// <summary>Все ссылки на <paramref name="id"/> в документе (кроме самой сущности и <paramref name="ignore"/>).</summary>
+    public static IReadOnlyList<ModReference> To(ModDocument doc, string id, string? ignore = null)
     {
         ArgumentNullException.ThrowIfNull(doc);
         var found = new List<ModReference>();
-        foreach (var e in doc.Entities.Where(e => e.Id != id))
+        foreach (var e in doc.Entities.Where(e => e.Id != id && e.Id != ignore))
             Walk(e.Id, e.Node, "", id, found);
         return found;
     }
@@ -33,7 +33,7 @@ public static class ModReferences
             if (key == "id" && prefix.Length == 0) continue;
             string path = prefix.Length == 0 ? key : $"{prefix}.{key}";
             if (value is JsonObject inner) Walk(entity, inner, path, id, found);
-            else if ((value is JsonArray array && array.Any(v => IsId(v, id))) || IsId(value, id))
+            else if ((value is JsonArray array && array.Any(v => Mentions(v, id))) || IsId(value, id))
                 found.Add(new ModReference(entity, path, value!.DeepClone()));
         }
     }
@@ -41,18 +41,28 @@ public static class ModReferences
     private static bool IsId(JsonNode? node, string id) =>
         node is JsonValue v && v.GetValueKind() == JsonValueKind.String && v.GetValue<string>() == id;
 
+    /// <summary>Узел — ссылка на <paramref name="id"/> или содержит её где-то внутри (запись списка: <c>{"spell": id, …}</c>).</summary>
+    private static bool Mentions(JsonNode? node, string id) => node switch
+    {
+        JsonObject o => o.Any(p => Mentions(p.Value, id)),
+        JsonArray a => a.Any(v => Mentions(v, id)),
+        _ => IsId(node, id),
+    };
+
     /// <summary>Команды, которые снимают ссылки на <paramref name="id"/>: из списка — вычеркнуть (список стал как у базы — снять поле), поле —
     /// снять (у своей сущности — убрать, у правки чужой — вернуть базовое). <paramref name="replacement"/> — чем заменить поле-ссылку по
-    /// пути (требование постройки — требуемой удаляемой: цепочка не рвётся); нет — снять.</summary>
-    public static IReadOnlyList<IEditCommand> Detach(StudioSession session, string id, Func<ModReference, string?>? replacement = null)
+    /// пути (требование постройки — требуемой удаляемой: цепочка не рвётся); нет — снять. <paramref name="ignore"/> — сущность, которую
+    /// та же пачка удаляет (её ссылки не трогать).</summary>
+    public static IReadOnlyList<IEditCommand> Detach(StudioSession session, string id, Func<ModReference, string?>? replacement = null,
+                                                     string? ignore = null)
     {
         ArgumentNullException.ThrowIfNull(session);
         var commands = new List<IEditCommand>();
-        foreach (var r in To(session.History.Current, id))
+        foreach (var r in To(session.History.Current, id, ignore))
         {
             if (r.Value is JsonArray array)
             {
-                var kept = new JsonArray([.. array.Where(v => !IsId(v, id)).Select(v => v?.DeepClone())]);
+                var kept = new JsonArray([.. array.Where(v => !Mentions(v, id)).Select(v => v?.DeepClone())]);
                 bool asBase = !session.IsMine(r.Entity) && BaseValue(session, r.Entity, r.Path) is { } b && JsonNode.DeepEquals(b, kept);
                 commands.Add(asBase ? new SetField(r.Entity, r.Path, null, Unset: true) : new SetField(r.Entity, r.Path, kept));
             }

@@ -182,8 +182,9 @@ public partial class StudioUnitsTab : HSplitContainer, IStudioTab
         // Форма — когда сменился выбор или документ.
         string? id = _ws.Selected is { } s && session.Report.Content?.Find(s) is UnitDef ? s : null;
         _create.Disabled = id is null;
-        if (_filled == (id, session.Revision)) return;
-        _filled = (id, session.Revision);
+        // По выбору и правке документа (история), а не по отказу команды: отказ не стирает набранное.
+        if (_filled == (id, session.History.Revision)) return;
+        _filled = (id, session.History.Revision);
         Fill(id);
     }
 

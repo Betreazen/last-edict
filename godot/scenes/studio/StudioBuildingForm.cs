@@ -61,8 +61,8 @@ public partial class StudioBuildingForm : ScrollContainer
     private List<string?> _requireIds = [];
     private List<string?> _treeIds = [];
     private ImmutableArray<byte>? _pendingIcon;   // картинка новой постройки до «Создать»
-    private string? _shownFor;
-    private int _shownRevision = -1;
+    private (string? Id, int Edits, string Lord) _shown = ("-", -1, "");
+    private readonly Dictionary<Texture2D, Texture2D> _small = [];
     private bool _nameTouched;
 
     public StudioBuildingForm(TreeWorkspace ws, Func<string, Texture2D?> texture)
@@ -171,11 +171,12 @@ public partial class StudioBuildingForm : ScrollContainer
 
     private void Refill(bool force)
     {
-        int revision = _ws.Revision;   // пересобирается и по правке документа, и по смене лорда или выбора
+        // Поля перезаполняются по смене выбора, правке документа (история) или лорда — не по отказу команды: отказ не стирает набранное.
         string? id = Editing;
-        if (!force && id == _shownFor && revision == _shownRevision) return;
-        bool newForm = id is null && (force || _shownFor is not null);
-        (_shownFor, _shownRevision) = (id, revision);
+        var shown = (id, _ws.Session.History.Revision, _ws.Lord);
+        if (!force && shown == _shown) return;
+        bool newForm = id is null && (force || _shown.Id is not null);
+        _shown = shown;
         bool own = id is not null && _ws.IsOwnFolder(id);
         var form = id is null ? (newForm ? _ws.NewForm(null) : CurrentForm()) : _ws.FormOf(id);
         _head.Text = id is null ? "Новая постройка" : own ? $"Своя постройка: {_ws.Session.NameOf(id)}" : $"Постройка базы: {_ws.Session.NameOf(id)} (правка — слоем мода)";
@@ -198,7 +199,7 @@ public partial class StudioBuildingForm : ScrollContainer
         _requires.AddItem("— (корень ветки)");
         foreach (var n in _ws.Nodes.Where(n => n.Building != id))
         {
-            if (_texture($"IconBld:{ArtNames.Of(n.Building)}") is { } icon) _requires.AddIconItem(Small(icon), n.Name);
+            if (Small($"IconBld:{ArtNames.Of(n.Building)}") is { } icon) _requires.AddIconItem(icon, n.Name);
             else _requires.AddItem(n.Name);
             _requireIds.Add(n.Building);
         }
@@ -221,11 +222,15 @@ public partial class StudioBuildingForm : ScrollContainer
         _pictureNote.Text = Note(png);
     }
 
-    private static Texture2D Small(Texture2D icon)
+    /// <summary>Значок списка «Требует» (26×25) — уменьшенный кадр, один раз на кадр.</summary>
+    private Texture2D? Small(string frame)
     {
-        var image = icon.GetImage();
+        // Ключ — сама текстура кадра: своя картинка после замены — другая текстура, уменьшается заново.
+        if (_texture(frame) is not { } full) return null;
+        if (_small.TryGetValue(full, out var cached)) return cached;
+        var image = full.GetImage();
         image.Resize(26, 25, Image.Interpolation.Bilinear);
-        return ImageTexture.CreateFromImage(image);
+        return _small[full] = ImageTexture.CreateFromImage(image);
     }
 
     private static string Note(ImmutableArray<byte>? png)

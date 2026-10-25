@@ -46,8 +46,13 @@ def run(cmd: list[str] | str, **kw) -> subprocess.CompletedProcess:
 
 def ssh(script: str, check: bool = True, timeout: int | None = None) -> subprocess.CompletedProcess:
     """Скрипт bash на EliteBook (через stdin, как велит ~/.claude/docs/elitebook-ssh.md)."""
-    return subprocess.run(["ssh", REMOTE, "bash -s"], input=script, text=True, encoding="utf-8", errors="replace",
-                          capture_output=True, check=check, timeout=timeout)
+    # Байтами: текстовый stdin на Windows дал бы bash переводы строк CRLF.
+    done = subprocess.run(["ssh", REMOTE, "bash -s"], input=script.encode("utf-8"), capture_output=True, check=False, timeout=timeout)
+    result = subprocess.CompletedProcess(done.args, done.returncode, done.stdout.decode("utf-8", "replace"),
+                                         done.stderr.decode("utf-8", "replace"))
+    if check and done.returncode != 0:
+        raise RuntimeError(f"EliteBook: код {done.returncode}: {result.stderr.strip()[-500:]}")
+    return result
 
 
 def free_port() -> int:
@@ -107,8 +112,19 @@ def start_relay(work: Path, port: int) -> subprocess.Popen:
 
 
 def game_args(role: list[str], days: int, script: int) -> list[str]:
-    return ["--headless", "--path", "godot", "res://scenes/map/MapScreen.tscn", "--", *role, "--net-script", str(script),
+    # --no-mods: проверке не нужен слой графики пользователя (HD — десятки ГБ), и без него игра не держит файлы чужих модов.
+    return ["--headless", "--path", "godot", "res://scenes/map/MapScreen.tscn", "--", "--no-mods", *role, "--net-script", str(script),
             "--net-days", str(days)]
+
+
+def kill_tree(proc: subprocess.Popen) -> None:
+    """Снять процесс с потомками: godot.cmd запускает настоящий Godot дочерним, и kill() одного родителя оставлял бы его жить."""
+    if proc.poll() is not None:
+        return
+    if os.name == "nt":
+        subprocess.run(["taskkill", "/F", "/T", "/PID", str(proc.pid)], capture_output=True)
+    else:
+        proc.kill()
 
 
 def assets_dir() -> str:
@@ -173,10 +189,9 @@ cd {REMOTE_ROOT}
 /usr/bin/time -v timeout {args.timeout} "$GODOT" {quoted} > /tmp/le-net-client.log 2>&1
 echo "exit=$?" >> /tmp/le-net-client.log
 """
-            client = subprocess.Popen(["ssh", REMOTE, "bash -s"], stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                                      text=True)
+            client = subprocess.Popen(["ssh", REMOTE, "bash -s"], stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             assert client.stdin is not None
-            client.stdin.write(script)
+            client.stdin.write(script.encode("utf-8"))
             client.stdin.close()
         else:
             client_env = {k: v for k, v in env.items() if k != "D2_COMMAND_JOURNAL"}   # журнал пишет только хост
@@ -192,12 +207,11 @@ echo "exit=$?" >> /tmp/le-net-client.log
         return verify(work, args, elapsed)
     finally:
         for p in procs:
-            if p.poll() is None:
-                p.kill()
+            kill_tree(p)
         if tunnel is not None:
-            tunnel.kill()
+            kill_tree(tunnel)
         if relay is not None:
-            relay.kill()
+            kill_tree(relay)
 
 
 def last(pattern: str, text: str) -> re.Match | None:

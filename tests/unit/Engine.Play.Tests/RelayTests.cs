@@ -148,6 +148,44 @@ public sealed class RelayTests : IAsyncLifetime
         Assert.Equal(StateHash.Of(game), StateHash.Of(replay));
     }
 
+    /// <summary>Лобби: хозяин создал комнату и ждёт; друг входит по коду и здоровается, пока партии ещё нет (хост молчит); хозяин нажимает
+    /// «Начать» — хост встаёт на той же комнате (<see cref="NetSession.HostOn"/>), и друг получает свой вид без нового входа. Асинхронная
+    /// комната: друг входит по коду без места и занимает первое свободное место человека по партии.</summary>
+    [Fact]
+    public async Task Lobby_FriendWaitsForTheStart_AndClaimsAsyncSeat()
+    {
+        var hostLink = await Link();
+        var key = await hostLink.CreateAsync("Лобби", "хост", async: false, seat: NetTestGame.HostPlayer);
+        var join = new NetJoin(_url, "друг", NetTestGame.Ruleset, "", view => new GameSession(view, MapArtData.Empty, NetTestGame.Book));
+        var friendLink = await Link();
+        await friendLink.JoinAsync(key.Room, "друг");
+        var joining = NetSession.JoinOn(friendLink, join, null, null, TimeSpan.FromSeconds(30));
+        await Task.Delay(3500);   // хозяин ещё выбирает места — друг здоровается снова
+        Assert.False(joining.IsCompleted);
+        var game = new GameSession(NetTestGame.Copy(NetTestGame.Start()), MapArtData.Empty, NetTestGame.Book);
+        var host = NetSession.HostOn(hostLink, game, NetTestGame.HostPlayer, [NetTestGame.ClientPlayer], NetTestGame.Ruleset);
+        host.HeadlessHost = true;
+        using var pump = new HostPump(host.Host!);
+        var friend = await joining;
+        Assert.Equal(NetTestGame.ClientPlayer, friend.Me);
+        await Until(() => SameView(friend.Client!, game));
+
+        // Асинхронная комната: место — по партии после входа, занятое — не занять.
+        var first = new GameSession(NetTestGame.Copy(NetTestGame.Start()), MapArtData.Empty, NetTestGame.Book);
+        await using var created = await AsyncRoom.CreateAsync(_url, first, NetTestGame.HostPlayer, "первый");
+        var guest = await Link();
+        await guest.JoinAsync(created.Key.Room, "второй");
+        var room = AsyncRoom.FromLink(guest);
+        var stored = await room.LoadAsync();
+        var free = AsyncRoom.FreeSeats(stored.State!, guest.Peers);
+        Assert.Equal([NetTestGame.ClientPlayer], free);
+        await guest.ClaimSeatAsync(free[0]);
+        Assert.False(room.Mine(stored));   // ход — первого
+        var third = await Link();
+        await third.JoinAsync(created.Key.Room, "третий");
+        Assert.Equal("seat", (await Assert.ThrowsAsync<RelayException>(() => third.ClaimSeatAsync(NetTestGame.ClientPlayer))).Code);
+    }
+
     private static bool SameView(NetClient client, GameSession host) =>
         client.ViewHash == ViewPatch.Hash(NetView.Of(host.SnapshotWithoutSummaries(), NetTestGame.ClientPlayer));
 

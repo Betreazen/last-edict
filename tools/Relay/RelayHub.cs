@@ -159,6 +159,7 @@ public sealed class RelayHub
             case "store": Store(connection, frame); break;
             case "load": Load(connection); break;
             case "rooms": List(connection, frame); break;
+            case "seat": Claim(connection, frame); break;
             default: connection.Send(Error("op", $"неизвестная операция «{op}»")); break;
         }
     }
@@ -236,6 +237,34 @@ public sealed class RelayHub
         connection.Send(Joined(room, member, null));
         if (member.Peer == room.Host) room.Broadcast(member.Peer, new JsonObject { ["op"] = "peer", ["peer"] = member.Peer, ["back"] = true, ["host"] = true });
         else room.Send(room.Host, new JsonObject { ["op"] = "peer", ["peer"] = member.Peer, ["nick"] = member.Nick, ["seat"] = member.Seat, ["back"] = true });
+        NotifyTurn(room, member);
+    }
+
+    /// <summary>Занять место: только своё пустое и только свободное (асинхронная комната — место выбирают по партии после входа).</summary>
+    private void Claim(Connection connection, JsonObject frame)
+    {
+        if (connection.Room is not { } room || connection.Member is not { } member)
+        {
+            connection.Send(Error("room", "сначала войдите в комнату"));
+            return;
+        }
+        string seat = Text(frame, "seat", 32);
+        lock (room)
+        {
+            if (seat.Length == 0 || member.Seat.Length > 0)
+            {
+                connection.Send(Error("seat", "место уже выбрано"));
+                return;
+            }
+            if (room.Members.Any(m => m.Seat == seat))
+            {
+                connection.Send(Error("seat", "это место уже занято"));
+                return;
+            }
+            member.Seat = seat;
+            if (room.Async) _store.Save(room);
+        }
+        connection.Send(new JsonObject { ["op"] = "seated", ["seat"] = seat });
         NotifyTurn(room, member);
     }
 

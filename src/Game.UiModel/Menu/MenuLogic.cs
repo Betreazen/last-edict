@@ -95,6 +95,9 @@ public sealed record MenuContext(GameCatalog Catalog, IReadOnlyDictionary<string
 
     public Action<Map.MapSettings>? SettingsApplied { get; init; }
 
+    /// <summary>Лобби сети (<see cref="LobbyLogic"/>): игроки сценария (id и раса) — из файла сценария; нет — лобби без мест.</summary>
+    public Func<ScenarioInfo, IReadOnlyList<(string Player, string RaceId)>>? ScenarioPlayers { get; init; }
+
     /// <summary>Ролики следующего показа <c>DLG_CINEMATIC</c> (запуск игры — <see cref="Cinematic.Startup"/>); нет — ролик меню
     /// (<see cref="Cinematic.Menu"/>, кнопка «Вступление»). Показ забирает их.</summary>
     public IReadOnlyList<CinematicClip>? Cinematic { get; set; }
@@ -143,8 +146,9 @@ public static class MenuLogic
         "DLG_CHOOSE_RACE" => new ChooseRaceLogic(context),
         "DLG_CHOOSE_LORD" => new ChooseLordLogic(context),
         "DLG_SCENARIO_BRIEFING" => BriefingLogic.Create(context),
-        // «Мультиплеер» погашен: «горячий стул» вырезан (Р33), люди одной партии — только по сети (Э7).
+        // «Мультиплеер» — лобби сетевой игры (Э7, data/ui/flow.manual.json); «горячего стула» нет (Р33).
         "DLG_MAIN_MENU" => new MainMenuLogic(),
+        LobbyLogic.Screen => new LobbyLogic(context.Catalog, context.Text, context.ScenarioPlayers ?? (_ => [])),
         "DLG_LOAD" when context.SavesDir.Length > 0 => new Play.LoadGameLogic(context.SavesDir, path => context.Setup.LoadPath = path,
                                                                               singlePlayer: true, Play.SaveKind.Quest),
         "DLG_LOAD_TOURNEMENT" when context.SavesDir.Length > 0 =>
@@ -199,8 +203,8 @@ internal sealed class CreditsLogic : IScreenLogic
 
 /// <summary>Экран-развилка меню («горячий стул» или одиночная игра): при открытии отмечает режим в выборе игрока; нажатая кнопка —
 /// <paramref name="clicked"/> (одиночная игра: «Новая сага» или квест).</summary>
-/// <summary>Главное меню: «Мультиплеер» (<c>BTN_MULTI</c> → выбор протокола → «горячий стул» или сеть) погашен — «горячий стул» вырезан
-/// (Р33), сетевая игра — Э7.</summary>
+/// <summary>Главное меню: «Мультиплеер» (<c>BTN_MULTI</c>) ведёт в лобби сетевой игры (<see cref="LobbyLogic"/>, Э7) — у оригинала там был
+/// выбор протокола и «горячий стул» (вырезан, Р33).</summary>
 public sealed class MainMenuLogic : IScreenLogic
 {
     public const string Multiplayer = "BTN_MULTI";
@@ -208,14 +212,12 @@ public sealed class MainMenuLogic : IScreenLogic
     public void Open(UiScreenState ui)
     {
         ArgumentNullException.ThrowIfNull(ui);
-        if (ui.Screen.Elements.Any(e => e.Id == Multiplayer)) ui.SetEnabled(Multiplayer, false);
+        if (ui.Screen.Elements.Any(e => e.Id == Multiplayer)) ui.SetEnabled(Multiplayer, true);
     }
 
     public void Handle(UiEvent e, UiScreenState ui)
     {
     }
-
-    public bool Allows(string element, UiScreenState ui) => element != Multiplayer;
 }
 
 internal sealed class MenuModeLogic(Action mark, Action<string>? clicked = null) : IScreenLogic

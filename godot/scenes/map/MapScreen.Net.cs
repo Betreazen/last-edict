@@ -230,28 +230,7 @@ public partial class MapScreen
         return play;
     }
 
-    /// <summary>Набор правил этой игры: база содержимого и включённые моды (графические — не в счёт).</summary>
-    private static Ruleset Ruleset() => RulesetHash.Of(GameData.RulesDir, GameData.Mods);
+    private static Ruleset Ruleset() => NetGames.Ruleset();
 
-    /// <summary>Новая партия сценария с людьми на местах <paramref name="seats"/> (игроки сценария), как из лобби: раса — игрока сценария,
-    /// лорд — воин.</summary>
-    private static GameSession NewNetGame(string scenarioId, string[] seats, uint seed)
-    {
-        var catalog = GameData.Catalog;
-        var scenario = catalog.Scenario(scenarioId) ?? throw new InvalidOperationException($"сценария «{scenarioId}» нет");
-        var data = GameData.ReadScenario(GameData.Content.ScenarioPath(scenario.File.Length > 0 ? Path.GetFileNameWithoutExtension(scenario.File) : scenario.Id));
-        var players = data.Looks.Map.Players;
-        var setup = new NewGameSetup
-        {
-            Scenario = scenario, Difficulty = 1,
-            Seats = [.. seats.Select(id => players.TryGetValue(id, out var p)
-                ? new PlayerSeat(p.RaceId, id, 0, 1, PlayerId: id)
-                : throw new InvalidOperationException($"в сценарии нет игрока {id}"))],
-        };
-        var begun = LastEdict.Data.Play.NewGame.Begin(data, setup, catalog, GameData.Book, GameData.Content.MapArt, reseed: seed);
-        // Партия комнаты начинается с записанного и прочитанного состояния: чтение кое-что упорядочивает (известные заклинания — как
-        // движок при загрузке), и сохранение начала журнала, асинхронная комната и возвращение хоста видят ту же партию, что идёт.
-        var read = GameSave.FromJson(GameSave.ToJson(begun.SnapshotWithoutSummaries(), "", DateTime.UnixEpoch));
-        return new GameSession(read, GameData.Content.MapArt, GameData.Book) { EventBattlesOnScreen = false };
-    }
+    private static GameSession NewNetGame(string scenarioId, string[] seats, uint seed) => NetGames.NewGame(scenarioId, seats, seed);
 }

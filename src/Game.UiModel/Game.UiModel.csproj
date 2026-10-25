@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Engine.Play\Engine.Play.csproj" />
+    <ProjectReference Include="..\Net\Net.csproj" />
   </ItemGroup>
 
   <ItemGroup>

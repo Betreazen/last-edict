@@ -10,13 +10,19 @@ namespace LastEdict.Godot;
 /// экран отдаёт окну.</summary>
 public partial class UiScreenView
 {
-    private SettingsWindow? _overlay;
+    private Control? _overlay;
 
-    /// <summary>Окно поверх экрана, если логика — модель такого окна.</summary>
+    /// <summary>Окно поверх экрана, если логика — модель такого окна: настройки (Э5) или лобби сети (Э7).</summary>
     private void AttachOverlay()
     {
-        if (Logic is not SettingsLogic settings || _overlay is not null) return;
-        _overlay = new SettingsWindow(settings, Lookup, Emit);
+        if (_overlay is not null) return;
+        _overlay = Logic switch
+        {
+            SettingsLogic settings => new SettingsWindow(settings, Lookup, Emit),
+            LastEdict.Data.Menu.LobbyLogic lobby => new LobbyWindow(lobby, Lookup, Emit),
+            _ => null,
+        };
+        if (_overlay is null) return;
         AddChild(_overlay);
         PlaceOverlay();
     }
@@ -35,8 +41,21 @@ public partial class UiScreenView
     /// <summary>Событие элемента от окна — тем же путём, что щелчок по элементу разметки (логика, хозяин, граф).</summary>
     public void Emit(string element) => Dispatch([new UiClicked(element)]);
 
+    /// <summary>Шаг сценария проверки — окну поверх экрана, если оно его знает.</summary>
+    private bool OverlayStep(string verb, string arg) => _overlay switch
+    {
+        SettingsWindow settings => settings.Step(verb, arg),
+        LobbyWindow lobby => lobby.Step(verb, arg),
+        _ => false,
+    };
+
     /// <summary>Строка проверки окна поверх экрана; нет окна — null.</summary>
-    public string? OverlayLine() => _overlay?.Line();
+    public string? OverlayLine() => _overlay switch
+    {
+        SettingsWindow settings => settings.Line(),
+        LobbyWindow lobby => lobby.Line(),
+        _ => null,
+    };
 
     private BuildTreeView? _tree;
 

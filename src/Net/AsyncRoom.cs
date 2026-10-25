@@ -59,6 +59,18 @@ public sealed class AsyncRoom : IAsyncDisposable
         return new AsyncRoom(link);
     }
 
+    /// <summary>Асинхронная комната поверх уже вошедшего соединения (лобби: вошли по коду, место выбрано по партии).</summary>
+    public static AsyncRoom FromLink(RelayLink link) => new(link ?? throw new ArgumentNullException(nameof(link)));
+
+    /// <summary>Свободные места людей партии <paramref name="state"/>: люди, чьё место в комнате никто не занял.</summary>
+    public static IReadOnlyList<string> FreeSeats(GameState state, System.Text.Json.Nodes.JsonArray? peers)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        var taken = (peers ?? []).OfType<System.Text.Json.Nodes.JsonObject>().Select(p => p["seat"]?.GetValue<string>() ?? "")
+                                 .Where(s => s.Length > 0).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        return [.. state.Info.Humans.Where(h => !taken.Contains(h))];
+    }
+
     /// <summary>Партия у посредника; хеш записанной партии сверяется с прочитанной (порча — <see cref="InvalidDataException"/>).</summary>
     public async Task<AsyncState> LoadAsync(CancellationToken cancel = default)
     {

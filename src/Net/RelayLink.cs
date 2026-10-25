@@ -112,6 +112,16 @@ public sealed class RelayLink : IAsyncDisposable
         return Key;
     }
 
+    /// <summary>Занять место <paramref name="seat"/> (игрок партии), если своё ещё пусто и место свободно (асинхронная комната: место
+    /// выбирают по партии после входа).</summary>
+    public async Task<RoomKey> ClaimSeatAsync(string seat, CancellationToken cancel = default)
+    {
+        var key = Key ?? throw new InvalidOperationException("сначала войдите в комнату");
+        await Request(new JsonObject { ["op"] = "seat", ["seat"] = seat }, "seated", cancel).ConfigureAwait(false);
+        Key = key with { Seat = seat };
+        return Key;
+    }
+
     /// <summary>Мои комнаты по ключам (без входа): асинхронные — чей ход, день.</summary>
     public async Task<JsonArray> RoomsAsync(IEnumerable<RoomKey> keys, CancellationToken cancel = default)
     {

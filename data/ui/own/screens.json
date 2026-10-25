@@ -8,5 +8,15 @@
       "Height": 600
     },
     "Cursor": "_CUDEFAUL"
+  },
+  {
+    "Id": "LE_LOBBY",
+    "Design": {
+      "X": 0,
+      "Y": 0,
+      "Width": 800,
+      "Height": 600
+    },
+    "Cursor": "_CUDEFAUL"
   }
 ]

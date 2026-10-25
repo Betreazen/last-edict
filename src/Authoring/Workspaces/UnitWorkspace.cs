@@ -48,7 +48,7 @@ public sealed record UnitForm
 /// (<see cref="EntityArt"/>); правка формой, найм (список расы и постройка), повышение (из кого и чьей постройкой), переименование и
 /// удаление своего. Каждая правка — одна команда отмены.
 /// </summary>
-public sealed class UnitWorkspace
+public sealed partial class UnitWorkspace
 {
     public UnitWorkspace(StudioSession session)
     {
@@ -212,19 +212,13 @@ public sealed class UnitWorkspace
     /// другие юниты не меняются.</summary>
     private IEnumerable<IEditCommand> AttackNumbers(string id, string? attackId, UnitForm form, UnitForm was)
     {
-        if (attackId is null || Content.Find(attackId) is not AttackDef attack) yield break;
-        bool exclusive = Session.IsMine(attackId) && !Content.Units.Any(u => u.Id != id && (u.Attack == attackId || u.SecondAttack == attackId));
-        if (!exclusive)
-        {
-            string name = EntityNames.Free(Session.History.Current, Session.Report.Content, "attack", id[(id.LastIndexOf('/') + 1)..]);
-            foreach (var c in CopyAttack(attack, name)) yield return c;
-            attackId = EntityFolders.IdOf(Session.Project.Id, ContentSet.KindNamed("attack"), name);
-            yield return new SetField(id, "attack", JsonValue.Create(attackId));
-        }
-        if (form.Initiative != was.Initiative) yield return new SetField(attackId, "initiative", JsonValue.Create(form.Initiative));
-        if (form.Accuracy != was.Accuracy) yield return new SetField(attackId, "power", JsonValue.Create(form.Accuracy));
-        if (form.Damage != was.Damage) yield return FormJson.Field(Session, attackId, "damage", form.Damage is { } d ? JsonValue.Create(d) : null);
-        if (form.Heal != was.Heal) yield return FormJson.Field(Session, attackId, "heal", form.Heal is { } h ? JsonValue.Create(h) : null);
+        if (attackId is null || Content.Find(attackId) is not AttackDef) return [];
+        var (commands, own) = OwnAttack(id, attackId, "attack");
+        if (form.Initiative != was.Initiative) commands.Add(new SetField(own, "initiative", JsonValue.Create(form.Initiative)));
+        if (form.Accuracy != was.Accuracy) commands.Add(new SetField(own, "power", JsonValue.Create(form.Accuracy)));
+        if (form.Damage != was.Damage) commands.Add(FormJson.Field(Session, own, "damage", form.Damage is { } d ? JsonValue.Create(d) : null));
+        if (form.Heal != was.Heal) commands.Add(FormJson.Field(Session, own, "heal", form.Heal is { } h ? JsonValue.Create(h) : null));
+        return commands;
     }
 
     /// <summary>Найм: юнит в одном списке — расы формы (лидер — лидеров, прочие — солдат), если нанимается; из прочих списков рас вычеркнут

@@ -1268,6 +1268,14 @@ public partial class BattleScreen : Node
             for (int i = 0; i < 3; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
         }
         GD.Print(VisibleLine());
+        // Бой с атакой и аурой мода (Студия 2): сколько юнитов под аурами в начале, бой досчитан — классы действий и победитель.
+        if (OS.GetCmdlineUserArgs().Contains("--play-out"))
+        {
+            int auras = _session.State.Units.Count(u => u.Auras.Count > 0);
+            _session.Resolve();
+            GD.Print($"battle played ауры={auras} классы={string.Join(",", _session.State.Actions.Select(a => a.Class).Distinct().DefaultIfEmpty())} " +
+                     $"раундов={_session.Round} победитель={_session.Winner ?? "-"}");
+        }
         if (OS.GetCmdlineUserArgs().Contains("--rmb")) await CheckHeldCard();
         if (OS.GetCmdlineUserArgs().Contains("--item")) await CheckItemDrag();
         if (OS.GetCmdlineUserArgs().Contains("--refusal"))

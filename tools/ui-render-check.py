@@ -1242,8 +1242,11 @@ STUDIO_STEPS = [
     {"op": "building-apply"},
     {"op": "unit-select", "id": "base:unit/squire-empire"},
     {"op": "unit-new", "title": "Алебардщик"},
-    {"op": "unit-form", "hp": 150, "damage": 40, "initiative": 55, "hireable": True},
+    {"op": "unit-form", "hp": 150, "hireable": True},
     {"op": "unit-apply"},
+    {"op": "unit-attack", "damage": 40},
+    {"op": "unit-aura", "modifier": "base:modifier/holy-armor", "reach": "adjacent"},
+    {"op": "unit-immune", "source": "fire"},
     {"op": "unit-picture", "file": "face.png", "path": "{face}"},
     {"op": "undo"},
     {"op": "redo"},
@@ -1280,6 +1283,9 @@ STUDIO_WANTS = [
     ("unit-new", ["ok=1", "selected=towers:unit/alebardshchik", "own=1", "errors=0"]),
     ("unit-form", ["ok=1", "форма_жизнь=150"]),
     ("unit-apply", ["ok=1", "errors=0"]),
+    ("unit-attack", ["ok=1", "errors=0", "атака_эффект=base:effect/damage"]),
+    ("unit-aura", ["ok=1", "errors=0", "ауры=1"]),
+    ("unit-immune", ["ok=1", "errors=0"]),
     ("unit-picture", ["ok=1", "errors=0"]),
     ("undo", ["ok=1", "own=1"]),
     ("redo", ["ok=1", "own=1"]),
@@ -1349,6 +1355,8 @@ def studio(repo: Path) -> tuple[bool, str]:
     unit = json.loads((mod / "content" / "units" / "alebardshchik" / "entity.json").read_text(encoding="utf-8"))
     attack = mod / "content" / "attacks" / "alebardshchik" / "entity.json"
     if unit.get("hitPoints") != 150 or unit.get("baseUnit") != "base:unit/squire-empire" or not attack.is_file() \
+            or unit.get("auras") != [{"modifier": "base:modifier/holy-armor", "reach": "adjacent"}] \
+            or unit.get("immunities") != [{"source": "fire", "level": "always"}] \
             or json.loads(attack.read_text(encoding="utf-8")).get("damage") != 40 \
             or png_size(mod / "content" / "units" / "alebardshchik" / "face.png") != (140, 170):
         return False, f"Студия: юнит формой — {unit}"
@@ -1356,8 +1364,39 @@ def studio(repo: Path) -> tuple[bool, str]:
     if not icon.is_file() or (size := png_size(icon)) != (231, 222):
         return False, f"Студия: значок постройки формой — {icon} {'нет' if not icon.is_file() else size}, ждали 231×222 (77×74 ×3)"
     shutil.rmtree(mod.parent, ignore_errors=True)
-    return True, (f"Студия: {len(lines)} шагов — дерево, постройка формой со значком (HD ×3), юнит на основе сквайра (своя атака, лицо ×2), "
+    return True, (f"Студия: {len(lines)} шагов — дерево, постройка формой со значком (HD ×3), юнит на основе сквайра (своя атака, аура, иммунитет, лицо ×2), "
                   "содержимое, арена, карта 1024², запись мода")
+
+
+def mod_battle(repo: Path) -> tuple[bool, str]:
+    """Бой с атакой и аурой мода (Студия 2, задача 3): d2mod собирает мод — своя атака «яд» и аура «на себя» у рыцаря на пегасе бой-образца;
+    сцена боя с модом досчитывает бой: под аурой — 1 юнит, среди действий — яд мода; без мода — ни аур, ни яда (ваниль та же)."""
+    if not (repo / "data" / "content" / "base" / "units.json").is_file():
+        return True, "бой с атакой мода: пропуск — нет импорта"
+    d2mod = dotnet_tool(repo, "d2mod")
+    mod = repo / ".cache" / "ui-check" / f"mod-battle-{os.getpid()}-{threading.get_ident()}" / "towers"
+    if mod.parent.exists():
+        shutil.rmtree(mod.parent)
+    cmds = [["new", str(mod), "--id", "towers"],
+            ["add", str(mod), "attack", "venom", "--json", json.dumps({"initiative": 60, "source": "death", "effect": "base:effect/poison",
+                                                                        "power": 100, "reach": "adjacent", "damage": 20, "infinite": True})],
+            ["set", str(mod), "base:unit/pegasus-knight", "attack", '"towers:attack/venom"'],
+            ["set", str(mod), "base:unit/pegasus-knight", "auras", '[{"modifier":"base:modifier/holy-armor","reach":"self"}]']]
+    for c in cmds:
+        r = subprocess.run([*d2mod, *c], capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=repo)
+        if r.returncode != 0:
+            return False, f"бой с атакой мода: d2mod {c[0]} — код {r.returncode}\n{r.stdout}{r.stderr}"
+    lines = {}
+    for name, extra in (("мод", ["--mods", str(mod)]), ("база", [])):
+        code, out = godot(repo, [*extra, "--check", "--play-out"], BATTLE_SCENE)
+        line = next((l for l in out.splitlines() if l.startswith("battle played ")), "")
+        if code != 0 or not line:
+            return False, f"бой с атакой мода ({name}): код {code}\n{out[-2000:]}"
+        lines[name] = line
+    if "ауры=1 " not in lines["мод"] or "Poison" not in lines["мод"] or "ауры=0 " not in lines["база"] or "Poison" in lines["база"]:
+        return False, f"бой с атакой мода: с модом — {lines['мод']}; без — {lines['база']}"
+    shutil.rmtree(mod.parent, ignore_errors=True)
+    return True, f"бой с атакой мода: {lines['мод'][len('battle played '):]} (без мода: {lines['база'][len('battle played '):]})"
 
 
 def city_windows(repo: Path) -> tuple[bool, str]:
@@ -2976,7 +3015,7 @@ def steps(repo: Path, screens: list[str], window: bool) -> list[tuple[str, Calla
         ("игровой цикл", gameloop), ("автосохранение", autosave),
         ("быстрое сохранение", quicksave), ("предложение союза", alliance_offer), ("журнал команд", command_journal), ("прокрутка стрелкой", map_arrows),
         ("сага", saga), ("перевод сценариев", scenario_texts), ("конец партии", game_over), ("бой эффекта", event_battle),
-        ("импорт героя", leader_import), ("окна города", city_windows), ("перезагрузка мода", mod_reload), ("Студия", studio),
+        ("импорт героя", leader_import), ("окна города", city_windows), ("перезагрузка мода", mod_reload), ("Студия", studio), ("бой с атакой мода", mod_battle),
         ("ход и туман по шагам, мешок", walk_steps), ("ход ИИ", ai_turn), ("плавная прокрутка", smooth_scroll),
         ("смена тумана", fog_change), ("звук", sound), ("начало боя", battle_opening), ("подсветка клетки", highlight),
         ("облака", clouds), ("снос гор", mountains), ("попап в ходе ИИ", ai_popup), ("настройки показа", map_settings), ("окно настроек", settings_window), ("переназначение клавиш", rebinding), ("геймпад", gamepad), ("HD-слой", hd_layer_step),

@@ -453,6 +453,7 @@ public sealed class BattleSim(BattleState state, IRng rng, RulesConstants consta
         // изгоняемый бросает инициативу (20261014-replay [245844] seq 245966: раунд 3 — два броска, S143UN025e в их числе).
         ClearFallenSummons(orphans: false);
         foreach (var u in state.Units) u.Waited = false;
+        Auras.Refresh(state);   // инициатива раунда — с аурами живых (у базы аур нет — ничего)
         var rolls = RollsOf(round);
         TurnOrder.Roll(state, rng, constants, rolls);
         _queue = [.. TurnOrder.Order(state, rolls, constants, commit: true)];
@@ -550,6 +551,7 @@ public sealed class BattleSim(BattleState state, IRng rng, RulesConstants consta
     {
         bool decided = Winner is not null;
         ClearFallenSummons();
+        Auras.Refresh(state);   // погибший или изгнанный источник ауры — уже без неё
         // Сторона пала изгнанием призванного в начале хода — бой кончен сразу, без нового раунда (в отличие от гибели от яда и
         // ухода беглеца): 20260922-ui [379898] seq 380083 → 380100, 20261014-replay [245844] seq 245972 → 245988 — turn_before
         // изгоняемого и battle_end без строки round и бросков.
@@ -708,6 +710,7 @@ public sealed class BattleSim(BattleState state, IRng rng, RulesConstants consta
     /// <see cref="Log"/>.</summary>
     public IReadOnlyList<TurnRecord> Act(int round, BattleUnit unit, BattleUnit? target = null)
     {
+        Auras.Refresh(state);
         var attack = Striking(unit, unit.Attack, target);
         // Summon в пару «атакующий — цель» не укладывается вовсе: движок целится в ПОЗИЦИЮ в отряде
         // атакующего, а не в юнита (потому у него и method17 свой — 0x66386f, единственный на 23

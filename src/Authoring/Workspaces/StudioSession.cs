@@ -154,6 +154,7 @@ public sealed class StudioSession
             BuildingBranchDef br => br.NameText,
             RaceDef race => race.NameText,
             AttackDef attack => attack.NameText,
+            EffectDef effect => effect.Looks.NameText,
             _ => null,
         };
         return key is not null && Text(key) is { Length: > 0 } text ? text : id[(id.LastIndexOf('/') + 1)..];

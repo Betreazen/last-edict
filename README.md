@@ -48,11 +48,11 @@ change what the original could not:
 | Game actions | direct calls | ✅ commands with a state hash — any game can be replayed from its journal |
 | Initiative | rolled each round | ✅ rolled a round ahead, effects applied live |
 | Random numbers | one generator for everything | ✅ separate streams for battles, AI, loot and the map — one AI change no longer reshuffles every battle |
-| Players and races | up to 5 players, one per race | ✅ the same race twice, teams with a shared victory, more than five players, races as mod content, race choice built from the content (mod races included) · 📋 lobby for friends (E7) |
+| Players and races | up to 5 players, one per race | ✅ the same race twice, teams with a shared victory, more than five players, races as mod content, race choice built from the content (mod races included) · ✅ lobby for friends (E7) |
 | Balance | by feel | ✅ headless simulator: thousands of AI games per seed, win rates by race, first move, snowballing |
 | Screen | 800×600 | ✅ any aspect ratio (16:9, 16:10, 21:9, 4:3): the map fills the screen, windows stay sharp · ✅ HD art pipeline (export → upscale → import, BC7) and an HD display mode: drawn at window resolution, vector text, sharpening · ✅ wide battle like the DisciplesGL wrapper · 📋 an HD art pack |
 | Input | mouse and keyboard | ✅ full gamepad: stick pointer, D-pad between buttons, button hints for Xbox, PlayStation and Steam Deck, remapping · 🚧 tested on real devices |
-| Multiplayer | LAN of 2002 | 📋 friends' rooms via a relay, async games |
+| Multiplayer | LAN of 2002 | ✅ friends' rooms by code through a small relay: the host computes the rules, each player sees only what their fog shows · ✅ AI on free seats, turn timer, async games (move — close the game — your friend moves later) · ✅ battles between two players, each commanding their own units · 🚧 rejoining in the middle of a battle |
 | Building window | a fixed tree on a panel | ✅ the tree comes from data: branch tabs, zoom to the cursor, drag with the middle button, gamepad, a card for the chosen building; mods add branches and buildings without code |
 | Modding | external tools | ✅ built-in Studio: building tree, any content by schema with undo, a battle arena and AI stand (base vs mod), map painting at any size, hot reload into a running game, `d2mod` CLI · ✅ new buildings, units (own pictures, attacks, immunities, auras), items and lords by form; map objects, players and events; layer conflicts and a packed mod archive · 📋 mod abilities (chance of a second hit, recovery in battle, marks on the target, "only one in the squad"), own battle animations |
 
@@ -114,6 +114,10 @@ chosen building opens as a card. Mods add branches and buildings without code �
 <td><a href="https://github.com/Betreazen/last-edict/releases/download/media/studio-map.png"><img src="https://github.com/Betreazen/last-edict/releases/download/media/studio-map-small.png" alt="Studio: map objects"></a><br><sub>Studio: map objects, players and events</sub></td>
 </tr>
 <tr>
+<td><a href="https://github.com/Betreazen/last-edict/releases/download/media/lobby.png"><img src="https://github.com/Betreazen/last-edict/releases/download/media/lobby-small.png" alt="Multiplayer lobby"></a><br><sub>Multiplayer lobby: a room for friends</sub></td>
+<td></td>
+</tr>
+<tr>
 <td><a href="https://github.com/Betreazen/last-edict/releases/download/media/controls.png"><img src="https://github.com/Betreazen/last-edict/releases/download/media/controls-small.png" alt="Controls"></a><br><sub>Key and gamepad remapping</sub></td>
 <td><a href="https://github.com/Betreazen/last-edict/releases/download/media/gamepad.png"><img src="https://github.com/Betreazen/last-edict/releases/download/media/gamepad-small.png" alt="Gamepad hints"></a><br><sub>Playing with a gamepad: button hints</sub></td>
 </tr>
@@ -132,13 +136,23 @@ chosen building opens as a card. Mods add branches and buildings without code �
 | E6 Building tree window and the Studio | ✅ done |
 | Studio 2 — creating buildings, units, attacks and map objects in the Studio | ✅ done |
 | Studio 3 — mod abilities, own battle animations, a custom arena | 📋 next |
-| E7 Play with friends | 🚧 in progress |
+| E7 Play with friends — lobby, relay, async games, battles between players | ✅ done |
+| E8 Network polish — rejoining mid-battle, chat, lord names | 📋 next |
 
 Decisions and details: [`docs/own-version-roadmap.md`](docs/own-version-roadmap.md).
 
 ## Progress
 
 <!-- Новые записи — сверху: дата, что изменилось, снимки «было / стало» (порядок — docs/media.md). -->
+
+- **2026-10-25 — Playing with friends over the network.** "Multiplayer" in the main menu opens a lobby: create a room, give friends
+  its six-letter code, choose who sits where (you, a friend or the AI), set a turn timer or make the game asynchronous. The host's game
+  computes the rules and sends each player only what their fog of war shows, as small changes; a small relay forwards the traffic, so
+  nobody opens ports. Turns go in the usual order, AI players move between people. Your battles play on your own screen with no
+  network delay and the host replays them to check; when two players meet, each commands their own units. A dropped connection comes
+  back on its own. In an async game the relay keeps the game: make your move, close the game, and your friend moves when they like.
+  Two machines through a remote relay end with exactly the same game as a replay of the host's journal, at about 0.3 s per command and
+  about 40 KB per day. Rules unchanged: the snapshots are identical ([the lobby](https://github.com/Betreazen/last-edict/releases/download/media/lobby.png)).
 
 - **2026-10-25 — Studio 2: a mod without touching files.** The Studio creates buildings, units, items and lords from a form,
   each with its own pictures (HD too) that never replace the original art. A new unit starts as a copy of an existing one. Units get

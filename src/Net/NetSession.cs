@@ -18,7 +18,7 @@ public sealed record NetJoin(Uri Relay, string Nick, Ruleset Ruleset, string Bui
 /// (<see cref="TryTakeWork"/>: у хоста — конец хода клиента, его ходы ИИ показывает карта хоста) и бои хода ИИ, которые клиент играет на
 /// своём экране (<see cref="TryTakeBattle"/>). Асинхронная комната — <see cref="AsyncTurn"/>.
 /// </summary>
-public sealed class NetSession : IAsyncDisposable, IHostRunner
+public sealed class NetSession : IAsyncDisposable, IHostRunner, INetPlay
 {
     private readonly ConcurrentQueue<Action> _work = new();
     private readonly ConcurrentQueue<BattleRequest> _battles = new();
@@ -187,6 +187,11 @@ public sealed class NetSession : IAsyncDisposable, IHostRunner
 
     /// <summary>Клиент: бой хода ИИ, который хост просит сыграть на этом экране.</summary>
     public bool TryTakeBattle(out BattleRequest request) => _battles.TryDequeue(out request!);
+
+    public LastEdict.Rules.Battle.BattleState? BuildBattle(BattleRequest request) => Client?.BuildRequestedBattle(request);
+
+    public void ReplyBattle(BattleRequest request, LastEdict.Data.Battle.BattlePlay? play, IReadOnlyList<LastEdict.Rules.Battle.TurnRecord> log) =>
+        Client?.ReplyBattle(request, play, log);
 
     private void OnNotice(JsonObject notice)
     {

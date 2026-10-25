@@ -40,6 +40,18 @@ public sealed partial class GameSession
         _settled = null;
     }
 
+    /// <summary>Асинхронная партия: взять партию целиком (новый ход, прочитанный у посредника) — состояние и генераторы; бой и аудит — с
+    /// начала. Ссылки на генераторы и наблюдателей остаются (сцена карты продолжает с той же сессией).</summary>
+    public void Replace(GameState state)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        _state = WithLandOwners(state with { Random = null }, Book);
+        RestoreRandom(state.Random ?? RandomStreams.FromSeed(0));
+        _battle = null;
+        _ending = null;
+        _settled = (State, RngSteps, Crt.State);
+    }
+
     /// <summary>Поставить генераторам партии места из <paramref name="random"/>: только названные там потоки (клиенту хост даёт лишь поток
     /// боя) и, если <paramref name="crt"/>, — CRT. Ссылки на генераторы остаются прежними.</summary>
     public void RestoreRandom(RandomStreams random, bool crt = true)

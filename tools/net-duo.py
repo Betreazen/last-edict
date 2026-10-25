@@ -156,6 +156,18 @@ def main() -> int:
     relay_url = args.relay or f"ws://127.0.0.1:{port}/ws"
     tunnel = None
     procs: list[subprocess.Popen] = []
+    if args.case == "async":
+        try:
+            if args.remote and not args.relay:
+                tunnel = subprocess.Popen(["ssh", "-N", "-R", f"{port}:127.0.0.1:{port}", REMOTE], stdout=subprocess.DEVNULL,
+                                          stderr=subprocess.DEVNULL)
+                time.sleep(2)
+            return play_async(work, args, relay_url)
+        finally:
+            if tunnel is not None:
+                kill_tree(tunnel)
+            if relay is not None:
+                kill_tree(relay)
     try:
         env = dict(os.environ, D2_ASSETS_DIR=assets_dir(), D2_COMMAND_JOURNAL=str(work / "host.journal"))
         room_file = work / "room.txt"
@@ -212,6 +224,76 @@ echo "exit=$?" >> /tmp/le-net-client.log
             kill_tree(tunnel)
         if relay is not None:
             kill_tree(relay)
+
+
+def run_game(work: Path, name: str, role: list[str], script: int, timeout: int, remote: bool) -> str:
+    """Один запуск игры до выхода (асинхронный ход: открыл, сходил, записал, закрыл); вывод — в <name>.log, текст вывода — итог."""
+    started = time.time()
+    if remote:
+        quoted = " ".join("'" + a.replace("'", "'\\''") + "'" for a in game_args(role, 999, script))
+        out = ssh(f"""{REMOTE_ENV}
+cd {REMOTE_ROOT}
+timeout {timeout} "$GODOT" {quoted} > /tmp/le-net-{name}.log 2>&1
+""", check=False, timeout=timeout + 60)
+        run(["scp", "-q", f"{REMOTE}:/tmp/le-net-{name}.log", str(work / f"{name}.log")])
+        for remote_file in [a for a in role if a.startswith("/tmp/le-net-")]:
+            run(["scp", "-q", f"{REMOTE}:{remote_file}", str(work / Path(remote_file).name.removeprefix("le-net-"))])
+        _ = out
+    else:
+        env = dict(os.environ, D2_ASSETS_DIR=assets_dir())
+        proc = subprocess.Popen([GODOT, *game_args(role, 999, script)], cwd=REPO, env=env,
+                                stdout=open(work / f"{name}.log", "w", encoding="utf-8"), stderr=subprocess.STDOUT)
+        try:
+            proc.wait(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            kill_tree(proc)
+    text = (work / f"{name}.log").read_text(encoding="utf-8", errors="replace")
+    log(f"net-duo: {name} — {time.time() - started:.0f} с")
+    return text
+
+
+def play_async(work: Path, args, relay_url: str) -> int:
+    """Асинхронная партия: ходы по очереди, каждый — отдельный запуск игры (сходил — записал — закрыл); клиент — локально или на
+    EliteBook. Затем повтор журналов ходов (JournalReplay --async) = последний записанный хеш."""
+    host_seat, guest_seat = args.seats.split(",")[:2]
+    turns = args.days * 2
+    journals: list[Path] = []
+    stored = None
+    started = time.time()
+    for turn in range(turns):
+        mine = turn % 2 == 0
+        remote = args.remote and not mine
+        prefix = "/tmp/le-net-" if remote else str(work) + os.sep
+        journal = f"{prefix}t{turn}.jsonl"
+        key = f"{prefix}{'host' if mine else 'guest'}.key"
+        common = ["--net-relay", relay_url, "--net-async-quit", "--net-journal-out", journal, "--net-nick", "host" if mine else "guest"]
+        if turn == 0:
+            role = ["--net-async-create", args.scenario, "--net-seats", args.seats, "--net-seed", str(args.seed),
+                    "--net-key-out", key, "--net-start-out", str(work / "start.d2save"), *common]
+        elif turn == 1:
+            room = re.search(r"^net-room (\w+)", (work / "t0.log").read_text(encoding="utf-8", errors="replace"), re.M)
+            if not room:
+                log("net-duo: FAIL — нет кода комнаты")
+                return 1
+            role = ["--net-async-join", room.group(1), "--net-seat", guest_seat, "--net-key-out", key, *common]
+        else:
+            role = ["--net-async-open", key, *common]
+        text = run_game(work, f"t{turn}", role, 1 if mine else 2, args.timeout, remote)
+        stored = re.search(r"^net-async stored rev=(\d+) hash=(\w+) day=(\d+) next=(\w+)", text, re.M)
+        if not stored:
+            log(f"net-duo: FAIL — ход {turn} не записан; {work / f't{turn}.log'}")
+            return 1
+        journals.append(work / f"t{turn}.jsonl")
+    replay = REPO / "tools" / "JournalReplay" / "bin" / "Debug" / "net10.0" / "JournalReplay.dll"
+    out = subprocess.run(["dotnet", str(replay), "--async", str(work / "start.d2save"), *map(str, journals)], capture_output=True,
+                         text=True, encoding="utf-8", errors="replace")
+    (work / "replay.txt").write_text(out.stdout + out.stderr, encoding="utf-8")
+    final = last(r"хеш (\w+)", out.stdout)
+    ok = out.returncode == 0 and final is not None and stored is not None and final.group(1) == stored.group(2)
+    summary = (f"ходов {turns}, ревизия {stored.group(1)}, день {stored.group(3)}, хеш {stored.group(2)[:12]}, "
+               f"{time.time() - started:.0f} с (с запусками игры)")
+    log(("net-duo: ok — " if ok else "net-duo: FAIL — ") + summary + ("" if ok else f"; повтор: {out.stdout.strip()[-300:]}"))
+    return 0 if ok else 1
 
 
 def last(pattern: str, text: str) -> re.Match | None:

@@ -19,7 +19,7 @@ namespace LastEdict.Godot;
 public partial class MapScreen
 {
     /// <summary>Сетевая партия; null — обычная.</summary>
-    public NetSession? Net { get; set; }
+    public INetPlay? Net { get; set; }
 
     /// <summary>Ход по сценарию (драйвер): зерно хода человека (<see cref="ScriptedHuman"/>); null — ходит человек.</summary>
     private Random? _netScript;
@@ -50,7 +50,8 @@ public partial class MapScreen
         net.Notice += text => Callable.From(() => Chat(text)).CallDeferred();
         net.Log += text => GD.Print(text);
         _map.AiTurnFinished += () => Callable.From(OnNetTurn).CallDeferred();
-        GD.Print($"net {(net.IsHost ? "host" : "client")} room={net.Room} me={net.Me} day={net.Session.Map.Turn} active={net.Active}");
+        string role = net is NetSession room ? room.IsHost ? "host" : "client" : "async";
+        GD.Print($"net {role} room={net.Room} me={net.Me} day={net.Session.Map.Turn} active={net.Active}");
         Callable.From(OnNetTurn).CallDeferred();
     }
 
@@ -60,16 +61,17 @@ public partial class MapScreen
         if (Net is not { } net) return;
         net.Pump();
         if (_netFinished) return;   // итог напечатан — партия стоит до выхода
-        if (_netDays is { } last && net.Session.Map.Turn > last && (!net.IsHost || net.MyTurn || net.Over))
+        if (_netDays is { } last && net.Session.Map.Turn > last && (net is NetSession { IsHost: false } || net.MyTurn || net.Over))
         {
             FinishNet(net);   // каждый кадр: смена хода могла прийти раньше дельты нового дня
             return;
         }
+        var client = (net as NetSession)?.Client;
         if (_netScript is not null && (_netBeat += 1) % 600 == 0)
             GD.Print($"net beat day={net.Session.Map.Turn} active={net.Active} mine={(net.MyTurn ? 1 : 0)} ai={(_map.AiRunning ? 1 : 0)} " +
-                     $"online={(net.Client?.Online ?? true ? 1 : 0)} seq={net.Client?.Seq ?? 0}");
+                     $"online={(client?.Online ?? true ? 1 : 0)} seq={client?.Seq ?? 0}");
         if (_netScript is not null && _map.AiRunning) DismissPopups();   // реплики ИИ и попапы в ходе ИИ — «Закрыть», как в проверке
-        if (!net.MyTurn || _map.AiRunning || _map.Walking || net.Client is { Online: false }) return;
+        if (!net.MyTurn || _map.AiRunning || _map.Walking || client is { Online: false }) return;
         if (net.Deadline is { } deadline && DateTimeOffset.UtcNow > deadline)
         {
             GD.Print($"net срок хода вышел день={_map.Map.Turn}");
@@ -100,7 +102,7 @@ public partial class MapScreen
         if (_netDays is { } days)
         {
             net.Pump();   // виды до смены хода — сначала (у клиента они ждут кадра)
-            if (net.Session.Map.Turn > days && (!net.IsHost || net.MyTurn || net.Over))
+            if (net.Session.Map.Turn > days && (net is NetSession { IsHost: false } || net.MyTurn || net.Over))
             {
                 FinishNet(net);
                 return;
@@ -111,7 +113,7 @@ public partial class MapScreen
 
     /// <summary>Ход по сценарию: команды хода (<see cref="ScriptedHuman.Turn"/>) без конца хода, затем «Конец хода» панели — ходы ИИ и
     /// ожидание чужого хода идут, как у человека.</summary>
-    private void ScriptTurn(NetSession net)
+    private void ScriptTurn(INetPlay net)
     {
         _netScriptRunning = true;
         try
@@ -121,7 +123,7 @@ public partial class MapScreen
             {
                 _netDropAt = null;
                 GD.Print($"net drop day={session.Map.Turn}");
-                net.Link.Abort();
+                (net as NetSession)?.Link.Abort();
                 return;   // ход — когда связь вернётся (StepNet снова позовёт)
             }
             ScriptedHuman.Turn(session, net.Me, c => session.Execute(c), _netScript!, endTurn: false);
@@ -141,8 +143,14 @@ public partial class MapScreen
 
     /// <summary>Драйвер: партия доиграна до дня — печать итога (хост — хеш партии, клиент — хеш вида) и выход; журнал хоста пишет выход
     /// сцены (<c>D2_COMMAND_JOURNAL</c>).</summary>
-    private void FinishNet(NetSession net)
+    private void FinishNet(INetPlay play)
     {
+        if (play is not NetSession net)
+        {
+            GD.Print($"net-done async day={play.Session.Map.Turn} me={play.Me}");
+            GetTree().Quit(0);
+            return;
+        }
         string result = net.IsHost
             ? $"net-done host day={net.Session.Map.Turn} hash={LastEdict.Data.Play.Commands.StateHash.Of(net.Session)} commands={net.Session.Journal?.Entries.Count ?? 0}"
             : $"net-done client day={net.Session.Map.Turn} player={net.Me} view={net.Client!.ViewHash} bytes={net.Link.BytesReceived}";
@@ -161,12 +169,13 @@ public partial class MapScreen
     /// <summary>Сетевая партия из аргументов: <c>--net-host &lt;сценарий&gt; --net-seats хозяин,гость…</c> (создать комнату, код — в
     /// <c>--net-room-out</c>) или <c>--net-join &lt;код&gt; [--net-seat игрок]</c>; посредник — <c>--net-relay</c> (или <c>LE_RELAY</c>). Без
     /// этих ключей — null.</summary>
-    private static NetSession? LaunchNet(string[] args)
+    private static INetPlay? LaunchNet(string[] args)
     {
         string? hosted = MapSource.Arg(args, "--net-host"), joined = MapSource.Arg(args, "--net-join");
-        if (hosted is null && joined is null) return null;
         var relay = new Uri(MapSource.Arg(args, "--net-relay") ?? System.Environment.GetEnvironmentVariable("LE_RELAY") ?? "ws://127.0.0.1:8790/ws");
         string nick = MapSource.Arg(args, "--net-nick") ?? System.Environment.MachineName;
+        if (LaunchAsync(args, relay, nick) is { } async) return async;
+        if (hosted is null && joined is null) return null;
         var ruleset = Ruleset();
         if (hosted is not null)
         {
@@ -182,6 +191,43 @@ public partial class MapScreen
         }
         var join = new NetJoin(relay, nick, ruleset, "", view => new GameSession(view, GameData.Content.MapArt, GameData.Book), AutoApply: false);
         return NetSession.JoinAsync(join, joined!, seat: MapSource.Arg(args, "--net-seat")).GetAwaiter().GetResult();
+    }
+
+    /// <summary>Асинхронная комната без меню (драйвер): <c>--net-async-create &lt;сценарий&gt; --net-seats …</c> (создать, ключ — в
+    /// <c>--net-key-out</c>), <c>--net-async-join &lt;код&gt; --net-seat &lt;игрок&gt;</c> или <c>--net-async-open &lt;файл ключа&gt;</c>. После своего хода
+    /// с <c>--net-async-quit</c> игра записывает ход, журнал хода (<c>--net-journal-out</c>) и выходит — «сходил и закрыл игру».</summary>
+    private static AsyncPlay? LaunchAsync(string[] args, Uri relay, string nick)
+    {
+        string? create = MapSource.Arg(args, "--net-async-create"), join = MapSource.Arg(args, "--net-async-join"),
+                open = MapSource.Arg(args, "--net-async-open");
+        if (create is null && join is null && open is null) return null;
+        AsyncRoom room;
+        if (create is not null)
+        {
+            var seats = (MapSource.Arg(args, "--net-seats") ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries);
+            if (seats.Length < 2) throw new InvalidOperationException("--net-seats: хозяин и хотя бы один гость");
+            uint seed = uint.TryParse(MapSource.Arg(args, "--net-seed"), out uint s) ? s : (uint)System.Environment.TickCount;
+            var start = NewNetGame(create, seats, seed);
+            room = AsyncRoom.CreateAsync(relay, start, seats[0], nick).GetAwaiter().GetResult();
+            if (MapSource.Arg(args, "--net-start-out") is { } startFile)
+                GameSave.Write(startFile, start.SnapshotWithoutSummaries());   // начало для повтора по ходам (драйвер)
+        }
+        else if (join is not null) room = AsyncRoom.OpenAsync(relay, null, join, MapSource.Arg(args, "--net-seat") ?? "", nick).GetAwaiter().GetResult();
+        else room = AsyncRoom.OpenAsync(relay, System.Text.Json.JsonSerializer.Deserialize<RoomKey>(File.ReadAllText(open!))).GetAwaiter().GetResult();
+        if (MapSource.Arg(args, "--net-key-out") is { } keyFile) File.WriteAllText(keyFile, System.Text.Json.JsonSerializer.Serialize(room.Key));
+        GD.Print($"net-room {room.Key.Room}");
+        var play = AsyncPlay.OpenAsync(room, state => new GameSession(state, GameData.Content.MapArt, GameData.Book)).GetAwaiter().GetResult();
+        if (args.Contains("--net-async-quit"))
+        {
+            string? journalFile = MapSource.Arg(args, "--net-journal-out");
+            play.Stored += (rev, hash, journal) =>
+            {
+                if (journalFile is not null) File.WriteAllText(journalFile, journal);
+                GD.Print($"net-async stored rev={rev} hash={hash} day={play.Session.Map.Turn} next={play.Session.ActiveHuman}");
+                Callable.From(() => (Engine.GetMainLoop() as SceneTree)?.Quit(0)).CallDeferred();   // сходил — закрыл игру
+            };
+        }
+        return play;
     }
 
     /// <summary>Набор правил этой игры: база содержимого и включённые моды (графические — не в счёт).</summary>

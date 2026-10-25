@@ -13,7 +13,7 @@ namespace LastEdict.Godot;
 public partial class MapView
 {
     /// <summary>Сетевая партия; null — обычная.</summary>
-    public NetSession? Net { get; set; }
+    public INetPlay? Net { get; set; }
 
     /// <summary>Как часто рабочий поток смотрит, не его ли ход.</summary>
     private const int NetPollMs = 25;
@@ -48,13 +48,12 @@ public partial class MapView
 
     /// <summary>Клиент: бой хода ИИ, о котором просит хост, — собрать по виду, сыграть экраном боя с человеком (как бой ИИ с человеком),
     /// ответить хосту действиями. Не собрался или экран занят — ответ «без боя»: хост играет автобой.</summary>
-    private void ClientBattle(NetSession net, BattleRequest request)
+    private void ClientBattle(INetPlay net, BattleRequest request)
     {
-        var client = net.Client!;
-        var state = client.BuildRequestedBattle(request);
+        var state = net.BuildBattle(request);
         if (state is null || AiBattleRequested is null)
         {
-            client.ReplyBattle(request, null, []);
+            net.ReplyBattle(request, null, []);
             return;
         }
         _aiShown = Session.State;   // вид после хода ИИ до боя — пришёл раньше запроса
@@ -62,7 +61,7 @@ public partial class MapView
         AskOnWorker(new AiBattleRequest(battle));
         var log = battle.Log ?? (_aiCancel ? battle.ResolveOnce() : null);
         var play = log is null ? null : battle.Played?.Invoke();
-        client.ReplyBattle(request, play, log ?? []);
+        net.ReplyBattle(request, play, log ?? []);
     }
 
     /// <summary>Заявка показа с рабочего потока сети (как <see cref="AiHooks"/>): положить и ждать, пока главный поток её покажет.</summary>

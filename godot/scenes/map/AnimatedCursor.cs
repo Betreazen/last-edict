@@ -169,14 +169,40 @@ public partial class AnimatedCursor : Node
             var full = ImageScales.ToLogical(file);
             if (full != file) file.Dispose();   // HD-файл — уменьшенная копия взята; полный не ждёт сборщика мусора
             full.Convert(Image.Format.Rgba8);
+            ClearFaint(full);
             var used = full.GetUsedRect();
             var cropped = used.Size == Vector2I.Zero ? full : full.GetRegion(used);
             var hotspot = new Vector2(cursor.HotspotX, cursor.HotspotY) - used.Position;
+            // Предел курсора Godot — 256 точек: больше (почти прозрачный край апскейла, мод) — уменьшить вместе с горячей точкой.
+            float fit = Mathf.Min(1f, MaxCursor / (float)Math.Max(cropped.GetWidth(), cropped.GetHeight()));
+            if (fit < 1f)
+            {
+                cropped.Resize(Mathf.Max(1, (int)(cropped.GetWidth() * fit)), Mathf.Max(1, (int)(cropped.GetHeight() * fit)), Image.Interpolation.Bilinear);
+                hotspot *= fit;
+            }
             frames = [(ImageTexture.CreateFromImage(cropped), hotspot.Clamp(Vector2.Zero, cropped.GetSize() - Vector2.One))];
         }
         else GD.PrintErr($"AnimatedCursor: нет кадра курсора окна {cursor.Frame} (python tools/ui-assets/build_ui_assets.py)");
         Cache[key] = frames;
         return frames;
+    }
+
+    /// <summary>Наибольшая сторона курсора у Godot (больше — <c>Cursor image too big</c>, курсор не ставится).</summary>
+    private const int MaxCursor = 256;
+
+    /// <summary>Почти прозрачные точки (альфа меньше 16) — прозрачные: апскейл оставляет еле заметный налёт на пустом холсте кадра
+    /// (у <c>_CUDEFAUL</c> — 321×321), и обрезка по непрозрачной части брала бы весь холст (HD ×3, 25.10).</summary>
+    private static void ClearFaint(Image image)
+    {
+        byte[] data = image.GetData();
+        bool changed = false;
+        for (int i = 3; i < data.Length; i += 4)
+            if (data[i] is > 0 and < 16)
+            {
+                data[i] = 0;
+                changed = true;
+            }
+        if (changed) image.SetData(image.GetWidth(), image.GetHeight(), false, Image.Format.Rgba8, data);
     }
 
     /// <summary>Горячая точка показанного кадра (для проверок); курсора нет — null.</summary>

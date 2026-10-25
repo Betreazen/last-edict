@@ -14,8 +14,8 @@ public sealed record PackResult(string Archive, int Files, long Bytes, string? R
 /// <summary>
 /// Упаковка мода (Студия 2, задача 6; <c>docs/tools/modding-kit/spec.md</c> §10): мод проверяется (<see cref="ModCheck"/>; с ошибками — отказ),
 /// файлы мода (без <c>.studio/</c>, <c>.git</c>, временных) идут в архив <c>&lt;id&gt;-&lt;версия&gt;.zip</c> по порядку имён, рядом с ними —
-/// <c>manifest.json</c>: id, имя, версия, «исполняет код», опись файлов (путь, размер, SHA-256) и хеш правил партии (<c>rulesetHash</c> —
-/// функция сетевой игры Э7, <c>RulesetHash.Of(mod)</c>; пока её нет в сборке — <c>null</c>, место оставлено). Архив по умолчанию — в
+/// <c>manifest.json</c>: id, имя, версия, «исполняет код», опись файлов (путь, размер, SHA-256) и хеш правил мода (<c>rulesetHash</c> —
+/// <see cref="RulesetHash.Of(ModInfo)"/> сетевой игры Э7; мод только с графикой в набор правил не входит — <c>null</c>). Архив по умолчанию — в
 /// <c>&lt;мод&gt;/.studio/pack</c>: Студия пишет только в свой мод.
 /// </summary>
 public static class ModPack
@@ -28,9 +28,8 @@ public static class ModPack
         || relative == ".git" || relative.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Упаковать мод. <paramref name="outDir"/> — каталог архива (нет — <c>&lt;мод&gt;/.studio/pack</c>); внутри мода — только
-    /// <c>.studio</c> (иначе архив попал бы в себя). <paramref name="rulesetHash"/> — функция хеша правил (Э7), нет — без хеша.</summary>
-    public static PackResult Pack(ModProject project, string baseDir, IReadOnlyList<ModInfo>? others = null, string? outDir = null,
-                                  Func<ModInfo, string>? rulesetHash = null)
+    /// <c>.studio</c> (иначе архив попал бы в себя).</summary>
+    public static PackResult Pack(ModProject project, string baseDir, IReadOnlyList<ModInfo>? others = null, string? outDir = null)
     {
         ArgumentNullException.ThrowIfNull(project);
         var doc = ModDocument.Load(project);
@@ -57,7 +56,9 @@ public static class ModPack
             bytes += data.Length;
             entries.Add(new JsonObject { ["file"] = relative, ["size"] = data.Length, ["sha256"] = Convert.ToHexStringLower(SHA256.HashData(data)) });
         }
-        string? hash = rulesetHash?.Invoke(project.Info);
+        // Хеш — по записанному моду (порядок наложения мог смениться правкой mod.json после открытия), как его прочтёт игра.
+        var info = ModProject.Open(project.Dir).Info;
+        string? hash = RulesetHash.HasRules(info) ? RulesetHash.Of(info).Hash : null;
         var manifest = new JsonObject
         {
             ["format"] = 1, ["id"] = project.Id, ["name"] = name, ["version"] = version, ["executesCode"] = project.ExecutesCode,

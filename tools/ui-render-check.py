@@ -1278,6 +1278,8 @@ STUDIO_STEPS = [
     {"op": "map-event", "name": "Привет", "condition": "Frequency", "effect": "Popup", "text": "Добро пожаловать"},
     {"op": "map-check"},
     {"op": "map-save"},
+    {"op": "mod-version", "version": "0.3.0"},
+    {"op": "mod-pack"},
     {"op": "save"},
 ]
 # (шаг, что должно быть в строке шага)
@@ -1335,6 +1337,8 @@ STUDIO_WANTS = [
     ("map-event", ["ok=1", "undo=8", "событий=1"]),
     ("map-check", ["ok=1"]),
     ("map-save", ["ok=1", "dirty=0"]),
+    ("mod-version", ["ok=1", "версия=0.3.0"]),
+    ("mod-pack", ["ok=1"]),
     ("save", ["ok=1", "dirty=0"]),
 ]
 
@@ -1407,13 +1411,23 @@ def studio(repo: Path) -> tuple[bool, str]:
     shown = next((l for l in played.splitlines() if l.startswith("mapscreen ")), "")
     if code != 0 or "ground_ready=True" not in shown:
         return False, f"Студия: игра на карте мода — код {code}\n{shown or played[-1500:]}"
+    packed = next((l for l in out.splitlines() if l.startswith("mod-pack ")), "")
+    archive = mod / ".studio" / "pack" / "towers-0.3.0.zip"
+    if "упаковано:" not in packed or not archive.is_file():
+        return False, f"Студия: упаковка — {packed or 'нет строки'}"
+    import zipfile
+    with zipfile.ZipFile(archive) as z:
+        names = set(z.namelist())
+        listed = {f["file"] for f in json.loads(z.read("manifest.json"))["files"]}
+    if "mod.json" not in names or not listed <= names or any(n.startswith(".studio") for n in names):
+        return False, f"Студия: архив мода — {sorted(names)[:10]}"
     icon = mod / "content" / "buildings" / "mage-tower" / "icon.png"
     if not icon.is_file() or (size := png_size(icon)) != (231, 222):
         return False, f"Студия: значок постройки формой — {icon} {'нет' if not icon.is_file() else size}, ждали 231×222 (77×74 ×3)"
     shutil.rmtree(mod.parent, ignore_errors=True)
     return True, (f"Студия: {len(lines)} шагов — дерево, постройка формой со значком (HD ×3), юнит на основе сквайра (своя атака, аура, иммунитет, лицо ×2), предмет со значком, лорд с исследованием, "
                   "содержимое, арена, "
-                  "карта 1024² с объектами (город, руина, мешок, отряд; перенос; игрок и событие; нарушений 0), запись мода, игра на этой карте")
+                  "карта 1024² с объектами (город, руина, мешок, отряд; перенос; игрок и событие; нарушений 0), запись мода, игра на этой карте, архив мода с описью")
 
 
 def mod_battle(repo: Path) -> tuple[bool, str]:

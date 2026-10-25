@@ -21,6 +21,9 @@ public sealed record CheckItem(string Rule, CheckLevel Level, string Target, str
 /// <summary>Итог проверки и содержимое мода поверх базы (нет — слой не накладывается, причина — ошибка <c>MOD001</c>).</summary>
 public sealed record CheckReport(IReadOnlyList<CheckItem> Items, ContentSet? Content)
 {
+    /// <summary>Отчёт наложения слоёв (кто добавил, поправил, убрал и чью правку перекрыл) — для окна конфликтов.</summary>
+    public IReadOnlyList<LayerChange> Layers { get; init; } = [];
+
     public int Errors => Items.Count(i => i.Level == CheckLevel.Error);
 
     public int Warnings => Items.Count(i => i.Level == CheckLevel.Warning);
@@ -47,14 +50,16 @@ public static partial class ModCheck
             items.Add(new("MOD090", CheckLevel.Info, project.Id,
                           $"исполняет код: C#-плагин ({string.Join(", ", project.Info.Plugins.Select(Path.GetFileName))}) — включать только доверенный"));
         ContentSet? content = null;
+        IReadOnlyList<LayerChange> layers = [];
         string temp = Path.Combine(Path.GetTempPath(), "le-studio-" + Guid.NewGuid().ToString("N"));
         try
         {
             // Слой — из документа (Студия проверяет и несохранённое): копия мода во временном каталоге.
             var copy = ModProject.Create(Path.Combine(temp, project.Id), project.Id, project.Info.Name);
             doc.Save(copy);
-            var info = project.Info with { Dir = copy.Dir };
-            content = ContentLayers.Load(baseDir, [.. others ?? [], info]);
+            // Описание мода — из документа (порядок loadAfter, зависимости — и несохранённые); плагины — с диска мода.
+            var info = ModProject.Open(copy.Dir).Info with { Plugins = project.Info.Plugins };
+            content = ContentLayers.Load(baseDir, [.. others ?? [], info], out layers);
         }
         catch (InvalidDataException e)
         {
@@ -72,7 +77,9 @@ public static partial class ModCheck
         }
         items.AddRange(Cycles(doc, content));
         if (content is not null) items.AddRange(Tree(doc, content));
-        return new CheckReport(items, content);
+        items.AddRange(LayerConflicts.Of(layers, project.Id).Select(c => new CheckItem("MOD020", CheckLevel.Info, c.Entity,
+            $"поле {c.Field} правят {string.Join(" и ", c.Mods)} — действует {c.Winner}") { Field = c.Field }));
+        return new CheckReport(items, content) { Layers = layers };
     }
 
     /// <summary>Круги требований построек (<c>MOD010</c>): у постройки мода цепочка <c>requires</c> возвращается к ней самой.</summary>

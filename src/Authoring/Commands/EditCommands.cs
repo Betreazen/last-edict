@@ -147,6 +147,33 @@ public sealed record SetFile(string Id, string FileName, ImmutableArray<byte>? B
     };
 }
 
+/// <summary>Поле описания мода (<c>mod.json</c>): имя, описание, версия, зависимости, порядок наложения (<c>loadAfter</c> — моды, которые
+/// этот мод перекрывает: он «главнее» их); null — убрать поле. <c>id</c> не меняется.</summary>
+public sealed record SetManifest(string Field, JsonNode? Value) : IEditCommand
+{
+    private static readonly HashSet<string> Fields = new(StringComparer.Ordinal)
+    {
+        "name", "description", "version", "authors", "dependencies", "loadAfter", "languages",
+    };
+
+    public string Name => $"mod.json: {Field}";
+
+    public ModDocument Apply(ModDocument doc)
+    {
+        ArgumentNullException.ThrowIfNull(doc);
+        if (!Fields.Contains(Field)) throw new InvalidOperationException($"поле mod.json «{Field}» Студия не правит (можно: {string.Join(", ", Fields)})");
+        if (doc.Manifest is not { } manifest) throw new InvalidOperationException("у документа нет mod.json");
+        if (Field is "dependencies" or "loadAfter" && Value is JsonArray ids && ids.Any(i => i?.GetValue<string>() == doc.ModId))
+            throw new InvalidOperationException("мод не может зависеть от себя или ставиться после себя");
+        var next = (JsonObject)manifest.DeepClone();
+        if (Value is null) next.Remove(Field);
+        else next[Field] = Value.DeepClone();
+        return JsonNode.DeepEquals(next, manifest) ? doc : doc.WithManifest(next);
+    }
+
+    public JsonObject ToJson() => new() { ["op"] = "manifest", ["field"] = Field, ["value"] = Value?.DeepClone() };
+}
+
 /// <summary>Переименовать свою сущность-каталог: новое имя каталога и id (<c>мод:вид/новое</c>), ссылки на неё в документе мода (требования,
 /// списки лорда, постройки найма…) переходят на новый id; строки и картинки — с ней, место в документе — то же.</summary>
 public sealed record RenameEntity(string Id, string NewName) : IEditCommand
@@ -209,6 +236,7 @@ public static class EditCommands
             "text" => new SetText(Str(json, "id"), Str(json, "lang"), Str(json, "key"), json["text"]?.GetValue<string>()),
             "file" => new SetFile(Str(json, "id"), Str(json, "name"), FileBytes(json)),
             "rename" => new RenameEntity(Str(json, "id"), Str(json, "name")),
+            "manifest" => new SetManifest(Str(json, "field"), json["value"]?.DeepClone()),
             "batch" => new Batch(json["name"]?.GetValue<string>() ?? "правки",
                                  [.. (json["commands"] as JsonArray ?? []).OfType<JsonObject>().Select(Parse)]),
             _ => throw new InvalidDataException($"неизвестная команда «{op}»"),

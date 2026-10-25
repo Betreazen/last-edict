@@ -29,6 +29,7 @@ public partial class Studio : Control
     private UnitWorkspace? _units;
     private ItemWorkspace? _items;
     private LordWorkspace? _lords;
+    private ModWorkspace? _modWs;
     private ContentWatcher? _watcher;
 
     private readonly Label _title = new() { ThemeTypeVariation = SettingsTheme.Title };
@@ -46,6 +47,7 @@ public partial class Studio : Control
     private StudioUnitsTab? _unitsTab;
     private StudioItemsTab? _itemsTab;
     private StudioLordsTab? _lordsTab;
+    private StudioModTab? _modTab;
     private int _shown = -1, _contentShown = -1, _unitsShown = -1, _itemsShown = -1, _lordsShown = -1;
 
     public override void _Ready()
@@ -72,6 +74,7 @@ public partial class Studio : Control
             _units = new UnitWorkspace(_session);
             _items = new ItemWorkspace(_session);
             _lords = new LordWorkspace(_session);
+            _modWs = new ModWorkspace(_session);
             if (Arg(args, "--lord") is { } lord) _tree.SelectLord(lord);
         }
         catch (Exception e) when (e is IOException or InvalidDataException or UnauthorizedAccessException)
@@ -128,6 +131,8 @@ public partial class Studio : Control
         _tabs.AddChild(_balanceTab);
         _mapTab = new StudioMapTab(_mapWs!, PlayMap, FrameTexture) { Name = "Карта" };
         _tabs.AddChild(_mapTab);
+        _modTab = new StudioModTab(_modWs!, Status) { Name = "Мод" };
+        _tabs.AddChild(_modTab);
 
         _lord.ItemSelected += i => { _tree!.SelectLord(_tree.Lords[(int)i].Id); Sync(); };
         _undo.Pressed += () => { _session!.Undo(); Sync(); };
@@ -275,6 +280,8 @@ public partial class Studio : Control
                     "connect" => ws.Connect(step["from"]!.GetValue<string>(), step["to"]!.GetValue<string>()),
                     "disconnect" => ws.Disconnect(step["to"]!.GetValue<string>()),
                     "drag" => _treeTab!.Drag(step["building"]!.GetValue<string>(), step["column"]!.GetValue<double>(), step["row"]!.GetValue<int>()),
+                    "mod-version" => _modWs!.SetField("version", step["version"]!.GetValue<string>()),
+                    "mod-pack" => Do(() => GD.Print($"mod-pack {_modTab!.Pack()}")),
                     "lord-select" => Do(() => _lords!.Select(step["id"]?.GetValue<string>())),
                     "lord-new" => Do(() => _lordsTab!.NewLord(step["title"]?.GetValue<string>() ?? "")),
                     "lord-research" => Do(() => _lordsTab!.AddResearch(step["spell"]!.GetValue<string>(), step["gold"]?.GetValue<long>() ?? 100)),
@@ -338,7 +345,7 @@ public partial class Studio : Control
                 if (op is "arena" or "stand") await _balanceTab!.Run(step["scenario"]!.GetValue<string>(), arena: op == "arena");
                 Sync();
                 for (int i = 0; i < 2; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-                GD.Print($"step {op} ok={(ok ? 1 : 0)} {ws.Line()} {_treeTab!.Line()} {_content!.Line()} {_balance!.Line()} {_mapTab!.Line()} {_unitsTab!.Line()} {_itemsTab!.Line()} {_lordsTab!.Line()}");
+                GD.Print($"step {op} ok={(ok ? 1 : 0)} {ws.Line()} {_treeTab!.Line()} {_content!.Line()} {_balance!.Line()} {_mapTab!.Line()} {_unitsTab!.Line()} {_itemsTab!.Line()} {_lordsTab!.Line()} {_modTab!.Line()}");
             }
         }
         for (int i = 0; i < 3; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);

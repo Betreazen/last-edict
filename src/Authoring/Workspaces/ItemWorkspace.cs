@@ -103,7 +103,7 @@ public sealed class ItemWorkspace
     {
         string id = EntityFolders.IdOf(Session.Project.Id, ContentSet.KindNamed("item"), name);
         JsonObject body = source is not null && Content.Find(source) is ItemDef from
-            ? (JsonObject)JsonSerializer.SerializeToNode(from, typeof(ItemDef), ContentJson.Options)!
+            ? (JsonObject)JsonSerializer.SerializeToNode(from, ContentJson.Options)!
             : new JsonObject { ["category"] = "jewel", ["value"] = new JsonObject { ["gold"] = 100 } };
         foreach (string drop in new[] { "id", "legacyId", "nameText", "descriptionText", "image" }) body.Remove(drop);
         var commands = new List<IEditCommand> { new AddEntity("item", name, body) };

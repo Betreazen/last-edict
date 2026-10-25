@@ -72,7 +72,23 @@ public sealed class StudioPackTests : IDisposable
             Assert.Contains(ModPack.ManifestFile, names);
             Assert.DoesNotContain(names, n => n.StartsWith(".studio", StringComparison.Ordinal));
         }
-        Assert.Null(result.RulesetHash);   // до слияния Э7 — без хеша, место в описи оставлено
+        // Хеш правил — тот же, что у сетевой игры (Э7): с ним хосту и гостю сверяют набор модов.
+        var info = ModProject.Open(session.Project.Dir).Info;
+        Assert.Equal(LastEdict.Data.Content.RulesetHash.Of(info).Hash, result.RulesetHash);
+        using (var zip = ZipFile.OpenRead(result.Archive))
+        using (var reader = new StreamReader(zip.GetEntry(ModPack.ManifestFile)!.Open()))
+            Assert.Equal(result.RulesetHash, JsonNode.Parse(reader.ReadToEnd())!["rulesetHash"]!.GetValue<string>());
+        // Картинка сущности хеш не меняет (графика — не правила), поле в entity.json — меняет.
+        string folder = Path.Combine(session.Project.Dir, "content", "buildings", "spire");
+        File.AppendAllText(Path.Combine(folder, "icon.png"), "-");
+        Assert.Equal(result.RulesetHash, LastEdict.Data.Content.RulesetHash.Of(info).Hash);
+        string entity = Path.Combine(folder, "entity.json"), was = File.ReadAllText(entity);
+        var changed = JsonNode.Parse(was)!.AsObject();
+        changed["level"] = 9;
+        File.WriteAllText(entity, changed.ToJsonString());
+        Assert.NotEqual(result.RulesetHash, LastEdict.Data.Content.RulesetHash.Of(info).Hash);
+        File.WriteAllText(entity, was);
+        session.Save();
         // Тот же мод — тот же архив байт в байт; версия с путём — отказ команды.
         var bytes = File.ReadAllBytes(result.Archive);
         Assert.Equal(bytes, File.ReadAllBytes(ModPack.Pack(session.Project, TestPackTests.Dir).Archive));
@@ -85,5 +101,13 @@ public sealed class StudioPackTests : IDisposable
         session.Undo();
         session.Save();
         Assert.Throws<InvalidOperationException>(() => ModPack.Pack(session.Project, TestPackTests.Dir, outDir: Path.Combine(session.Project.Dir, "content")));
+    }
+
+    [Fact]
+    public void Pack_ModWithoutRules_HasNoRulesetHash()
+    {
+        // Мод только с mod.json (графика, музыка) правил партии не меняет — хеша нет, как у сетевой игры (RulesetHash.HasRules).
+        var project = ModProject.Create(Path.Combine(_root, "look"), "look");
+        Assert.Null(ModPack.Pack(project, TestPackTests.Dir).RulesetHash);
     }
 }

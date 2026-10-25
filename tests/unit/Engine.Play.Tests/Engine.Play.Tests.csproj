@@ -70,8 +70,9 @@
     <None Include="../../../data/sound/**" Link="data/sound/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../../../data/music/**" Link="data/music/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <!-- Пример мода (mods/) кладётся рядом с data/ целиком, с подкаталогами: GameContentTests проверяет
-         наложение на тех же файлах, что читает игра. -->
-    <None Include="../../../mods/**" Link="mods/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+         наложение на тех же файлах, что читает игра. HD-слой пользователя (mods/hd*, вне git, десятки ГБ) — нет: тесты его не читают,
+         а копия в вывод занимала 59 ГБ и ломала сборку, пока слой переимпортировался (25.10). -->
+    <None Include="../../../mods/**" Exclude="../../../mods/hd*/**" Link="mods/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

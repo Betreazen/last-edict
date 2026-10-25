@@ -8,7 +8,9 @@ namespace LastEdict.Net;
 
 /// <summary>С чем входит игрок: посредник, имя, набор правил, сборка игры, фабрика сессии над видом (правила и графика карты — у
 /// клиента свои).</summary>
-public sealed record NetJoin(Uri Relay, string Nick, Ruleset Ruleset, string Build, Func<GameState, GameSession> SessionFactory);
+/// <param name="AutoApply">Вид меняется на потоке сети (проверки); игра — false и <see cref="NetSession.Pump"/> на своём потоке.</param>
+public sealed record NetJoin(Uri Relay, string Nick, Ruleset Ruleset, string Build, Func<GameState, GameSession> SessionFactory,
+                             bool AutoApply = true);
 
 /// <summary>
 /// Сетевая партия целиком (<c>docs/network.md</c> §7) — для игры и драйвера двух машин. Обычная комната: хост (<see cref="HostAsync"/>)
@@ -98,8 +100,12 @@ public sealed class NetSession : IAsyncDisposable, IHostRunner
         return net;
     }
 
-    /// <summary>Разобрать почту хоста (кадр игры или цикл драйвера).</summary>
-    public void Pump() => Host?.Pump();
+    /// <summary>Разобрать почту: у хоста — команды клиентов, у клиента — пришедшие виды (кадр игры или цикл драйвера).</summary>
+    public void Pump()
+    {
+        Host?.Pump();
+        Client?.Pump();
+    }
 
     /// <summary>Конец хода клиента — на рабочий поток карты хоста (там ходы ИИ показываются, бой с человеком хоста — его экраном);
     /// прочее — сразу. Без показа (<see cref="HeadlessHost"/>) — всё сразу.</summary>
@@ -139,7 +145,7 @@ public sealed class NetSession : IAsyncDisposable, IHostRunner
         else await link.JoinAsync(room, join.Nick, seat ?? "", cancel).ConfigureAwait(false);
         var net = new NetSession(link, "");
         var client = new NetClient(new NetClientOptions { Ruleset = join.Ruleset, Build = join.Build, Name = join.Nick, Seat = seat, Token = token },
-                                   NetRelay.ClientSender(link), join.SessionFactory);
+                                   NetRelay.ClientSender(link), join.SessionFactory) { AutoApply = join.AutoApply };
         net.Client = client;
         NetRelay.Attach(client, link);
         var first = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -163,7 +169,13 @@ public sealed class NetSession : IAsyncDisposable, IHostRunner
         wait.CancelAfter(TimeSpan.FromSeconds(60));
         try
         {
-            await first.Task.WaitAsync(wait.Token).ConfigureAwait(false);
+            while (!first.Task.IsCompleted)   // вид, пришедший в очередь (AutoApply = false), — разобрать здесь
+            {
+                wait.Token.ThrowIfCancellationRequested();
+                client.Pump();
+                await Task.WhenAny(first.Task, Task.Delay(20, wait.Token)).ConfigureAwait(false);
+            }
+            await first.Task.ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {

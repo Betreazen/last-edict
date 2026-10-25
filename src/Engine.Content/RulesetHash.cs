@@ -35,11 +35,15 @@ public static class RulesetHash
         ArgumentNullException.ThrowIfNull(mods);
         string baseHash = Combine(ContentSet.Kinds.Select(k => Path.Combine(baseDir, k.File)).Where(File.Exists)
                                                   .Select(p => (Path.GetFileName(p), FileHash(p))));
-        var ordered = ContentLayers.Order(mods).Select(Of).ToList();
+        // Мод без файлов правил (только графика, звук, строки — HD-слой) в набор не входит: у друзей он может быть разным.
+        var ordered = ContentLayers.Order(mods).Where(HasRules).Select(Of).ToList();
         var all = new StringBuilder("le-ruleset/1\nbase=").Append(baseHash).Append('\n');
         foreach (var mod in ordered) all.Append("mod=").Append(mod.Id).Append(':').Append(mod.Hash).Append('\n');
         return new Ruleset(Sha(all.ToString()), baseHash, ordered);
     }
+
+    /// <summary>У мода есть файлы правил (кроме <c>mod.json</c>): виды содержимого, «папки = сущности», плагины.</summary>
+    public static bool HasRules(ModInfo mod) => ModFiles(mod).Count > 1;
 
     /// <summary>Правила одного мода.</summary>
     public static ModRules Of(ModInfo mod)

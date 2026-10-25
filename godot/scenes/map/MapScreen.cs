@@ -75,6 +75,12 @@ public partial class MapScreen : Node
 
             // Перезапуск со снимка после перезагрузки модов (--watch, MapScreen.Reload.cs): та же партия с новыми правилами.
             var held = GameData.TakeReload();
+            // Сетевая партия без меню (драйвер двух машин, MapScreen.Net.cs): хост собирает партию и комнату, клиент входит и ждёт вида.
+            if (Session is null && (Net ??= LaunchNet(args)) is { } launched)
+            {
+                Session = launched.Session;
+                Viewer = launched.Me;
+            }
             var session = Session ?? (held is { } h ? new GameSession(h.State, GameData.Content.MapArt, GameData.Book) : LoadSession(args));
             var looks = session.Looks;
             string? viewer = Session is not null ? Viewer : held is { } kept ? kept.Viewer : MapSource.Arg(args, "--player") switch
@@ -83,7 +89,9 @@ public partial class MapScreen : Node
                 { } id => id,
                 null => looks.Map.Players.Values.FirstOrDefault(p => p.IsHuman)?.Id,
             };
-            session.EventBattlesOnScreen = true;   // бой эффекта L_BATTLE в ход человека — экраном (MapScreen.Overlays.cs); до показа — журнал команд её запомнит
+            // Бой эффекта L_BATTLE в ход человека — экраном (MapScreen.Overlays.cs); до показа — журнал команд её запомнит. В сети — автобой
+            // у всех (журнал хоста повторяется одной настройкой).
+            if (Net is null) session.EventBattlesOnScreen = true;
             _map.Show(session, session.State.Info.ScenarioName, viewer);
             if (Session is null && MapSource.Arg(args, "--at") is { } at) _map.CenterOn(ParseCell(at));
             else if (StartCell(session, viewer) is { } start) _map.CenterOn(start);
@@ -125,6 +133,7 @@ public partial class MapScreen : Node
             _map.FortOpened += OnEntered;
             _map.CityArmyOpened += OpenCityArmy;
             WireAiTurn();
+            WireNet(args);   // сеть: почта, ожидание чужого хода, свой срок (MapScreen.Net.cs)
             WireCards();
             _map.SiteVisited += OnSiteVisited;
             // Снос жезла жезлоносцем — вопрос X005TA0272 (0x4d144d), «Да» — ход к жезлу и снос (0x4d1ec7), «Нет» — путь стёрт (0x4d1f06, Ин82).
@@ -147,7 +156,8 @@ public partial class MapScreen : Node
                 Failures.Run(this, () => RunCheck(MapSource.Arg(args, "--shot")), "MapScreen.RunCheck");
             }
         }
-        catch (Exception e) when (e is IOException or InvalidDataException or FormatException or InvalidOperationException)
+        catch (Exception e) when (e is IOException or InvalidDataException or FormatException or InvalidOperationException
+                                      or LastEdict.Net.RelayException or System.Net.WebSockets.WebSocketException)
         {
             GD.PrintErr($"MapScreen: {e.GetType().Name}: {e.Message}");
             GetTree().Quit(1);

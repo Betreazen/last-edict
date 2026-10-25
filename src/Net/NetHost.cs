@@ -309,9 +309,10 @@ public sealed class NetHost : IDisposable
             return;
         }
         string? notYours = null;
-        string? refusal = !seat.Player.Equals(_session.ActiveHuman, StringComparison.OrdinalIgnoreCase) || _session.Over ? NetErrors.WrongTurn
-            : request.TurnToken != _token ? NetErrors.WrongTurn
-            : request.ExpectedViewSeq != seat.Seq ? NetErrors.StaleView
+        bool anyTime = OutOfTurn(request.Command);
+        string? refusal = !anyTime && (!seat.Player.Equals(_session.ActiveHuman, StringComparison.OrdinalIgnoreCase) || _session.Over) ? NetErrors.WrongTurn
+            : !anyTime && request.TurnToken != _token ? NetErrors.WrongTurn
+            : !anyTime && request.ExpectedViewSeq != seat.Seq ? NetErrors.StaleView   // попапы хост отдаёт значением — вид не нужен свежим
             : (notYours = CommandRights.Check(_session.State, seat.Player, request.Command) ?? BattleRights(seat.Player, request.Command)) is not null
                 ? NetErrors.NotYours
             : null;
@@ -330,6 +331,9 @@ public sealed class NetHost : IDisposable
         var runner = Runner ?? Immediate.Instance;
         runner.Run(request.Command, () => Execute(seat, request, payload), () => _busy = false);
     }
+
+    /// <summary>Команды не хода, а показа — можно и в чужой ход: снять свои показанные попапы событий (права — <see cref="CommandRights"/>).</summary>
+    internal static bool OutOfTurn(GameCommand command) => command is TakeMessagesCommand;
 
     /// <summary>Бой клиента: собрать — только на видимую цель; кончить и записать — только свой открытый бой; бой экрана — только
     /// действиями (повтор у хоста), в разумных пределах.</summary>

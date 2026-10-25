@@ -149,6 +149,13 @@ public class NetProtocolTests
             var before = RulesetHash.Of(TestPackTests.Dir, [mod]);
             Assert.Equal(["content/buildings/spire/entity.json", "mod.json"], RulesetHash.ModFiles(mod).Select(f => f.Name));
 
+            // Мод только с графикой (HD-слой) в набор не входит.
+            string art = Path.Combine(dir, "art");
+            Directory.CreateDirectory(Path.Combine(art, "gfx"));
+            File.WriteAllText(Path.Combine(art, "mod.json"), """{"id": "hd", "name": "HD"}""");
+            File.WriteAllBytes(Path.Combine(art, "gfx", "x.png"), [1]);
+            Assert.Equal(before.Hash, RulesetHash.Of(TestPackTests.Dir, [mod, new ModInfo("hd", "HD", art)]).Hash);
+
             // Тексты, значки и форматирование JSON правил не меняют.
             File.WriteAllText(Path.Combine(dir, "content", "buildings", "spire", "strings.ru.json"), """{"name": "Башня"}""");
             File.WriteAllBytes(Path.Combine(dir, "content", "buildings", "spire", "icon.png"), [9, 9]);

@@ -497,7 +497,8 @@ public partial class MapScreen
     /// него писали бы в сохранения пользователя.</summary>
     private void WriteAutoSave()
     {
-        if (!_settings.AutoSave || SavesDirOrNull() is not { } dir) return;
+        // Сеть: у клиента — только его вид, у хоста — партия комнаты; автосохранения одиночной игры обе не пишут.
+        if (!_settings.AutoSave || Net is not null || SavesDirOrNull() is not { } dir) return;
         var state = _map.Session.Snapshot();
         if (SaveWithChat(AutoSave.ArchiveName(state), () => AutoSave.Write(dir, enabled: true, state)) is { } path)
             GD.Print($"autosave {System.IO.Path.GetFileName(path).Replace(' ', '_')} день={_map.Map.Turn} " +

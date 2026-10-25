@@ -24,6 +24,7 @@ public partial class MapScreen
         UpdateBanners();
         CapitalMusic();
         ExpireChat();   // строки чата живут 10 с (MapScreen.QuickSave.cs)
+        StepNet();   // почта сетевой партии (MapScreen.Net.cs)
         if (_map is not null)   // фон мест молчит под окнами, столицей и боем
             _map.RegionsPaused = CapitalOpen || _dialogViews.Count > 0 || _overlay is not null || _battle is not null;
     }

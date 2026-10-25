@@ -189,13 +189,26 @@ public partial class MapView
     public void EndTurn()
     {
         if (Walking || AiRunning) return;
-        if (PassesToHuman())
+        if (Net is null && PassesToHuman())
         {
             // «Горячий стул»: ход сразу переходит к следующему человеку, ИИ не ходит — показывать нечего.
             Session.Execute(new LastEdict.Data.Play.Commands.EndTurnCommand());
             AfterTurn();
             return;
         }
+        BeginAiMode(() =>
+        {
+            // Командой: ответ человека на предложение, пока ход ИИ ждёт, — вложенная команда этого хода (docs/game-commands.md §2).
+            Session.Execute(new LastEdict.Data.Play.Commands.EndTurnCommand());
+            if (Net is not null) NetWait();   // сеть: ход ушёл другому человеку — ждать своего (MapView.Net.cs)
+        });
+    }
+
+    /// <summary>Режим хода ИИ: рабочий поток с телом <paramref name="body"/> (конец хода человека или ожидание чужого хода в сети), показ
+    /// его заявок на главном.</summary>
+    private void BeginAiMode(Action body)
+    {
+        _aiBody = body;
         _aiShown = Session.State;
         (_aiDone, _aiCancel, _aiError, _aiRequest, _aiShowing, _aiWalk, _aiAfterFog) = (false, false, null, null, null, null, null);
         (_aiPlayers, _aiMoves, _aiShownMoves, _aiBattles, _aiHumanBattles, _aiSights) = (0, 0, 0, 0, 0, 0);
@@ -208,14 +221,16 @@ public partial class MapView
         AiStarted?.Invoke();
     }
 
+    /// <summary>Что делает рабочий поток режима хода ИИ (<see cref="BeginAiMode"/>).</summary>
+    private Action? _aiBody;
+
     /// <summary>Тело рабочего потока. Исключение не должно уйти из потока (в .NET оно роняет процесс): оно передаётся
     /// главному, и тот сообщает об ошибке — партия после него в полуходе.</summary>
     private void RunAi()
     {
         try
         {
-            // Командой: ответ человека на предложение, пока ход ИИ ждёт, — вложенная команда этого хода (docs/game-commands.md §2).
-            Session.Execute(new LastEdict.Data.Play.Commands.EndTurnCommand());
+            _aiBody?.Invoke();
         }
         catch (Exception e)
         {
@@ -662,7 +677,7 @@ public partial class MapView
             if (!OnWorker) return null;
             view._aiBattles++;
             // Бой ИИ с ИИ — автобой ядра; на виду его уже показало начало боя (TurnSightKind.BattleStarted: камера и ABATTLE).
-            if (view.AiBattleRequested is null || !HumanDefends(view.Session, state)) return null;
+            if (view.AiBattleRequested is null || !HumanDefends(view, state)) return null;
             var battle = new AiBattle(state, view);
             Ask(new AiBattleRequest(battle));
             var log = battle.Log ?? (view._aiCancel ? battle.ResolveOnce() : null);
@@ -821,14 +836,17 @@ public partial class MapView
                    && (!map.Contains(c.X, c.Y) || fog[c.X, c.Y]);
         }
 
-        /// <summary>Защищается человек: хозяин отряда или укрепления защиты — среди людей партии.</summary>
-        private static bool HumanDefends(GameSession session, BattleState state)
+        /// <summary>Защищается человек: хозяин отряда или укрепления защиты — среди людей партии; в сети — зритель (бой другого человека
+        /// играет его машина, MapView.Net.cs).</summary>
+        private static bool HumanDefends(MapView view, BattleState state)
         {
+            var session = view.Session;
             var map = session.Map;
             string group = state.DefenderGroup;
             string owner = map.Stacks.TryGetValue(group, out var stack) ? stack.Owner
                 : map.Sites.FirstOrDefault(s => s.Id.Equals(group, StringComparison.OrdinalIgnoreCase))?.Owner ?? "";
-            return session.State.Info.Humans.Contains(owner, StringComparer.OrdinalIgnoreCase);
+            return view.Net is null ? session.State.Info.Humans.Contains(owner, StringComparer.OrdinalIgnoreCase)
+                : owner.Equals(view.Viewer, StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>Положить заявку и ждать, пока главный поток её покажет. Ожидание с опросом отмены: вид мог уйти.</summary>

@@ -300,7 +300,7 @@ public partial class MapScreen
         AddChild(_battle);
         GameLog.Verbose($"aibattle start attacker={state.AttackerGroup} defender={state.DefenderGroup} units={state.Units.Count} " +
                  $"place={_battle.PlaceName} flip={(_battle.Flipped ? 1 : 0)} bg={_battle.BackgroundVariant}");
-        if (OS.GetCmdlineUserArgs().Contains("--check")) Callable.From(() => _battle?.AutoFinish()).CallDeferred();
+        if (OS.GetCmdlineUserArgs().Contains("--check") || _netScript is not null) Callable.From(() => _battle?.AutoFinish()).CallDeferred();
     }
 
     /// <summary>Бой без экрана (экран занят) — автобой ядра: журнала нет (null), и <see cref="GameSession"/> играет бой сам

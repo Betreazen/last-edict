@@ -267,6 +267,8 @@ public sealed class NetClient
     {
         ArgumentNullException.ThrowIfNull(command);
         var session = Session ?? throw new NetCommandException(NetErrors.Lost, "вида партии ещё нет");
+        if (!MyTurn && !NetHost.OutOfTurn(command))
+            throw new NetCommandException(NetErrors.WrongTurn, $"сейчас не ваш ход ({command.GetType().Name})");
         object? before = null;
         CommandResult? local = null;
         if (NetHost.Mirrored(command))

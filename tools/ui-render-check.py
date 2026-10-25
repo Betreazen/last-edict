@@ -1252,6 +1252,9 @@ STUDIO_STEPS = [
     {"op": "item-form", "gold": 777, "equip": "base:modifier/holy-armor"},
     {"op": "item-apply"},
     {"op": "item-picture", "path": "{face}"},
+    {"op": "lord-select", "id": "base:lord/mountain-clans-mage-lord"},
+    {"op": "lord-new", "title": "Рунный лорд"},
+    {"op": "lord-research", "spell": "base:spell/air-ward", "gold": 300},
     {"op": "unit-picture", "file": "face.png", "path": "{face}"},
     {"op": "undo"},
     {"op": "redo"},
@@ -1296,6 +1299,9 @@ STUDIO_WANTS = [
     ("item-form", ["ok=1"]),
     ("item-apply", ["ok=1", "errors=0"]),
     ("item-picture", ["ok=1", "значок=1", "errors=0"]),
+    ("lord-select", ["ok=1", "lords: selected=base:lord/mountain-clans-mage-lord"]),
+    ("lord-new", ["ok=1", "selected=towers:lord/runnyy-lord", "own=1"]),
+    ("lord-research", ["ok=1", "errors=0"]),
     ("unit-picture", ["ok=1", "errors=0"]),
     ("undo", ["ok=1", "own=1"]),
     ("redo", ["ok=1", "own=1"]),
@@ -1378,7 +1384,7 @@ def studio(repo: Path) -> tuple[bool, str]:
     if not icon.is_file() or (size := png_size(icon)) != (231, 222):
         return False, f"Студия: значок постройки формой — {icon} {'нет' if not icon.is_file() else size}, ждали 231×222 (77×74 ×3)"
     shutil.rmtree(mod.parent, ignore_errors=True)
-    return True, (f"Студия: {len(lines)} шагов — дерево, постройка формой со значком (HD ×3), юнит на основе сквайра (своя атака, аура, иммунитет, лицо ×2), предмет со значком, "
+    return True, (f"Студия: {len(lines)} шагов — дерево, постройка формой со значком (HD ×3), юнит на основе сквайра (своя атака, аура, иммунитет, лицо ×2), предмет со значком, лорд с исследованием, "
                   "содержимое, арена, карта 1024², запись мода")
 
 

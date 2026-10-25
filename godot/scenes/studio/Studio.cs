@@ -28,6 +28,7 @@ public partial class Studio : Control
     private MapWorkspace? _mapWs;
     private UnitWorkspace? _units;
     private ItemWorkspace? _items;
+    private LordWorkspace? _lords;
     private ContentWatcher? _watcher;
 
     private readonly Label _title = new() { ThemeTypeVariation = SettingsTheme.Title };
@@ -44,7 +45,8 @@ public partial class Studio : Control
     private StudioMapTab? _mapTab;
     private StudioUnitsTab? _unitsTab;
     private StudioItemsTab? _itemsTab;
-    private int _shown = -1, _contentShown = -1, _unitsShown = -1, _itemsShown = -1;
+    private StudioLordsTab? _lordsTab;
+    private int _shown = -1, _contentShown = -1, _unitsShown = -1, _itemsShown = -1, _lordsShown = -1;
 
     public override void _Ready()
     {
@@ -69,6 +71,7 @@ public partial class Studio : Control
             _mapWs = new MapWorkspace(_session);
             _units = new UnitWorkspace(_session);
             _items = new ItemWorkspace(_session);
+            _lords = new LordWorkspace(_session);
             if (Arg(args, "--lord") is { } lord) _tree.SelectLord(lord);
         }
         catch (Exception e) when (e is IOException or InvalidDataException or UnauthorizedAccessException)
@@ -119,6 +122,8 @@ public partial class Studio : Control
         _tabs.AddChild(_unitsTab);
         _itemsTab = new StudioItemsTab(_items!, FrameTexture) { Name = "Предметы" };
         _tabs.AddChild(_itemsTab);
+        _lordsTab = new StudioLordsTab(_lords!, FrameTexture) { Name = "Лорды" };
+        _tabs.AddChild(_lordsTab);
         _tabs.AddChild(_contentTab);
         _tabs.AddChild(_balanceTab);
         _mapTab = new StudioMapTab(_mapWs!, PlayMap) { Name = "Карта" };
@@ -166,10 +171,11 @@ public partial class Studio : Control
     {
         if (_session is null || _tree is null || _content is null) return;
         if (_watcher?.Take() is not null && _session.ReloadFromDisk()) Status("мод изменён снаружи — перечитан");
-        if (_session.Revision + _tree.Revision != _shown || _content.Revision != _contentShown || _units?.Revision != _unitsShown || _items?.Revision != _itemsShown) Sync();
+        if (_session.Revision + _tree.Revision != _shown || _content.Revision != _contentShown || _units?.Revision != _unitsShown || _items?.Revision != _itemsShown || _lords?.Revision != _lordsShown) Sync();
         _contentShown = _content.Revision;
         _unitsShown = _units?.Revision ?? 0;
         _itemsShown = _items?.Revision ?? 0;
+        _lordsShown = _lords?.Revision ?? 0;
     }
 
     public override void _UnhandledInput(InputEvent e)
@@ -269,6 +275,9 @@ public partial class Studio : Control
                     "connect" => ws.Connect(step["from"]!.GetValue<string>(), step["to"]!.GetValue<string>()),
                     "disconnect" => ws.Disconnect(step["to"]!.GetValue<string>()),
                     "drag" => _treeTab!.Drag(step["building"]!.GetValue<string>(), step["column"]!.GetValue<double>(), step["row"]!.GetValue<int>()),
+                    "lord-select" => Do(() => _lords!.Select(step["id"]?.GetValue<string>())),
+                    "lord-new" => Do(() => _lordsTab!.NewLord(step["title"]?.GetValue<string>() ?? "")),
+                    "lord-research" => Do(() => _lordsTab!.AddResearch(step["spell"]!.GetValue<string>(), step["gold"]?.GetValue<long>() ?? 100)),
                     "item-select" => Do(() => _items!.Select(step["id"]?.GetValue<string>())),
                     "item-new" => Do(() => _itemsTab!.NewItem(step["title"]?.GetValue<string>() ?? "")),
                     "item-form" => Do(() => _itemsTab!.Fill(step["gold"]?.GetValue<long>(), step["equip"]?.GetValue<string>())),
@@ -314,7 +323,7 @@ public partial class Studio : Control
                 if (op is "arena" or "stand") await _balanceTab!.Run(step["scenario"]!.GetValue<string>(), arena: op == "arena");
                 Sync();
                 for (int i = 0; i < 2; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-                GD.Print($"step {op} ok={(ok ? 1 : 0)} {ws.Line()} {_treeTab!.Line()} {_content!.Line()} {_balance!.Line()} {_mapTab!.Line()} {_unitsTab!.Line()} {_itemsTab!.Line()}");
+                GD.Print($"step {op} ok={(ok ? 1 : 0)} {ws.Line()} {_treeTab!.Line()} {_content!.Line()} {_balance!.Line()} {_mapTab!.Line()} {_unitsTab!.Line()} {_itemsTab!.Line()} {_lordsTab!.Line()}");
             }
         }
         for (int i = 0; i < 3; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);

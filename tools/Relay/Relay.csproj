@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!-- Посредник сетевой игры (Э7, Р22, docs/network.md §6): комнаты по коду, пересылка сообщений между хостом и клиентами по WebSocket,
+       возвращение по ключу, хранение партии и очереди ходов асинхронного режима. Правил игры не знает: сообщения игры — непрозрачные строки. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>LastEdict.Relay</RootNamespace>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Engine.Play.Tests" />
+  </ItemGroup>
+
+</Project>

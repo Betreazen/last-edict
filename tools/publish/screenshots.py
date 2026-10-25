@@ -50,6 +50,7 @@ OUT = REPO / "docs" / "screenshots"
 GODOT = os.environ.get("GODOT", r"C:\Tools\bin\godot.cmd")
 WIDTH, HEIGHT = 800, 600          # родной размер экранов игры
 WIDE = (1280, 720)                # широкий экран (Э5)
+HD = (1920, 1080)                 # снимки с HD-слоем (--hd): окно 1080p, показ «HD»
 FULL_SCALE = 2                    # полноразмерный снимок — 1600×1200
 SMALL_MAX_BYTES = 200_000
 SMALL_WIDTHS = (640, 560, 480, 400)
@@ -123,18 +124,21 @@ def window_position(size: tuple[int, int] = (WIDTH, HEIGHT)) -> list[str]:
     return ["--position", f"{x - left},{y - top}"]
 
 
-def godot_args(shot: Shot, raw: Path, menu_dirs: Path, corpus: Path, repo: Path = REPO) -> list[str]:
+def godot_args(shot: Shot, raw: Path, menu_dirs: Path, corpus: Path, repo: Path = REPO, hd: Path | None = None) -> list[str]:
+    """Ключи прогона снимка. С <paramref name="hd"/> (каталог модов с HD-слоем, 25.10) — вид Last Edict: слой, показ «HD», чёткий текст,
+    резкость 40 %, широкий бой; без него — вид оригинала (без модов, «целый» или «чёткий»)."""
     w, h = shot.size
     head = [GODOT, "--path", str(repo / "godot"), "--resolution", f"{w}x{h}", *window_position(shot.size), "--audio-driver", "Dummy"]
-    scale = "sharp" if shot.wide else "integer"
+    scale = "hd" if hd else "sharp" if shot.wide else "integer"
+    mods = ["--mods", str(hd), "--vector-text", "--sharpen", "40", "--wide-battle"] if hd else ["--no-mods"]
     if shot.save is None:
         empty = menu_dirs / "empty"
         empty.mkdir(parents=True, exist_ok=True)
-        return [*head, "res://scenes/ui/UiFlow.tscn", "--", "--no-mods", "--start", "DLG_MAIN_MENU", "--scale", "integer",
+        return [*head, "res://scenes/ui/UiFlow.tscn", "--", *mods, "--start", "DLG_MAIN_MENU", "--scale", "hd" if hd else "integer",
                 "--stage-shot", str(raw), "--stage-shot-ms", str(shot.hold_ms),
                 "--ldr", str(empty), "--csg", str(empty), "--leaders", str(menu_dirs / "leaders"),
                 "--campaigns", str(menu_dirs / "campaigns"), "--saves", str(menu_dirs / "saves")]
-    args = [*head, "res://scenes/dev/StageHost.tscn", "--", "--no-mods", "--scene", "res://scenes/map/MapScreen.tscn",
+    args = [*head, "res://scenes/dev/StageHost.tscn", "--", *mods, "--scene", "res://scenes/map/MapScreen.tscn",
             "--scale", scale, "--sg", str(corpus / shot.save), "--player", HUMAN, "--check",
             "--hold-ms", str(shot.hold_ms), "--shot", str(raw)]
     if shot.at:
@@ -153,11 +157,12 @@ def kill_tree(proc: subprocess.Popen) -> None:
     proc.communicate()
 
 
-def capture(shot: Shot, raw: Path, menu_dirs: Path, corpus: Path, env: dict[str, str], repo: Path = REPO) -> str | None:
+def capture(shot: Shot, raw: Path, menu_dirs: Path, corpus: Path, env: dict[str, str], repo: Path = REPO,
+            hd: Path | None = None) -> str | None:
     """Прогон сцены с окном; None — снимок есть и сцена дошла до нужного экрана, иначе причина."""
     if shot.save is not None and not (corpus / shot.save).is_file():
         return f"нет сохранения {corpus / shot.save} (корпус: D2_CORPUS_DIR)"
-    proc = subprocess.Popen(godot_args(shot, raw, menu_dirs, corpus, repo), cwd=repo, env=env, stdout=subprocess.PIPE,
+    proc = subprocess.Popen(godot_args(shot, raw, menu_dirs, corpus, repo, hd), cwd=repo, env=env, stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace")
     try:
         out, _ = proc.communicate(timeout=RUN_TIMEOUT)
@@ -231,12 +236,16 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--out", type=Path, default=OUT, help=f"каталог снимков (по умолчанию {OUT.relative_to(REPO)})")
     parser.add_argument("--no-build", action="store_true", help="не собирать godot/LastEdict.Godot.csproj")
     parser.add_argument("--repo", type=Path, default=REPO, help="рабочая копия, чьей сборкой снимать (кадр «было»)")
+    parser.add_argument("--hd", type=Path, help="каталог модов с HD-слоем: снимки 1920×1080 с ним, показ «HD», чёткий текст, резкость, "
+                                                "широкий бой (вид Last Edict; окно оригинала options-old — без слоя)")
     args = parser.parse_args(argv)
     known = {s.name for s in SHOTS}
     if unknown := set(args.only) - known:
         parser.error(f"нет снимков {sorted(unknown)}; есть {sorted(known)}")
     holds = parse_holds(args.hold_ms)
     shots = [replace(s, hold_ms=holds.get(s.name, s.hold_ms)) for s in SHOTS if not args.only or s.name in args.only]
+    if args.hd:
+        shots = [replace(s, size=HD) for s in shots if s.name != "options-old"]
 
     if shutil.which(GODOT) is None:
         print(f"нет Godot {GODOT}: задайте переменную GODOT (Godot 4.7.2 mono)")
@@ -252,7 +261,7 @@ def main(argv: list[str]) -> int:
         work = Path(tmp)
         for shot in shots:
             raw = work / f"{shot.name}.png"
-            reason = capture(shot, raw, work / "menu", corpus, env, args.repo)
+            reason = capture(shot, raw, work / "menu", corpus, env, args.repo, args.hd)
             numbers = "-"
             if reason is None:
                 with Image.open(raw) as opened:

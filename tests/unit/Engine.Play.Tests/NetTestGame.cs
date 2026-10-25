@@ -45,55 +45,9 @@ internal static class NetTestGame
 
     public static Ruleset Ruleset { get; } = RulesetHash.Of(TestPackTests.Dir, []);
 
-    /// <summary>Ход человека командами (как окна интерфейса): постройка, найм, ход отряда с планом и туманом по шагам, нападение на
-    /// видимого врага рядом (бой на «экране» — автобой по шагам на генераторе сессии), конец хода. <paramref name="run"/> — исполнить
-    /// команду (хост — сессия, клиент — через сеть).</summary>
-    public static void HumanTurn(GameSession session, string human, Func<GameCommand, CommandResult> run, Random random)
-    {
-        var map = session.Map;
-        var capital = map.Sites.FirstOrDefault(s => s.Kind == SiteKind.Capital && s.Owner.Equals(human, StringComparison.OrdinalIgnoreCase));
-        foreach (var building in session.Book!.LordBuildings.GetValueOrDefault(map.Players[human].LordId) ?? [])
-            if (run(new BuildCommand(human, building)).Value is BuildStatus.CanBeBuilt) break;
-        if (capital is not null && session.Book.Economy.Races[map.Players[human].RaceId].Soldiers is [var soldier, ..])
-            run(new HireUnitCommand(capital.Id, soldier));
-        foreach (var stack in session.Map.Stacks.Values.Where(s => s.Owner.Equals(human, StringComparison.OrdinalIgnoreCase) && s.Move > 0)
-                                     .OrderBy(s => s.Id, StringComparer.Ordinal).Take(2).ToList())
-        {
-            if (!session.Map.Stacks.TryGetValue(stack.Id, out var now)) continue;
-            if (Attack(session, now, run)) continue;
-            Walk(session, now, run, random);
-        }
-        run(new EndTurnCommand());
-    }
-
-    private static void Walk(GameSession session, MapStack stack, Func<GameCommand, CommandResult> run, Random random)
-    {
-        var paths = (from dx in Enumerable.Range(-5, 11) from dy in Enumerable.Range(-5, 11)
-                     select session.PathTo(stack, stack.X + dx, stack.Y + dy)).Where(p => p.Today.Count >= 2).ToList();
-        if (paths.Count == 0) return;
-        var path = paths[random.Next(paths.Count)];
-        var planned = (PlannedMove)run(new PlanMoveCommand(stack.Id, path.Today)).Value!;
-        var today = path.Today.Take(planned.Walk).ToList();
-        if (today.Count == 0) return;
-        foreach (var p in today) run(new RevealFromCommand(stack.Id, p.X, p.Y));
-        run(new MoveStackCommand(stack.Id, today[^1].X, today[^1].Y, 0, today[^1].Cost, planned.Fired, today));
-    }
-
-    /// <summary>Видимый чужой отряд вплотную — бой: <c>startBattle</c>, автобой «экраном», <c>endBattle</c> с действиями, <c>commitBattle</c>.</summary>
-    private static bool Attack(GameSession session, MapStack stack, Func<GameCommand, CommandResult> run)
-    {
-        var target = session.Map.Stacks.Values.FirstOrDefault(s => !s.Owner.Equals(stack.Owner, StringComparison.OrdinalIgnoreCase)
-                                                                   && s.Inside.Length == 0 && Math.Abs(s.X - stack.X) <= 1
-                                                                   && Math.Abs(s.Y - stack.Y) <= 1 && !session.Invisible(s.Id));
-        if (target is null || stack.Move <= 0) return false;
-        var state = (BattleState)run(new StartBattleCommand(stack.Id, target.Id)).Value!;
-        var rules = session.Book!.Rules;
-        var battle = new BattleSession(state, new BattleSim(state, session.BattleRng, rules.Constants), rules.Constants) { Auto = true };
-        battle.PlayOut();
-        run(new EndBattleCommand(battle.Log, battle.Played()));
-        run(new CommitBattleCommand());
-        return true;
-    }
+    /// <summary>Ход человека по сценарию (<see cref="ScriptedHuman"/>).</summary>
+    public static void HumanTurn(GameSession session, string human, Func<GameCommand, CommandResult> run, Random random) =>
+        ScriptedHuman.Turn(session, human, run, random);
 }
 
 /// <summary>Хост и клиенты в памяти: сообщение — запись и чтение JSON; хост разбирает почту сразу (<see cref="NetHost.Pump"/>).</summary>

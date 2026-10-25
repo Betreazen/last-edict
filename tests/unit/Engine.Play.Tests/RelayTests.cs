@@ -111,20 +111,7 @@ public sealed class RelayTests : IAsyncLifetime
         var client = new NetClient(new NetClientOptions { Ruleset = NetTestGame.Ruleset, Name = "друг" }, NetRelay.ClientSender(clientLink),
                                    view => new GameSession(view, MapArtData.Empty, NetTestGame.Book));
         NetRelay.Attach(client, clientLink);
-        client.BattleRequested += request =>
-        {
-            var battle = client.BuildRequestedBattle(request);
-            if (battle is null)
-            {
-                client.ReplyBattle(request, null, []);
-                return;
-            }
-            var rules = client.Session!.Book!.Rules;
-            var play = new BattleSession(battle, new BattleSim(battle, client.Session.BattleRng, rules.Constants), rules.Constants,
-                                         request.Side == "attacker") { Auto = true };
-            play.PlayOut();
-            client.ReplyBattle(request, play.Played(), play.Log);
-        };
+        client.BattleRequested += request => ScriptedHuman.AnswerBattle(client, request);
         var joined = new TaskCompletionSource();
         client.ViewChanged += () => joined.TrySetResult();
         client.Connect();

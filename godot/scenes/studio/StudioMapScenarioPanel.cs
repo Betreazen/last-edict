@@ -35,14 +35,15 @@ public partial class StudioMapScenarioPanel : TabContainer
     private readonly Label _zones = new() { AutowrapMode = TextServer.AutowrapMode.WordSmart, ThemeTypeVariation = SettingsTheme.HelpLabel };
     private int _shown = -1;
     private string? _player, _event;
+    private (string? Player, string? Event, string Data) _filled = ("-", "-", "");
 
     public StudioMapScenarioPanel(MapWorkspace ws)
     {
         _ws = ws ?? throw new ArgumentNullException(nameof(ws));
         AddChild(PlayersPage());
         AddChild(EventsPage());
-        _players.ItemSelected += i => { _player = _players.GetItemMetadata((int)i).AsString(); ShowPlayer(); };
-        _events.ItemSelected += i => { _event = _events.GetItemMetadata((int)i).AsString(); ShowEvent(); };
+        _players.ItemSelected += i => { _player = _players.GetItemMetadata((int)i).AsString(); _shown = -1; Sync(); };
+        _events.ItemSelected += i => { _event = _events.GetItemMetadata((int)i).AsString(); _shown = -1; Sync(); };
         foreach (string k in LastEdict.Authoring.Maps.MapObjects.ConditionKinds) _conditionKind.AddItem(k);
         foreach (string k in LastEdict.Authoring.Maps.MapObjects.EffectKinds) _effectKind.AddItem(k);
     }
@@ -94,6 +95,13 @@ public partial class StudioMapScenarioPanel : TabContainer
     {
         if (_shown == _ws.Revision) return;
         _shown = _ws.Revision;
+        // Поля перезаполняются, только когда сменился выбор или сами игроки и события (не на каждый мазок и щелчок по карте): ввод не теряется.
+        var reader = _ws.Reader;
+        string data = reader is null ? "" : string.Join("|", reader.Players().Select(p => p.ToString())) + "#"
+            + (reader.Events().Count + ":" + (_event is { } ev ? reader.EventOf(ev)?.ToJsonString() : "")) + "#"
+            + (_player is { } pl ? reader.PlayerOf(pl)?.ToJsonString() : "") + "#" + string.Join(";", reader.Zones());
+        if (_filled == (_player, _event, data)) return;
+        _filled = (_player, _event, data);
         var content = _ws.Session.Report.Content ?? _ws.Session.BaseContent;
         if (_race.Selected is null)
         {
@@ -212,17 +220,20 @@ public partial class StudioMapScenarioPanel : TabContainer
 
     private void AddPart(bool effect)
     {
-        if (_event is not { } id) return;
+        if (_event is not { } id || Edits() is not { } edits) return;
         var pick = effect ? _effectKind : _conditionKind;
         string kind = pick.GetItemText(Math.Max(0, pick.Selected));
-        _ws.Change($"+ {kind}", m => m.AddPart(id, kind, effect));
+        // Набранное в строках — тем же шагом, что новая строка: перезаполнение формы его не сотрёт.
+        _ws.Change($"+ {kind}", m =>
+        {
+            foreach (var (index, eff, field, value) in edits) m.SetPart(id, index, eff, field, value);
+            m.AddPart(id, kind, effect);
+        });
     }
 
-    /// <summary>Поля события и всех его строк — одной командой.</summary>
-    private void ApplyEvent()
+    /// <summary>Значения полей строк условий и действий; не читается — отказ в сессии и null.</summary>
+    private List<(int Index, bool Effect, string Field, JsonNode? Value)>? Edits()
     {
-        if (_event is not { } id) return;
-        var players = _who.GetChildren().OfType<CheckBox>().Where(c => c.ButtonPressed).Select(c => (JsonNode)JsonValue.Create(c.TooltipText)!).ToArray();
         var edits = new List<(int Index, bool Effect, string Field, JsonNode? Value)>();
         try
         {
@@ -234,8 +245,17 @@ public partial class StudioMapScenarioPanel : TabContainer
         catch (Exception e) when (e is FormatException or JsonException or OverflowException)
         {
             _ws.Session.Refuse($"значение поля не читается: {e.Message}");
-            return;
+            return null;
         }
+        return edits;
+    }
+
+    /// <summary>Поля события и всех его строк — одной командой.</summary>
+    private void ApplyEvent()
+    {
+        if (_event is not { } id) return;
+        var players = _who.GetChildren().OfType<CheckBox>().Where(c => c.ButtonPressed).Select(c => (JsonNode)JsonValue.Create(c.TooltipText)!).ToArray();
+        if (Edits() is not { } edits) return;
         _ws.Change("событие", m =>
         {
             m.SetEvent(id, "Enabled", JsonValue.Create(_enabled.ButtonPressed));

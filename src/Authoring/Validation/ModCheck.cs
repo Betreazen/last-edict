@@ -61,7 +61,7 @@ public static partial class ModCheck
             var info = ModProject.Open(copy.Dir).Info with { Plugins = project.Info.Plugins };
             content = ContentLayers.Load(baseDir, [.. others ?? [], info], out layers);
         }
-        catch (InvalidDataException e)
+        catch (Exception e) when (e is InvalidDataException or InvalidOperationException or System.Text.Json.JsonException)
         {
             string message = e.Message.Replace(temp, "", StringComparison.OrdinalIgnoreCase);
             // Ошибка ссылки называет сущность и поле: «id» (мод): путь → «значение» — … — её цель и поле, иначе — мод.

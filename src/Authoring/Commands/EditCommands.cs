@@ -163,6 +163,7 @@ public sealed record SetManifest(string Field, JsonNode? Value) : IEditCommand
         ArgumentNullException.ThrowIfNull(doc);
         if (!Fields.Contains(Field)) throw new InvalidOperationException($"поле mod.json «{Field}» Студия не правит (можно: {string.Join(", ", Fields)})");
         if (doc.Manifest is not { } manifest) throw new InvalidOperationException("у документа нет mod.json");
+        if (Value is not null && Problem(Field, Value) is { } problem) throw new InvalidOperationException($"mod.json, {Field}: {problem}");
         if (Field is "dependencies" or "loadAfter" && Value is JsonArray ids && ids.Any(i => i?.GetValue<string>() == doc.ModId))
             throw new InvalidOperationException("мод не может зависеть от себя или ставиться после себя");
         var next = (JsonObject)manifest.DeepClone();
@@ -172,6 +173,26 @@ public sealed record SetManifest(string Field, JsonNode? Value) : IEditCommand
     }
 
     public JsonObject ToJson() => new() { ["op"] = "manifest", ["field"] = Field, ["value"] = Value?.DeepClone() };
+
+    /// <summary>Версия: цифры, латиница, «.», «+», «_», «-» (она же — часть имени архива: ни «/», ни «..»).</summary>
+    public static bool ValidVersion(string version) =>
+        version.Length is > 0 and <= 40 && version.All(c => char.IsAsciiLetterOrDigit(c) || c is '.' or '+' or '_' or '-') && !version.Contains("..", StringComparison.Ordinal);
+
+    /// <summary>Вид значения поля: имя, описание, версия — текст; зависимости, порядок — список id модов; авторы, языки — список строк.</summary>
+    private static string? Problem(string field, JsonNode value)
+    {
+        bool text = value is JsonValue v && v.GetValueKind() == JsonValueKind.String;
+        bool strings = value is JsonArray a && a.All(i => i is JsonValue s && s.GetValueKind() == JsonValueKind.String);
+        return field switch
+        {
+            "version" when !text || !ValidVersion(value.GetValue<string>()) => "версия — цифры, латиница и «.+_-» (например 1.2.0)",
+            "name" or "description" when !text => "ждали текст",
+            "dependencies" or "loadAfter" when !strings || ((JsonArray)value).Any(i => !i!.GetValue<string>().All(c => c is (>= 'a' and <= 'z') or (>= '0' and <= '9') or '-'))
+                => "ждали список id модов",
+            "authors" or "languages" when !strings => "ждали список строк",
+            _ => null,
+        };
+    }
 }
 
 /// <summary>Переименовать свою сущность-каталог: новое имя каталога и id (<c>мод:вид/новое</c>), ссылки на неё в документе мода (требования,

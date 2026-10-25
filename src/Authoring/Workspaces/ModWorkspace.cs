@@ -16,10 +16,17 @@ public sealed class ModWorkspace(StudioSession session)
 {
     public StudioSession Session { get; } = session ?? throw new ArgumentNullException(nameof(session));
 
-    /// <summary>Моды рядом с этим (соседние каталоги с <c>mod.json</c>) и моды игры, кроме этого, — без повторов по id.</summary>
-    public IReadOnlyList<ModInfo> Others()
+    private IReadOnlyList<ModInfo>? _others;
+
+    /// <summary>Моды рядом с этим (соседние каталоги с <c>mod.json</c>) и моды игры, кроме этого, — без повторов по id. Кэш — до
+    /// <see cref="RefreshOthers"/> (каталоги не перебираются на каждую правку).</summary>
+    public IReadOnlyList<ModInfo> Others() => _others ??= FindOthers();
+
+    public void RefreshOthers() => _others = null;
+
+    private IReadOnlyList<ModInfo> FindOthers()
     {
-        string? parent = Path.GetDirectoryName(Session.Project.Dir);
+        string? parent = Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(Session.Project.Dir));
         var near = parent is null ? [] : Directory.EnumerateDirectories(parent)
             .Where(d => File.Exists(Path.Combine(d, ModProject.ManifestFile)) && !Path.GetFullPath(d).Equals(Session.Project.Dir, StringComparison.OrdinalIgnoreCase))
             .Select(TryOpen).OfType<ModInfo>();
@@ -60,6 +67,7 @@ public sealed class ModWorkspace(StudioSession session)
     /// <summary>Конфликты этого мода со всеми модами рядом и игры (несохранённое — тоже).</summary>
     public IReadOnlyList<LayerConflict> Conflicts()
     {
+        RefreshOthers();
         var report = ModCheck.Run(Session.History.Current, Session.Project, Session.BaseDir, Others());
         return LayerConflicts.Of(report.Layers, Session.Project.Id);
     }
@@ -67,9 +75,9 @@ public sealed class ModWorkspace(StudioSession session)
     /// <summary>Записать мод и упаковать; итог — строкой для статуса.</summary>
     public string Pack()
     {
-        if (Session.History.Dirty) Session.Save();
         try
         {
+            if (Session.History.Dirty) Session.Save();
             var r = ModPack.Pack(Session.Project, Session.BaseDir, Session.Others);
             var problems = ModPack.Verify(r.Archive);
             return problems.Count == 0 ? $"упаковано: {r.Archive} — файлов {r.Files}, {r.Bytes / 1024} КБ" : $"архив не сошёлся с описью: {string.Join("; ", problems)}";

@@ -29,7 +29,9 @@ public sealed partial class MapObjects
         string? lordId = lord ?? content.Lords.FirstOrDefault(l => l.Race == race)?.Id;
         if (lordId is not null && content.Find(lordId) is not LordDef) throw new InvalidOperationException($"лорда «{lordId}» нет");
         string id = NewPlayerId();
-        int party = PlayersNode.Select(p => p.Value?["Party"]?.GetValue<int>() ?? 0).DefaultIfEmpty(19).Max() + 1;
+        // Сторона дипломатии: у игроков без своей — род расы (как у правил, Diplomacy.PartyOf); новому — число, не занятое никем.
+        var parties = PlayersNode.Select(p => p.Value as JsonObject).OfType<JsonObject>().Select(PartyOf).OfType<int>().ToList();
+        int party = Math.Max(19, parties.DefaultIfEmpty(0).Max()) + 1;
         var bank = Zero();
         bank["Gold"] = raceDef.Neutral == true ? 0 : 600;
         PlayersNode[id] = new JsonObject
@@ -40,11 +42,15 @@ public sealed partial class MapObjects
             ["KnownSpells"] = new JsonArray(), ["Spied"] = new JsonArray(), ["Party"] = party,
         };
         var relations = List(MapNode, "Relations");
-        foreach (var other in PlayersNode.Where(p => p.Key != id).Select(p => p.Value?["Party"]?.GetValue<int>()).OfType<int>())
+        foreach (int other in parties.Distinct())
             relations.Add(new JsonObject { ["Race1"] = other, ["Race2"] = party, ["Raw"] = 0 });
         _ = SubraceOf(id);
         return id;
     }
+
+    /// <summary>Сторона игрока: своя (<c>Party</c>) или род расы; расы нет в содержимом — null.</summary>
+    private int? PartyOf(JsonObject player) =>
+        player["Party"]?.GetValue<int>() ?? (content.Find(Str(player, "RaceId")) is RaceDef race ? (int)race.Kind : null);
 
     private string NewPlayerId()
     {
@@ -60,14 +66,22 @@ public sealed partial class MapObjects
     public void SetPlayer(string id, string? race = null, string? lord = null, string? name = null, bool? human = null, int? gold = null)
     {
         if (PlayersNode[id] is not JsonObject p) throw new InvalidOperationException($"игрока «{id}» нет");
-        if (race is not null)
+        string raceId = race ?? Str(p, "RaceId");
+        if (content.Find(raceId) is not RaceDef raceDef) throw new InvalidOperationException($"расы «{raceId}» нет");
+        if (lord is not null && content.Find(lord) is not LordDef) throw new InvalidOperationException($"лорда «{lord}» нет");
+        if (race is not null && race != Str(p, "RaceId"))
         {
-            if (content.Find(race) is not RaceDef) throw new InvalidOperationException($"расы «{race}» нет");
+            // Сторона, своя до смены, сохраняется (отношения не путаются); флаг отрядов — по новой расе; лорд — расы.
+            p["Party"] ??= PartyOf(p);
             p["RaceId"] = race;
+            if (root["Events"]?["SubraceOwners"] is JsonObject owners)
+                foreach (var sub in owners.Where(o => o.Value?.GetValue<string>() == id).Select(o => o.Key)) Section("Subraces")[sub] = SubraceCode(raceDef);
+            if (lord is null) p["LordId"] = content.Lords.FirstOrDefault(l => l.Race == race)?.Id ?? "";
         }
         if (lord is not null)
         {
-            if (content.Find(lord) is not LordDef) throw new InvalidOperationException($"лорда «{lord}» нет");
+            if (content.Find(lord) is LordDef { Race: { } lordRace } && lordRace != raceId)
+                throw new InvalidOperationException($"лорд «{lord}» — другой расы");
             p["LordId"] = lord;
         }
         if (name is not null) p["Name"] = name;
@@ -81,13 +95,23 @@ public sealed partial class MapObjects
         if (!PlayersNode.ContainsKey(id)) throw new InvalidOperationException($"игрока «{id}» нет");
         if (All().FirstOrDefault(o => o.Owner == id) is { } owned)
             throw new InvalidOperationException($"у игрока есть объекты ({owned.Kind} {owned.Id}) — сначала их убрать или отдать другому");
-        int? party = PlayersNode[id]?["Party"]?.GetValue<int>();
+        if (EventsUsing(id) is { Count: > 0 } events)
+            throw new InvalidOperationException($"на игрока ссылаются события ({string.Join(", ", events)}) — сначала поправить их");
+        int? party = PartyOf((JsonObject)PlayersNode[id]!);
         PlayersNode.Remove(id);
+        // Отношения стороны — только если она больше ничья (у двоих одной расы без своих сторон сторона общая).
+        bool shared = PlayersNode.Select(p => p.Value as JsonObject).OfType<JsonObject>().Any(p => PartyOf(p) == party);
         var relations = List(MapNode, "Relations");
-        foreach (var r in relations.OfType<JsonObject>().Where(r => r["Race1"]?.GetValue<int>() == party || r["Race2"]?.GetValue<int>() == party).ToList())
-            relations.Remove(r);
+        if (!shared)
+            foreach (var r in relations.OfType<JsonObject>().Where(r => r["Race1"]?.GetValue<int>() == party || r["Race2"]?.GetValue<int>() == party).ToList())
+                relations.Remove(r);
         if (root["Events"]?["SubraceOwners"] is JsonObject owners)
-            foreach (var sub in owners.Where(o => o.Value?.GetValue<string>() == id).Select(o => o.Key).ToList()) owners.Remove(sub);
+            foreach (var sub in owners.Where(o => o.Value?.GetValue<string>() == id).Select(o => o.Key).ToList())
+            {
+                owners.Remove(sub);
+                Section("Subraces").Remove(sub);
+                (LooksNode["Banners"] as JsonObject)?.Remove(sub);
+            }
     }
 
     // ---- события
@@ -100,21 +124,26 @@ public sealed partial class MapObjects
 
     private JsonArray EventList => List(EventsNode, "Events");
 
+    /// <summary>События для чтения (без создания раздела событий).</summary>
+    private IEnumerable<JsonObject> EventNodes => (root["Events"]?["Events"] as JsonArray)?.OfType<JsonObject>() ?? [];
+
     public IReadOnlyList<MapEventRow> Events() =>
-        [.. EventList.OfType<JsonObject>().Select(e => new MapEventRow(Str(e, "Id"), Str(e, "Name"), e["Enabled"]?.GetValue<bool>() ?? true,
+        [.. EventNodes.Select(e => new MapEventRow(Str(e, "Id"), Str(e, "Name"), e["Enabled"]?.GetValue<bool>() ?? true,
             e["OccurOnce"]?.GetValue<bool>() ?? true, e["Chance"]?.GetValue<int>() ?? 100, (e["Conditions"] as JsonArray)?.Count ?? 0,
             (e["Effects"] as JsonArray)?.Count ?? 0))];
 
-    public JsonObject? EventOf(string id) => EventList.OfType<JsonObject>().FirstOrDefault(e => Str(e, "Id") == id);
+    public JsonObject? EventOf(string id) => EventNodes.FirstOrDefault(e => Str(e, "Id") == id);
 
-    /// <summary>Новое событие: включено, один раз, шанс 100, для всех; без условий и действий. Возвращает id.</summary>
+    /// <summary>Новое событие: включено, один раз, шанс 100, для всех рас (шесть флагов — да: иначе событие не работает ни для кого), порядок —
+    /// после всех; без условий и действий. Возвращает id.</summary>
     public string AddEvent(string name)
     {
         string id = NewEventId();
         EventList.Add(new JsonObject
         {
-            ["Id"] = id, ["Enabled"] = true, ["OccurOnce"] = true, ["Chance"] = 100, ["Order"] = EventList.Count,
-            ["Races"] = new JsonArray(false, false, false, false, false, false), ["Conditions"] = new JsonArray(), ["Effects"] = new JsonArray(),
+            ["Id"] = id, ["Enabled"] = true, ["OccurOnce"] = true, ["Chance"] = 100,
+            ["Order"] = EventNodes.Select(e => e["Order"]?.GetValue<int>() ?? 0).DefaultIfEmpty(-1).Max() + 1,
+            ["Races"] = new JsonArray(true, true, true, true, true, true), ["Conditions"] = new JsonArray(), ["Effects"] = new JsonArray(),
             ["Name"] = name,
         });
         return id;
@@ -139,8 +168,22 @@ public sealed partial class MapObjects
         var e = EventOf(id) ?? throw new InvalidOperationException($"события «{id}» нет");
         if (field is not ("Name" or "Enabled" or "OccurOnce" or "Chance" or "Order" or "RaceIds" or "TriggerRaceIds" or "PlayerIds"))
             throw new InvalidOperationException($"поле события {field} так не правится");
-        if (value is null) e.Remove(field);
-        else e[field] = value.DeepClone();
+        if (value is null && field is "RaceIds" or "TriggerRaceIds" or "PlayerIds")
+        {
+            e.Remove(field);
+            return;
+        }
+        bool ok = field switch
+        {
+            "Name" => value is JsonValue v && v.GetValueKind() == JsonValueKind.String,
+            "Enabled" or "OccurOnce" => value is JsonValue v && v.GetValueKind() is JsonValueKind.True or JsonValueKind.False,
+            "Chance" or "Order" => value is JsonValue v && v.TryGetValue<int>(out _),
+            _ => value is JsonArray a && a.All(i => i is JsonValue s && s.GetValueKind() == JsonValueKind.String),
+        };
+        if (!ok) throw new InvalidOperationException($"поле события {field}: значение не того вида");
+        if (field == "PlayerIds" && value is JsonArray players && players.Select(i => i!.GetValue<string>()).FirstOrDefault(i => !PlayersNode.ContainsKey(i)) is { } stranger)
+            throw new InvalidOperationException($"игрока «{stranger}» на карте нет");
+        e[field] = value!.DeepClone();
     }
 
     /// <summary>Виды условий и действий событий — из атрибутов записей правил (без «неизвестного»).</summary>
@@ -176,7 +219,17 @@ public sealed partial class MapObjects
     {
         var part = Part(eventId, index, effect);
         if (field is "Kind" or "Category" or "Name") throw new InvalidOperationException($"поле {field} задаёт вид — оно не правится");
-        if (!part.ContainsKey(field)) throw new InvalidOperationException($"у «{Str(part, "Kind")}» нет поля {field}");
+        if (!part.TryGetPropertyValue(field, out var was)) throw new InvalidOperationException($"у «{Str(part, "Kind")}» нет поля {field}");
+        // Значение — того же вида, что у поля (число, текст, флаг, список): иначе сценарий не соберётся, а правка уже была бы в истории.
+        var kind = was?.GetValueKind();
+        bool same = (kind, value?.GetValueKind()) switch
+        {
+            (null, _) => true,
+            (JsonValueKind.True or JsonValueKind.False, JsonValueKind.True or JsonValueKind.False) => true,
+            (JsonValueKind.Number, JsonValueKind.Number) => value is JsonValue n && n.TryGetValue<int>(out _),
+            var (a, b) => a == b,
+        };
+        if (!same) throw new InvalidOperationException($"поле {field}: ждали {kind}, а дано {value?.GetValueKind().ToString() ?? "пусто"}");
         part[field] = value?.DeepClone();
     }
 

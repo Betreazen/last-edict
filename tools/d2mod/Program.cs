@@ -112,14 +112,27 @@ int Apply()
 
 /// <summary>Моды рядом с этим (каталоги с mod.json в родительском каталоге) — слои, с которыми он может конфликтовать.</summary>
 IReadOnlyList<LastEdict.Data.Content.ModInfo> Neighbours(ModProject project) =>
-    [.. Directory.EnumerateDirectories(Path.GetDirectoryName(project.Dir)!)
+    [.. Directory.EnumerateDirectories(Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(project.Dir))!)
         .Where(d => File.Exists(Path.Combine(d, ModProject.ManifestFile)) && !Path.GetFullPath(d).Equals(project.Dir, StringComparison.OrdinalIgnoreCase))
-        .Select(d => ModProject.Open(d).Info)];
+        .Select(TryOpen).OfType<LastEdict.Data.Content.ModInfo>()];
+
+static LastEdict.Data.Content.ModInfo? TryOpen(string dir)
+{
+    try
+    {
+        return ModProject.Open(dir).Info;
+    }
+    catch (Exception e) when (e is InvalidDataException or IOException)
+    {
+        Console.Error.WriteLine($"d2mod: мод рядом не читается и пропущен — {e.Message}");
+        return null;
+    }
+}
 
 int Pack()
 {
     var project = ModProject.Open(modDir);
-    var result = LastEdict.Authoring.Packaging.ModPack.Pack(project, BaseDir(), outDir: Opt("--out"));
+    var result = LastEdict.Authoring.Packaging.ModPack.Pack(project, BaseDir(), Neighbours(project), outDir: Opt("--out"));
     var problems = LastEdict.Authoring.Packaging.ModPack.Verify(result.Archive);
     Console.WriteLine($"pack mod={project.Id} archive={result.Archive} files={result.Files} bytes={result.Bytes} " +
                       $"ruleset_hash={result.RulesetHash ?? "-"} verify={(problems.Count == 0 ? "ok" : string.Join(";", problems))}");

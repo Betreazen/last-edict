@@ -73,6 +73,11 @@ public sealed class StudioPackTests : IDisposable
             Assert.DoesNotContain(names, n => n.StartsWith(".studio", StringComparison.Ordinal));
         }
         Assert.Null(result.RulesetHash);   // до слияния Э7 — без хеша, место в описи оставлено
+        // Тот же мод — тот же архив байт в байт; версия с путём — отказ команды.
+        var bytes = File.ReadAllBytes(result.Archive);
+        Assert.Equal(bytes, File.ReadAllBytes(ModPack.Pack(session.Project, TestPackTests.Dir).Archive));
+        Assert.False(session.Do(new SetManifest("version", JsonValue.Create("x/../../evil"))));
+        Assert.False(session.Do(new SetManifest("name", JsonValue.Create(5))));
         // Мод с ошибкой (висячая ссылка) не упаковывается; архив внутри мода вне .studio — отказ.
         Assert.True(session.Do(new SetField("towers:building/spire", "requires", JsonValue.Create("towers:building/ghost"))));
         session.Save();

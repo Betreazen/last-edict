@@ -42,6 +42,9 @@ public sealed class MapWorkspace(StudioSession session)
     private JsonObject? _doc;
     private IReadOnlyList<MapObject>? _objects;
 
+    /// <summary>Объектная часть после последней правки (или открытия): «до» следующей правки — она же, снимок не делается дважды.</summary>
+    private JsonObject? _lastSnapshot;
+
     public StudioSession Session { get; } = session ?? throw new ArgumentNullException(nameof(session));
 
     public string? Id { get; private set; }
@@ -76,10 +79,16 @@ public sealed class MapWorkspace(StudioSession session)
     private ContentSet Content => Session.Report.Content ?? Session.BaseContent;
 
     /// <summary>Объекты открытой карты.</summary>
-    public IReadOnlyList<MapObject> Objects => _objects ??= _doc is null ? [] : new MapObjects(_doc, Content).All();
+    public IReadOnlyList<MapObject> Objects => _objects ??= Reader?.All() ?? [];
 
     /// <summary>Объекты карты для чтения свойств (место, отряд, игроки); карта не открыта — null.</summary>
-    public MapObjects? Reader => _doc is null ? null : new MapObjects(_doc, Content);
+    public MapObjects? Reader => _doc is null ? null : new MapObjects(_doc, Content, Ground);
+
+    /// <summary>Грунт клетки для проверки места объекта (вода и горы — не под объекты).</summary>
+    private int Ground(int x, int y) => x >= 0 && y >= 0 && x < Size && y < Size ? (Tiles[(y * Size) + x] >> 3) & 0b111 : 0;
+
+    /// <summary>Объект под клеткой по кэшу объектов (щелчок по карте).</summary>
+    public MapObject? ObjectAt(int x, int y) => Reader?.At(x, y, Objects);
 
     /// <summary>Карты мода (<c>data/scenarios</c>).</summary>
     public IReadOnlyList<string> Maps
@@ -146,6 +155,7 @@ public sealed class MapWorkspace(StudioSession session)
         _dirty.Clear();
         _strokeBefore.Clear();
         _objects = null;
+        _lastSnapshot = null;
         Selected = null;
         Changed = 0;
         Dirty = false;
@@ -279,6 +289,7 @@ public sealed class MapWorkspace(StudioSession session)
         foreach (var (k, v) in (JsonObject)snapshot["Looks"]!) looks[k] = v?.DeepClone();
         _doc["Events"] = snapshot["Events"]?.DeepClone();
         _objects = null;
+        _lastSnapshot = snapshot;
         if (Selected is { } s && !Objects.Any(o => o.Id == s)) Selected = null;
     }
 
@@ -287,17 +298,21 @@ public sealed class MapWorkspace(StudioSession session)
     {
         if (_doc is null) return Session.Refuse("карта не открыта — новая или из мода");
         StrokeEnd();
-        var before = Snapshot();
+        var before = _lastSnapshot ?? Snapshot();
         try
         {
-            change(new MapObjects(_doc, Content));
+            change(new MapObjects(_doc, Content, Ground));
         }
-        catch (InvalidOperationException e)
+        catch (Exception e) when (e is InvalidOperationException or InvalidCastException or FormatException or ArgumentException
+                                       or KeyNotFoundException or NullReferenceException or System.Text.Json.JsonException)
         {
+            // Любой сбой правки — карта прежняя целиком (документ мог измениться наполовину).
             Restore(before);
-            return Session.Refuse(e.Message);
+            return Session.Refuse(e is InvalidOperationException ? e.Message : $"правка не прошла: {e.Message}");
         }
-        _undo.Push(new MapObjectEdit(name, before, Snapshot()));
+        var after = Snapshot();
+        _lastSnapshot = after;
+        _undo.Push(new MapObjectEdit(name, before, after));
         _redo.Clear();
         _objects = null;
         Dirty = true;
@@ -361,9 +376,11 @@ public sealed class MapWorkspace(StudioSession session)
         var map = (JsonObject)_doc!["Looks"]!["Map"]!;
         ((JsonObject)map[nameof(Tiles)]!)["data"] = Convert.ToBase64String(Tiles);
         var fog = map["Fog"] as JsonObject ?? (JsonObject)(map["Fog"] = new JsonObject());
-        foreach (var player in ((JsonObject)map["Players"]!).Select(p => p.Value).OfType<JsonObject>())
-            if (player["FogId"]?.GetValue<string>() is { Length: > 0 } fogId && !fog.ContainsKey(fogId))
-                fog[fogId] = new JsonObject { ["w"] = Size, ["h"] = Size, ["data"] = Convert.ToBase64String(new byte[Size * Size]) };
+        var fogIds = ((JsonObject)map["Players"]!).Select(p => p.Value?["FogId"]?.GetValue<string>()).OfType<string>().Where(f => f.Length > 0)
+            .ToHashSet(StringComparer.Ordinal);
+        foreach (string fogId in fogIds.Where(f => !fog.ContainsKey(f)))
+            fog[fogId] = new JsonObject { ["w"] = Size, ["h"] = Size, ["data"] = Convert.ToBase64String(new byte[Size * Size]) };
+        foreach (string orphan in fog.Select(f => f.Key).Where(f => !fogIds.Contains(f)).ToList()) fog.Remove(orphan);   // убранный (отменённый) игрок
         return _doc.ToJsonString(new System.Text.Json.JsonSerializerOptions { WriteIndented = false });
     }
 

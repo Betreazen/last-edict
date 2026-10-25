@@ -52,7 +52,7 @@ public partial class StudioModTab : ScrollContainer, IStudioTab
 
     public void Sync()
     {
-        if (_shown == _ws.Session.History.Revision) return;
+        if (_shown == _ws.Session.History.Revision || !IsVisibleInTree()) return;   // моды рядом — только когда вкладка открыта
         _shown = _ws.Session.History.Revision;
         (_name.Text, _version.Text, _description.Text) = (_ws.Field("name"), _ws.Field("version"), _ws.Field("description"));
         foreach (var child in _order.GetChildren()) { _order.RemoveChild(child); child.QueueFree(); }
@@ -85,5 +85,5 @@ public partial class StudioModTab : ScrollContainer, IStudioTab
     /// <summary>Шаги проверки без окна.</summary>
     public string Pack() => _ws.Pack();
 
-    public string Line() => $"мод: версия={(_version.Text.Length > 0 ? _version.Text : "-")} рядом={_ws.Others().Count} конфликтов={_conflicts.ItemCount}";
+    public string Line() => $"мод: версия={(_ws.Field("version") is { Length: > 0 } v ? v : "-")} рядом={_ws.Others().Count} конфликтов={_conflicts.ItemCount}";
 }

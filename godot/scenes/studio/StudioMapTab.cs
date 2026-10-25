@@ -109,7 +109,7 @@ public partial class StudioMapTab : HSplitContainer, IStudioTab
         }
         if (_selecting)
         {
-            _ws.Select(_ws.Reader?.At(x, y)?.Id);
+            _ws.Select(_ws.ObjectAt(x, y)?.Id);
             Sync();
             return true;
         }
@@ -146,7 +146,9 @@ public partial class StudioMapTab : HSplitContainer, IStudioTab
 
     public override void _UnhandledKeyInput(InputEvent e)
     {
-        if (e is InputEventKey { Pressed: true, Keycode: Key.Delete } && _ws.Selected is { } id && IsVisibleInTree())
+        // Delete — объекту карты, только когда клавиша не нужна полю ввода или списку (там Delete — их).
+        if (e is InputEventKey { Pressed: true, Keycode: Key.Delete } && _ws.Selected is { } id && IsVisibleInTree()
+            && GetViewport().GuiGetFocusOwner() is not (LineEdit or TextEdit or ItemList or SpinBox))
         {
             _ws.Remove(id);
             Sync();

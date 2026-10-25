@@ -32,8 +32,11 @@ public sealed record MapPlacement
 /// держит их согласованными (что проверяет <c>MapInvariants</c>). Работает над JSON сценария (как <see cref="MapFactory"/>); id — класс
 /// оригинала с приставкой карты (<c>S9NNKC0003</c>). Отказ — <see cref="InvalidOperationException"/> с текстом.
 /// </summary>
-public sealed partial class MapObjects(JsonObject root, ContentSet content)
+public sealed partial class MapObjects(JsonObject root, ContentSet content, Func<int, int, int>? ground = null)
 {
+    /// <summary>Грунт клетки (0 равнина, 1 лес, 3 вода, 4 горы) — от карты редактора (<see cref="MapWorkspace.Tiles"/>); нет — не проверяется.</summary>
+    private int GroundAt(int x, int y) => ground?.Invoke(x, y) ?? 0;
+
     /// <summary>Сторона квадрата объекта: столица 5, город 4, руина и места 3, прочие 1 (ориентир — по размеру из содержимого).</summary>
     public static int SideOf(MapObjectKind kind) => kind switch
     {
@@ -108,10 +111,10 @@ public sealed partial class MapObjects(JsonObject root, ContentSet content)
         return result;
     }
 
-    /// <summary>Объект под клеткой (верхний — отряд, потом прочие); нет — null.</summary>
-    public MapObject? At(int x, int y)
+    /// <summary>Объект под клеткой (верхний — отряд, потом прочие); нет — null. <paramref name="all"/> — уже собранный список (кэш окна).</summary>
+    public MapObject? At(int x, int y, IReadOnlyList<MapObject>? all = null)
     {
-        var all = All();
+        all ??= All();
         return all.FirstOrDefault(o => o.Kind == MapObjectKind.Stack && o.X == x && o.Y == y && !Inside(o.Id))
                ?? all.FirstOrDefault(o => o.Kind != MapObjectKind.Stack && x >= o.X && y >= o.Y && x < o.X + o.W && y < o.Y + o.H);
     }
@@ -150,6 +153,11 @@ public sealed partial class MapObjects(JsonObject root, ContentSet content)
         ArgumentNullException.ThrowIfNull(p);
         var (w, h) = kind == MapObjectKind.Landmark ? LandmarkSize(p.Landmark) : (SideOf(kind), SideOf(kind));
         if (Blocked(x, y, w, h) is { } why) throw new InvalidOperationException(why);
+        // Вода — ни под что; горы — только под ориентир (он сам бывает горой).
+        for (int yy = y; yy < y + h; yy++)
+            for (int xx = x; xx < x + w; xx++)
+                if (GroundAt(xx, yy) == 3 || (GroundAt(xx, yy) == 4 && kind != MapObjectKind.Landmark))
+                    throw new InvalidOperationException($"клетка {xx},{yy} — {(GroundAt(xx, yy) == 3 ? "вода" : "горы")}: сюда {kind} не ставится");
         return kind switch
         {
             MapObjectKind.Capital => Fort(x, y, capital: true, p),
@@ -183,18 +191,22 @@ public sealed partial class MapObjects(JsonObject root, ContentSet content)
     /// <summary>Подраса игрока (флаг отрядов): из <c>SubraceOwners</c>; нет — новая.</summary>
     private string SubraceOf(string player)
     {
-        var owners = root["Events"]?["SubraceOwners"] as JsonObject;
-        if (owners?.FirstOrDefault(p => p.Value?.GetValue<string>() == player).Key is { } sub) return sub;
+        var events = root["Events"] as JsonObject ?? (JsonObject)(root["Events"] = new JsonObject());
+        var owners = events["SubraceOwners"] as JsonObject ?? (JsonObject)(events["SubraceOwners"] = new JsonObject());
+        if (owners.FirstOrDefault(p => p.Value?.GetValue<string>() == player).Key is { } sub) return sub;
         string id = NewSubraceId();
         var race = content.Find(Str((JsonObject)Section("Players")[player]!, "RaceId")) as RaceDef;
-        Section("Subraces")[id] = race?.Kind switch
-        {
-            RaceKind.Human => 1, RaceKind.Undead => 2, RaceKind.Heretic => 3, RaceKind.Dwarf => 4, RaceKind.Elf => 14, _ => 5,
-        };
-        if (owners is not null) owners[id] = player;
+        Section("Subraces")[id] = SubraceCode(race);
+        owners[id] = player;
         if (LooksNode["Banners"] is JsonObject banners) banners[id] = banners.Count;
         return id;
     }
+
+    /// <summary>Код подрасы (флаг отряда) по роду расы.</summary>
+    private static int SubraceCode(RaceDef? race) => race?.Kind switch
+    {
+        RaceKind.Human => 1, RaceKind.Undead => 2, RaceKind.Heretic => 3, RaceKind.Dwarf => 4, RaceKind.Elf => 14, _ => 5,
+    };
 
     private string NewSubraceId()
     {
@@ -258,11 +270,28 @@ public sealed partial class MapObjects(JsonObject root, ContentSet content)
     /// <summary>Клетки группы по порядку заполнения (передний ряд, затем задний).</summary>
     private static readonly int[] Cells = [2, 0, 4, 3, 1, 5];
 
-    private static JsonArray Slots(int count)
+    /// <summary>Построение группы: клетка → номер юнита (−1 — пусто). Большой юнит — обе клетки колонки (как у карт оригинала: <c>[2,3,0,0,1,-1]</c>),
+    /// сначала большие (колонки 1, 0, 2), затем малые — передний ряд, задний. Не влезает в шесть клеток — отказ с текстом.</summary>
+    private JsonArray Slots(IReadOnlyList<string> types)
     {
         var slots = new int[6];
         Array.Fill(slots, -1);
-        for (int i = 0; i < count && i < 6; i++) slots[Cells[i]] = i;
+        int[] columns = [2, 0, 4];
+        int column = 0;
+        for (int i = 0; i < types.Count; i++)
+            if (content.Find(types[i]) is UnitDef { Small: false })
+            {
+                while (column < columns.Length && slots[columns[column]] >= 0) column++;
+                if (column >= columns.Length) throw new InvalidOperationException("больших юнитов больше, чем колонок (три)");
+                slots[columns[column]] = slots[columns[column] + 1] = i;
+            }
+        for (int i = 0; i < types.Count; i++)
+        {
+            if (content.Find(types[i]) is UnitDef { Small: false }) continue;
+            int cell = Array.FindIndex(Cells, c => slots[c] < 0);
+            if (cell < 0) throw new InvalidOperationException("юниты не помещаются в шесть клеток группы");
+            slots[Cells[cell]] = i;
+        }
         return Arr(slots);
     }
 
@@ -270,6 +299,8 @@ public sealed partial class MapObjects(JsonObject root, ContentSet content)
     {
         string owner = capital ? p.Owner ?? throw new InvalidOperationException("у столицы нужен игрок-хозяин") : OwnerOf(p);
         if (!Section("Players").ContainsKey(owner)) throw new InvalidOperationException($"игрока «{owner}» на карте нет");
+        if (capital && content.Find(Str((JsonObject)Section("Players")[owner]!, "RaceId")) is RaceDef { Neutral: true })
+            throw new InvalidOperationException("у нейтралов столицы нет — выберите игрока-хозяина");
         if (capital && List(MapNode, "Sites").OfType<JsonObject>().Any(s => Str(s, "Kind") == "Capital" && Str(s, "Owner") == owner))
             throw new InvalidOperationException("у этого игрока столица уже есть");
         string id = NewId("FT"), sub = SubraceOf(owner);
@@ -278,10 +309,11 @@ public sealed partial class MapObjects(JsonObject root, ContentSet content)
         // Стража столицы по умолчанию — страж расы; города — данная (не больше трёх).
         IReadOnlyList<string> guardTypes = capital && p.Units.Count == 0
             && content.Find(Str((JsonObject)Section("Players")[owner]!, "RaceId")) is RaceDef { Guardian: { } g } ? [g] : p.Units;
-        var guards = guardTypes.Take(capital ? 1 : 3).Select(Unit).ToList();
+        if (guardTypes.Count > (capital ? 1 : 3)) throw new InvalidOperationException(capital ? "у столицы один страж" : "у города не больше трёх стражей");
+        var guards = guardTypes.Select(Unit).ToList();
         var site = Site(id, capital ? "Capital" : "Village", capital ? "Capital" : "MidVillage", x, y, p.Name ?? (capital ? "Столица" : "Город"), owner);
         site["Guards"] = Arr(guards);
-        site["GuardSlots"] = Slots(guards.Count);
+        site["GuardSlots"] = Slots(guardTypes);
         site["Subrace"] = sub;
         if (!capital)
         {
@@ -303,10 +335,11 @@ public sealed partial class MapObjects(JsonObject root, ContentSet content)
     {
         string id = NewId("RU");
         Object(id, "RU", x, y, 3, 3);
-        var guards = p.Units.Take(6).Select(Unit).ToList();
+        var slots = Slots(p.Units);
+        var guards = p.Units.Select(Unit).ToList();
         var site = Site(id, "Ruin", "MidRuin", x, y, p.Name ?? "Руины", "");
         site["Guards"] = Arr(guards);
-        site["GuardSlots"] = Slots(guards.Count);
+        site["GuardSlots"] = slots;
         ((JsonObject)site["Cash"]!)["Gold"] = p.Gold;
         if (p.Items.FirstOrDefault() is { } item) site["ItemId"] = Item(item, instance: false);
         List(MapNode, "Sites").Add(site);
@@ -393,13 +426,13 @@ public sealed partial class MapObjects(JsonObject root, ContentSet content)
     private string Stack(string owner, IReadOnlyList<string> types, int x, int y, string inside, int order)
     {
         if (types.Count == 0) throw new InvalidOperationException("в отряде нужен хотя бы лидер");
-        if (types.Count > 6) throw new InvalidOperationException("в отряде не больше шести юнитов");
+        var slots = Slots(types);
         string id = NewId("KC"), sub = SubraceOf(owner);
         var units = types.Select(Unit).ToList();
         Section("Stacks")[id] = new JsonObject
         {
             ["Id"] = id, ["Owner"] = owner, ["Subrace"] = sub, ["LeaderId"] = units[0], ["LeaderAlive"] = true, ["X"] = x, ["Y"] = y, ["Move"] = 20,
-            ["Inside"] = inside, ["UnitIds"] = Arr(units), ["Slots"] = Slots(units.Count), ["Items"] = new JsonArray(), ["TemplateId"] = "",
+            ["Inside"] = inside, ["UnitIds"] = Arr(units), ["Slots"] = slots, ["Items"] = new JsonArray(), ["TemplateId"] = "",
             ["Equipment"] = Arr(Enumerable.Repeat("", 7)), ["Order"] = order, ["OrderTarget"] = "", ["AiOrder"] = 1, ["AiOrderTarget"] = "", ["AiIgnore"] = false,
             ["UpgradeCount"] = 0, ["BattlesWon"] = 0, ["CreationLevel"] = 1, ["AiPriority"] = 3,
         };
@@ -418,6 +451,8 @@ public sealed partial class MapObjects(JsonObject root, ContentSet content)
     public void Remove(string id)
     {
         if (!Section("Objects").ContainsKey(id)) throw new InvalidOperationException($"объекта «{id}» на карте нет");
+        if (EventsUsing(id) is { Count: > 0 } events)
+            throw new InvalidOperationException($"на «{id}» ссылаются события ({string.Join(", ", events)}) — сначала поправить их");
         var site = List(MapNode, "Sites").OfType<JsonObject>().FirstOrDefault(s => Str(s, "Id") == id);
         if (site is not null)
         {
@@ -457,6 +492,8 @@ public sealed partial class MapObjects(JsonObject root, ContentSet content)
         {
             Shift(Section("Stacks")[visitor] as JsonObject, dx, dy);
             Shift(Section("Objects")[visitor] as JsonObject, dx, dy);
+            Uncover(visitor);   // визитёр стоит в клетке укрепления — план переносится с ним
+            Cover(visitor, Section("Stacks")[visitor]!["X"]!.GetValue<int>(), Section("Stacks")[visitor]!["Y"]!.GetValue<int>(), 1, 1);
             foreach (var e in List(LooksNode, "Stacks").OfType<JsonObject>().Where(e => Str(e, "Id") == visitor)) Shift(e, dx, dy);
         }
     }
@@ -475,9 +512,24 @@ public sealed partial class MapObjects(JsonObject root, ContentSet content)
     {
         var site = List(MapNode, "Sites").OfType<JsonObject>().FirstOrDefault(s => Str(s, "Id") == id)
                    ?? throw new InvalidOperationException($"у «{id}» нет полей места");
-        if (field is "Id" or "Kind" or "RawKind" or "X" or "Y") throw new InvalidOperationException($"поле {field} правится не так");
-        if (field == "Gold") ((JsonObject)site["Cash"]!)["Gold"] = value?.DeepClone();
-        else site[field] = value?.DeepClone();
+        switch (field)
+        {
+            case "Name" or "Description":
+                site[field] = value is JsonValue v && v.GetValueKind() == System.Text.Json.JsonValueKind.String ? v.DeepClone()
+                    : throw new InvalidOperationException($"{field} — текст");
+                break;
+            case "Gold":
+                ((JsonObject)site["Cash"]!)["Gold"] = Math.Clamp(Int(value, field), 0, 9999);
+                break;
+            case "Resource" when Str(site, "Kind") == "Crystal":
+                int r = Math.Clamp(Int(value, field), 0, 5);
+                site["Resource"] = r;
+                if (Section("Objects")[id] is JsonObject o) o["Resource"] = r;
+                foreach (var c in List(LooksNode, "Crystals").OfType<JsonObject>().Where(c => Str(c, "Id") == id)) c["Resource"] = r;
+                break;
+            default:
+                throw new InvalidOperationException($"поле места {field} Студия так не правит (можно: Name, Description, Gold, Resource кристалла)");
+        }
     }
 
     /// <summary>Отряд: новый состав (лидер — первый), приказ (номер приказа движка) и хозяин.</summary>
@@ -486,12 +538,14 @@ public sealed partial class MapObjects(JsonObject root, ContentSet content)
         if (Section("Stacks")[id] is not JsonObject stack) throw new InvalidOperationException($"отряда «{id}» нет");
         if (units is not null)
         {
-            if (units.Count is 0 or > 6) throw new InvalidOperationException("в отряде от одного до шести юнитов");
+            if (units.Count == 0) throw new InvalidOperationException("в отряде нужен хотя бы лидер");
+            _ = Slots(units);   // не влезает — отказ до правки
             foreach (string old in Strings(stack["UnitIds"])) Section("Units").Remove(old);
             var ids = units.Select(Unit).ToList();
             stack["UnitIds"] = Arr(ids);
-            stack["Slots"] = Slots(ids.Count);
+            stack["Slots"] = Slots(units);
             stack["LeaderId"] = ids[0];
+            stack["LeaderAlive"] = true;
             foreach (var e in List(LooksNode, "Stacks").OfType<JsonObject>().Where(e => Str(e, "Id") == id)) e["LeaderType"] = units[0];
         }
         if (order is { } o) stack["Order"] = o;
@@ -518,6 +572,24 @@ public sealed partial class MapObjects(JsonObject root, ContentSet content)
     /// <summary>Игроки карты: id, раса, имя.</summary>
     public IReadOnlyList<(string Id, string Race, string Name)> Players() =>
         [.. Section("Players").Select(p => p.Value as JsonObject).OfType<JsonObject>().Select(p => (Str(p, "Id"), Str(p, "RaceId"), Str(p, "Name")))];
+
+    private static int Int(JsonNode? value, string field) =>
+        value is JsonValue v && v.TryGetValue<int>(out int n) ? n : throw new InvalidOperationException($"{field} — целое число");
+
+    /// <summary>События, в условиях и действиях которых есть строка <paramref name="id"/> (ссылка на объект, игрока, область).</summary>
+    public IReadOnlyList<string> EventsUsing(string id) =>
+        root["Events"]?["Events"] is JsonArray events
+            ? [.. events.OfType<JsonObject>().Where(e => Mentions(e["Conditions"], id) || Mentions(e["Effects"], id) || Mentions(e["PlayerIds"], id))
+                  .Select(e => Str(e, "Id"))]
+            : [];
+
+    private static bool Mentions(JsonNode? node, string id) => node switch
+    {
+        JsonObject o => o.Any(p => Mentions(p.Value, id)),
+        JsonArray a => a.Any(v => Mentions(v, id)),
+        JsonValue v => v.GetValueKind() == System.Text.Json.JsonValueKind.String && v.GetValue<string>() == id,
+        _ => false,
+    };
 
     private static string Str(JsonObject o, string key) => o[key] is JsonValue v && v.TryGetValue<string>(out var s) ? s : "";
 

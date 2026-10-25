@@ -30,9 +30,13 @@ public sealed class StudioMapObjectTests : IDisposable
     {
         for (int y = 2; y < map.Size - side - 2; y++)
             for (int x = 2; x < map.Size - side - 2; x++)
-                if (map.Reader!.Blocked(x - 1, y - 1, side + 2, side + 2) is null) return (x, y);
+                if (map.Reader!.Blocked(x - 1, y - 1, side + 2, side + 2) is null && Land(map, x, y, side)) return (x, y);
         throw new InvalidOperationException("места нет");
     }
+
+    /// <summary>Под квадратом — суша (не вода и не горы).</summary>
+    private static bool Land(MapWorkspace map, int x, int y, int side) =>
+        Enumerable.Range(y, side).All(yy => Enumerable.Range(x, side).All(xx => ((map.Tiles[(yy * map.Size) + xx] >> 3) & 0b111) is not (3 or 4)));
 
     [Fact]
     public void Palette_PlacesEveryKind_MapStaysValid_UndoAndSaveRoundTrip()
@@ -154,5 +158,69 @@ public sealed class StudioMapObjectTests : IDisposable
         while (map.Undo()) { }
         Assert.Equal(3, map.Reader!.Players().Count);
         Assert.Empty(map.Reader!.Events());
+    }
+    [Fact]
+    public void ReviewFixes_EventsWorkForAll_FortMovesWithGarrison_TerrainAndReferencesChecked()
+    {
+        var (session, map) = Open();
+        // Событие Студии — для всех рас (шесть флагов да), порядок — после всех.
+        string? ev = null;
+        Assert.True(map.Change("событие", m => ev = m.AddEvent("Всем")));
+        Assert.All(map.Reader!.EventOf(ev!)!["Races"]!.AsArray(), f => Assert.True(f!.GetValue<bool>()));
+        // Столица с гарнизоном переносится вместе с ним — план цел.
+        var capital = map.Objects.First(o => o.Kind == MapObjectKind.Capital);
+        Assert.Contains(map.Reader!.All(), o => o.Kind == MapObjectKind.Stack && map.Reader.StackOf(o.Id)?["Inside"]?.GetValue<string>() == capital.Id);
+        var (x, y) = Free(map, 5);
+        Assert.True(map.Move(capital.Id, x, y), session.Refusal);
+        Assert.Empty(map.Check());
+        // Вода — не под объект; на объект, на который ссылается событие, — отказ убрать.
+        map.Brush = MapBrush.Water;
+        map.Radius = 0;
+        var (wx, wy) = Free(map, 1);
+        map.StrokeBegin();
+        map.Paint(wx, wy);
+        map.StrokeEnd();
+        Assert.False(map.Place(MapObjectKind.Bag, wx, wy, new MapPlacement()));
+        Assert.Contains("вода", session.Refusal, StringComparison.Ordinal);
+        string? bag = null;
+        (x, y) = Free(map, 1);
+        Assert.True(map.Place(MapObjectKind.Bag, x, y, new MapPlacement()));
+        bag = map.Selected;
+        Assert.True(map.Change("ссылка", m =>
+        {
+            int c = m.AddPart(ev!, "VisitSite", effect: false);
+            m.SetPart(ev!, c, false, "SiteId", System.Text.Json.Nodes.JsonValue.Create(bag));
+        }));
+        Assert.False(map.Remove(bag!));
+        Assert.Contains("событи", session.Refusal, StringComparison.Ordinal);
+        // Поле условия — значение того же вида; поле события — тоже.
+        Assert.False(map.Change("тип", m => m.SetPart(ev!, 0, false, "SiteId", System.Text.Json.Nodes.JsonValue.Create(5))));
+        Assert.False(map.Change("тип", m => m.SetEvent(ev!, "Chance", System.Text.Json.Nodes.JsonValue.Create("много"))));
+        Assert.Empty(map.Check());
+    }
+
+    [Fact]
+    public void AddPlayer_OnAMapWithoutParties_GetsItsOwnSideAndRelationsToAll()
+    {
+        var session = new StudioSession(ModProject.Create(Path.Combine(_root, "towers"), "towers"), TestPackTests.Dir, _ => null, language: "ru");
+        Directory.CreateDirectory(Path.Combine(session.Project.Dir, "data", "scenarios"));
+        File.Copy(Path.Combine(TestPackTests.Dir, "scenarios", "long-march.json"), Path.Combine(session.Project.Dir, "data", "scenarios", "long-march.json"));
+        var map = new MapWorkspace(session);
+        Assert.True(map.Open("long-march"), session.Refusal);
+        int players = map.Reader!.Players().Count;
+        string? id = null;
+        Assert.True(map.Change("игрок", m => id = m.AddPlayer("test:race/ember")));
+        Assert.Empty(map.Check());
+        var read = ScenarioFile.FromJson(System.IO.File.ReadAllText(Path.Combine(session.Project.Dir, "data", "scenarios", "long-march.json")));
+        Assert.True(map.Save());
+        read = ScenarioFile.Read(session.Project.PathOf(Path.Combine("data", "scenarios", "long-march.json")));
+        var book = GameBook.Load(session.BaseContent);
+        var parties = read.Looks.Map.Players.Values.Select(p => LastEdict.Rules.Map.Diplomacy.PartyOf(p, book.Economy.Races)).ToList();
+        Assert.Equal(players + 1, parties.Count);
+        Assert.Equal(parties.Count, parties.Distinct().Count());   // новый — своя сторона, ни с кем не слит
+        int mine = (int)LastEdict.Rules.Map.Diplomacy.PartyOf(read.Looks.Map.Players[id!], book.Economy.Races)!;
+        Assert.Equal(players, read.Looks.Map.Relations.Count(r => r.Race1 == mine || r.Race2 == mine));
+        Assert.True(map.Undo());
+        Assert.Equal(players, map.Reader!.Players().Count);
     }
 }

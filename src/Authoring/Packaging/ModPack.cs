@@ -37,16 +37,18 @@ public static class ModPack
         var report = ModCheck.Run(doc, project, baseDir, others);
         if (report.Errors > 0)
             throw new InvalidOperationException($"мод с ошибками не упаковывается ({report.Errors}): {report.Items.First(i => i.Level == CheckLevel.Error)}");
-        string dir = outDir is null ? project.PathOf(Path.Combine(".studio", "pack")) : Path.GetFullPath(outDir);
-        string inside = Path.GetRelativePath(project.Dir, dir).Replace('\\', '/');
-        if (!inside.StartsWith("..", StringComparison.Ordinal) && !Path.IsPathRooted(inside) && inside != ".studio" && !inside.StartsWith(".studio/", StringComparison.Ordinal))
+        string dir = Path.TrimEndingDirectorySeparator(outDir is null ? project.PathOf(Path.Combine(".studio", "pack")) : Path.GetFullPath(outDir));
+        if (Within(dir, project.Dir) && !Within(dir, Path.Combine(project.Dir, ".studio")))
             throw new InvalidOperationException($"архив внутри мода — только в .studio (иначе он попал бы в себя): {dir}");
+        if (File.Exists(Path.Combine(project.Dir, ManifestFile)))
+            throw new InvalidOperationException($"{ManifestFile} в корне мода — имя описи архива: переименуйте файл мода");
         var files = Directory.EnumerateFiles(project.Dir, "*", SearchOption.AllDirectories)
             .Select(f => (Full: f, Relative: Path.GetRelativePath(project.Dir, f).Replace('\\', '/')))
             .Where(f => !Skipped(f.Relative))
             .OrderBy(f => f.Relative, StringComparer.Ordinal)
             .ToList();
-        string version = doc.Manifest?["version"]?.GetValue<string>() is { Length: > 0 } v ? v : "0";
+        string version = doc.Manifest?["version"] is JsonValue jv && jv.TryGetValue<string>(out var v) && LastEdict.Authoring.Commands.SetManifest.ValidVersion(v) ? v : "0";
+        string name = doc.Manifest?["name"] is JsonValue nv && nv.TryGetValue<string>(out var n) ? n : project.Info.Name;
         var entries = new JsonArray();
         long bytes = 0;
         foreach (var (full, relative) in files)
@@ -58,23 +60,44 @@ public static class ModPack
         string? hash = rulesetHash?.Invoke(project.Info);
         var manifest = new JsonObject
         {
-            ["format"] = 1, ["id"] = project.Id, ["name"] = project.Info.Name, ["version"] = version, ["executesCode"] = project.ExecutesCode,
+            ["format"] = 1, ["id"] = project.Id, ["name"] = name, ["version"] = version, ["executesCode"] = project.ExecutesCode,
             ["rulesetHash"] = hash, ["files"] = entries,
         };
         Directory.CreateDirectory(dir);
         string archive = Path.Combine(dir, $"{project.Id}-{version}.zip");
+        if (!Within(archive, dir)) throw new InvalidOperationException($"имя архива вне каталога: {archive}");
         string temp = archive + ".tmp";
         using (var zip = ZipFile.Open(temp, ZipArchiveMode.Create))
         {
-            foreach (var (full, relative) in files) zip.CreateEntryFromFile(full, relative, CompressionLevel.Optimal);
-            using var writer = new StreamWriter(zip.CreateEntry(ManifestFile, CompressionLevel.Optimal).Open());
+            // Время записей — одно на всех: тот же мод — тот же архив байт в байт.
+            foreach (var (full, relative) in files)
+            {
+                var entry = zip.CreateEntry(relative, CompressionLevel.Optimal);
+                entry.LastWriteTime = Stamp;
+                using var to = entry.Open();
+                using var from = File.OpenRead(full);
+                from.CopyTo(to);
+            }
+            var manifestEntry = zip.CreateEntry(ManifestFile, CompressionLevel.Optimal);
+            manifestEntry.LastWriteTime = Stamp;
+            using var writer = new StreamWriter(manifestEntry.Open());
             writer.Write(manifest.ToJsonString(ContentJson.Options).ReplaceLineEndings("\n") + "\n");
         }
         File.Move(temp, archive, overwrite: true);
         return new PackResult(archive, files.Count, bytes, hash);
     }
 
-    /// <summary>Сверить архив с его описью: каждый файл описи есть, размер и SHA-256 — те же. Несовпадения — списком.</summary>
+    /// <summary>Время записей архива (одно на всех).</summary>
+    private static readonly DateTimeOffset Stamp = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+
+    /// <summary>Путь внутри каталога (или он сам) — по полным путям, а не по началу строки «..».</summary>
+    private static bool Within(string path, string dir)
+    {
+        string full = Path.TrimEndingDirectorySeparator(Path.GetFullPath(path)), parent = Path.TrimEndingDirectorySeparator(Path.GetFullPath(dir));
+        return full.Equals(parent, StringComparison.OrdinalIgnoreCase) || full.StartsWith(parent + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>Сверить архив с его описью: каждый файл описи есть, размер и SHA-256 — те же, лишних записей нет. Несовпадения — списком.</summary>
     public static IReadOnlyList<string> Verify(string archive)
     {
         using var zip = ZipFile.OpenRead(archive);
@@ -82,6 +105,9 @@ public static class ModPack
         JsonNode? manifest;
         using (var stream = manifestEntry.Open()) manifest = JsonNode.Parse(stream);
         var problems = new List<string>();
+        if (manifest?["format"]?.GetValue<int>() != 1 || manifest["id"]?.GetValue<string>() is not { Length: > 0 }) problems.Add("опись без формата или id");
+        var listed = (manifest?["files"] as JsonArray ?? []).OfType<JsonObject>().Select(f => f["file"]!.GetValue<string>()).ToHashSet(StringComparer.Ordinal);
+        problems.AddRange(zip.Entries.Select(e => e.FullName).Where(n => n != ManifestFile && !listed.Contains(n)).Select(n => $"лишняя запись {n}"));
         foreach (var file in (manifest?["files"] as JsonArray ?? []).OfType<JsonObject>())
         {
             string name = file["file"]!.GetValue<string>();

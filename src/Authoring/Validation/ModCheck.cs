@@ -11,12 +11,19 @@ public enum CheckLevel { Error, Warning, Info }
 /// <summary>Находка проверки: правило (<c>MOD010</c>), уровень, сущность или файл, текст по-русски.</summary>
 public sealed record CheckItem(string Rule, CheckLevel Level, string Target, string Message)
 {
+    /// <summary>Поле сущности, к которому относится находка (путь через точку, <c>requires</c>, <c>research[1].spell</c>); не известно — null.
+    /// Формы Студии показывают ошибку у этого поля.</summary>
+    public string? Field { get; init; }
+
     public override string ToString() => $"{Rule} {Level.ToString().ToLowerInvariant()} {Target}: {Message}";
 }
 
 /// <summary>Итог проверки и содержимое мода поверх базы (нет — слой не накладывается, причина — ошибка <c>MOD001</c>).</summary>
 public sealed record CheckReport(IReadOnlyList<CheckItem> Items, ContentSet? Content)
 {
+    /// <summary>Отчёт наложения слоёв (кто добавил, поправил, убрал и чью правку перекрыл) — для окна конфликтов.</summary>
+    public IReadOnlyList<LayerChange> Layers { get; init; } = [];
+
     public int Errors => Items.Count(i => i.Level == CheckLevel.Error);
 
     public int Warnings => Items.Count(i => i.Level == CheckLevel.Warning);
@@ -27,8 +34,11 @@ public sealed record CheckReport(IReadOnlyList<CheckItem> Items, ContentSet? Con
 /// накладывается на базу теми же слоями, что у игры (<see cref="ContentLayers"/>): что не грузится в игре, здесь — ошибка с тем же текстом.
 /// Дальше — правила дерева построек (круги требований, постройка вне списков лордов, два значка в одной клетке) и пометка «исполняет код».
 /// </summary>
-public static class ModCheck
+public static partial class ModCheck
 {
+    [System.Text.RegularExpressions.GeneratedRegex(@"^«(?<id>[^»]+)»[^:]*: (?<path>[A-Za-z][\w.\[\]]*) (→|—)")]
+    private static partial System.Text.RegularExpressions.Regex WhereFrom();
+
     /// <summary>Проверить документ <paramref name="doc"/> мода <paramref name="project"/> поверх базы <paramref name="baseDir"/> и модов
     /// <paramref name="others"/> (зависимости — их слои под этим).</summary>
     public static CheckReport Run(ModDocument doc, ModProject project, string baseDir, IReadOnlyList<ModInfo>? others = null)
@@ -40,18 +50,26 @@ public static class ModCheck
             items.Add(new("MOD090", CheckLevel.Info, project.Id,
                           $"исполняет код: C#-плагин ({string.Join(", ", project.Info.Plugins.Select(Path.GetFileName))}) — включать только доверенный"));
         ContentSet? content = null;
+        IReadOnlyList<LayerChange> layers = [];
         string temp = Path.Combine(Path.GetTempPath(), "le-studio-" + Guid.NewGuid().ToString("N"));
         try
         {
             // Слой — из документа (Студия проверяет и несохранённое): копия мода во временном каталоге.
             var copy = ModProject.Create(Path.Combine(temp, project.Id), project.Id, project.Info.Name);
             doc.Save(copy);
-            var info = project.Info with { Dir = copy.Dir };
-            content = ContentLayers.Load(baseDir, [.. others ?? [], info]);
+            // Описание мода — из документа (порядок loadAfter, зависимости — и несохранённые); плагины — с диска мода.
+            var info = ModProject.Open(copy.Dir).Info with { Plugins = project.Info.Plugins };
+            content = ContentLayers.Load(baseDir, [.. others ?? [], info], out layers);
         }
-        catch (InvalidDataException e)
+        catch (Exception e) when (e is InvalidDataException or InvalidOperationException or System.Text.Json.JsonException)
         {
-            items.Add(new("MOD001", CheckLevel.Error, project.Id, e.Message.Replace(temp, "", StringComparison.OrdinalIgnoreCase)));
+            string message = e.Message.Replace(temp, "", StringComparison.OrdinalIgnoreCase);
+            // Ошибка ссылки называет сущность и поле: «id» (мод): путь → «значение» — … — её цель и поле, иначе — мод.
+            var at = WhereFrom().Match(message);
+            items.Add(new("MOD001", CheckLevel.Error, at.Success ? at.Groups["id"].Value : project.Id, message)
+            {
+                Field = at.Success ? at.Groups["path"].Value : null,
+            });
         }
         finally
         {
@@ -59,7 +77,9 @@ public static class ModCheck
         }
         items.AddRange(Cycles(doc, content));
         if (content is not null) items.AddRange(Tree(doc, content));
-        return new CheckReport(items, content);
+        items.AddRange(LayerConflicts.Of(layers, project.Id).Select(c => new CheckItem("MOD020", CheckLevel.Info, c.Entity,
+            $"поле {c.Field} правят {string.Join(" и ", c.Mods)} — действует {c.Winner}") { Field = c.Field }));
+        return new CheckReport(items, content) { Layers = layers };
     }
 
     /// <summary>Круги требований построек (<c>MOD010</c>): у постройки мода цепочка <c>requires</c> возвращается к ней самой.</summary>

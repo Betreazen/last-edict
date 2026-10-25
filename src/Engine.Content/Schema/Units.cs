@@ -89,6 +89,20 @@ public sealed record UnitDef : ContentDef
 
     [Description("Земли, по которым юнит ходит без штрафа (GMabi).")]
     public IReadOnlyList<MoveAbility> MoveAbilities { get; init; } = [];
+
+    [Description("Ауры (Last Edict, моды): модификатор, который юнит в бою даёт, пока он на поле, — своему отряду, соседям, врагу или себе. " +
+                 "Действуют вживую: броня, урон, точность, инициатива, иммунитеты; здоровье — нет.")]
+    public IReadOnlyList<UnitAuraDef> Auras { get; init; } = [];
+}
+
+/// <summary>Аура юнита: модификатор и кому он действует (<see cref="LastEdict.Rules.Battle.Auras"/>).</summary>
+public sealed record UnitAuraDef
+{
+    [Ref("modifier"), Description("Модификатор ауры (его элементы: броня, урон, точность, инициатива, иммунитеты…).")]
+    public required string Modifier { get; init; }
+
+    [Description("Кому: group — свой отряд, кроме себя; adjacent — соседи по отряду; enemies — отряд врага; self — сам.")]
+    public AuraReach Reach { get; init; }
 }
 
 /// <summary>Рост юнита с уровнем (<c>DYN_UPG1</c>, <c>DYN_UPG_LV</c>, <c>DYN_UPG2</c>).</summary>

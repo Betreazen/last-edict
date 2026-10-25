@@ -18,6 +18,8 @@ using LastEdict.Data.Ui.Windows;
 //   d2mod text <мод> <id> <язык> <ключ> <текст>       строка сущности-каталога (id строки — автоматический)
 //   d2mod file <мод> <id> <файл> [<png>]               картинка сущности-каталога (icon.png…; без png — убрать), PNG как есть
 //   d2mod rename <мод> <id> <новое имя>                переименовать свою сущность-каталог (ссылки мода — следом)
+//   d2mod pack <мод> [--out <каталог>] [--data <data>]  проверка и архив <id>-<версия>.zip с описью (manifest.json); по умолчанию — <мод>/.studio/pack
+//   d2mod conflicts <мод> [--data <data>]             конфликты слоёв: поле правят несколько модов (моды — рядом с этим, корень его каталога)
 //   d2mod apply <мод> <сценарий.json> [--undo-check] [--dry]   команды по порядку; --undo-check — отменить всё и повторить
 //   d2mod tree <мод> --lord <id> [--data <data>]      дерево построек лорда с модом: ветки, клетки, связи
 //   d2mod run <мод> [--scenario <id> --player <id>] [--watch] [--godot <exe>]   игра отдельным процессом с модом
@@ -26,7 +28,7 @@ using LastEdict.Data.Ui.Windows;
 
 if (args.Length < 2)
 {
-    Console.Error.WriteLine("d2mod <new|validate|add|set|unset|text|file|rename|apply|tree|run> <мод> …  (подробно — tools/d2mod/Program.cs)");
+    Console.Error.WriteLine("d2mod <new|validate|add|set|unset|text|file|rename|pack|conflicts|apply|tree|run> <мод> …  (подробно — tools/d2mod/Program.cs)");
     return 2;
 }
 
@@ -44,6 +46,8 @@ try
         "text" => Edit(new SetText(args[2], args[3], args[4], args[5])),
         "file" => Edit(new SetFile(args[2], args[3], args.Length > 4 ? System.Collections.Immutable.ImmutableArray.Create(File.ReadAllBytes(args[4])) : null)),
         "rename" => Edit(new RenameEntity(args[2], args[3])),
+        "pack" => Pack(),
+        "conflicts" => Conflicts(),
         "apply" => Apply(),
         "tree" => Tree(),
         "run" => Run(),
@@ -104,6 +108,45 @@ int Apply()
     var (written, deleted) = Has("--dry") ? (0, 0) : result.Save(project);
     Console.WriteLine($"mod={project.Id} applied={commands.Count} entities={result.Entities.Count} written={written} deleted={deleted} undo={undo}");
     return undo.StartsWith("FAIL", StringComparison.Ordinal) ? 1 : 0;
+}
+
+/// <summary>Моды рядом с этим (каталоги с mod.json в родительском каталоге) — слои, с которыми он может конфликтовать.</summary>
+IReadOnlyList<LastEdict.Data.Content.ModInfo> Neighbours(ModProject project) =>
+    [.. Directory.EnumerateDirectories(Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(project.Dir))!)
+        .Where(d => File.Exists(Path.Combine(d, ModProject.ManifestFile)) && !Path.GetFullPath(d).Equals(project.Dir, StringComparison.OrdinalIgnoreCase))
+        .Select(TryOpen).OfType<LastEdict.Data.Content.ModInfo>()];
+
+static LastEdict.Data.Content.ModInfo? TryOpen(string dir)
+{
+    try
+    {
+        return ModProject.Open(dir).Info;
+    }
+    catch (Exception e) when (e is InvalidDataException or IOException)
+    {
+        Console.Error.WriteLine($"d2mod: мод рядом не читается и пропущен — {e.Message}");
+        return null;
+    }
+}
+
+int Pack()
+{
+    var project = ModProject.Open(modDir);
+    var result = LastEdict.Authoring.Packaging.ModPack.Pack(project, BaseDir(), Neighbours(project), outDir: Opt("--out"));
+    var problems = LastEdict.Authoring.Packaging.ModPack.Verify(result.Archive);
+    Console.WriteLine($"pack mod={project.Id} archive={result.Archive} files={result.Files} bytes={result.Bytes} " +
+                      $"ruleset_hash={result.RulesetHash ?? "-"} verify={(problems.Count == 0 ? "ok" : string.Join(";", problems))}");
+    return problems.Count == 0 ? 0 : 1;
+}
+
+int Conflicts()
+{
+    var project = ModProject.Open(modDir);
+    var report = ModCheck.Run(ModDocument.Load(project), project, BaseDir(), Neighbours(project));
+    var conflicts = LayerConflicts.Of(report.Layers, project.Id);
+    foreach (var c in conflicts) Console.WriteLine($"  {c.Entity} {c.Field}: {string.Join(" > ", c.Mods)} — действует {c.Winner}");
+    Console.WriteLine($"conflicts mod={project.Id} count={conflicts.Count} errors={report.Errors}");
+    return report.Errors > 0 ? 1 : 0;
 }
 
 int Tree()

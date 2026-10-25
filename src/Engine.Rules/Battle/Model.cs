@@ -104,6 +104,9 @@ public sealed record UnitType(string Id, int Level, int HitPoints, int Armor, st
     /// <summary>Лидер — у реализации заполнен <c>Gunits.LEADER_CAT</c> (Lua тулсета <c>isLeader</c>:
     /// <c>leaderType ~= -1</c>). Сюда входят и воры.</summary>
     public bool IsLeader { get; init; }
+
+    /// <summary>Ауры юнита в бою (<see cref="Battle.Auras"/>; только у юнитов модов, у базы — нет).</summary>
+    public IReadOnlyList<UnitAura> Auras { get; init; } = [];
 }
 
 /// <summary><c>LunitC.dbf</c> — категории юнитов (<c>Gunits.UNIT_CAT</c>).</summary>
@@ -444,10 +447,13 @@ public sealed class BattleUnit
     /// Живут до конца боя: ход их не снимает (ранг 1, ai-q33 — броня +15 в раундах 2 и 3).</summary>
     public List<Modifier> Potions { get; } = [];
 
-    /// <summary>Цепочка, которую видят EffectiveStats: постоянные модификаторы плюс варды и выпитые
-    /// зелья. Без них возвращается та же самая ссылка на Modifiers — Ф4/Ф5 не платят ни аллокации.</summary>
+    /// <summary>Модификаторы аур других юнитов (и своей «на себя»), действующие сейчас (<see cref="Battle.Auras.Refresh"/>).</summary>
+    public List<Modifier> Auras { get; } = [];
+
+    /// <summary>Цепочка, которую видят EffectiveStats: постоянные модификаторы плюс варды, выпитые
+    /// зелья и ауры. Без них возвращается та же самая ссылка на Modifiers — Ф4/Ф5 не платят ни аллокации.</summary>
     public IReadOnlyList<Modifier> Chain =>
-        Wards.Count == 0 && Potions.Count == 0 ? Modifiers : [.. Modifiers, .. Wards, .. Potions];
+        Wards.Count == 0 && Potions.Count == 0 && Auras.Count == 0 ? Modifiers : [.. Modifiers, .. Wards, .. Potions, .. Auras];
 
     /// <summary>battlemsgdata attackSourceImmunityStatuses / attackClassImmunityStatuses: биты
     /// потраченных иммунитетов уровня Once. Номер бита — категория (источник LattS 0..7, класс

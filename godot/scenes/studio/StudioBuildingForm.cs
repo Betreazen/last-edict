@@ -45,7 +45,7 @@ public partial class StudioBuildingForm : ScrollContainer
     private readonly LineEdit _name = new() { PlaceholderText = "имя каталога (латиница)" };
     private readonly Button _rename = new() { Text = "Переименовать" };
     private readonly TextEdit _description = new() { CustomMinimumSize = new Vector2(0, 70), WrapMode = TextEdit.LineWrappingMode.Boundary };
-    private readonly OptionButton _requires = new() { FitToLongestItem = false };
+    private readonly StudioPicker _requires = new();   // требуемая — выбором с поиском и значком
     private readonly SpinBox _level = new() { MinValue = 1, MaxValue = 20 };
     private readonly Dictionary<string, SpinBox> _cost = [];
     private readonly OptionButton _category = new(), _unitBranch = new(), _treeBranch = new();
@@ -58,7 +58,6 @@ public partial class StudioBuildingForm : ScrollContainer
         UseNativeDialog = true, Title = "Картинка постройки",
     };
 
-    private List<string?> _requireIds = [];
     private List<string?> _treeIds = [];
     private ImmutableArray<byte>? _pendingIcon;   // картинка новой постройки до «Создать»
     private (string? Id, int Edits, string Lord) _shown = ("-", -1, "");
@@ -103,7 +102,7 @@ public partial class StudioBuildingForm : ScrollContainer
         foreach (var (id, title) in Currencies)
         {
             cost.AddChild(new Label { Text = title, ThemeTypeVariation = SettingsTheme.HelpLabel });
-            var spin = new SpinBox { MinValue = 0, MaxValue = 100000, Step = 25, SizeFlagsHorizontal = SizeFlags.ExpandFill };
+            var spin = new SpinBox { MinValue = 0, MaxValue = 100000, Step = 1, CustomArrowStep = 25, SizeFlagsHorizontal = SizeFlags.ExpandFill };
             _cost[id] = spin;
             cost.AddChild(spin);
         }
@@ -138,10 +137,10 @@ public partial class StudioBuildingForm : ScrollContainer
         {
             if (Editing is { } id) _ws.RenameBuilding(id, _name.Text.Trim());
         };
-        _requires.ItemSelected += i =>
+        _requires.Picked += picked =>
         {
             // Новая под другой требуемой — уровень и ветки по ней (поля можно поправить).
-            if (Editing is not null || _requireIds[(int)i] is not { } parent) return;
+            if (Editing is not null || picked is not { } parent) return;
             var form = _ws.NewForm(parent);
             (_level.Value, _category.Selected) = (form.Level, (int)form.Category);
             _unitBranch.Selected = form.UnitBranch is { } ub ? (int)ub + 1 : 0;
@@ -194,16 +193,9 @@ public partial class StudioBuildingForm : ScrollContainer
         _choose.Disabled = id is not null && !own;
         _clearPicture.Disabled = _choose.Disabled;
         // Требуемая — постройки дерева открытого лорда, кроме самой (и её потомков не отсекаем: круг — отказ ядра с текстом).
-        _requires.Clear();
-        _requireIds = [null];
-        _requires.AddItem("— (корень ветки)");
-        foreach (var n in _ws.Nodes.Where(n => n.Building != id))
-        {
-            if (Small($"IconBld:{ArtNames.Of(n.Building)}") is { } icon) _requires.AddIconItem(icon, n.Name);
-            else _requires.AddItem(n.Name);
-            _requireIds.Add(n.Building);
-        }
-        _requires.Selected = Math.Max(0, _requireIds.IndexOf(form.Requires));
+        _requires.SetItems([new PickItem(null, "— (корень ветки)"),
+                            .. _ws.Nodes.Where(n => n.Building != id).Select(n => new PickItem(n.Building, n.Name, Small($"IconBld:{ArtNames.Of(n.Building)}")))],
+                           form.Requires);
         _level.Value = form.Level;
         foreach (var (currency, spin) in _cost) spin.Value = form.Cost.GetValueOrDefault(currency);
         _category.Selected = (int)form.Category;
@@ -220,6 +212,11 @@ public partial class StudioBuildingForm : ScrollContainer
         var png = id is null ? _pendingIcon : _ws.IconOf(id);
         _picture.Texture = png is { } bytes ? StudioPictures.Texture(bytes) : id is not null ? _texture($"IconBld:{ArtNames.Of(id)}") : null;
         _pictureNote.Text = Note(png);
+        // Ошибки проверки — у полей и в заголовке.
+        var session = _ws.Session;
+        foreach (var (field, path) in new (Control, string)[] { (_requires, "requires"), (_treeBranch, "tree.branch"), (_level, "level") })
+            StudioMarks.Mark(field, id is null ? [] : session.ProblemsOf(id, path));
+        if (id is not null) _head.Text += StudioMarks.Head(session.ProblemsOf(id));
     }
 
     /// <summary>Значок списка «Требует» (26×25) — уменьшенный кадр, один раз на кадр.</summary>
@@ -245,7 +242,7 @@ public partial class StudioBuildingForm : ScrollContainer
     private BuildingForm CurrentForm() => new()
     {
         Title = _title.Text.Trim(), Description = _description.Text.Trim(),
-        Requires = _requireIds.ElementAtOrDefault(_requires.Selected), Level = (int)_level.Value,
+        Requires = _requires.Selected, Level = (int)_level.Value,
         Cost = _cost.Where(c => c.Value.Value > 0).ToDictionary(c => c.Key, c => (long)c.Value.Value),
         Category = (BuildingCategory)Math.Max(0, _category.Selected),
         UnitBranch = _unitBranch.Selected > 0 ? (BranchKind)(_unitBranch.Selected - 1) : null,
@@ -268,7 +265,14 @@ public partial class StudioBuildingForm : ScrollContainer
     {
         var (png, problem) = StudioPictures.FromFile(path, EntityArt.Find("building", EntityFolders.IconFile)!);
         if (png is not { } bytes) return _ws.Session.Refuse(problem ?? "картинка не читается");
-        if (Editing is { } id) return _ws.SetIcon(id, bytes);
+        if (Editing is { } id)
+        {
+            if (!_ws.SetIcon(id, bytes)) return false;
+            _shown = (id, _ws.Session.History.Revision, _ws.Lord);   // только картинка — набранное в полях остаётся
+            _picture.Texture = StudioPictures.Texture(bytes);
+            _pictureNote.Text = Note(bytes);
+            return true;
+        }
         _pendingIcon = bytes;
         _picture.Texture = StudioPictures.Texture(bytes);
         _pictureNote.Text = Note(bytes);
@@ -282,7 +286,7 @@ public partial class StudioBuildingForm : ScrollContainer
         if (Editing is null && !_nameTouched) _name.Text = _ws.NameFor(title);
         if (requires is not null)
         {
-            _requires.Selected = Math.Max(0, _requireIds.IndexOf(requires));
+            _requires.Select(requires);
             if (Editing is null && _ws.NewForm(requires) is var f) (_level.Value, _category.Selected) = (f.Level, (int)f.Category);
         }
         if (level is { } l) _level.Value = l;
@@ -294,5 +298,5 @@ public partial class StudioBuildingForm : ScrollContainer
 
     public string Line() =>
         $"форма: {(Editing is { } id ? $"постройка={id}" : "новая")} имя={(_name.Text.Length > 0 ? _name.Text : "-")} картинка={(_picture.Texture is null ? 0 : 1)} " +
-        $"требует={_requireIds.ElementAtOrDefault(_requires.Selected) ?? "-"} уровень={(int)_level.Value}";
+        $"требует={_requires.Selected ?? "-"} уровень={(int)_level.Value}";
 }

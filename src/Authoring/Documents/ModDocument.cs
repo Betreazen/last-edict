@@ -53,12 +53,21 @@ public sealed record ModEntity(string Kind, string Id, JsonObject Node, EntitySo
 /// </summary>
 public sealed class ModDocument
 {
-    private ModDocument(string modId, ImmutableList<ModEntity> entities, ImmutableDictionary<string, string>? schemas = null)
+    private ModDocument(string modId, ImmutableList<ModEntity> entities, ImmutableDictionary<string, string>? schemas = null, JsonObject? manifest = null)
     {
         ModId = modId;
         Entities = entities;
         Schemas = schemas ?? ImmutableDictionary<string, string>.Empty;
+        Manifest = manifest;
     }
+
+    /// <summary>Описание мода (<c>mod.json</c>: имя, версия, зависимости, порядок <c>loadAfter</c>) — часть документа: «кто главнее» правится
+    /// командой с отменой (<see cref="Commands.SetManifest"/>). Узел после создания не меняется (команда даёт новый); null — документ без
+    /// описания (собран в памяти), <c>mod.json</c> не пишется.</summary>
+    public JsonObject? Manifest { get; }
+
+    /// <summary>Документ с другим описанием мода (узел копируется).</summary>
+    public ModDocument WithManifest(JsonObject manifest) => new(ModId, Entities, Schemas, (JsonObject)manifest.DeepClone());
 
     /// <summary>Ссылки <c>$schema</c> файлов видов мода (вид → ссылка): запись их сохраняет — подсказки редактора у автора не пропадают.</summary>
     public ImmutableDictionary<string, string> Schemas { get; }
@@ -78,16 +87,16 @@ public sealed class ModDocument
     {
         ArgumentNullException.ThrowIfNull(entity);
         int at = Entities.FindIndex(e => e.Id == entity.Id);
-        return new(ModId, at >= 0 ? Entities.SetItem(at, entity) : Entities.Add(entity), Schemas);
+        return new(ModId, at >= 0 ? Entities.SetItem(at, entity) : Entities.Add(entity), Schemas, Manifest);
     }
 
     /// <summary>Документ с другим списком сущностей (переименование правит ссылки во всех).</summary>
-    public ModDocument WithEntities(ImmutableList<ModEntity> entities) => new(ModId, entities ?? throw new ArgumentNullException(nameof(entities)), Schemas);
+    public ModDocument WithEntities(ImmutableList<ModEntity> entities) => new(ModId, entities ?? throw new ArgumentNullException(nameof(entities)), Schemas, Manifest);
 
     public ModDocument Without(string id)
     {
         int at = Entities.FindIndex(e => e.Id == id);
-        return at < 0 ? this : new(ModId, Entities.RemoveAt(at), Schemas);
+        return at < 0 ? this : new(ModId, Entities.RemoveAt(at), Schemas, Manifest);
     }
 
     /// <summary>Вид по id сущности (<c>мод:вид/имя</c>).</summary>
@@ -103,6 +112,7 @@ public sealed class ModDocument
 
     /// <summary>Слепок документа для сравнения: все файлы, какими их запишет <see cref="Save"/>.</summary>
     public string Fingerprint() => string.Join("\n", Files()
+        .Concat(Manifest is null ? [] : [KeyValuePair.Create(ModProject.ManifestFile, Text(Manifest))])
         .Concat(Binaries().Select(p => KeyValuePair.Create(p.Key, "sha256:" + Convert.ToHexString(SHA256.HashData(p.Value.AsSpan())))))
         .OrderBy(p => p.Key, StringComparer.Ordinal).Select(p => $"--- {p.Key}\n{p.Value}"));
 
@@ -141,7 +151,14 @@ public sealed class ModDocument
                 });
             }
         }
-        return new ModDocument(project.Id, entities.ToImmutable(), schemas.ToImmutable());
+        return new ModDocument(project.Id, entities.ToImmutable(), schemas.ToImmutable(), ReadManifest(project));
+    }
+
+    /// <summary><c>mod.json</c> мода объектом (его уже прочитал и проверил <see cref="ModProject.Open"/>).</summary>
+    private static JsonObject? ReadManifest(ModProject project)
+    {
+        string path = project.PathOf(ModProject.ManifestFile);
+        return File.Exists(path) ? JsonNode.Parse(File.ReadAllText(path)) as JsonObject : null;
     }
 
     /// <summary><c>$schema</c> файла вида; нет или файл не читается как объект — null (ошибку разбора скажет чтение сущностей).</summary>
@@ -195,6 +212,17 @@ public sealed class ModDocument
         var files = Files();
         var binaries = Binaries();
         int written = 0, deleted = 0;
+        // mod.json — только если описание другое по смыслу: оформление файла у автора без нужды не переписывается.
+        if (Manifest is not null)
+        {
+            string manifest = project.PathOf(ModProject.ManifestFile);
+            var disk = File.Exists(manifest) ? JsonNode.Parse(File.ReadAllText(manifest)) : null;
+            if (!JsonNode.DeepEquals(disk, Manifest))
+            {
+                project.Write(ModProject.ManifestFile, Text(Manifest));
+                written++;
+            }
+        }
         foreach (var (relative, text) in files)
         {
             string path = project.PathOf(relative);

@@ -68,6 +68,7 @@ public sealed partial class TreeWorkspace
         Tree = content is null || Lord.Length == 0 ? null : BuildTree.OfLord(content, Lord);
         BuildGraph(content);
         Preview.Show(Tree, Session.NameOf, Session.IsMine, Session.Text);
+        if (Selected is { } selected && Tree?.BranchOf(selected) is not null) Preview.Pick(selected);   // правка выбранной — она в виду
         Revision++;
     }
 

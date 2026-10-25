@@ -32,6 +32,7 @@ public sealed partial class TreeWorkspace
     public void Select(string? id)
     {
         Selected = id;
+        Preview.Pick(id);
         Revision++;
     }
 
@@ -88,10 +89,10 @@ public sealed partial class TreeWorkspace
         string id = EntityFolders.IdOf(Session.Project.Id, ContentSet.KindNamed("building"), name);
         if (form.Requires is { } r && Session.Report.Content?.Find(r) is not BuildingDef)
             return Session.Refuse($"требуемой постройки «{r}» нет");
-        var body = new JsonObject { ["level"] = form.Level, ["category"] = Enum(form.Category) };
+        var body = new JsonObject { ["level"] = form.Level, ["category"] = FormJson.Enum(form.Category) };
         if (form.Requires is { } requires) body["requires"] = requires;
-        if (form.UnitBranch is { } branch) body["branch"] = Enum(branch);
-        if (CostNode(form.Cost) is { } cost) body["cost"] = cost;
+        if (form.UnitBranch is { } branch) body["branch"] = FormJson.Enum(branch);
+        if (FormJson.Cost(form.Cost) is { } cost) body["cost"] = cost;
         if (form.TreeBranch is { } tree) body["tree"] = new JsonObject { ["branch"] = tree };
         var commands = new List<IEditCommand> { new AddEntity("building", name, body) };
         if (form.Title.Length > 0) commands.Add(new SetText(id, Session.Language, "name", form.Title));
@@ -126,11 +127,11 @@ public sealed partial class TreeWorkspace
         }
         var commands = new List<IEditCommand>();
         if (form.Level != was.Level) commands.Add(new SetField(id, "level", JsonValue.Create(form.Level)));
-        if (form.Category != was.Category) commands.Add(new SetField(id, "category", Enum(form.Category)));
-        if (form.Requires != was.Requires) commands.Add(Field(id, "requires", form.Requires is { } req ? JsonValue.Create(req) : null));
-        if (form.UnitBranch != was.UnitBranch) commands.Add(Field(id, "branch", form.UnitBranch is { } ub ? Enum(ub) : null));
-        if (form.TreeBranch != was.TreeBranch) commands.Add(Field(id, "tree.branch", form.TreeBranch is { } tb ? JsonValue.Create(tb) : null));
-        if (!SameCost(form.Cost, was.Cost)) commands.Add(Field(id, "cost", CostNode(form.Cost)));
+        if (form.Category != was.Category) commands.Add(new SetField(id, "category", FormJson.Enum(form.Category)));
+        if (form.Requires != was.Requires) commands.Add(FormJson.Field(Session, id, "requires", form.Requires is { } req ? JsonValue.Create(req) : null));
+        if (form.UnitBranch != was.UnitBranch) commands.Add(FormJson.Field(Session, id, "branch", form.UnitBranch is { } ub ? FormJson.Enum(ub) : null));
+        if (form.TreeBranch != was.TreeBranch) commands.Add(FormJson.Field(Session, id, "tree.branch", form.TreeBranch is { } tb ? JsonValue.Create(tb) : null));
+        if (!FormJson.SameCost(form.Cost, was.Cost)) commands.Add(FormJson.Field(Session, id, "cost", FormJson.Cost(form.Cost)));
         if (IsOwnFolder(id))
         {
             if (form.Title != was.Title) commands.Add(new SetText(id, Session.Language, "name", form.Title.Length > 0 ? form.Title : null));
@@ -165,10 +166,6 @@ public sealed partial class TreeWorkspace
         return true;
     }
 
-    /// <summary>Поле-ссылка или значение: null у своей сущности — убрать поле, у правки чужой — null слоя (поле базы снимается).</summary>
-    private SetField Field(string id, string path, JsonNode? value) =>
-        value is null && Session.IsMine(id) ? new SetField(id, path, null, Unset: true) : new SetField(id, path, value);
-
     /// <summary>Сделает ли требование «<paramref name="building"/> требует <paramref name="requires"/>» круг; да — текст отказа.</summary>
     private string? Cycle(string requires, string building)
     {
@@ -181,18 +178,4 @@ public sealed partial class TreeWorkspace
         return null;
     }
 
-    private static JsonValue Enum<T>(T value) where T : struct, System.Enum =>
-        JsonValue.Create(JsonNamingPolicy.CamelCase.ConvertName(value.ToString()));
-
-    private static JsonObject? CostNode(IReadOnlyDictionary<string, long> cost)
-    {
-        var node = new JsonObject();
-        foreach (var (currency, amount) in cost.Where(c => c.Value != 0).OrderBy(c => Prices.Currencies.ToList().IndexOf(c.Key) is var i and >= 0 ? i : int.MaxValue))
-            node[currency] = amount;
-        return node.Count == 0 ? null : node;
-    }
-
-    private static bool SameCost(IReadOnlyDictionary<string, long> a, IReadOnlyDictionary<string, long> b) =>
-        a.Where(p => p.Value != 0).OrderBy(p => p.Key, StringComparer.Ordinal)
-         .SequenceEqual(b.Where(p => p.Value != 0).OrderBy(p => p.Key, StringComparer.Ordinal));
 }

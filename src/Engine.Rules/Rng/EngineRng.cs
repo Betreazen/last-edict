@@ -39,6 +39,18 @@ public sealed class EngineRng : IRng
         return new EngineRng(table.ToArray(), Normalize(index));
     }
 
+    /// <summary>Поставить генератору состояние (<paramref name="table"/>, <paramref name="index"/>) на месте — те, кто держит ссылку на
+    /// него, продолжают уже с нового места (сеть: клиент берёт генератор боя хоста перед своим боем, хост откатывает отказанную команду).
+    /// <see cref="Steps"/> не меняется.</summary>
+    public void Restore(IReadOnlyList<ushort> table, int index)
+    {
+        ArgumentNullException.ThrowIfNull(table);
+        if (table.Count != Size)
+            throw new ArgumentException($"таблица генератора — {Size} слов, получено {table.Count}", nameof(table));
+        for (int i = 0; i < Size; i++) _table[i] = table[i];
+        Index = Normalize(index);
+    }
+
     /// <summary>Копия таблицы (250 слов) в текущем состоянии — тот же вид, что <c>rng_seed.table</c>.</summary>
     public ushort[] TableSnapshot() => (ushort[])_table.Clone();
 

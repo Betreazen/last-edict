@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Сеть с друзьями (Э7, roadmap §3.5, docs/network.md): протокол хоста и клиента, проекция партии по туману (PlayerView), дельты вида,
+       хост комнаты и клиент поверх любого канала. Без Godot: им пользуются игра (godot/), посредник (tools/Relay) и проверки. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>LastEdict.Net</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Engine.Play\Engine.Play.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Engine.Play.Tests" />
+  </ItemGroup>
+
+</Project>

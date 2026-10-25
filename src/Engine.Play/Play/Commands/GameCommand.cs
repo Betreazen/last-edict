@@ -420,7 +420,10 @@ public sealed record EndBattleCommand(IReadOnlyList<TurnRecord> Log, LastEdict.D
 {
     internal override object? Run(GameSession s, List<string> report)
     {
-        s.EndBattle(s.Replaying && Play is { } play ? s.ReplayBattle(play) : Log);
+        var log = (s.Replaying || s.BattlesPlayedElsewhere) && Play is { } play ? s.ReplayBattle(play) : Log;
+        // Бой сыграл клиент сети на копии генератора хоста: повтор здесь — итог, а журнал клиента — проверка, что сыграли одно и то же.
+        if (s.BattlesPlayedElsewhere && Play is not null && !log.SequenceEqual(Log)) s.ElsewhereBattleDiverged = true;
+        s.EndBattle(log);
         return null;
     }
 

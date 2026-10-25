@@ -136,6 +136,18 @@ public partial class MapView
 
         public BattleState State { get; } = state;
 
+        /// <summary>Сеть: генератор боя и CRT экрана — копии генератора хоста (бой по запросу хоста); null — генераторы партии.</summary>
+        public LastEdict.Rules.Rng.IRng? Rng { get; init; }
+
+        public LastEdict.Rules.Rng.CrtRand? Crt { get; init; }
+
+        /// <summary>Сеть: карта вида на миг сборки боя — место и фон по ней (пока экран открывается, вид может уйти вперёд: бой людей у
+        /// записывающего кончился раньше); null — карта партии.</summary>
+        public LastEdict.Rules.Map.MapState? Map { get; init; }
+
+        /// <summary>Сеть, бой людей: сторона другого человека (её решения — по сети); null — боя людей нет.</summary>
+        public bool? RemoteSide { get; init; }
+
         internal IReadOnlyList<TurnRecord>? Log => _log.Value;
 
         /// <summary>Доиграть бой без экрана (только C#, без узлов Godot).</summary>

@@ -14,7 +14,7 @@ public partial class BattleScreen
     private (BattleSession Session, BattleUnit? Current, bool Awaits, bool Dragging, bool Closable, int Round, int Actions, int Log)? _buttonsKey;
 
     /// <summary>Ход юнита человека ждёт команды: показ прошлого действия кончился (<see cref="_playing"/>), автобоя нет, бой не кончен.</summary>
-    private bool AwaitsHuman => !_playing && !_session.Finished && _session.WaitsPlayer;
+    private bool AwaitsHuman => !_playing && !_session.Finished && _session.WaitsPlayer && !RemoteTurn;
 
     /// <summary>Поставить доступность кнопок панели по правилу движка; true — что-то сменилось (панель надо перерисовать). Зовётся каждым кадром
     /// (<see cref="_Process"/>: конец показа — отложенный шаг) и сборкой панелей (<see cref="PanelBackgrounds"/>).</summary>
@@ -26,7 +26,7 @@ public partial class BattleScreen
              _session.Log.Count);
         if (_buttonsKey == key) return false;
         _buttonsKey = key;
-        var moment = new BattlePanelMoment(key.Awaits, key.Awaits ? _session.Allowed : EmptyCommands, key.Dragging, key.Closable);
+        var moment = new BattlePanelMoment(key.Awaits, key.Awaits ? LocalAllowed(_session.Allowed) : EmptyCommands, key.Dragging, key.Closable);
         bool changed = false;
         foreach (string id in BattlePanelButtons.Elements)
         {

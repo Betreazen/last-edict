@@ -133,7 +133,7 @@ def assets_dir() -> str:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--case", default="play", choices=["play", "drop", "async"])
+    ap.add_argument("--case", default="play", choices=["play", "drop", "async", "duel"])
     ap.add_argument("--days", type=int, default=3)
     ap.add_argument("--remote", action="store_true", help="клиент — на EliteBook")
     ap.add_argument("--relay", help="готовый посредник (ws://…/ws); без него — свой локальный")
@@ -156,11 +156,23 @@ def main() -> int:
     relay_url = args.relay or f"ws://127.0.0.1:{port}/ws"
     tunnel = None
     procs: list[subprocess.Popen] = []
+    if args.case == "async":
+        try:
+            if args.remote and not args.relay:
+                tunnel = subprocess.Popen(["ssh", "-N", "-R", f"{port}:127.0.0.1:{port}", REMOTE], stdout=subprocess.DEVNULL,
+                                          stderr=subprocess.DEVNULL)
+                time.sleep(2)
+            return play_async(work, args, relay_url)
+        finally:
+            if tunnel is not None:
+                kill_tree(tunnel)
+            if relay is not None:
+                kill_tree(relay)
     try:
         env = dict(os.environ, D2_ASSETS_DIR=assets_dir(), D2_COMMAND_JOURNAL=str(work / "host.journal"))
         room_file = work / "room.txt"
         host_role = ["--net-host", args.scenario, "--net-seats", args.seats, "--net-seed", str(args.seed), "--net-relay", relay_url,
-                     "--net-room-out", str(room_file), "--net-nick", "host"]
+                     "--net-room-out", str(room_file), "--net-nick", "host", *(["--net-hold", "--net-meet"] if args.case == "duel" else [])]
         started = time.time()
         host = subprocess.Popen([GODOT, *game_args(host_role, args.days, 1)], cwd=REPO, env=env,
                                 stdout=open(work / "host.log", "w", encoding="utf-8"), stderr=subprocess.STDOUT)
@@ -174,6 +186,8 @@ def main() -> int:
         room = room_file.read_text().strip()
         log(f"net-duo: комната {room}, посредник {relay_url}")
         client_role = ["--net-join", room, "--net-nick", "client"]
+        if args.case == "duel":   # бой людей: отряд гостя — рядом с большим отрядом хоста (стоит), гость нападает: записывает бой он
+            client_role += ["--net-hunt"]
         if args.case == "drop":
             client_role += ["--net-drop-at", "2"]
         if args.remote:
@@ -214,6 +228,76 @@ echo "exit=$?" >> /tmp/le-net-client.log
             kill_tree(relay)
 
 
+def run_game(work: Path, name: str, role: list[str], script: int, timeout: int, remote: bool) -> str:
+    """Один запуск игры до выхода (асинхронный ход: открыл, сходил, записал, закрыл); вывод — в <name>.log, текст вывода — итог."""
+    started = time.time()
+    if remote:
+        quoted = " ".join("'" + a.replace("'", "'\\''") + "'" for a in game_args(role, 999, script))
+        out = ssh(f"""{REMOTE_ENV}
+cd {REMOTE_ROOT}
+timeout {timeout} "$GODOT" {quoted} > /tmp/le-net-{name}.log 2>&1
+""", check=False, timeout=timeout + 60)
+        run(["scp", "-q", f"{REMOTE}:/tmp/le-net-{name}.log", str(work / f"{name}.log")])
+        for remote_file in [a for a in role if a.startswith("/tmp/le-net-")]:
+            run(["scp", "-q", f"{REMOTE}:{remote_file}", str(work / Path(remote_file).name.removeprefix("le-net-"))])
+        _ = out
+    else:
+        env = dict(os.environ, D2_ASSETS_DIR=assets_dir())
+        proc = subprocess.Popen([GODOT, *game_args(role, 999, script)], cwd=REPO, env=env,
+                                stdout=open(work / f"{name}.log", "w", encoding="utf-8"), stderr=subprocess.STDOUT)
+        try:
+            proc.wait(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            kill_tree(proc)
+    text = (work / f"{name}.log").read_text(encoding="utf-8", errors="replace")
+    log(f"net-duo: {name} — {time.time() - started:.0f} с")
+    return text
+
+
+def play_async(work: Path, args, relay_url: str) -> int:
+    """Асинхронная партия: ходы по очереди, каждый — отдельный запуск игры (сходил — записал — закрыл); клиент — локально или на
+    EliteBook. Затем повтор журналов ходов (JournalReplay --async) = последний записанный хеш."""
+    host_seat, guest_seat = args.seats.split(",")[:2]
+    turns = args.days * 2
+    journals: list[Path] = []
+    stored = None
+    started = time.time()
+    for turn in range(turns):
+        mine = turn % 2 == 0
+        remote = args.remote and not mine
+        prefix = "/tmp/le-net-" if remote else str(work) + os.sep
+        journal = f"{prefix}t{turn}.jsonl"
+        key = f"{prefix}{'host' if mine else 'guest'}.key"
+        common = ["--net-relay", relay_url, "--net-async-quit", "--net-journal-out", journal, "--net-nick", "host" if mine else "guest"]
+        if turn == 0:
+            role = ["--net-async-create", args.scenario, "--net-seats", args.seats, "--net-seed", str(args.seed),
+                    "--net-key-out", key, "--net-start-out", str(work / "start.d2save"), *common]
+        elif turn == 1:
+            room = re.search(r"^net-room (\w+)", (work / "t0.log").read_text(encoding="utf-8", errors="replace"), re.M)
+            if not room:
+                log("net-duo: FAIL — нет кода комнаты")
+                return 1
+            role = ["--net-async-join", room.group(1), "--net-seat", guest_seat, "--net-key-out", key, *common]
+        else:
+            role = ["--net-async-open", key, *common]
+        text = run_game(work, f"t{turn}", role, 1 if mine else 2, args.timeout, remote)
+        stored = re.search(r"^net-async stored rev=(\d+) hash=(\w+) day=(\d+) next=(\w+)", text, re.M)
+        if not stored:
+            log(f"net-duo: FAIL — ход {turn} не записан; {work / f't{turn}.log'}")
+            return 1
+        journals.append(work / f"t{turn}.jsonl")
+    replay = REPO / "tools" / "JournalReplay" / "bin" / "Debug" / "net10.0" / "JournalReplay.dll"
+    out = subprocess.run(["dotnet", str(replay), "--async", str(work / "start.d2save"), *map(str, journals)], capture_output=True,
+                         text=True, encoding="utf-8", errors="replace")
+    (work / "replay.txt").write_text(out.stdout + out.stderr, encoding="utf-8")
+    final = last(r"хеш (\w+)", out.stdout)
+    ok = out.returncode == 0 and final is not None and stored is not None and final.group(1) == stored.group(2)
+    summary = (f"ходов {turns}, ревизия {stored.group(1)}, день {stored.group(3)}, хеш {stored.group(2)[:12]}, "
+               f"{time.time() - started:.0f} с (с запусками игры)")
+    log(("net-duo: ok — " if ok else "net-duo: FAIL — ") + summary + ("" if ok else f"; повтор: {out.stdout.strip()[-300:]}"))
+    return 0 if ok else 1
+
+
 def last(pattern: str, text: str) -> re.Match | None:
     found = list(re.finditer(pattern, text, re.M))
     return found[-1] if found else None
@@ -224,6 +308,8 @@ def verify(work: Path, args, elapsed: float) -> int:
     client_log = (work / "client.log").read_text(encoding="utf-8", errors="replace") if (work / "client.log").exists() else ""
     host_done = last(r"^net-done host day=(\d+) hash=(\w+) commands=(\d+)", host_log)
     client_done = last(r"^net-done client day=(\d+) player=(\w+) view=(\w+) bytes=(\d+)", client_log)
+    lat = last(r"latency_n=(\d+) latency_ms=([\d.]+) p95_ms=([\d.]+) max_ms=([\d.]+) ws_mb=(\d+)", client_log)
+    host_ws = last(r"ws_mb=(\d+)", host_log)
     if not host_done or not client_done:
         log(f"net-duo: FAIL — партия не доиграна (хост {'да' if host_done else 'нет'}, клиент {'да' if client_done else 'нет'}); логи {work}")
         return 1
@@ -239,7 +325,10 @@ def verify(work: Path, args, elapsed: float) -> int:
           and view_m is not None and view_m.group(2) == client_done.group(3))
     summary = (f"день {host_done.group(1)}, команд {host_done.group(3)}, хеш {host_done.group(2)[:12]}, "
                f"вид клиента {client_done.group(3)[:12]}, боёв на экране {battles}, resync {resyncs}, "
-               f"трафик клиента {int(client_done.group(4)) // 1024} КиБ, {elapsed:.0f} с")
+               f"трафик клиента {int(client_done.group(4)) // 1024} КиБ ({int(client_done.group(4)) // 1024 // max(1, int(host_done.group(1)) - 1)} КиБ/день), "
+               + (f"задержка команды {lat.group(2)} мс (p95 {lat.group(3)}, наиб. {lat.group(4)}, n={lat.group(1)}), память хост {host_ws.group(1) if host_ws else '?'} / "
+                  f"клиент {lat.group(5)} МБ, " if lat else "")
+               + f"{elapsed:.0f} с")
     log(("net-duo: ok — " if ok else "net-duo: FAIL — ") + summary + ("" if ok else f"; повтор: {out.stdout.strip()[-300:]}"))
     (work / "result.json").write_text(json.dumps({"ok": ok, "summary": summary}, ensure_ascii=False), encoding="utf-8")
     return 0 if ok else 1

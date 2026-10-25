@@ -599,19 +599,31 @@ public sealed class BattleSession
     public IReadOnlyList<BattleInput> Actions => _actions;
 
     /// <summary>Сыгранное до сих пор: устройство сессии и её действия; <paramref name="crtDraws"/> — числа <c>rand()</c> экрана.</summary>
-    public BattlePlay Played(int crtDraws = 0) => new(new BattleSetup(PlayerIsAttacker, HoldTurnStart), [.. _actions], crtDraws);
+    public BattlePlay Played(int crtDraws = 0) => new(new BattleSetup(PlayerIsAttacker, HoldTurnStart, BothHuman), [.. _actions], crtDraws);
+
+    /// <summary>Обе стороны — люди (сеть, Э7, решение пользователя 25.10 «каждый своих»; у движка — бой двух людей, <c>CBattleViewerInterfData
+    /// +0x14f8</c>, <c>0x62d2e6</c>): команды ждёт каждый юнит, кто бы ни ходил; ведёт его экран хозяина, решения другой стороны приходят по
+    /// сети. Автобой у каждой стороны свой (<see cref="AutoOf"/>).</summary>
+    public bool BothHuman { get; init; }
+
+    /// <summary>Действие записано (внешний вызов, <see cref="Actions"/>) и исполнено: экран сети отправляет свои решения другой стороне.</summary>
+    public event Action<BattleInput>? Recorded;
 
     private T Act<T>(BattleInput action, Func<T> body)
     {
-        if (_acting++ == 0) _actions.Add(action);
+        bool outer = _acting++ == 0;
+        if (outer) _actions.Add(action);
+        T result;
         try
         {
-            return body();
+            result = body();
         }
         finally
         {
             _acting--;
         }
+        if (outer) Recorded?.Invoke(action);
+        return result;
     }
 
     private void Act(BattleInput action, Action body) => Act(action, () =>
@@ -648,7 +660,7 @@ public sealed class BattleSession
     private BattleUnit UnitOf(string id) => _state.Unit(id) ?? throw new InvalidDataException($"в бою нет юнита {id}");
 
     /// <summary>Юнит на стороне игрока.</summary>
-    public bool IsPlayers(BattleUnit unit) => unit is not null && unit.Attacker == PlayerIsAttacker;
+    public bool IsPlayers(BattleUnit unit) => unit is not null && (BothHuman || unit.Attacker == PlayerIsAttacker);
 
     private void FinishTurn()
     {

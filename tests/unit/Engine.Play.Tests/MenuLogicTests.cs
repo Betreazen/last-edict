@@ -207,16 +207,19 @@ public class MenuLogicTests
         Assert.Null(MenuLogic.For("DLG_HOTSEAT_LOBBY", context));   // «горячий стул» вырезан (Р33)
     }
 
-    /// <summary>Главное меню: «Мультиплеер» погашен и не ведёт никуда — «горячий стул» вырезан (Р33), сеть — Э7.</summary>
+    /// <summary>Главное меню: «Мультиплеер» включён и ведёт в лобби сетевой игры (Э7); экран протокола оригинала и «горячий стул» — нет (Р33).</summary>
     [SkippableFact]
-    public void MainMenu_MultiplayerOff()
+    public void MainMenu_MultiplayerOpensTheLobby()
     {
         var context = new MenuContext(Content.Catalog, Strings, new NewGameSetup(), "Игрок");
         var logic = MenuLogic.For("DLG_MAIN_MENU", context)!;
         var ui = new UiScreenState(Content.Screens.Single(s => s.Id == "DLG_MAIN_MENU"));
         logic.Open(ui);
-        Assert.False(ui.IsEnabled(MainMenuLogic.Multiplayer));
-        Assert.False(logic.Allows(MainMenuLogic.Multiplayer, ui));
-        Assert.True(logic.Allows("BTN_SINGLE", ui));
+        Assert.True(ui.IsEnabled(MainMenuLogic.Multiplayer));
+        Assert.True(logic.Allows(MainMenuLogic.Multiplayer, ui));
+        var nav = new UiNavigator(Content.Flow, "DLG_MAIN_MENU");
+        nav.Activate(MainMenuLogic.Multiplayer);
+        Assert.Equal(LobbyLogic.Screen, nav.Top);
+        Assert.IsType<LobbyLogic>(MenuLogic.For(LobbyLogic.Screen, context));
     }
 }

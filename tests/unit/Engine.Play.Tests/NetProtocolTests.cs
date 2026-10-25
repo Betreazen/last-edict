@@ -381,6 +381,108 @@ public class NetProtocolTests
         AssertSameView(client, game);
     }
 
+    /// <summary>Бой людей «каждый своих» (решение пользователя 25.10): нападает хост — клиент получает запрос боя людей и собирает тот же бой
+    /// у себя; нападает клиент — хост собирает его на копиях генератора. Каждая сторона решает за свои юниты, решения идут через хост;
+    /// оба экрана играют один и тот же бой, а повтор у хоста (бой записал экран подавшего) даёт тот же журнал ходов и ту же партию, что
+    /// повтор журнала команд.</summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void HumanBattle_EachSidePlaysItsOwnUnits(bool hostAttacks)
+    {
+        var start = NetTestGame.Copy(NetTestGame.Start());
+        var startMap = start.Looks.Map;
+        foreach (string player in new[] { NetTestGame.HostPlayer, NetTestGame.ClientPlayer })
+        {
+            var sight = startMap.Fog[startMap.Players[player].FogId];
+            for (int x = 0; x < startMap.Size; x++)
+                for (int y = 0; y < startMap.Size; y++)
+                    sight[x, y] = false;   // стороны видят друг друга, как вплотную
+        }
+        var game = Network(start, out var hub, out var client);
+        var host = hub.Host!;
+        if (!hostAttacks) game.Execute(new EndTurnCommand());   // ход клиента
+        var rules = NetTestGame.Book.Rules;
+        BattleSession? hostScreen = null, clientScreen = null;
+        var toHost = new Queue<BattleInput>();
+        var toClient = new Queue<BattleInput>();
+        host.StepReceived += step => toHost.Enqueue(step.Input);
+        client.StepReceived += step => toClient.Enqueue(step.Input);
+        client.BattleRequested += request =>
+        {
+            Assert.True(request.Lockstep);
+            var state = client.BuildRequestedBattle(request)!;
+            clientScreen = new BattleSession(state, new BattleSim(state, client.Session!.BattleRng, rules.Constants), rules.Constants,
+                                             request.Side == "attacker") { BothHuman = true };
+        };
+        host.LockstepRequested += request =>
+        {
+            var crt = new LastEdict.Rules.Rng.CrtRand(request.Seed.Crt);
+            var state = game.BuildBattleHere(request.AttackerGroup, request.DefenderGroup, false, crt);
+            Assert.Equal(request.Fingerprint, BattleFingerprint.Of(state));
+            var at = request.Seed.Of(LastEdict.Rules.Rng.RngStream.Battle)!;
+            hostScreen = new BattleSession(state, new BattleSim(state, LastEdict.Rules.Rng.EngineRng.FromSeed(at.Table, at.Index), rules.Constants),
+                                           rules.Constants, request.Side == "attacker") { BothHuman = true };
+        };
+        var hostStack = game.Map.Stacks.Values.First(s => s.Owner == NetTestGame.HostPlayer);
+        var clientStack = game.Map.Stacks.Values.First(s => s.Owner == NetTestGame.ClientPlayer);
+        BattleSession recorder;
+        if (hostAttacks)
+        {
+            var state = (BattleState)game.Execute(new StartBattleCommand(hostStack.Id, clientStack.Id)).Value!;
+            recorder = hostScreen = new BattleSession(state, new BattleSim(state, game.BattleRng, rules.Constants), rules.Constants) { BothHuman = true };
+        }
+        else
+        {
+            var state = (BattleState)client.Session!.Execute(new StartBattleCommand(clientStack.Id, hostStack.Id)).Value!;
+            recorder = clientScreen = new BattleSession(state, new BattleSim(state, client.Session.BattleRng, rules.Constants), rules.Constants) { BothHuman = true };
+        }
+        Assert.NotNull(hostScreen);
+        Assert.NotNull(clientScreen);
+        // Своё решение — другой стороне; решения другой стороны — по очереди, когда ходит её юнит.
+        bool relaying = false;
+        hostScreen!.Recorded += input => { if (!relaying && input is not StartTurnAction) host.SendStep(new BattleStep("", 0, input)); };
+        clientScreen!.Recorded += input => { if (!relaying && input is not StartTurnAction) client.SendStep(new BattleStep("", 0, input)); };
+        bool hostSide = hostAttacks;   // нападающие — у хоста?
+        for (int guard = 0; guard < 2000 && !(hostScreen.Finished && clientScreen.Finished); guard++)
+        {
+            foreach (var (screen, mine, inbox) in new[] { (hostScreen, hostSide, toHost), (clientScreen, !hostSide, toClient) })
+            {
+                screen.StartTurn();
+                if (screen.Finished || screen.Current is not { } unit) continue;
+                if (unit.Attacker == mine)
+                {
+                    if (screen.Targets() is { Count: > 0 } targets) screen.Attack(targets[0]);
+                    else screen.Defend();
+                }
+                else if (inbox.Count > 0)
+                {
+                    relaying = true;
+                    screen.Apply(inbox.Dequeue());
+                    relaying = false;
+                }
+            }
+        }
+        Assert.True(hostScreen.Finished && clientScreen.Finished);
+        Assert.Equal(hostScreen.Log, clientScreen.Log);
+        if (hostAttacks)
+        {
+            game.Execute(new EndBattleCommand([.. recorder.Log], recorder.Played()));
+            game.Execute(new CommitBattleCommand());
+        }
+        else
+        {
+            client.Session!.Execute(new EndBattleCommand([.. recorder.Log], recorder.Played()));
+            client.Session.Execute(new CommitBattleCommand());
+            Assert.False(game.ElsewhereBattleDiverged);
+        }
+        AssertSameView(client, game);
+        var replay = new GameSession(NetTestGame.Copy(start), MapArtData.Empty, NetTestGame.Book);
+        CommandJournal.FromJsonLines(game.Journal!.ToJsonLines()).Replay(replay);
+        Assert.Equal(StateHash.Of(game), StateHash.Of(replay));
+        Assert.Contains(game.Journal.Entries, e => e.Command is EndBattleCommand { Play.Setup.BothHuman: true });
+    }
+
     private static void AssertSameView(NetClient client, GameSession host) =>
         Assert.Equal(ViewPatch.Hash(NetView.Of(host.SnapshotWithoutSummaries(), NetTestGame.ClientPlayer)), client.ViewHash);
 

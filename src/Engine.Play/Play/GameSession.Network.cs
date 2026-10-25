@@ -40,6 +40,18 @@ public sealed partial class GameSession
         _settled = null;
     }
 
+    /// <summary>Асинхронная партия: взять партию целиком (новый ход, прочитанный у посредника) — состояние и генераторы; бой и аудит — с
+    /// начала. Ссылки на генераторы и наблюдателей остаются (сцена карты продолжает с той же сессией).</summary>
+    public void Replace(GameState state)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        _state = WithLandOwners(state with { Random = null }, Book);
+        RestoreRandom(state.Random ?? RandomStreams.FromSeed(0));
+        _battle = null;
+        _ending = null;
+        _settled = (State, RngSteps, Crt.State);
+    }
+
     /// <summary>Поставить генераторам партии места из <paramref name="random"/>: только названные там потоки (клиенту хост даёт лишь поток
     /// боя) и, если <paramref name="crt"/>, — CRT. Ссылки на генераторы остаются прежними.</summary>
     public void RestoreRandom(RandomStreams random, bool crt = true)
@@ -85,13 +97,18 @@ public sealed partial class GameSession
 
     /// <summary>Клиент: собрать у себя бой хода ИИ по виду — так же, как его собрал хост (<see cref="MapBattle.Build"/>, призванные — по
     /// счётчику карты, выбор призыва — CRT сессии); партия не меняется (очки хода нападающего хост уже списал).</summary>
-    public LastEdict.Rules.Battle.BattleState BuildBattleHere(string attackerGroup, string defenderGroup, bool duel)
+    public LastEdict.Rules.Battle.BattleState BuildBattleHere(string attackerGroup, string defenderGroup, bool duel, CrtRand? crt = null)
     {
         if (Book is null) throw new InvalidOperationException("партия без правил боя");
         var battle = MapBattle.Build(Map, attackerGroup, defenderGroup, Book, State.Info.Difficulty, Map.Stacks[attackerGroup].Move, duel);
         var ids = new BattleIds(Map.IdNext, [.. Map.Units.Keys], attackerGroup);
         battle.NewUnitId = ids.NewUnit;
-        battle.ProcessRand = Crt;
+        battle.ProcessRand = crt ?? Crt;   // хост, бой людей: копия CRT — настоящий возьмёт повтор боя по действиям
         return battle;
     }
+
+    /// <summary>Драйвер боя людей (<c>tools/net-duo.py --case duel</c>): до начала партии отряд <paramref name="stackId"/> встаёт рядом с
+    /// <paramref name="nearId"/> — как эффект события «переместить рядом» (<see cref="MoveByEvent"/>). Не команда: журнал начинается после.</summary>
+    public bool MoveBeside(string stackId, string nearId) =>
+        Map.Stacks.TryGetValue(nearId, out var near) && Map.Stacks.ContainsKey(stackId) && MoveByEvent(stackId, near.X, near.Y, beside: true);
 }

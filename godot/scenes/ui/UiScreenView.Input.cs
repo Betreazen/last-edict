@@ -364,7 +364,7 @@ public partial class UiScreenView
         string[] parts = step.Split(' ', 2, StringSplitOptions.TrimEntries);
         string verb = parts[0];
         string arg = parts.Length > 1 ? parts[1] : "";
-        if (_overlay is not null && _overlay.Step(verb, arg)) return true;   // окно поверх экрана (UiScreenView.Overlay.cs)
+        if (OverlayStep(verb, arg)) return true;   // окно поверх экрана (UiScreenView.Overlay.cs)
 
         if (verb == "type")
         {

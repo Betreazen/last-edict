@@ -13,7 +13,7 @@ namespace LastEdict.Godot;
 public partial class MapView
 {
     /// <summary>Сетевая партия; null — обычная.</summary>
-    public NetSession? Net { get; set; }
+    public INetPlay? Net { get; set; }
 
     /// <summary>Как часто рабочий поток смотрит, не его ли ход.</summary>
     private const int NetPollMs = 25;
@@ -48,21 +48,24 @@ public partial class MapView
 
     /// <summary>Клиент: бой хода ИИ, о котором просит хост, — собрать по виду, сыграть экраном боя с человеком (как бой ИИ с человеком),
     /// ответить хосту действиями. Не собрался или экран занят — ответ «без боя»: хост играет автобой.</summary>
-    private void ClientBattle(NetSession net, BattleRequest request)
+    private void ClientBattle(INetPlay net, BattleRequest request)
     {
-        var client = net.Client!;
-        var state = client.BuildRequestedBattle(request);
-        if (state is null || AiBattleRequested is null)
+        var kit = net.BuildBattle(request);
+        var map = Session.Map;   // вид, по которому бой собран
+        global::Godot.GD.Print($"net battle request lockstep={(request.Lockstep ? 1 : 0)} side={request.Side} собран={(kit is null ? 0 : 1)} " +
+                               $"экран={(AiBattleRequested is null ? 0 : 1)}");
+        if (kit is null || AiBattleRequested is null)
         {
-            client.ReplyBattle(request, null, []);
+            if (!request.Lockstep) net.ReplyBattle(request, null, []);   // бой хода ИИ без экрана — автобой у хоста
             return;
         }
-        _aiShown = Session.State;   // вид после хода ИИ до боя — пришёл раньше запроса
-        var battle = new AiBattle(state, this);
+        _aiShown = Session.State;   // вид после хода до боя — пришёл раньше запроса
+        var battle = new AiBattle(kit.State, this) { Rng = kit.Rng, Crt = kit.Crt, RemoteSide = kit.RemoteSide, Map = map };
         AskOnWorker(new AiBattleRequest(battle));
+        if (request.Lockstep) return;   // бой людей записывает экран подавшего, этот экран вёл только свои юниты
         var log = battle.Log ?? (_aiCancel ? battle.ResolveOnce() : null);
         var play = log is null ? null : battle.Played?.Invoke();
-        client.ReplyBattle(request, play, log ?? []);
+        net.ReplyBattle(request, play, log ?? []);
     }
 
     /// <summary>Заявка показа с рабочего потока сети (как <see cref="AiHooks"/>): положить и ждать, пока главный поток её покажет.</summary>

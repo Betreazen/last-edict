@@ -112,6 +112,16 @@ public sealed class RelayLink : IAsyncDisposable
         return Key;
     }
 
+    /// <summary>Занять место <paramref name="seat"/> (игрок партии), если своё ещё пусто и место свободно (асинхронная комната: место
+    /// выбирают по партии после входа).</summary>
+    public async Task<RoomKey> ClaimSeatAsync(string seat, CancellationToken cancel = default)
+    {
+        var key = Key ?? throw new InvalidOperationException("сначала войдите в комнату");
+        await Request(new JsonObject { ["op"] = "seat", ["seat"] = seat }, "seated", cancel).ConfigureAwait(false);
+        Key = key with { Seat = seat };
+        return Key;
+    }
+
     /// <summary>Мои комнаты по ключам (без входа): асинхронные — чей ход, день.</summary>
     public async Task<JsonArray> RoomsAsync(IEnumerable<RoomKey> keys, CancellationToken cancel = default)
     {
@@ -187,20 +197,32 @@ public sealed class RelayLink : IAsyncDisposable
 
     // ---- провод
 
+    /// <summary>Запрос посреднику и его ответ. Ответы у посредника без номера запроса — в полёте один запрос (<see cref="_requests"/>): опрос
+    /// асинхронной партии и запись хода с разных потоков не крадут ответы друг друга.</summary>
     private async Task<JsonObject> Request(JsonObject frame, string expect, CancellationToken cancel)
     {
-        while (_replies.Reader.TryRead(out _)) { }   // старые ответы — не к этому запросу
-        await Send(frame).ConfigureAwait(false);
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancel, _stop.Token);
         timeout.CancelAfter(TimeSpan.FromSeconds(30));
-        while (true)
+        await _requests.WaitAsync(timeout.Token).ConfigureAwait(false);
+        try
         {
-            var reply = await _replies.Reader.ReadAsync(timeout.Token).ConfigureAwait(false);
-            string op = reply["op"]?.GetValue<string>() ?? "";
-            if (op == expect) return reply;
-            if (op == "error") throw new RelayException(reply["code"]?.GetValue<string>() ?? "", reply["text"]?.GetValue<string>() ?? "");
+            while (_replies.Reader.TryRead(out _)) { }   // старые ответы — не к этому запросу
+            await Send(frame).ConfigureAwait(false);
+            while (true)
+            {
+                var reply = await _replies.Reader.ReadAsync(timeout.Token).ConfigureAwait(false);
+                string op = reply["op"]?.GetValue<string>() ?? "";
+                if (op == expect) return reply;
+                if (op == "error") throw new RelayException(reply["code"]?.GetValue<string>() ?? "", reply["text"]?.GetValue<string>() ?? "");
+            }
+        }
+        finally
+        {
+            _requests.Release();
         }
     }
+
+    private readonly SemaphoreSlim _requests = new(1, 1);
 
     /// <summary>Кадр — в очередь отправки соединения (один писатель: порядок кадров — порядок вызовов); нет связи — исключение.</summary>
     private Task Send(JsonObject frame)
@@ -395,14 +417,14 @@ public static class NetRelay
         {
             if (from == link.Host) client.Receive(message);
         };
-        link.Lost += client.Disconnected;
+        link.Lost += () => client.Disconnected("нет связи с посредником");
         link.Reconnected += client.Connect;
         link.Notice += notice =>
         {
             bool host = notice["host"]?.GetValue<bool>() ?? false;
             switch (notice["op"]?.GetValue<string>())
             {
-                case "gone" when host: client.Disconnected(); break;
+                case "gone" when host: client.Disconnected("хост ушёл из комнаты"); break;
                 case "peer" when host: client.Connect(); break;
             }
         };

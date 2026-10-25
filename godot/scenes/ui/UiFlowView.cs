@@ -168,7 +168,13 @@ public partial class UiFlowView : Node
                                             InputBindings.Apply(settings.Bindings);
                                             UiScale.Apply(settings);
                                         },
-                                        SettingsApplied = SettingsApplied(args) };
+                                        SettingsApplied = SettingsApplied(args), ScenarioPlayers = NetGames.Players };
+            // Лобби сети (Э7): партия готова — карта (StartGame берёт её вместо сценария и сохранения).
+            LobbyWindow.Started = play =>
+            {
+                _net = play;
+                _nav = new UiNavigator(GameData.Content.Flow, GameScreen, UiPhase.Game);
+            };
             if (SettingsPath(args) is { } settings)
             {
                 _menu.Settings = LastEdict.Data.Map.MapSettings.Load(settings);
@@ -209,6 +215,17 @@ public partial class UiFlowView : Node
         if (Arg(args, "--input") is not { } script) return;
         _scripted = true;
         bool ok = Run(script);
+        // --shot <файл>: снимок окна после сценария (два кадра на отрисовку), потом выход — снимки окон меню для README и проверки глазами.
+        if (ok && Arg(args, "--shot") is { } shot)
+        {
+            GetTree().CreateTimer(1.0).Timeout += () =>
+            {
+                GetViewport().GetTexture().GetImage().SavePng(shot);
+                GD.Print($"flow shot {shot}");
+                GetTree().Quit(0);
+            };
+            return;
+        }
         // С --check партия, начатая сценарием, проверяет себя сама (MapScreen ждёт землю, печатает числа и выходит).
         if (!ok || _game is null || !args.Contains("--check")) GetTree().Quit(ok ? 0 : 1);
     }
@@ -319,6 +336,20 @@ public partial class UiFlowView : Node
 
     private const string Briefing = "DLG_SCENARIO_BRIEFING";
 
+    /// <summary>Сетевая партия из лобби, ждущая карты.</summary>
+    private LastEdict.Net.INetPlay? _net;
+
+    /// <summary>Карта сетевой партии (Э7): сессия и зритель — от сети, вид карты получает её (<see cref="MapScreen.Net"/>).</summary>
+    private void StartNetGame(LastEdict.Net.INetPlay net)
+    {
+        _game = new MapScreen { Name = "Game", Session = net.Session, Viewer = net.Me, Net = net, NewGame = false };
+        _game.LoadRequested += LoadFromGame;
+        _game.QuitRequested += QuitGame;
+        _game.NextChapterRequested += NextChapter;
+        Host.AddChild(_game);
+        GD.Print($"game net room={net.Room} me={net.Me} day={net.Session.Map.Turn} active={net.Active}");
+    }
+
     /// <summary>Меню пройдено: экраны снимаются, партия собирается из выбранного сценария и выбора игрока
     /// (<see cref="NewGame"/>) или читается из сохранения (<paramref name="savePath"/>), и её показывает экран карты.
     /// Сценарий — <c>Exports</c> копии игры (<c>.sg</c> только на входе: дальше партия живёт в модели порта).</summary>
@@ -332,6 +363,12 @@ public partial class UiFlowView : Node
         }
         _views.Clear();
         var setup = _menu!.Setup;
+        if (_net is { } net)
+        {
+            _net = null;
+            StartNetGame(net);
+            return;
+        }
         try
         {
             GameSession session;

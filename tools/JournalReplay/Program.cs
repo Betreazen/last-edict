@@ -13,6 +13,27 @@ using LastEdict.Data.Play.Commands;
 // Сохранение по умолчанию — <журнал>.start.d2save; данные — data/ репозитория (содержимое base без модов, как у проверок).
 // Код возврата 0 — повтор сошёлся; 1 — расхождение (первая команда с другим хешем); 2 — нет файлов.
 
+// --async <начало.d2save> <ход1.jsonl> <ход2.jsonl> … — асинхронная партия сети: журналы ходов по порядку с записью и чтением партии между
+// ходами (LastEdict.Net.AsyncRoom.ReplayTurns); печатает «асинхронная: ходов N, хеш H».
+if (args.Length > 2 && args[0] == "--async")
+{
+    string root = Path.Combine(RepoRoot(), "data");
+    var asyncContent = GameContent.Load(root);
+    var asyncBook = GameBook.Load(Path.Combine(root, "content", "base"));
+    try
+    {
+        var end = LastEdict.Net.AsyncRoom.ReplayTurns(GameSave.Read(args[1]), args[2..].Select(File.ReadAllText),
+                                                       s => new GameSession(s, asyncContent.MapArt, asyncBook));
+        Console.WriteLine($"асинхронная: ходов {args.Length - 2}, хеш {StateHash.Of(end)}");
+        return 0;
+    }
+    catch (InvalidDataException e)
+    {
+        Console.WriteLine($"повтор разошёлся: {e.Message}");
+        return 1;
+    }
+}
+
 string? journalPath = args.FirstOrDefault(a => !a.StartsWith("--", StringComparison.Ordinal));
 if (journalPath is null || !File.Exists(journalPath))
 {

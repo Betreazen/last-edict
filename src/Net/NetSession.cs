@@ -18,7 +18,7 @@ public sealed record NetJoin(Uri Relay, string Nick, Ruleset Ruleset, string Bui
 /// (<see cref="TryTakeWork"/>: у хоста — конец хода клиента, его ходы ИИ показывает карта хоста) и бои хода ИИ, которые клиент играет на
 /// своём экране (<see cref="TryTakeBattle"/>). Асинхронная комната — <see cref="AsyncTurn"/>.
 /// </summary>
-public sealed class NetSession : IAsyncDisposable, IHostRunner
+public sealed class NetSession : IAsyncDisposable, IHostRunner, INetPlay
 {
     private readonly ConcurrentQueue<Action> _work = new();
     private readonly ConcurrentQueue<BattleRequest> _battles = new();
@@ -85,8 +85,19 @@ public sealed class NetSession : IAsyncDisposable, IHostRunner
         ArgumentNullException.ThrowIfNull(seats);
         var link = new RelayLink(relay);
         await link.ConnectAsync(cancel).ConfigureAwait(false);
-        var key = await link.CreateAsync(name.Length > 0 ? name : session.State.Info.ScenarioName, nick, async: false, seat: me, cancel)
-                            .ConfigureAwait(false);
+        await link.CreateAsync(name.Length > 0 ? name : session.State.Info.ScenarioName, nick, async: false, seat: me, cancel).ConfigureAwait(false);
+        return HostOn(link, session, me, seats, ruleset, build, turnSeconds);
+    }
+
+    /// <summary>Стать хостом партии <paramref name="session"/> в уже созданной комнате <paramref name="link"/> (лобби: друзья вошли, пока
+    /// хозяин выбирал места).</summary>
+    public static NetSession HostOn(RelayLink link, GameSession session, string me, IReadOnlyList<string> seats, Ruleset ruleset,
+                                    string build = "", int? turnSeconds = null)
+    {
+        ArgumentNullException.ThrowIfNull(link);
+        ArgumentNullException.ThrowIfNull(session);
+        ArgumentNullException.ThrowIfNull(seats);
+        var key = link.Key ?? throw new InvalidOperationException("комната не создана");
         var net = new NetSession(link, me);
         session.EventBattlesOnScreen = false;   // бой события в сети — автобой у всех: журнал повторяется одной настройкой
         var host = new NetHost(session, new NetHostOptions { Room = key.Room, Ruleset = ruleset, Build = build, TurnSeconds = turnSeconds },
@@ -94,6 +105,8 @@ public sealed class NetSession : IAsyncDisposable, IHostRunner
         NetRelay.Attach(host, link);
         foreach (string seat in seats) host.AddSeat(seat);
         host.Changed += () => net.Changed?.Invoke();
+        host.LockstepRequested += request => net._battles.Enqueue(request);
+        host.StepReceived += step => net.BattleStepReceived?.Invoke(step.Input);
         host.TurnChanged += _ => net.TurnChanged?.Invoke();
         host.Log += text => net.Log?.Invoke(text);
         net.Host = host;
@@ -143,6 +156,16 @@ public sealed class NetSession : IAsyncDisposable, IHostRunner
         await link.ConnectAsync(cancel).ConfigureAwait(false);
         if (rejoin is not null) await link.RejoinAsync(rejoin, cancel).ConfigureAwait(false);
         else await link.JoinAsync(room, join.Nick, seat ?? "", cancel).ConfigureAwait(false);
+        return await JoinOn(link, join, seat, token, TimeSpan.FromSeconds(60), cancel).ConfigureAwait(false);
+    }
+
+    /// <summary>Клиент в комнате <paramref name="link"/> (вошёл уже): здороваться с хостом каждые 3 с, пока он не примет (лобби: хост ещё
+    /// выбирает места) или не выйдет <paramref name="wait"/>; затем — первый вид.</summary>
+    public static async Task<NetSession> JoinOn(RelayLink link, NetJoin join, string? seat, string? token, TimeSpan wait,
+                                                CancellationToken cancel = default)
+    {
+        ArgumentNullException.ThrowIfNull(link);
+        ArgumentNullException.ThrowIfNull(join);
         var net = new NetSession(link, "");
         var client = new NetClient(new NetClientOptions { Ruleset = join.Ruleset, Build = join.Build, Name = join.Nick, Seat = seat, Token = token },
                                    NetRelay.ClientSender(link), join.SessionFactory) { AutoApply = join.AutoApply };
@@ -162,18 +185,25 @@ public sealed class NetSession : IAsyncDisposable, IHostRunner
         };
         client.Joined += () => net.Me = client.Player ?? "";
         client.BattleRequested += request => net._battles.Enqueue(request);
+        client.StepReceived += step => net.BattleStepReceived?.Invoke(step.Input);
         client.ChatReceived += chat => net.Notice?.Invoke($"{chat.From}: {chat.Text}");
         client.Log += text => net.Log?.Invoke(text);
         client.Connect();
-        using var wait = CancellationTokenSource.CreateLinkedTokenSource(cancel);
-        wait.CancelAfter(TimeSpan.FromSeconds(60));
+        using var waiting = CancellationTokenSource.CreateLinkedTokenSource(cancel);
+        waiting.CancelAfter(wait);
+        var hello = DateTime.UtcNow;
         try
         {
             while (!first.Task.IsCompleted)   // вид, пришедший в очередь (AutoApply = false), — разобрать здесь
             {
-                wait.Token.ThrowIfCancellationRequested();
+                waiting.Token.ThrowIfCancellationRequested();
+                if (client.Player is null && client.Refusal is null && DateTime.UtcNow - hello > TimeSpan.FromSeconds(3))
+                {
+                    hello = DateTime.UtcNow;
+                    client.Connect();   // хост ещё не начал партию — поздороваться снова
+                }
                 client.Pump();
-                await Task.WhenAny(first.Task, Task.Delay(20, wait.Token)).ConfigureAwait(false);
+                await Task.WhenAny(first.Task, Task.Delay(20, waiting.Token)).ConfigureAwait(false);
             }
             await first.Task.ConfigureAwait(false);
         }
@@ -187,6 +217,40 @@ public sealed class NetSession : IAsyncDisposable, IHostRunner
 
     /// <summary>Клиент: бой хода ИИ, который хост просит сыграть на этом экране.</summary>
     public bool TryTakeBattle(out BattleRequest request) => _battles.TryDequeue(out request!);
+
+    /// <summary>Бой по запросу хоста: у клиента — по виду (генератор сессии — копия хоста); у хоста (бой людей, нападает клиент) — по партии,
+    /// но на копиях генератора боя и CRT: настоящие возьмёт повтор боя по действиям, когда клиент кончит бой.</summary>
+    public BattleKit? BuildBattle(BattleRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        bool? remote = request.Lockstep ? request.Side != "attacker" : null;   // моя сторона — Side; другая — у другого человека
+        if (Client is { } client)
+            return client.BuildRequestedBattle(request) is { } state && client.Session is { } view
+                ? new BattleKit(state, view.BattleRng, view.Crt, remote) : null;
+        var session = Session;
+        var crt = new LastEdict.Rules.Rng.CrtRand(request.Seed.Crt);
+        var battle = session.BuildBattleHere(request.AttackerGroup, request.DefenderGroup, duel: false, crt);
+        if (BattleFingerprint.Of(battle) != request.Fingerprint)
+            battle = session.BuildBattleHere(request.AttackerGroup, request.DefenderGroup, duel: true, crt);
+        if (BattleFingerprint.Of(battle) != request.Fingerprint) return null;
+        var at = request.Seed.Of(LastEdict.Rules.Rng.RngStream.Battle);
+        var rng = at is null ? session.BattleRng : LastEdict.Rules.Rng.EngineRng.FromSeed(at.Table, at.Index);
+        return new BattleKit(battle, rng, crt, remote);
+    }
+
+    private int _steps;
+
+    public void SendBattleStep(LastEdict.Data.Battle.BattleInput input)
+    {
+        var step = new BattleStep("", Interlocked.Increment(ref _steps), input);
+        if (Host is { } host) host.SendStep(step);
+        else Client?.SendStep(step);
+    }
+
+    public event Action<LastEdict.Data.Battle.BattleInput>? BattleStepReceived;
+
+    public void ReplyBattle(BattleRequest request, LastEdict.Data.Battle.BattlePlay? play, IReadOnlyList<LastEdict.Rules.Battle.TurnRecord> log) =>
+        Client?.ReplyBattle(request, play, log);
 
     private void OnNotice(JsonObject notice)
     {

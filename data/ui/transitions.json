@@ -8,7 +8,6 @@
   "Transitions": [
     { "From": "DLG_CINEMATIC", "To": "DLG_MAIN_MENU", "Video": "TRANS_INTRO2MAIN" },
     { "From": "DLG_MAIN_MENU", "To": "DLG_SINGLE_PLAYER", "Video": "TRANS_MAIN2SINGLE" },
-    { "From": "DLG_MAIN_MENU", "To": "DLG_PROTOCOL", "Video": "TRANS_MAIN2PROTO" },
     { "From": "DLG_SINGLE_PLAYER", "To": "DLG_CHOOSE_SKIRMISH", "Video": "TRANS_SINGLE2NEW" },
     { "From": "DLG_SINGLE_PLAYER", "To": "DLG_LOAD", "Video": "TRANS_SINGLE2LOAD" },
     { "From": "DLG_SINGLE_PLAYER", "To": "DLG_LOAD_TOURNEMENT", "Video": "TRANS_SINGLE2LOAD" },

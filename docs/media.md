@@ -41,7 +41,11 @@ git, старые снимки удаляются без переписыван�
 `compare-build-tree` (окно построек: «было» — сборка до Э6 `08bcb08`, «стало» — `main`; сохранение стенда `CheckSaves` за гномов, день 30,
 `--scale hd --vector-text`, HD-слой пользователя) и `studio-tree` (Студия, `--check --shot`), каждый + `-small`; со «Студии 2» —
 `studio-units` (вкладка «Юниты», юнит мода со своими картинками) и `studio-map` (объекты карты), каждый + `-small`: Студия `--open <копия
-мода> --check --script <шаги> --shot <файл> --resolution 1920x1080`, шаги — `{"op":"tab","index":N}` и операции вкладки.
+мода> --check --script <шаги> --shot <файл> --resolution 1920x1080`, шаги — `{"op":"tab","index":N}` и операции вкладки; с Э7 —
+`lobby` (+ `-small`): лобби «Мультиплеер», `UiFlow.tscn` с HD-слоем (`--mods … --vector-text --sharpen 40 --scale hd`), `--start
+DLG_MAIN_MENU --input "click BTN_MULTI; lobby scenario 3" --shot <файл>`, окно 1920×1080. Перед снимком — свои настройки сети
+(`user://net.json`) подменить нейтральными и вернуть после, `LE_RELAY=ws://my-server:8790/ws`: в поле не должно попасть ни настоящего
+адреса посредника, ни своего логина.
 
 25.10 всё, что показывает игру, переснято с HD-слоем ×3: галерея — `screenshots.py --hd ../last-edict/mods`; `compare-hd-*` — тем же
 `--stage-shot`; у `compare-widescreen`, `compare-settings`, `compare-battle-queue`, `compare-build-tree` левая половина («было») взята из

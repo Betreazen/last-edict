@@ -142,9 +142,10 @@ FLOW_CASES = [
         ("key 13", "DLG_CHOOSE_LORD"),
         ("key 13", "DLG_SCENARIO_BRIEFING"),
     ]),
-    # «Мультиплеер» погашен (Э5, Р33): «горячий стул» вырезан, сетевая игра — Э7; щелчок никуда не ведёт.
-    ("мультиплеер погашен", None, [
-        ("click BTN_MULTI", "DLG_MAIN_MENU"),
+    # «Мультиплеер» (Э7): лобби сетевой игры окном поверх меню (docs/network.md §7); Esc — назад в меню.
+    ("мультиплеер — лобби", None, [
+        ("click BTN_MULTI", "DLG_MAIN_MENU>LE_LOBBY"),
+        ("key 27", "DLG_MAIN_MENU"),
         ("click BTN_SINGLE", "DLG_SINGLE_PLAYER"),
     ]),
     # Титры — пустая страница (решение пользователя 28.09), любой щелчок или клавиша — в главное меню (переход без элемента).
@@ -938,8 +939,8 @@ def gamepad(repo: Path) -> tuple[bool, str]:
     focus = [(m[2], m[3]) for m in PAD_FOCUS.finditer(out)]
     stick = re.search(r"^flow step=4 do=stick at=pointer (\d+),(\d+) ", out, re.M)
     stacks = re.findall(r"^flow step=\d+ .* stack=(\S+) ", out, re.M)
-    # «Мультиплеер» погашен (Р33) — крестовина его пропускает: «Одиночная игра» → «Обучение».
-    want = [("down", "BTN_SINGLE"), ("down", "BTN_TUTORIAL"), ("up", "BTN_SINGLE"), ("down", "BTN_TUTORIAL"), ("up", "BTN_SINGLE")]
+    # «Мультиплеер» открыт (Э7, лобби) — крестовина идёт на него: «Одиночная игра» → «Мультиплеер».
+    want = [("down", "BTN_SINGLE"), ("down", "BTN_MULTI"), ("up", "BTN_SINGLE"), ("down", "BTN_MULTI"), ("up", "BTN_SINGLE")]
     first = PAD_FOCUS.search(out)
     moved = stick is not None and first is not None and int(first[4]) - int(stick[1]) == 360 and stick[2] == first[5]
     if code != 0 or focus != want or not moved or stacks[-2:] != ["DLG_SINGLE_PLAYER", "DLG_MAIN_MENU"]:

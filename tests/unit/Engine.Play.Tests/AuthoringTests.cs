@@ -175,6 +175,7 @@ public sealed class AuthoringTests : IDisposable
         Assert.Equal(1, watcher.Revision);
         Assert.Equal(ContentChange.Art, watcher.Classify(Path.Combine(project.Dir, "data", "gfx", "IconBld.json")));
         Assert.Equal(ContentChange.Code, watcher.Classify(Path.Combine(project.Dir, "plugins", "x.dll")));
+        Assert.Equal(ContentChange.Rules | ContentChange.Art, watcher.Classify(Path.Combine(project.Dir, "content", "buildings", "spire", "icon.png")));
     }
 
     [Fact]

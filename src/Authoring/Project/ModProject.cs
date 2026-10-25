@@ -94,6 +94,16 @@ public sealed class ModProject
         File.Move(temp, path, overwrite: true);
     }
 
+    /// <summary>Записать двоичный файл внутри мода (картинку) атомарно.</summary>
+    public void Write(string relative, ReadOnlySpan<byte> bytes)
+    {
+        string path = PathOf(relative);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        string temp = path + ".tmp";
+        File.WriteAllBytes(temp, bytes);
+        File.Move(temp, path, overwrite: true);
+    }
+
     /// <summary>Удалить файл внутри мода (нет — ничего).</summary>
     public void Delete(string relative)
     {

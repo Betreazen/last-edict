@@ -16,6 +16,8 @@ using LastEdict.Data.Ui.Windows;
 //   d2mod set <мод> <id> <путь> <значение JSON>       поле сущности (правка чужой — в слой мода)
 //   d2mod unset <мод> <id> <путь>                     убрать поле из слоя мода
 //   d2mod text <мод> <id> <язык> <ключ> <текст>       строка сущности-каталога (id строки — автоматический)
+//   d2mod file <мод> <id> <файл> [<png>]               картинка сущности-каталога (icon.png…; без png — убрать), PNG как есть
+//   d2mod rename <мод> <id> <новое имя>                переименовать свою сущность-каталог (ссылки мода — следом)
 //   d2mod apply <мод> <сценарий.json> [--undo-check] [--dry]   команды по порядку; --undo-check — отменить всё и повторить
 //   d2mod tree <мод> --lord <id> [--data <data>]      дерево построек лорда с модом: ветки, клетки, связи
 //   d2mod run <мод> [--scenario <id> --player <id>] [--watch] [--godot <exe>]   игра отдельным процессом с модом
@@ -24,7 +26,7 @@ using LastEdict.Data.Ui.Windows;
 
 if (args.Length < 2)
 {
-    Console.Error.WriteLine("d2mod <new|validate|add|set|unset|text|apply|tree|run> <мод> …  (подробно — tools/d2mod/Program.cs)");
+    Console.Error.WriteLine("d2mod <new|validate|add|set|unset|text|file|rename|apply|tree|run> <мод> …  (подробно — tools/d2mod/Program.cs)");
     return 2;
 }
 
@@ -40,6 +42,8 @@ try
         "set" => Edit(new SetField(args[2], args[3], JsonNode.Parse(args[4]))),
         "unset" => Edit(new SetField(args[2], args[3], null, Unset: true)),
         "text" => Edit(new SetText(args[2], args[3], args[4], args[5])),
+        "file" => Edit(new SetFile(args[2], args[3], args.Length > 4 ? System.Collections.Immutable.ImmutableArray.Create(File.ReadAllBytes(args[4])) : null)),
+        "rename" => Edit(new RenameEntity(args[2], args[3])),
         "apply" => Apply(),
         "tree" => Tree(),
         "run" => Run(),

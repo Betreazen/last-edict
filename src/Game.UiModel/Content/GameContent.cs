@@ -89,6 +89,10 @@ public sealed class GameContent
     /// <summary>Графика карты и боя (<c>gfx/*.json</c>, файлы — <c>assets/gfx</c>). Нет описей — пусто.</summary>
     public GfxAssets Gfx { get; }
 
+    /// <summary>Кадры картинок сущностей модов («Архив:ИМЯ», <see cref="EntityArt"/>): свой портрет юнита мода главнее графики базового
+    /// юнита (<see cref="EntityArt.Prefer"/>), графика оригинала так не подменяется.</summary>
+    public IReadOnlySet<string> EntityFrames { get; private init; } = new HashSet<string>();
+
     /// <summary>Данные отрисовки карты (<c>map/*.json</c>): слои, следы ориентиров, бонусы хода. Нет файлов — пусто.</summary>
     public MapArtData MapArt { get; }
 
@@ -250,6 +254,7 @@ public sealed class GameContent
         IReadOnlyList<UiVideo> videos = File.Exists(videosJson) ? UiVideos.Load(videosJson) : [];
         var gfx = GfxAssets.Load(Path.Combine(gameDir, "gfx"));
         var mapArt = MapArtData.Load(Path.Combine(gameDir, "map"));
+        var entityFrames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         var layers = mods?.ToList() ?? [];
         foreach (var mod in layers)
@@ -272,7 +277,10 @@ public sealed class GameContent
                     transitions = UiTransitions.Merge(transitions, modTransitions);
                 gfx = GfxAssets.Merge(gfx, GfxAssets.Load(Path.Combine(mod.Dir, "data", "gfx")),
                                       Path.Combine(mod.Dir, "assets", "gfx"));
-                gfx = GfxAssets.Merge(gfx, EntityIcons(mod), mod.Dir);
+                var entityArt = EntityIcons(mod);
+                gfx = GfxAssets.Merge(gfx, entityArt, mod.Dir);
+                foreach (var archive in entityArt.Archives)
+                    foreach (var image in archive.Images) entityFrames.Add($"{archive.Name}:{image.Name}");
                 mapArt = MapArtData.Merge(mapArt, MapArtData.Load(Path.Combine(mod.Dir, "data", "map")));
                 string modVideos = Path.Combine(mod.Dir, "data", "video", "videos.json");
                 if (File.Exists(modVideos))
@@ -293,30 +301,30 @@ public sealed class GameContent
         screens = UiLayouts.Apply(screens, layout);
         return new GameContent(screens, assets, flow, defaults, catalog, transitions, videos, gfx, mapArt, layers, dataDir, gameDir, input)
         {
-            Rules = rules,
+            Rules = rules, EntityFrames = entityFrames,
         };
     }
 
-    /// <summary>Архивы значков по виду сущности: значок <c>icon.png</c> каталога сущности мода (<see cref="EntityFolders"/>) встаёт в архив
-    /// значков вида под именем графики сущности (<see cref="ArtNames"/>) — так окно построек находит значок постройки мода без описи.</summary>
-    private static readonly IReadOnlyDictionary<string, string> IconArchives = new Dictionary<string, string>(StringComparer.Ordinal)
-    {
-        ["building"] = "IconBld.ff",
-    };
-
-    private static GfxAssets EntityIcons(ModInfo mod) => GfxAssets.Of(EntityFolders.Scan(mod)
-        .Where(f => f.Icon is not null && IconArchives.ContainsKey(f.Kind.Name))
-        .GroupBy(f => IconArchives[f.Kind.Name])
+    /// <summary>Картинки каталогов сущностей мода (<see cref="EntityArt"/>: <c>icon.png</c> постройки…) — в архивы графики под именем графики
+    /// сущности (<see cref="ArtNames"/>): окна находят значок постройки мода без описи. Файл крупнее места в целое число раз — HD
+    /// (<see cref="GfxImage.Scale"/>, размер — логический); иного размера — как есть.</summary>
+    internal static GfxAssets EntityIcons(ModInfo mod) => GfxAssets.Of(EntityFolders.Scan(mod)
+        .SelectMany(f => EntityArt.Of(f.Kind.Name).Select(slot => (Folder: f, Slot: slot, Path: Path.Combine(f.Dir, slot.File))))
+        .Where(a => File.Exists(a.Path))
+        .GroupBy(a => a.Slot.Archive)
         .Select(g => new GfxArchive
         {
             Archive = g.Key,
-            Images = [.. g.Select(f => Icon(f.Id, f.Icon!))],
+            Images = [.. g.Select(a => Icon(a.Folder.Id, a.Slot, a.Path))],
         }));
 
-    private static GfxImage Icon(string id, string path)
+    private static GfxImage Icon(string id, EntityArtSlot slot, string path)
     {
         var (w, h) = PngSize(path);
-        return new GfxImage { Name = ArtNames.Of(id), File = path, W = w, H = h };
+        string name = EntityArt.FrameName(id, slot);
+        return EntityArt.ScaleOf(slot, w, h) is { } k
+            ? new GfxImage { Name = name, File = path, W = slot.W, H = slot.H, Scale = k > 1 ? k : null }
+            : new GfxImage { Name = name, File = path, W = w, H = h };
     }
 
     /// <summary>Размер PNG по заголовку (IHDR); не PNG — 0×0.</summary>
@@ -324,8 +332,7 @@ public sealed class GameContent
     {
         Span<byte> head = stackalloc byte[24];
         using var file = File.OpenRead(path);
-        if (file.Read(head) < 24) return (0, 0);
-        return (System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(head[16..]), System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(head[20..]));
+        return file.Read(head) < 24 ? (0, 0) : EntityArt.PngSize(head);
     }
 
     private static UiFlow? LoadFlow(string path) => File.Exists(path) ? UiFlows.Load(path) : null;

@@ -125,6 +125,7 @@ public partial class BattleScreen : Node
                                          PlayerIsAttacker) { HoldTurnStart = true };
             _scene = new BattleScene(screen, GameData.Content.Gfx, BaseUnit(), DeathRace())
             {
+                OwnArt = GameData.Content.EntityFrames.Contains,   // свои лицо и портрет юнита мода (Студия 2)
                 Layout = layout,
                 MainShowsAttackers = !PlayerIsAttacker,   // до хода человека — группа врага
                 Animated = BattleAnim,
@@ -397,7 +398,7 @@ public partial class BattleScreen : Node
     {
         var card = GameData.Content.Screens.FirstOrDefault(s => s.Id == "DLG_R_C_UNIT");
         if (card?.Elements.FirstOrDefault(e => e.Id == "IMG_UNIT_ICON")?.Rect is not { } slot) return;
-        string name = BaseUnit()(unit.Type.Id).ToUpperInvariant();
+        string name = LastEdict.Data.Content.EntityArt.Prefer("Events", ArtNames.Of(unit.Type.Id), BaseUnit()(unit.Type.Id).ToUpperInvariant(), GameData.Content.EntityFrames.Contains);
         if (GameData.Content.Gfx.Image("Events", name) is not { } info) return;
         if (GfxAssets.PathOf(info, GameData.GfxRoot) is not { } path || !File.Exists(path)) return;
         if (GfxTextures.Of(path) is not { } texture) return;   // общий кэш графики мира: HD логического размера, не холст в логических точках

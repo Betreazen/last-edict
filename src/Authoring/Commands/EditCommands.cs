@@ -66,8 +66,7 @@ public sealed record AddEntity(string Kind, string EntityName, JsonObject Body, 
     {
         ArgumentNullException.ThrowIfNull(doc);
         _ = ContentSet.KindNamed(Kind);
-        if (EntityName.Length == 0 || !EntityName.All(c => c is (>= 'a' and <= 'z') or (>= '0' and <= '9') or '-'))
-            throw new InvalidOperationException($"имя «{EntityName}» — только строчные латинские буквы, цифры и «-» (оно же каталог и часть id)");
+        CheckName(EntityName);
         string id = EntityFolders.IdOf(doc.ModId, ContentSet.KindNamed(Kind), EntityName);
         if (doc.Find(id) is not null) throw new InvalidOperationException($"«{id}» уже есть в моде");
         var node = new JsonObject { ["id"] = id };
@@ -78,6 +77,15 @@ public sealed record AddEntity(string Kind, string EntityName, JsonObject Body, 
 
     public JsonObject ToJson() =>
         new() { ["op"] = "add", ["kind"] = Kind, ["name"] = EntityName, ["folder"] = Folder, ["body"] = Body.DeepClone() };
+
+    /// <summary>Имя сущности мода (каталог и часть id): строчные латинские буквы, цифры и «-»; иначе — отказ с текстом.</summary>
+    public static void CheckName(string name)
+    {
+        if (string.IsNullOrEmpty(name) || !name.All(c => c is (>= 'a' and <= 'z') or (>= '0' and <= '9') or '-'))
+            throw new InvalidOperationException($"имя «{name}» — только строчные латинские буквы, цифры и «-» (оно же каталог и часть id)");
+        if (LegacyIds.LooksLegacy(name))
+            throw new InvalidOperationException($"имя «{name}» похоже на id оригинала — графика такой сущности назвалась бы как графика оригинала");
+    }
 }
 
 /// <summary>Убрать сущность из слоя мода: своя исчезает, правка чужой — отменяется (действует базовая).</summary>
@@ -113,6 +121,67 @@ public sealed record SetText(string Id, string Language, string Key, string? Tex
     public JsonObject ToJson() => new() { ["op"] = "text", ["id"] = Id, ["lang"] = Language, ["key"] = Key, ["text"] = Text };
 }
 
+/// <summary>Картинка сущности-каталога мода (<see cref="EntityArt"/>: <c>icon.png</c> постройки…): байты PNG; null — убрать. Картинка лежит в
+/// документе — выбор и замена отменяются, как любая правка, а на диск идут при записи мода.</summary>
+public sealed record SetFile(string Id, string FileName, ImmutableArray<byte>? Bytes) : IEditCommand
+{
+    public string Name => Bytes is null ? $"убрать {FileName} у {Id}" : $"{FileName} у {Id}";
+
+    public ModDocument Apply(ModDocument doc)
+    {
+        ArgumentNullException.ThrowIfNull(doc);
+        if (doc.Find(Id) is not { Source: EntitySource.Folder } entity)
+            throw new InvalidOperationException($"картинки — у сущности-каталога мода; «{Id}» не она");
+        if (EntityArt.Find(entity.Kind, FileName) is not { } slot)
+            throw new InvalidOperationException($"у {entity.Kind} нет картинки «{FileName}» (есть: {string.Join(", ", EntityArt.Of(entity.Kind).Select(s => s.File))})");
+        if (Bytes is not { } bytes) return entity.Files.ContainsKey(slot.File) ? doc.With(entity with { Files = entity.Files.Remove(slot.File) }) : doc;
+        var (w, h) = EntityArt.PngSize(bytes.AsSpan());
+        if (w <= 0 || h <= 0 || bytes.Length < 45)   // подпись, IHDR, IDAT и IEND — не меньше 45 байт
+            throw new InvalidOperationException($"{FileName}: это не PNG (или файл оборван)");
+        return doc.With(entity with { Files = entity.Files.SetItem(slot.File, bytes) });
+    }
+
+    public JsonObject ToJson() => new()
+    {
+        ["op"] = "file", ["id"] = Id, ["name"] = FileName, ["png"] = Bytes is { } b ? Convert.ToBase64String(b.AsSpan()) : null,
+    };
+}
+
+/// <summary>Переименовать свою сущность-каталог: новое имя каталога и id (<c>мод:вид/новое</c>), ссылки на неё в документе мода (требования,
+/// списки лорда, постройки найма…) переходят на новый id; строки и картинки — с ней, место в документе — то же.</summary>
+public sealed record RenameEntity(string Id, string NewName) : IEditCommand
+{
+    public string Name => $"переименовать {Id} в {NewName}";
+
+    public ModDocument Apply(ModDocument doc)
+    {
+        ArgumentNullException.ThrowIfNull(doc);
+        if (doc.Find(Id) is not { Source: EntitySource.Folder } || !Id.StartsWith(doc.ModId + ":", StringComparison.Ordinal))
+            throw new InvalidOperationException($"переименовать можно только свою сущность-каталог; «{Id}» не она");
+        AddEntity.CheckName(NewName);
+        string id = EntityFolders.IdOf(doc.ModId, ContentSet.KindNamed(ModDocument.KindOf(Id)), NewName);
+        if (id == Id) return doc;
+        if (doc.Find(id) is not null) throw new InvalidOperationException($"«{id}» уже есть в моде");
+        return doc.WithEntities(doc.Entities.ConvertAll(e =>
+        {
+            var node = (JsonObject)Replace(e.Node, Id, id);   // и само поле id переименованной
+            if (e.Id == Id) return e with { Id = id, Node = node };
+            return JsonNode.DeepEquals(node, e.Node) ? e : e with { Node = node };
+        }));
+    }
+
+    /// <summary>Копия узла, где строки, равные <paramref name="from"/>, — <paramref name="to"/>.</summary>
+    private static JsonNode Replace(JsonNode node, string from, string to) => node switch
+    {
+        JsonObject o => new JsonObject(o.Select(p => KeyValuePair.Create(p.Key, p.Value is null ? null : Replace(p.Value, from, to)))),
+        JsonArray a => new JsonArray([.. a.Select(v => v is null ? null : Replace(v, from, to))]),
+        JsonValue v when v.GetValueKind() == JsonValueKind.String && v.GetValue<string>() == from => JsonValue.Create(to),
+        _ => node.DeepClone(),
+    };
+
+    public JsonObject ToJson() => new() { ["op"] = "rename", ["id"] = Id, ["name"] = NewName };
+}
+
 /// <summary>Несколько команд одним шагом отмены (перенос значка в дереве — столбец и строка).</summary>
 public sealed record Batch(string Label, IReadOnlyList<IEditCommand> Commands) : IEditCommand
 {
@@ -138,6 +207,8 @@ public static class EditCommands
                                    json["folder"]?.GetValueKind() != JsonValueKind.False),
             "remove" => new RemoveEntity(Str(json, "id")),
             "text" => new SetText(Str(json, "id"), Str(json, "lang"), Str(json, "key"), json["text"]?.GetValue<string>()),
+            "file" => new SetFile(Str(json, "id"), Str(json, "name"), FileBytes(json)),
+            "rename" => new RenameEntity(Str(json, "id"), Str(json, "name")),
             "batch" => new Batch(json["name"]?.GetValue<string>() ?? "правки",
                                  [.. (json["commands"] as JsonArray ?? []).OfType<JsonObject>().Select(Parse)]),
             _ => throw new InvalidDataException($"неизвестная команда «{op}»"),
@@ -151,6 +222,13 @@ public static class EditCommands
         var array = root as JsonArray ?? root?["commands"] as JsonArray ?? throw new InvalidDataException("сценарий: ждали массив команд");
         return [.. array.OfType<JsonObject>().Select(Parse)];
     }
+
+    /// <summary>Байты картинки команды <c>file</c>: <c>png</c> — base64 (так пишет журнал), <c>from</c> — путь к PNG (сценарий
+    /// <c>d2mod apply</c>); ни того, ни другого — убрать картинку.</summary>
+    private static ImmutableArray<byte>? FileBytes(JsonObject json) =>
+        json["png"]?.GetValue<string>() is { } b64 ? ImmutableArray.Create(Convert.FromBase64String(b64))
+        : json["from"]?.GetValue<string>() is { } path ? ImmutableArray.Create(File.ReadAllBytes(path))
+        : null;
 
     private static string Str(JsonObject json, string key) =>
         json[key]?.GetValue<string>() is { } s ? s : throw new InvalidDataException($"команда {json.ToJsonString()}: нет поля «{key}»");

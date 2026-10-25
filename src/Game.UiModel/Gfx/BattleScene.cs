@@ -114,6 +114,13 @@ public sealed class BattleScene
         _deathRace = deathRace;
     }
 
+    /// <summary>Кадр — картинка сущности мода («Архив:ИМЯ», <see cref="LastEdict.Data.Content.GameContent.EntityFrames"/>): свои лицо и портрет
+    /// юнита мода главнее картинок базового (<see cref="LastEdict.Data.Content.EntityArt.Prefer"/>); анимации — всегда базового.</summary>
+    public Func<string, bool>? OwnArt { get; init; }
+
+    private string FaceName(string type, string suffix) =>
+        LastEdict.Data.Content.EntityArt.Prefer("Faces", LastEdict.Data.Ui.ArtNames.Of(type) + suffix, _baseUnit(type) + suffix, OwnArt);
+
     /// <summary>Имена, которых нет в графике.</summary>
     public IReadOnlyList<string> Missing => _missing;
 
@@ -363,7 +370,7 @@ public sealed class BattleScene
     public BattleSprite? Portrait(BattleUnit unit)
     {
         ArgumentNullException.ThrowIfNull(unit);
-        string name = _baseUnit(unit.Type.Id) + "FACE";
+        string name = FaceName(unit.Type.Id, "FACE");
         if (_gfx.Image("Faces", name) is { } image)
         {
             var slot = PanelFace(unit, image.W);
@@ -388,7 +395,7 @@ public sealed class BattleScene
     public BattleSprite? BigFace(BattleUnit unit)
     {
         ArgumentNullException.ThrowIfNull(unit);
-        string name = _baseUnit(unit.Type.Id) + "FACEB";
+        string name = FaceName(unit.Type.Id, "FACEB");
         var slot = BigFaceSlot(unit.Attacker);
         if (_gfx.Image("Faces", name) is { } image)
             return new BattleSprite("Faces", image.Name, slot.X, slot.Y, PanelLayer + 1, unit.Id);

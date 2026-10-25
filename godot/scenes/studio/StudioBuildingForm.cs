@@ -102,7 +102,7 @@ public partial class StudioBuildingForm : ScrollContainer
         foreach (var (id, title) in Currencies)
         {
             cost.AddChild(new Label { Text = title, ThemeTypeVariation = SettingsTheme.HelpLabel });
-            var spin = new SpinBox { MinValue = 0, MaxValue = 100000, Step = 25, SizeFlagsHorizontal = SizeFlags.ExpandFill };
+            var spin = new SpinBox { MinValue = 0, MaxValue = 100000, Step = 1, CustomArrowStep = 25, SizeFlagsHorizontal = SizeFlags.ExpandFill };
             _cost[id] = spin;
             cost.AddChild(spin);
         }

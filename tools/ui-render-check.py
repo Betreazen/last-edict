@@ -1247,6 +1247,11 @@ STUDIO_STEPS = [
     {"op": "unit-attack", "damage": 40},
     {"op": "unit-aura", "modifier": "base:modifier/holy-armor", "reach": "adjacent"},
     {"op": "unit-immune", "source": "fire"},
+    {"op": "item-select", "id": "base:item/tome-of-air"},
+    {"op": "item-new", "title": "Кольцо стража"},
+    {"op": "item-form", "gold": 777, "equip": "base:modifier/holy-armor"},
+    {"op": "item-apply"},
+    {"op": "item-picture", "path": "{face}"},
     {"op": "unit-picture", "file": "face.png", "path": "{face}"},
     {"op": "undo"},
     {"op": "redo"},
@@ -1286,6 +1291,11 @@ STUDIO_WANTS = [
     ("unit-attack", ["ok=1", "errors=0", "атака_эффект=base:effect/damage"]),
     ("unit-aura", ["ok=1", "errors=0", "ауры=1"]),
     ("unit-immune", ["ok=1", "errors=0"]),
+    ("item-select", ["ok=1", "items: selected=base:item/tome-of-air"]),
+    ("item-new", ["ok=1", "selected=towers:item/koltso-strazha", "own=1"]),
+    ("item-form", ["ok=1"]),
+    ("item-apply", ["ok=1", "errors=0"]),
+    ("item-picture", ["ok=1", "значок=1", "errors=0"]),
     ("unit-picture", ["ok=1", "errors=0"]),
     ("undo", ["ok=1", "own=1"]),
     ("redo", ["ok=1", "own=1"]),
@@ -1360,11 +1370,15 @@ def studio(repo: Path) -> tuple[bool, str]:
             or json.loads(attack.read_text(encoding="utf-8")).get("damage") != 40 \
             or png_size(mod / "content" / "units" / "alebardshchik" / "face.png") != (140, 170):
         return False, f"Студия: юнит формой — {unit}"
+    item = json.loads((mod / "content" / "items" / "koltso-strazha" / "entity.json").read_text(encoding="utf-8"))
+    if item.get("equipModifier") != "base:modifier/holy-armor" or item.get("value") != {"gold": 777} \
+            or png_size(mod / "content" / "items" / "koltso-strazha" / "icon.png") != (140, 170):
+        return False, f"Студия: предмет формой — {item}"
     icon = mod / "content" / "buildings" / "mage-tower" / "icon.png"
     if not icon.is_file() or (size := png_size(icon)) != (231, 222):
         return False, f"Студия: значок постройки формой — {icon} {'нет' if not icon.is_file() else size}, ждали 231×222 (77×74 ×3)"
     shutil.rmtree(mod.parent, ignore_errors=True)
-    return True, (f"Студия: {len(lines)} шагов — дерево, постройка формой со значком (HD ×3), юнит на основе сквайра (своя атака, аура, иммунитет, лицо ×2), "
+    return True, (f"Студия: {len(lines)} шагов — дерево, постройка формой со значком (HD ×3), юнит на основе сквайра (своя атака, аура, иммунитет, лицо ×2), предмет со значком, "
                   "содержимое, арена, карта 1024², запись мода")
 
 

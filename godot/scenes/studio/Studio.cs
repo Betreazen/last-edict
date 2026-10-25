@@ -126,7 +126,7 @@ public partial class Studio : Control
         _tabs.AddChild(_lordsTab);
         _tabs.AddChild(_contentTab);
         _tabs.AddChild(_balanceTab);
-        _mapTab = new StudioMapTab(_mapWs!, PlayMap) { Name = "Карта" };
+        _mapTab = new StudioMapTab(_mapWs!, PlayMap, FrameTexture) { Name = "Карта" };
         _tabs.AddChild(_mapTab);
 
         _lord.ItemSelected += i => { _tree!.SelectLord(_tree.Lords[(int)i].Id); Sync(); };
@@ -317,6 +317,13 @@ public partial class Studio : Control
                     "map-stroke" => Do(() => { _mapWs!.Brush = Enum.Parse<MapBrush>(step["brush"]?.GetValue<string>() ?? "Forest"); _mapWs.Radius = step["radius"]?.GetValue<int>() ?? 1; _mapTab!.Stroke(step["x0"]!.GetValue<int>(), step["y0"]!.GetValue<int>(), step["x1"]!.GetValue<int>(), step["y1"]!.GetValue<int>()); }),
                     "map-undo" => Do(() => { _mapWs!.Undo(); _mapTab!.Sync(); }),
                     "map-save" => Do(() => _mapWs!.Save()),
+                    "map-place" => _mapTab!.PlaceAt(step["kind"]!.GetValue<string>(), step["x"]!.GetValue<int>(), step["y"]!.GetValue<int>(),
+                        (step["units"] as JsonArray)?.Select(u => u!.GetValue<string>()), (step["items"] as JsonArray)?.Select(i => i!.GetValue<string>()),
+                        step["owner"]?.GetValue<string>()),
+                    "map-select" => _mapTab!.SelectAt(step["x"]!.GetValue<int>(), step["y"]!.GetValue<int>()),
+                    "map-move" => _mapTab!.MoveSelected(step["x"]!.GetValue<int>(), step["y"]!.GetValue<int>()),
+                    "map-remove" => _mapWs!.Selected is { } removing && _mapWs.Remove(removing),
+                    "map-check" => Do(() => GD.Print($"map-check нарушений={_mapWs!.Check().Count} {string.Join(" | ", _mapWs.Check().Take(3))}")),
                     "map-open" => Do(() => _mapTab!.Open(step["id"]!.GetValue<string>())),
                     _ => session.Do(EditCommands.Parse(step)),
                 };

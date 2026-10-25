@@ -12,7 +12,9 @@ namespace LastEdict.Godot;
 /// Пространство «Карта» (<see cref="MapWorkspace"/>, Р6, Р16): слева — карты мода, новая карта (сторона любая, игроки), кисть (грунт или
 /// земля расы, радиус), отмена, запись и «Играть»; справа — карта клетка-в-точку с зумом к курсору и сдвигом средней кнопкой (тот же
 /// <see cref="ZoomView"/>, что у окна построек; на 1024² видна целиком), кисть — левой кнопкой, мазок — одна команда отмены. Перекрашиваются
-/// только задетые клетки.
+/// только задетые клетки. Инструмент (Студия 2): кисть, объект палитры (ставится щелчком в клетку — левый верхний угол) или выбор (щелчок —
+/// объект, тащение — перенос, Delete — убрать); объекты — метками на карте, справа — что ставить и свойства выбранного
+/// (<see cref="StudioMapObjectsPanel"/>). Отмена — общая для мазков и объектов.
 /// </summary>
 public partial class StudioMapTab : HSplitContainer, IStudioTab
 {
@@ -27,11 +29,17 @@ public partial class StudioMapTab : HSplitContainer, IStudioTab
     private readonly SpinBox _radius = new() { MinValue = 0, MaxValue = 3, Value = 1, Prefix = "радиус" };
     private readonly Label _info = new() { ThemeTypeVariation = SettingsTheme.HelpLabel, AutowrapMode = TextServer.AutowrapMode.WordSmart };
     private readonly MapCanvas _canvas;
+    private readonly OptionButton _tool = new();
+    private readonly StudioMapObjectsPanel _panel;
+
+    /// <summary>Инструмент холста: null — кисть, вид объекта — поставить, <see cref="SelectTool"/> — выбор и перенос.</summary>
+    private MapObjectKind? _placing;
+    private bool _selecting;
 
     private static readonly (string Name, MapBrush Brush)[] Brushes =
         [("Равнина", MapBrush.Plain), ("Лес", MapBrush.Forest), ("Вода", MapBrush.Water), ("Горы", MapBrush.Mountain), ("Земля расы", MapBrush.Land)];
 
-    public StudioMapTab(MapWorkspace ws, Action<string> play)
+    public StudioMapTab(MapWorkspace ws, Action<string> play, Func<string, Texture2D?> texture)
     {
         _ws = ws ?? throw new ArgumentNullException(nameof(ws));
         _play = play ?? throw new ArgumentNullException(nameof(play));
@@ -47,7 +55,11 @@ public partial class StudioMapTab : HSplitContainer, IStudioTab
         foreach (var kind in Enum.GetValues<TerrainKind>()) _land.AddItem(kind.ToString());
         _land.ItemSelected += i => _ws.Land = Enum.GetValues<TerrainKind>()[(int)i];
         _radius.ValueChanged += v => _ws.Radius = (int)v;
-        var undo = new Button { Text = "Отменить мазок" };
+        _tool.AddItem("Кисть");
+        _tool.AddItem("Выбор и перенос");
+        foreach (var (title, _) in StudioMapObjectsPanel.Kinds) _tool.AddItem($"Объект: {title}");
+        _tool.ItemSelected += i => Tool((int)i);
+        var undo = new Button { Text = "Отменить" };
         undo.Pressed += () => { _ws.Undo(); _canvas!.Sync(); };
         var redo = new Button { Text = "Повторить" };
         redo.Pressed += () => { _ws.Redo(); _canvas!.Sync(); };
@@ -59,12 +71,81 @@ public partial class StudioMapTab : HSplitContainer, IStudioTab
                  {
                      new Label { Text = "Карты мода", ThemeTypeVariation = SettingsTheme.GroupLabel }, _maps, open,
                      new Label { Text = "Новая", ThemeTypeVariation = SettingsTheme.GroupLabel }, _id, _size, _seats, create,
+                     new Label { Text = "Инструмент", ThemeTypeVariation = SettingsTheme.GroupLabel }, _tool,
                      new Label { Text = "Кисть", ThemeTypeVariation = SettingsTheme.GroupLabel }, _brush, _land, _radius, undo, redo, save, playMap, _info,
                  })
             left.AddChild(c);
         AddChild(left);
-        _canvas = new MapCanvas(ws) { SizeFlagsHorizontal = SizeFlags.ExpandFill, ClipContents = true };
-        AddChild(_canvas);
+        _canvas = new MapCanvas(ws, this) { SizeFlagsHorizontal = SizeFlags.ExpandFill, ClipContents = true };
+        _panel = new StudioMapObjectsPanel(ws, texture);
+        var right = new HSplitContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        right.AddChild(_canvas);
+        right.AddChild(_panel);
+        AddChild(right);
+    }
+
+    /// <summary>Инструмент по пункту списка: 0 — кисть, 1 — выбор, дальше — объекты палитры.</summary>
+    public void Tool(int index)
+    {
+        _tool.Selected = index;
+        _selecting = index == 1;
+        _placing = index >= 2 ? StudioMapObjectsPanel.Kinds[index - 2].Kind : null;
+    }
+
+    /// <summary>Щелчок по клетке инструментом (не кистью): поставить объект или выбрать. Возвращает «сделано».</summary>
+    private bool Click(int x, int y)
+    {
+        if (_placing is { } kind)
+        {
+            bool done = _ws.Place(kind, x, y, _panel.Placement());
+            Sync();
+            return done;
+        }
+        if (_selecting)
+        {
+            _ws.Select(_ws.Reader?.At(x, y)?.Id);
+            Sync();
+            return true;
+        }
+        return false;
+    }
+
+    /// <summary>Перенос выбранного объекта в клетку (тащение инструментом «Выбор»).</summary>
+    private void Drop(int x, int y)
+    {
+        if (_ws.Selected is { } id && _ws.Objects.FirstOrDefault(o => o.Id == id) is { } o && (o.X, o.Y) != (x, y)) _ws.Move(id, x, y);
+        Sync();
+    }
+
+    /// <summary>Шаги проверки без окна: поставить объект (инструмент, размещение, щелчок), выбрать, перенести, убрать.</summary>
+    public bool PlaceAt(string kind, int x, int y, IEnumerable<string>? units, IEnumerable<string>? items, string? owner)
+    {
+        Tool(2 + Array.FindIndex(StudioMapObjectsPanel.Kinds, k => k.Kind.ToString().Equals(kind, StringComparison.OrdinalIgnoreCase)));
+        _panel.Set(units, items, owner);
+        return Click(x, y);
+    }
+
+    public bool SelectAt(int x, int y)
+    {
+        Tool(1);
+        Click(x, y);
+        return _ws.Selected is not null;
+    }
+
+    public bool MoveSelected(int x, int y)
+    {
+        Drop(x, y);
+        return true;
+    }
+
+    public override void _UnhandledKeyInput(InputEvent e)
+    {
+        if (e is InputEventKey { Pressed: true, Keycode: Key.Delete } && _ws.Selected is { } id && IsVisibleInTree())
+        {
+            _ws.Remove(id);
+            Sync();
+            GetViewport().SetInputAsHandled();
+        }
     }
 
     public void New(string id, int size, int seats)
@@ -100,15 +181,40 @@ public partial class StudioMapTab : HSplitContainer, IStudioTab
             _maps.Clear();
             foreach (string m in maps) _maps.AddItem(m);
         }
-        _info.Text = _ws.Id is null ? "карта не открыта" : $"{_ws.Id}: {_ws.Size}×{_ws.Size}, клеток изменено {_ws.Changed}" + (_ws.Dirty ? " *" : "");
+        _info.Text = _ws.Id is null ? "карта не открыта" : $"{_ws.Id}: {_ws.Size}×{_ws.Size}, клеток изменено {_ws.Changed}, объектов {_ws.Objects.Count}" + (_ws.Dirty ? " *" : "");
         _canvas.Sync();
+        _canvas.QueueRedraw();   // метки объектов
+        _panel.Sync();
     }
 
     public string Line() => $"{_ws.Line()} холст={_canvas.Line()}";
 
     /// <summary>Карта клетка-в-точку: картинка RGBA, вид с зумом, кисть мышью.</summary>
-    private sealed partial class MapCanvas(MapWorkspace ws) : Control
+    private sealed partial class MapCanvas(MapWorkspace ws, StudioMapTab tab) : Control
     {
+        /// <summary>Цвет метки объекта по виду.</summary>
+        private static Color Mark(MapObjectKind kind) => kind switch
+        {
+            MapObjectKind.Capital => new Color("#ffd24a"), MapObjectKind.City => new Color("#e8b45a"), MapObjectKind.Ruin => new Color("#b07cff"),
+            MapObjectKind.Merchant or MapObjectKind.Mage or MapObjectKind.Mercenaries or MapObjectKind.Trainer => new Color("#4ad0ff"),
+            MapObjectKind.Crystal => new Color("#7cffb0"), MapObjectKind.Bag => new Color("#ffffff"), MapObjectKind.Landmark => new Color("#9c8f7a"),
+            _ => new Color("#ff5a4a"),
+        };
+
+        private (int X, int Y)? _drag;
+
+        /// <summary>Карта целиком в место холста: и мельче, и крупнее (маленькая карта — крупнее 1:1; <see cref="ZoomView.Reset"/> крупнее
+        /// 1:1 не даёт — так нужно окну построек).</summary>
+        private void Fit()
+        {
+            _view.Reset(Size.X, Size.Y, ws.Size, ws.Size);
+            double fit = Math.Min(Size.X, Size.Y) / Math.Max(1.0, ws.Size);
+            if (fit > _view.Zoom) _view.ZoomAt(Size.X / 2, Size.Y / 2, fit / _view.Zoom);
+        }
+
+        /// <summary>Вид вписан и не тронут (зум, сдвиг) — при смене места вписывается снова.</summary>
+        private bool _fitted;
+
         private Image? _image;
         private ImageTexture? _texture;
         private readonly ZoomView _view = new() { Least = 0.02, Most = 24 };
@@ -124,7 +230,8 @@ public partial class StudioMapTab : HSplitContainer, IStudioTab
             _image.SetData(ws.Size, ws.Size, false, Image.Format.Rgba8, bytes);
             _texture = ImageTexture.CreateFromImage(_image);
             ws.TakeDirty();
-            _view.Reset(Size.X, Size.Y, ws.Size, ws.Size);
+            Fit();
+            _fitted = true;
             QueueRedraw();
         }
 
@@ -164,8 +271,8 @@ public partial class StudioMapTab : HSplitContainer, IStudioTab
         public override void _Notification(int what)
         {
             if (what != NotificationResized || ws.Size == 0) return;
-            // Карта открыта до раскладки (размер был нулём) — вписать её целиком, когда место известно.
-            if (_view.Width <= 1) _view.Reset(Size.X, Size.Y, ws.Size, ws.Size);
+            // Карта открыта до раскладки (размер был нулём) или её ещё не двигали — вписать целиком в новое место.
+            if (_view.Width <= 1 || _fitted) Fit();
             else _view.Resize(Size.X, Size.Y);
             QueueRedraw();
         }
@@ -177,6 +284,15 @@ public partial class StudioMapTab : HSplitContainer, IStudioTab
             TextureFilter = TextureFilterEnum.Nearest;
             DrawSetTransform(new Vector2((float)_view.X, (float)_view.Y), 0, new Vector2((float)_view.Zoom, (float)_view.Zoom));
             DrawTexture(_texture, Vector2.Zero);
+            // Метки объектов: рамка по клеткам объекта, отряд — кружок; выбранный — толще и светлее.
+            float line = (float)Math.Max(0.15, 1.5 / _view.Zoom);
+            foreach (var o in ws.Objects)
+            {
+                bool picked = o.Id == ws.Selected;
+                var color = picked ? Colors.White : Mark(o.Kind);
+                if (o.Kind == MapObjectKind.Stack) DrawCircle(new Vector2(o.X + 0.5f, o.Y + 0.5f), 0.45f, color);
+                else DrawRect(new Rect2(o.X, o.Y, o.W, o.H), color, false, picked ? line * 2 : line);
+            }
             DrawSetTransform(Vector2.Zero, 0, Vector2.One);
         }
 
@@ -186,6 +302,18 @@ public partial class StudioMapTab : HSplitContainer, IStudioTab
             {
                 case InputEventMouseButton { ButtonIndex: MouseButton.WheelUp or MouseButton.WheelDown, Pressed: true } w:
                     _view.ZoomAt(w.Position.X, w.Position.Y, w.ButtonIndex == MouseButton.WheelUp ? 1.25 : 0.8);
+                    _fitted = false;
+                    break;
+                case InputEventMouseButton { ButtonIndex: MouseButton.Left } b when b.Pressed && (tab._placing is not null || tab._selecting):
+                    var at = Cell(b.Position);
+                    tab.Click(at.X, at.Y);
+                    _drag = tab._selecting && ws.Selected is not null ? at : null;
+                    break;
+                case InputEventMouseButton { ButtonIndex: MouseButton.Left } b when !b.Pressed && _drag is not null:
+                    var drop = Cell(b.Position);
+                    if (drop != _drag && ws.Objects.FirstOrDefault(o => o.Id == ws.Selected) is { } moving)
+                        tab.Drop(moving.X + drop.X - _drag.Value.X, moving.Y + drop.Y - _drag.Value.Y);
+                    _drag = null;
                     break;
                 case InputEventMouseButton { ButtonIndex: MouseButton.Left } b when b.Pressed:
                     ws.StrokeBegin();
@@ -199,8 +327,9 @@ public partial class StudioMapTab : HSplitContainer, IStudioTab
                     break;
                 case InputEventMouseMotion m when m.ButtonMask.HasFlag(MouseButtonMask.Middle):
                     _view.Pan(m.Relative.X, m.Relative.Y);
+                    _fitted = false;
                     break;
-                case InputEventMouseMotion m when m.ButtonMask.HasFlag(MouseButtonMask.Left) && _last is { } from:
+                case InputEventMouseMotion m when m.ButtonMask.HasFlag(MouseButtonMask.Left) && _last is { } from && tab._placing is null && !tab._selecting:
                     var to = Cell(m.Position);
                     foreach (var (x, y) in Line(from.X, from.Y, to.X, to.Y)) ws.Paint(x, y);
                     _last = to;

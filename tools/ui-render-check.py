@@ -1267,6 +1267,14 @@ STUDIO_STEPS = [
     {"op": "map-stroke", "x0": 100, "y0": 100, "x1": 300, "y1": 180, "brush": "Water", "radius": 3},
     {"op": "map-undo"},
     {"op": "map-stroke", "x0": 10, "y0": 500, "x1": 1000, "y1": 520, "brush": "Mountain", "radius": 2},
+    {"op": "map-place", "kind": "City", "x": 600, "y": 600, "units": ["base:unit/squire-empire"]},
+    {"op": "map-place", "kind": "Ruin", "x": 620, "y": 600, "units": ["base:unit/archer"], "items": ["base:item/tome-of-air"]},
+    {"op": "map-place", "kind": "Bag", "x": 610, "y": 620, "items": ["base:item/tome-of-air"]},
+    {"op": "map-place", "kind": "Stack", "x": 605, "y": 615, "units": ["base:unit/squire-empire", "base:unit/archer"]},
+    {"op": "map-place", "kind": "Bag", "x": 601, "y": 601},
+    {"op": "map-select", "x": 605, "y": 615},
+    {"op": "map-move", "x": 606, "y": 616},
+    {"op": "map-check"},
     {"op": "map-save"},
     {"op": "save"},
 ]
@@ -1314,6 +1322,14 @@ STUDIO_WANTS = [
     ("map-stroke", ["ok=1", "undo=1"]),
     ("map-undo", ["ok=1", "undo=0", "redo=1"]),
     ("map-stroke", ["ok=1", "undo=1", "redo=0"]),
+    ("map-place", ["ok=1", "undo=2"]),
+    ("map-place", ["ok=1", "undo=3"]),
+    ("map-place", ["ok=1", "undo=4"]),
+    ("map-place", ["ok=1", "undo=5"]),
+    ("map-place", ["ok=0", "undo=5"]),
+    ("map-select", ["ok=1", "selected=S"]),
+    ("map-move", ["ok=1", "undo=6"]),
+    ("map-check", ["ok=1"]),
     ("map-save", ["ok=1", "dirty=0"]),
     ("save", ["ok=1", "dirty=0"]),
 ]
@@ -1361,6 +1377,8 @@ def studio(repo: Path) -> tuple[bool, str]:
     script.write_text(json.dumps(steps, ensure_ascii=False), encoding="utf-8")
     code, out = godot(repo, ["--open", str(mod), "--check", "--script", str(script)], "res://scenes/studio/Studio.tscn")
     lines = [l for l in out.splitlines() if l.startswith("step ")]
+    if (check := next((l for l in out.splitlines() if l.startswith("map-check ")), "")) and "нарушений=0" not in check:
+        return False, f"Студия: карта с объектами — {check}"
     if code != 0 or len(lines) != len(STUDIO_WANTS):
         return False, f"Студия: код {code}, шагов {len(lines)} из {len(STUDIO_WANTS)}\n{out[-3000:]}"
     for (op, wants), line in zip(STUDIO_WANTS, lines):
@@ -1385,7 +1403,8 @@ def studio(repo: Path) -> tuple[bool, str]:
         return False, f"Студия: значок постройки формой — {icon} {'нет' if not icon.is_file() else size}, ждали 231×222 (77×74 ×3)"
     shutil.rmtree(mod.parent, ignore_errors=True)
     return True, (f"Студия: {len(lines)} шагов — дерево, постройка формой со значком (HD ×3), юнит на основе сквайра (своя атака, аура, иммунитет, лицо ×2), предмет со значком, лорд с исследованием, "
-                  "содержимое, арена, карта 1024², запись мода")
+                  "содержимое, арена, "
+                  "карта 1024² с объектами (город, руина, мешок, отряд; перенос; нарушений 0), запись мода")
 
 
 def mod_battle(repo: Path) -> tuple[bool, str]:

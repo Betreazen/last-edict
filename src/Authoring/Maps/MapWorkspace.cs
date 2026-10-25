@@ -1,6 +1,8 @@
 using System.Text.Json.Nodes;
 using LastEdict.Authoring.Workspaces;
+using LastEdict.Data.Content;
 using LastEdict.Data.Content.Schema;
+using LastEdict.Data.Diagnostics;
 using LastEdict.Data.Play;
 
 namespace LastEdict.Authoring.Maps;
@@ -8,26 +10,41 @@ namespace LastEdict.Authoring.Maps;
 /// <summary>Кисть редактора карт: грунт (равнина, лес, вода, горы) или земля расы (владелец клетки).</summary>
 public enum MapBrush { Plain = 0, Forest = 1, Water = 3, Mountain = 4, Land = 8 }
 
+/// <summary>Правка карты в истории: мазок кисти или правка объектов.</summary>
+public interface IMapEdit
+{
+    string Name { get; }
+}
+
 /// <summary>Мазок кисти — одна команда отмены: клетки и их байты до и после.</summary>
-public sealed record MapStroke(IReadOnlyList<(int Index, byte Before, byte After)> Cells);
+public sealed record MapStroke(IReadOnlyList<(int Index, byte Before, byte After)> Cells) : IMapEdit
+{
+    public string Name => $"мазок ({Cells.Count} клеток)";
+}
+
+/// <summary>Правка объектов — одна команда отмены: объектная часть сценария до и после (без клеток и тумана — они большие и правкой
+/// объектов не меняются).</summary>
+public sealed record MapObjectEdit(string Name, JsonObject Before, JsonObject After) : IMapEdit;
 
 /// <summary>
-/// Рабочее пространство Студии «Карта» (Э6, Р6, Р16): карта мода любой стороны (квадрат, без потолка площади) — новая
+/// Рабочее пространство Студии «Карта» (Э6, Р6, Р16; объекты — Студия 2): карта мода любой стороны (квадрат, без потолка площади) — новая
 /// (<see cref="MapFactory"/>) или из <c>data/scenarios</c> мода; кисть грунта и земли расы радиусом 0…3 (1/3/5/7 клеток, как у ScenEdit),
-/// мазок за время зажатой кнопки — одна команда отмены (меняются только задетые клетки: на 1024² отмена не копирует карту); запись — в
-/// <c>data/scenarios/&lt;id&gt;.json</c> мода и карточка в <c>data/game/scenarios.json</c> мода (игра видит карту в списке сценариев).
-/// Вид — картинка карты клетка-в-точку (<see cref="Rgba"/>), окно Студии обновляет только задетые клетки (<see cref="TakeDirty"/>).
+/// мазок за время зажатой кнопки — одна команда отмены (меняются только задетые клетки: на 1024² отмена не копирует карту); объекты палитры
+/// (<see cref="MapObjects"/>: столица, город, руина, лавки, кристалл, мешок, ориентир, отряд) — поставить, сдвинуть, убрать, свойства; одна
+/// история с мазками. Запись — в <c>data/scenarios/&lt;id&gt;.json</c> мода и карточка в <c>data/game/scenarios.json</c> мода. Вид — картинка
+/// карты клетка-в-точку (<see cref="Rgba"/>), окно Студии обновляет только задетые клетки (<see cref="TakeDirty"/>) и рисует объекты метками.
 /// </summary>
 public sealed class MapWorkspace(StudioSession session)
 {
-    private readonly Stack<MapStroke> _undo = new(), _redo = new();
+    private readonly Stack<IMapEdit> _undo = new(), _redo = new();
     private readonly Dictionary<int, byte> _strokeBefore = [];
     private readonly HashSet<int> _dirty = [];
-    private ScenarioData? _scenario;
+    private JsonObject? _doc;
+    private IReadOnlyList<MapObject>? _objects;
 
     public StudioSession Session { get; } = session ?? throw new ArgumentNullException(nameof(session));
 
-    public string? Id => _scenario?.Id;
+    public string? Id { get; private set; }
 
     public int Size { get; private set; }
 
@@ -53,6 +70,17 @@ public sealed class MapWorkspace(StudioSession session)
     /// <summary>Клеток, изменённых за всё время правки (для строки проверки).</summary>
     public int Changed { get; private set; }
 
+    /// <summary>Выбранный объект (свойства — в окне); нет — null.</summary>
+    public string? Selected { get; private set; }
+
+    private ContentSet Content => Session.Report.Content ?? Session.BaseContent;
+
+    /// <summary>Объекты открытой карты.</summary>
+    public IReadOnlyList<MapObject> Objects => _objects ??= _doc is null ? [] : new MapObjects(_doc, Content).All();
+
+    /// <summary>Объекты карты для чтения свойств (место, отряд, игроки); карта не открыта — null.</summary>
+    public MapObjects? Reader => _doc is null ? null : new MapObjects(_doc, Content);
+
     /// <summary>Карты мода (<c>data/scenarios</c>).</summary>
     public IReadOnlyList<string> Maps
     {
@@ -75,10 +103,9 @@ public sealed class MapWorkspace(StudioSession session)
         if (!ValidId(id)) return Session.Refuse($"id карты «{id}» — только строчные латинские буквы, цифры и «-»");
         if (Maps.Contains(id, StringComparer.OrdinalIgnoreCase)) return Session.Refuse($"карта «{id}» в моде уже есть — откройте её или возьмите другой id");
         if (size > MaxNewSide) return Session.Refuse($"сторона {size} — больше {MaxNewSide} новая карта в Студии не собирается");
-        var content = Session.Report.Content ?? Session.BaseContent;
         try
         {
-            Load(MapFactory.Create(content, new NewMapOptions(id, size, seats, seed)));
+            Load(MapFactory.Create(Content, new NewMapOptions(id, size, seats, seed)));
         }
         catch (ArgumentException e)
         {
@@ -107,7 +134,8 @@ public sealed class MapWorkspace(StudioSession session)
 
     private void Load(ScenarioData scenario)
     {
-        _scenario = scenario;
+        Id = scenario.Id;
+        _doc = JsonNode.Parse(ScenarioFile.ToJson(scenario)) as JsonObject ?? throw new InvalidDataException("сценарий — не объект JSON");
         var map = scenario.Looks.Map;
         Size = map.Size;
         Tiles = new byte[Size * Size];
@@ -117,6 +145,8 @@ public sealed class MapWorkspace(StudioSession session)
         _redo.Clear();
         _dirty.Clear();
         _strokeBefore.Clear();
+        _objects = null;
+        Selected = null;
         Changed = 0;
         Dirty = false;
         Revision++;
@@ -173,16 +203,24 @@ public sealed class MapWorkspace(StudioSession session)
         return Swap(_redo, _undo, back: false);
     }
 
-    private bool Swap(Stack<MapStroke> from, Stack<MapStroke> to, bool back)
+    private bool Swap(Stack<IMapEdit> from, Stack<IMapEdit> to, bool back)
     {
         if (from.Count == 0) return false;
-        var stroke = from.Pop();
-        foreach (var (i, before, after) in stroke.Cells)
+        var edit = from.Pop();
+        switch (edit)
         {
-            Tiles[i] = back ? before : after;
-            _dirty.Add(i);
+            case MapStroke stroke:
+                foreach (var (i, before, after) in stroke.Cells)
+                {
+                    Tiles[i] = back ? before : after;
+                    _dirty.Add(i);
+                }
+                break;
+            case MapObjectEdit objects:
+                Restore(back ? objects.Before : objects.After);
+                break;
         }
-        to.Push(stroke);
+        to.Push(edit);
         Dirty = true;
         Revision++;
         return true;
@@ -214,6 +252,120 @@ public sealed class MapWorkspace(StudioSession session)
         return (uint)((r << 24) | (g << 16) | (b << 8) | 0xFF);
     }
 
+    // ---- объекты
+
+    /// <summary>Части сценария, которые меняет правка объектов (снимок для отмены): всё, кроме клеток, тумана и картинок деревьев.</summary>
+    private static readonly string[] MapParts = ["Stacks", "Units", "Objects", "Plan", "Sites", "Players", "ItemTypes", "Subraces", "Relations"];
+
+    private static readonly string[] LookParts = ["Forts", "Ruins", "Sites", "Crystals", "Bags", "Landmarks", "Stacks", "Banners"];
+
+    private JsonObject Snapshot()
+    {
+        var looks = (JsonObject)_doc!["Looks"]!;
+        var map = (JsonObject)looks["Map"]!;
+        return new JsonObject
+        {
+            ["Map"] = new JsonObject(MapParts.Select(k => KeyValuePair.Create(k, map[k]?.DeepClone()))),
+            ["Looks"] = new JsonObject(LookParts.Select(k => KeyValuePair.Create(k, looks[k]?.DeepClone()))),
+            ["Events"] = _doc["Events"]?.DeepClone(),
+        };
+    }
+
+    private void Restore(JsonObject snapshot)
+    {
+        var looks = (JsonObject)_doc!["Looks"]!;
+        var map = (JsonObject)looks["Map"]!;
+        foreach (var (k, v) in (JsonObject)snapshot["Map"]!) map[k] = v?.DeepClone();
+        foreach (var (k, v) in (JsonObject)snapshot["Looks"]!) looks[k] = v?.DeepClone();
+        _doc["Events"] = snapshot["Events"]?.DeepClone();
+        _objects = null;
+        if (Selected is { } s && !Objects.Any(o => o.Id == s)) Selected = null;
+    }
+
+    /// <summary>Правка объектов одной командой отмены; отказ (<see cref="InvalidOperationException"/>) — карта прежняя, текст — в сессии.</summary>
+    private bool Edit(string name, Action<MapObjects> change)
+    {
+        if (_doc is null) return Session.Refuse("карта не открыта — новая или из мода");
+        StrokeEnd();
+        var before = Snapshot();
+        try
+        {
+            change(new MapObjects(_doc, Content));
+        }
+        catch (InvalidOperationException e)
+        {
+            Restore(before);
+            return Session.Refuse(e.Message);
+        }
+        _undo.Push(new MapObjectEdit(name, before, Snapshot()));
+        _redo.Clear();
+        _objects = null;
+        Dirty = true;
+        Revision++;
+        return true;
+    }
+
+    public void Select(string? id)
+    {
+        Selected = id;
+        Revision++;
+    }
+
+    /// <summary>Поставить объект палитры; он становится выбранным.</summary>
+    public bool Place(MapObjectKind kind, int x, int y, MapPlacement placement)
+    {
+        string? id = null;
+        if (!Edit($"поставить {kind} в {x},{y}", m => id = m.Place(kind, x, y, placement))) return false;
+        Select(id);
+        return true;
+    }
+
+    public bool Remove(string id)
+    {
+        if (!Edit($"убрать {id}", m => m.Remove(id))) return false;
+        if (Selected == id) Select(null);
+        return true;
+    }
+
+    public bool Move(string id, int x, int y) => Edit($"сдвинуть {id} в {x},{y}", m => m.Move(id, x, y));
+
+    /// <summary>Поле места (имя, описание, золото, ресурс, заклинания мага, товар…).</summary>
+    public bool SetSite(string id, string field, JsonNode? value) => Edit($"{field} у {id}", m => m.SetSite(id, field, value));
+
+    /// <summary>Отряд: состав, приказ, хозяин.</summary>
+    public bool SetStack(string id, IReadOnlyList<string>? units = null, int? order = null, string? owner = null) =>
+        Edit($"отряд {id}", m => m.SetStack(id, units, order, owner));
+
+    /// <summary>Нарушения инвариантов карты (<see cref="MapInvariants"/>): сценарий собирается из документа и проверяется по правилам мода.
+    /// Не читается — одна строка с причиной.</summary>
+    public IReadOnlyList<string> Check()
+    {
+        if (_doc is null) return [];
+        try
+        {
+            var scenario = ScenarioFile.FromJson(Json());
+            return [.. MapInvariants.Check(scenario.Looks.Map, GameBook.Load(Content)).Select(v => v.ToString())];
+        }
+        catch (Exception e) when (e is InvalidDataException or InvalidOperationException or KeyNotFoundException)
+        {
+            return [$"карта не собирается: {e.Message}"];
+        }
+    }
+
+    /// <summary>Сценарий JSON для записи: клетки — из <see cref="Tiles"/>, туман — у каждого игрока карты (новым — пустой).</summary>
+    private string Json()
+    {
+        var map = (JsonObject)_doc!["Looks"]!["Map"]!;
+        ((JsonObject)map[nameof(Tiles)]!)["data"] = Convert.ToBase64String(Tiles);
+        var fog = map["Fog"] as JsonObject ?? (JsonObject)(map["Fog"] = new JsonObject());
+        foreach (var player in ((JsonObject)map["Players"]!).Select(p => p.Value).OfType<JsonObject>())
+            if (player["FogId"]?.GetValue<string>() is { Length: > 0 } fogId && !fog.ContainsKey(fogId))
+                fog[fogId] = new JsonObject { ["w"] = Size, ["h"] = Size, ["data"] = Convert.ToBase64String(new byte[Size * Size]) };
+        return _doc.ToJsonString(new System.Text.Json.JsonSerializerOptions { WriteIndented = false });
+    }
+
+    // ---- запись
+
     /// <summary>Записать карту в мод: сценарий и карточка в каталоге мода. Байт файла сценария — как у <see cref="ScenarioFile"/>.</summary>
     public bool Save(string? name = null)
     {
@@ -230,7 +382,7 @@ public sealed class MapWorkspace(StudioSession session)
 
     private void SaveCore(string? name)
     {
-        if (_scenario is not { } scenario) return;
+        if (_doc is null || Id is null) return;
         StrokeEnd();
         // Каталог мода — сначала разобрать и проверить: битый или не список — отказ до записи карты (ничего не записано наполовину).
         string catalog = Path.Combine("data", "game", "scenarios.json");
@@ -248,13 +400,13 @@ public sealed class MapWorkspace(StudioSession session)
             }
         }
         else cards = [];
-        var root = JsonNode.Parse(ScenarioFile.ToJson(scenario))!;
-        root[nameof(ScenarioData.Looks)]!["Map"]![nameof(Tiles)]!["data"] = Convert.ToBase64String(Tiles);
-        Session.Project.Write(Path.Combine("data", "scenarios", scenario.Id + ScenarioFile.Extension), root.ToJsonString(new System.Text.Json.JsonSerializerOptions { WriteIndented = false }));
-        var card = cards.OfType<JsonObject>().FirstOrDefault(c => c[nameof(ScenarioData.Id)] is JsonValue v && v.TryGetValue<string>(out var id) && id == scenario.Id);
-        if (card is null) cards.Add(card = new JsonObject { [nameof(ScenarioData.Id)] = scenario.Id });
-        card["File"] = scenario.Id + ScenarioFile.Extension;
-        card["Name"] = name ?? card["Name"]?.GetValue<string>() ?? scenario.Id;
+        string json = Json();
+        var scenario = ScenarioFile.FromJson(json);   // документ обязан читаться игрой — иначе отказ до записи
+        Session.Project.Write(Path.Combine("data", "scenarios", Id + ScenarioFile.Extension), ScenarioFile.ToJson(scenario));   // вид файла — как у ScenarioFile
+        var card = cards.OfType<JsonObject>().FirstOrDefault(c => c[nameof(ScenarioData.Id)] is JsonValue v && v.TryGetValue<string>(out var id) && id == Id);
+        if (card is null) cards.Add(card = new JsonObject { [nameof(ScenarioData.Id)] = Id });
+        card["File"] = Id + ScenarioFile.Extension;
+        card["Name"] = name ?? card["Name"]?.GetValue<string>() ?? Id;
         card["MapSize"] = Size;
         card["RaceIds"] = new JsonArray([.. scenario.Looks.Map.Players.Values.Select(p => (JsonNode)JsonValue.Create(p.RaceId)!)]);
         Session.Project.Write(catalog, cards.ToJsonString(new System.Text.Json.JsonSerializerOptions { WriteIndented = true }) + "\n");
@@ -263,5 +415,6 @@ public sealed class MapWorkspace(StudioSession session)
     }
 
     public string Line() =>
-        $"map: id={Id ?? "-"} size={Size} cells={Size * Size} changed={Changed} undo={_undo.Count} redo={_redo.Count} dirty={(Dirty ? 1 : 0)}";
+        $"map: id={Id ?? "-"} size={Size} cells={Size * Size} changed={Changed} undo={_undo.Count} redo={_redo.Count} dirty={(Dirty ? 1 : 0)} " +
+        $"objects={Objects.Count} selected={Selected ?? "-"}";
 }

@@ -24,6 +24,7 @@ public partial class StudioPicker : Button
         Alignment = HorizontalAlignment.Left;
         ClipText = true;
         ExpandIcon = false;
+        AddThemeConstantOverride("icon_max_width", 28);   // значок строки — маленький, кнопка не растёт под лицо 70×85
         var box = new VBoxContainer();
         box.AddChild(_search);
         box.AddChild(_list);

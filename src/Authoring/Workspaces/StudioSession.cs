@@ -154,6 +154,7 @@ public sealed class StudioSession
             BuildingBranchDef br => br.NameText,
             RaceDef race => race.NameText,
             AttackDef attack => attack.NameText,
+            EffectDef effect => effect.Looks.NameText,
             _ => null,
         };
         return key is not null && Text(key) is { Length: > 0 } text ? text : id[(id.LastIndexOf('/') + 1)..];
@@ -173,6 +174,11 @@ public sealed class StudioSession
                     return (png, slot);
         return null;
     }
+
+    /// <summary>Находки проверки по сущности <paramref name="id"/>: все или (с <paramref name="field"/>) у поля — путь равен или начинается с него.</summary>
+    public IReadOnlyList<Validation.CheckItem> ProblemsOf(string id, string? field = null) =>
+        [.. Report.Items.Where(i => i.Target == id && (field is null || (i.Field is { } f && (f == field || f.StartsWith(field + ".", StringComparison.Ordinal)
+                                                                                          || f.StartsWith(field + "[", StringComparison.Ordinal)))))];
 
     /// <summary>Строка по ключу; нет — null.</summary>
     public string? Text(string key) => _strings(key);

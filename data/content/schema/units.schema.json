@@ -424,6 +424,32 @@
         "mountain"
        ]
       }
+     },
+     "auras": {
+      "description": "Ауры (Last Edict, моды): модификатор, который юнит в бою даёт, пока он на поле, — своему отряду, соседям, врагу или себе. Действуют вживую: броня, урон, точность, инициатива, иммунитеты; здоровье — нет.",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "modifier": {
+         "description": "Модификатор ауры (его элементы: броня, урон, точность, инициатива, иммунитеты…).",
+         "type": "string"
+        },
+        "reach": {
+         "description": "Кому: group — свой отряд, кроме себя; adjacent — соседи по отряду; enemies — отряд врага; self — сам.",
+         "enum": [
+          "group",
+          "adjacent",
+          "enemies",
+          "self"
+         ]
+        }
+       },
+       "required": [
+        "modifier"
+       ],
+       "additionalProperties": false
+      }
      }
     },
     "required": [

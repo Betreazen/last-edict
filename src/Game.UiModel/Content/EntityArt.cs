@@ -28,6 +28,8 @@ public static class EntityArt
         new("unit", "face.png", "Faces.ff", "FACE", 70, 85, "лицо (панели, отряд, бой)"),
         new("unit", "portrait.png", "Faces.ff", "FACEB", 130, 142, "портрет (крупный, бой)"),
         new("unit", "picture.png", "Events.ff", "", 350, 450, "картина (карточка юнита)"),
+        new("item", EntityFolders.IconFile, "IconItem.ff", "", 70, 85, "значок предмета"),
+        new("spell", EntityFolders.IconFile, "IconSpel.ff", "", 70, 85, "значок заклинания"),
     ];
 
     /// <summary>Своя картинка сущности мода главнее графики, на которую она ссылается (юнит мода рисуется базовым — <c>baseUnit</c>,

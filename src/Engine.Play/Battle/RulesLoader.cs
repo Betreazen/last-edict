@@ -53,6 +53,7 @@ public static class RulesLoader
                 MageLeader = u.MageLeader ?? LegacyUnits.IsMageLeader(u.LegacyId),
                 DamageBonus = u.DamageBonus ?? LegacyUnits.HasDamageBonus(u.LegacyId),
                 Copyable = u.Copyable ?? LegacyUnits.IsCopyable(u.LegacyId),
+                Auras = u.Auras.Count == 0 ? [] : [.. u.Auras.Select(a => new UnitAura(content.KeyOf(a.Modifier), a.Reach))],
             };
         }
 

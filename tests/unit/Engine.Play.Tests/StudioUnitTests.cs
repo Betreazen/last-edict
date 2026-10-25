@@ -1,5 +1,6 @@
 using LastEdict.Authoring.Project;
 using LastEdict.Authoring.Workspaces;
+using LastEdict.Data.Battle;
 using LastEdict.Data.Content;
 using LastEdict.Data.Content.Schema;
 using LastEdict.Data.Play;
@@ -110,6 +111,80 @@ public sealed class StudioUnitTests : IDisposable
         // Имя вида id оригинала — отказ: графика назвалась бы именем кадра оригинала.
         Assert.False(units.CreateFrom(Footman, "g000uu0154", "Двойник"));
         Assert.Contains("id оригинала", session.Refusal, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Combat_AttackByForm_Immunities_OwnModifierAsAura()
+    {
+        var session = Session();
+        var units = new UnitWorkspace(session);
+        Assert.True(units.CreateFrom(Footman, "alebardshchik", "Алебардщик"));
+        // Атака формой: яд из реестра эффектов, источник «Смерть», площадная — своя атака юнита меняется, атака основы — нет.
+        Assert.Contains(units.Effects, e => e.Id == "test:effect/poison");
+        var attack = units.AttackFormOf(Halberdier) with
+        {
+            Effect = "test:effect/poison", Source = AttackSource.Death, Reach = ReachKind.All, Damage = 15, Infinite = true,
+        };
+        Assert.True(units.EditAttack(Halberdier, attack));
+        var made = (AttackDef)session.Report.Content!.Find(((UnitDef)session.Report.Content.Find(Halberdier)!).Attack!)!;
+        Assert.Equal(("test:effect/poison", AttackSource.Death, ReachKind.All, 15, true), (made.Effect, made.Source, made.Reach, made.Damage ?? 0, made.Infinite ?? false));
+        Assert.NotEqual("test:effect/poison", ((AttackDef)session.Report.Content.Find(((UnitDef)session.Report.Content.Find(Footman)!).Attack!)!).Effect);
+        Assert.False(units.EditAttack(Halberdier, attack with { Effect = "towers:effect/none" }));   // нет такого эффекта
+        // Вторая атака, которой не было, — новая своя.
+        Assert.True(units.EditAttack(Halberdier, units.AttackFormOf(Halberdier, second: true) with { Effect = "test:effect/heal", Heal = 10, Damage = null }, second: true));
+        Assert.Equal("towers:attack/alebardshchik-2nd", ((UnitDef)session.Report.Content!.Find(Halberdier)!).SecondAttack);
+        // Иммунитеты и защиты.
+        Assert.True(units.SetImmunities(Halberdier, [new SourceImmunity(AttackSource.Fire, LastEdict.Rules.Units.ImmunityLevel.Always)],
+            [new ClassImmunity(LastEdict.Rules.Battle.AttackClass.Paralyze, LastEdict.Rules.Units.ImmunityLevel.Once)]));
+        var unit = (UnitDef)session.Report.Content!.Find(Halberdier)!;
+        Assert.Single(unit.Immunities);
+        Assert.Single(unit.ClassImmunities);
+        // Свой модификатор (+15 брони) — аурой своему отряду.
+        string? modifier = units.CreateModifier("Знамя", [UnitWorkspace.Element(LastEdict.Rules.Units.ModifierElementType.Armor, 15)]);
+        Assert.Equal("towers:modifier/znamya", modifier);
+        Assert.True(units.SetAuras(Halberdier, [new UnitAuraDef { Modifier = modifier!, Reach = LastEdict.Rules.Battle.AuraReach.Group }]));
+        Assert.False(units.SetAuras(Halberdier, [new UnitAuraDef { Modifier = "towers:modifier/nothing" }]));
+        Assert.Equal(0, session.Report.Errors);
+        var rules = RulesLoader.Load(session.Report.Content!);
+        Assert.Equal([new LastEdict.Rules.Battle.UnitAura("towers:modifier/znamya", LastEdict.Rules.Battle.AuraReach.Group)], rules.Units[Halberdier].Auras);
+        Assert.Equal(15, rules.Modifiers!["towers:modifier/znamya"].Elements.Single().Number);
+    }
+
+    [Fact]
+    public void EditAttack_OfABaseAttack_CopiesIt_AndWritesFieldsBackToDefaults()
+    {
+        var session = Session();
+        var units = new UnitWorkspace(session);
+        // Атака юнита базы: огонь, оберег, «до конца боя» — правкой мода.
+        string attack = ((UnitDef)session.Report.Content!.Find(Footman)!).Attack!;
+        Assert.True(session.Do(new LastEdict.Authoring.Commands.Batch("подготовка", [
+            new LastEdict.Authoring.Commands.SetField(attack, "source", System.Text.Json.Nodes.JsonValue.Create("fire")),
+            new LastEdict.Authoring.Commands.SetField(attack, "wards", System.Text.Json.Nodes.JsonNode.Parse("""["test:modifier/charm"]""")),
+            new LastEdict.Authoring.Commands.SetField(attack, "infinite", System.Text.Json.Nodes.JsonValue.Create(true))])));
+        // Форма возвращает значения по умолчанию — копия атаки юниту, у копии они и записаны.
+        var form = units.AttackFormOf(Footman) with { Source = AttackSource.Weapon, Wards = [], Infinite = false };
+        Assert.True(units.EditAttack(Footman, form));
+        var own = (AttackDef)session.Report.Content!.Find(((UnitDef)session.Report.Content.Find(Footman)!).Attack!)!;
+        Assert.StartsWith("towers:attack/", own.Id, StringComparison.Ordinal);
+        Assert.Equal((AttackSource.Weapon, 0, false), (own.Source, own.Wards.Count, own.Infinite ?? false));
+        Assert.Equal(AttackSource.Fire, ((AttackDef)session.Report.Content.Find(attack)!).Source);   // общая атака — как была в моде
+        // Аура из модификатора, который правила не прочтут (броня процентами), — отказ, а не падение боя.
+        string? bad = units.CreateModifier("Кривой", [new ModifierElementDef { Type = LastEdict.Rules.Units.ModifierElementType.Armor, Percent = 10 }]);
+        Assert.False(units.SetAuras(Footman, [new UnitAuraDef { Modifier = bad! }]));
+        Assert.Contains("не годится", session.Refusal, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void BrokenReference_IsReportedAtTheEntityAndField()
+    {
+        var session = Session();
+        var units = new UnitWorkspace(session);
+        Assert.True(units.CreateFrom(Footman, "alebardshchik", "Алебардщик"));
+        Assert.True(session.Do(new LastEdict.Authoring.Commands.SetField(Halberdier, "previousLevel", System.Text.Json.Nodes.JsonValue.Create("towers:unit/ghost"))));
+        var problem = Assert.Single(session.ProblemsOf(Halberdier));
+        Assert.Equal(("MOD001", "previousLevel"), (problem.Rule, problem.Field));
+        Assert.Single(session.ProblemsOf(Halberdier, "previousLevel"));
+        Assert.Empty(session.ProblemsOf(Halberdier, "baseUnit"));
     }
 
     [Fact]

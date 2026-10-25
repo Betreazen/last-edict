@@ -27,6 +27,9 @@ public partial class Studio : Control
     private BalanceWorkspace? _balance;
     private MapWorkspace? _mapWs;
     private UnitWorkspace? _units;
+    private ItemWorkspace? _items;
+    private LordWorkspace? _lords;
+    private ModWorkspace? _modWs;
     private ContentWatcher? _watcher;
 
     private readonly Label _title = new() { ThemeTypeVariation = SettingsTheme.Title };
@@ -42,7 +45,10 @@ public partial class Studio : Control
     private StudioBalanceTab? _balanceTab;
     private StudioMapTab? _mapTab;
     private StudioUnitsTab? _unitsTab;
-    private int _shown = -1, _contentShown = -1, _unitsShown = -1;
+    private StudioItemsTab? _itemsTab;
+    private StudioLordsTab? _lordsTab;
+    private StudioModTab? _modTab;
+    private int _shown = -1, _contentShown = -1, _unitsShown = -1, _itemsShown = -1, _lordsShown = -1;
 
     public override void _Ready()
     {
@@ -66,6 +72,9 @@ public partial class Studio : Control
             _balance = new BalanceWorkspace(_session, Arg(args, "--scenarios") is { } scenarios ? GameData.FromProject(scenarios) : GameData.ScenariosDir);
             _mapWs = new MapWorkspace(_session);
             _units = new UnitWorkspace(_session);
+            _items = new ItemWorkspace(_session);
+            _lords = new LordWorkspace(_session);
+            _modWs = new ModWorkspace(_session);
             if (Arg(args, "--lord") is { } lord) _tree.SelectLord(lord);
         }
         catch (Exception e) when (e is IOException or InvalidDataException or UnauthorizedAccessException)
@@ -114,10 +123,16 @@ public partial class Studio : Control
         _tabs.AddChild(_treeTab);
         _unitsTab = new StudioUnitsTab(_units!, FrameTexture) { Name = "Юниты" };
         _tabs.AddChild(_unitsTab);
+        _itemsTab = new StudioItemsTab(_items!, FrameTexture) { Name = "Предметы" };
+        _tabs.AddChild(_itemsTab);
+        _lordsTab = new StudioLordsTab(_lords!, FrameTexture) { Name = "Лорды" };
+        _tabs.AddChild(_lordsTab);
         _tabs.AddChild(_contentTab);
         _tabs.AddChild(_balanceTab);
-        _mapTab = new StudioMapTab(_mapWs!, PlayMap) { Name = "Карта" };
+        _mapTab = new StudioMapTab(_mapWs!, PlayMap, FrameTexture) { Name = "Карта" };
         _tabs.AddChild(_mapTab);
+        _modTab = new StudioModTab(_modWs!, Status) { Name = "Мод" };
+        _tabs.AddChild(_modTab);
 
         _lord.ItemSelected += i => { _tree!.SelectLord(_tree.Lords[(int)i].Id); Sync(); };
         _undo.Pressed += () => { _session!.Undo(); Sync(); };
@@ -161,9 +176,11 @@ public partial class Studio : Control
     {
         if (_session is null || _tree is null || _content is null) return;
         if (_watcher?.Take() is not null && _session.ReloadFromDisk()) Status("мод изменён снаружи — перечитан");
-        if (_session.Revision + _tree.Revision != _shown || _content.Revision != _contentShown || _units?.Revision != _unitsShown) Sync();
+        if (_session.Revision + _tree.Revision != _shown || _content.Revision != _contentShown || _units?.Revision != _unitsShown || _items?.Revision != _itemsShown || _lords?.Revision != _lordsShown) Sync();
         _contentShown = _content.Revision;
         _unitsShown = _units?.Revision ?? 0;
+        _itemsShown = _items?.Revision ?? 0;
+        _lordsShown = _lords?.Revision ?? 0;
     }
 
     public override void _UnhandledInput(InputEvent e)
@@ -263,10 +280,23 @@ public partial class Studio : Control
                     "connect" => ws.Connect(step["from"]!.GetValue<string>(), step["to"]!.GetValue<string>()),
                     "disconnect" => ws.Disconnect(step["to"]!.GetValue<string>()),
                     "drag" => _treeTab!.Drag(step["building"]!.GetValue<string>(), step["column"]!.GetValue<double>(), step["row"]!.GetValue<int>()),
+                    "mod-version" => _modWs!.SetField("version", step["version"]!.GetValue<string>()),
+                    "mod-pack" => Do(() => GD.Print($"mod-pack {_modTab!.Pack()}")),
+                    "lord-select" => Do(() => _lords!.Select(step["id"]?.GetValue<string>())),
+                    "lord-new" => Do(() => _lordsTab!.NewLord(step["title"]?.GetValue<string>() ?? "")),
+                    "lord-research" => Do(() => _lordsTab!.AddResearch(step["spell"]!.GetValue<string>(), step["gold"]?.GetValue<long>() ?? 100)),
+                    "item-select" => Do(() => _items!.Select(step["id"]?.GetValue<string>())),
+                    "item-new" => Do(() => _itemsTab!.NewItem(step["title"]?.GetValue<string>() ?? "")),
+                    "item-form" => Do(() => _itemsTab!.Fill(step["gold"]?.GetValue<long>(), step["equip"]?.GetValue<string>())),
+                    "item-apply" => Do(() => _itemsTab!.Press()),
+                    "item-picture" => _itemsTab!.Picked(GameData.FromProject(step["path"]!.GetValue<string>())),
+                    "unit-page" => Do(() => _unitsTab!.Page(step["index"]!.GetValue<int>())),
                     "unit-select" => Do(() => _units!.Select(step["id"]?.GetValue<string>())),
                     "unit-new" => Do(() => { _unitsTab!.NewTitle(step["title"]?.GetValue<string>() ?? ""); _unitsTab.PressCreate(); }),
-                    "unit-form" => Do(() => _unitsTab!.Fill(step["hp"]?.GetValue<int>(), step["damage"]?.GetValue<int>(), step["initiative"]?.GetValue<int>(),
-                        step["hireable"]?.GetValue<bool>(), step["title"]?.GetValue<string>())),
+                    "unit-form" => Do(() => _unitsTab!.Fill(step["hp"]?.GetValue<int>(), step["hireable"]?.GetValue<bool>(), step["title"]?.GetValue<string>())),
+                    "unit-attack" => Do(() => { _unitsTab!.Combat.Check(step["effect"]?.GetValue<string>(), step["damage"]?.GetValue<int>(), null, null, null); _unitsTab.Combat.PressAttack(); }),
+                    "unit-aura" => Do(() => { _unitsTab!.Combat.Check(null, null, step["modifier"]!.GetValue<string>(), step["reach"]?.GetValue<string>(), null); _unitsTab.Combat.PressAuras(); }),
+                    "unit-immune" => Do(() => { _unitsTab!.Combat.Check(null, null, null, null, step["source"]!.GetValue<string>()); _unitsTab.Combat.PressImmunities(); }),
                     "unit-apply" => Do(() => _unitsTab!.Press()),
                     "unit-picture" => _unitsTab!.Picked(step["file"]!.GetValue<string>(), GameData.FromProject(step["path"]!.GetValue<string>())),
                     "unit-rename" => _units!.Rename(step["id"]!.GetValue<string>(), step["name"]!.GetValue<string>()),
@@ -294,13 +324,28 @@ public partial class Studio : Control
                     "map-stroke" => Do(() => { _mapWs!.Brush = Enum.Parse<MapBrush>(step["brush"]?.GetValue<string>() ?? "Forest"); _mapWs.Radius = step["radius"]?.GetValue<int>() ?? 1; _mapTab!.Stroke(step["x0"]!.GetValue<int>(), step["y0"]!.GetValue<int>(), step["x1"]!.GetValue<int>(), step["y1"]!.GetValue<int>()); }),
                     "map-undo" => Do(() => { _mapWs!.Undo(); _mapTab!.Sync(); }),
                     "map-save" => Do(() => _mapWs!.Save()),
+                    "map-place" => _mapTab!.PlaceAt(step["kind"]!.GetValue<string>(), step["x"]!.GetValue<int>(), step["y"]!.GetValue<int>(),
+                        (step["units"] as JsonArray)?.Select(u => u!.GetValue<string>()), (step["items"] as JsonArray)?.Select(i => i!.GetValue<string>()),
+                        step["owner"]?.GetValue<string>()),
+                    "map-select" => _mapTab!.SelectAt(step["x"]!.GetValue<int>(), step["y"]!.GetValue<int>()),
+                    "map-move" => _mapTab!.MoveSelected(step["x"]!.GetValue<int>(), step["y"]!.GetValue<int>()),
+                    "map-remove" => _mapWs!.Selected is { } removing && _mapWs.Remove(removing),
+                    "map-player" => _mapWs!.Change("игрок", m => m.AddPlayer(step["race"]!.GetValue<string>(), human: step["human"]?.GetValue<bool>() ?? false)),
+                    "map-event" => _mapWs!.Change("событие", m =>
+                    {
+                        string ev = m.AddEvent(step["name"]?.GetValue<string>() ?? "");
+                        m.AddPart(ev, step["condition"]?.GetValue<string>() ?? "Frequency", effect: false);
+                        int e = m.AddPart(ev, step["effect"]?.GetValue<string>() ?? "Popup", effect: true);
+                        if (step["text"] is { } text) m.SetPart(ev, e, true, "Text", text.DeepClone());
+                    }),
+                    "map-check" => Do(() => GD.Print($"map-check нарушений={_mapWs!.Check().Count} {string.Join(" | ", _mapWs.Check().Take(3))}")),
                     "map-open" => Do(() => _mapTab!.Open(step["id"]!.GetValue<string>())),
                     _ => session.Do(EditCommands.Parse(step)),
                 };
                 if (op is "arena" or "stand") await _balanceTab!.Run(step["scenario"]!.GetValue<string>(), arena: op == "arena");
                 Sync();
                 for (int i = 0; i < 2; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-                GD.Print($"step {op} ok={(ok ? 1 : 0)} {ws.Line()} {_treeTab!.Line()} {_content!.Line()} {_balance!.Line()} {_mapTab!.Line()} {_unitsTab!.Line()}");
+                GD.Print($"step {op} ok={(ok ? 1 : 0)} {ws.Line()} {_treeTab!.Line()} {_content!.Line()} {_balance!.Line()} {_mapTab!.Line()} {_unitsTab!.Line()} {_itemsTab!.Line()} {_lordsTab!.Line()} {_modTab!.Line()}");
             }
         }
         for (int i = 0; i < 3; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);

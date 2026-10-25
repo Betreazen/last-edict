@@ -20,7 +20,7 @@ public sealed record TreeGraphLink(string From, string To);
 /// живой странице — место в дереве (<c>tree.column</c>/<c>tree.row</c>: место мода главнее автораскладки). Всё — командами ядра (общая
 /// история сессии): отмена, повтор, журнал. Решений в окне Godot нет — оно рисует это и зовёт эти методы.
 /// </summary>
-public sealed class TreeWorkspace
+public sealed partial class TreeWorkspace
 {
     public TreeWorkspace(StudioSession session)
     {
@@ -68,6 +68,7 @@ public sealed class TreeWorkspace
         Tree = content is null || Lord.Length == 0 ? null : BuildTree.OfLord(content, Lord);
         BuildGraph(content);
         Preview.Show(Tree, Session.NameOf, Session.IsMine, Session.Text);
+        if (Selected is { } selected && Tree?.BranchOf(selected) is not null) Preview.Pick(selected);   // правка выбранной — она в виду
         Revision++;
     }
 
@@ -103,13 +104,7 @@ public sealed class TreeWorkspace
     public bool Connect(string from, string to)
     {
         ArgumentNullException.ThrowIfNull(from);
-        if (from == to) return Session.Refuse("постройка не может требовать саму себя");
-        var content = Session.Report.Content;
-        var seen = new HashSet<string>(StringComparer.Ordinal);
-        for (string? at = from; at is not null && seen.Add(at); at = (content?.Find(at) as BuildingDef)?.Requires)
-            if (at == to)
-                return Session.Refuse($"требования по кругу: «{Session.NameOf(to)}» уже нужна для «{Session.NameOf(from)}»");
-        return Session.Do(new SetField(to, "requires", JsonValue.Create(from)));
+        return Cycle(from, to) is { } refusal ? Session.Refuse(refusal) : Session.Do(new SetField(to, "requires", JsonValue.Create(from)));
     }
 
     /// <summary>Снять требование постройки (стрелку в неё).</summary>
@@ -128,24 +123,9 @@ public sealed class TreeWorkspace
         Session.Do(new Batch($"место «{Session.NameOf(building)}» — авто",
             [new SetField(building, "tree.column", null, Unset: true), new SetField(building, "tree.row", null, Unset: true)]));
 
-    /// <summary>Новая постройка мода каталогом у текущего лорда, под требуемой (если задана; ветка — её), с именем на языке окна.</summary>
-    public bool AddBuilding(string name, string title, string? requires)
-    {
-        var body = new JsonObject { ["level"] = 2, ["category"] = "guild", ["cost"] = new JsonObject { ["gold"] = 500 } };
-        if (requires is not null && Session.Report.Content?.Find(requires) is BuildingDef parent)
-        {
-            body["requires"] = requires;
-            body["level"] = parent.Level + 1;
-            body["category"] = JsonValue.Create(System.Text.Json.JsonNamingPolicy.CamelCase.ConvertName(parent.Category.ToString()));
-            if (parent.Branch is { } kind) body["branch"] = System.Text.Json.JsonNamingPolicy.CamelCase.ConvertName(kind.ToString());
-        }
-        string id = EntityFolders.IdOf(Session.Project.Id, ContentSet.KindNamed("building"), name);
-        var commands = new List<IEditCommand> { new AddEntity("building", name, body) };
-        if (title.Length > 0) commands.Add(new SetText(id, Session.Language, "name", title));
-        if (Session.Report.Content?.Find(Lord) is LordDef lord)
-            commands.Add(new SetField(lord.Id, "buildings", new JsonArray([.. lord.Buildings.Append(id).Select(b => (JsonNode)JsonValue.Create(b)!)])));
-        return Session.Do(new Batch($"новая постройка «{(title.Length > 0 ? title : name)}»", commands));
-    }
+    /// <summary>Новая постройка мода каталогом у открытого лорда под требуемой (форма по ней, <see cref="NewForm"/>), с именем на языке окна.</summary>
+    public bool AddBuilding(string name, string title, string? requires) =>
+        CreateBuilding(name, NewForm(requires) with { Title = title }, raceLords: false);
 
     /// <summary>Строка проверки окна без глаз.</summary>
     public string Line() =>

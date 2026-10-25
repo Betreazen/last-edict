@@ -90,6 +90,27 @@ public sealed class BuildTreePreview : IBuildTreeSource
         Layout(resetView: true);
     }
 
+    /// <summary>Выбрать постройку снаружи (форма Студии): её ветка — на странице, значок — с рамкой выбора; null — снять выбор.</summary>
+    public void Pick(string? building)
+    {
+        if (building is not null && _tree?.BranchOf(building) is { } branch && branch.Id != Branch)
+        {
+            (Branch, Selected) = (branch.Id, building);
+            Layout(resetView: true);
+        }
+        else if (Selected != building)
+        {
+            Selected = building;
+            Layout(resetView: false);
+        }
+        // Значок — в виду целиком (постройка глубоко в ветке — вид сдвигается к ней).
+        if (Items.FirstOrDefault(i => i.Building == building) is { } item)
+        {
+            View.Reveal(item.Icon with { Height = item.Plate.Bottom - item.Icon.Y });
+            Revision++;
+        }
+    }
+
     private void Layout(bool resetView)
     {
         if (_page.Width <= 0 || _tree is null)

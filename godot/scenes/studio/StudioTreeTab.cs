@@ -28,6 +28,7 @@ public partial class StudioTreeTab : VSplitContainer, IStudioTab
     private readonly Control _page = new() { ClipContents = true, SizeFlagsHorizontal = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(480, 300) };
     private readonly ItemList _errors = new() { CustomMinimumSize = new Vector2(0, 110) };
     private readonly BuildTreeView _view;
+    private readonly StudioBuildingForm _form;
     private readonly Dictionary<string, string> _nodeOf = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _buildingOf = new(StringComparer.Ordinal);
     private int _graphRevision = -1;
@@ -40,7 +41,11 @@ public partial class StudioTreeTab : VSplitContainer, IStudioTab
         var split = new HSplitContainer { SizeFlagsVertical = SizeFlags.ExpandFill, SplitOffsets = [120] };
         _page.SizeFlagsVertical = SizeFlags.ExpandFill;
         split.AddChild(_graph);
-        split.AddChild(_page);
+        var right = new HSplitContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsVertical = SizeFlags.ExpandFill };
+        right.AddChild(_page);
+        _form = new StudioBuildingForm(ws, texture) { SizeFlagsVertical = SizeFlags.ExpandFill };
+        right.AddChild(_form);
+        split.AddChild(right);
         AddChild(split);
         AddChild(_errors);
         _view = new BuildTreeView(ws.Preview, texture);
@@ -57,6 +62,10 @@ public partial class StudioTreeTab : VSplitContainer, IStudioTab
         {
             if (_buildingOf.TryGetValue(from, out var a) && _buildingOf.TryGetValue(to, out var b)) _ws.Connect(a, b);
         };
+        _graph.NodeSelected += node =>
+        {
+            if (_buildingOf.TryGetValue(node.Name, out var b)) _ws.Select(b);
+        };
         _graph.DisconnectionRequest += (_, _, to, _) =>
         {
             if (_buildingOf.TryGetValue(to, out var b)) _ws.Disconnect(b);
@@ -67,6 +76,7 @@ public partial class StudioTreeTab : VSplitContainer, IStudioTab
     {
         if (_graphRevision != _ws.Revision) RebuildGraph();
         _view.Sync(Vector2I.Zero);
+        _form.Sync();
         _errors.Clear();
         foreach (var item in _ws.Session.Report.Items)
         {
@@ -132,6 +142,7 @@ public partial class StudioTreeTab : VSplitContainer, IStudioTab
                 break;
             case InputEventMouseButton { ButtonIndex: MouseButton.Left } b:
                 if (preview.Release((int)b.Position.X, (int)b.Position.Y) is { } drop) _ws.Place(drop.Building, drop.Column, drop.Row);
+                else if (preview.Selected is { } picked && picked != _ws.Selected) _ws.Select(picked);   // щелчок по значку — постройка в форме
                 break;
             case InputEventMouseButton { ButtonIndex: MouseButton.Right, Pressed: true } r:
                 // Правая кнопка по значку — вернуть его к автораскладке.
@@ -166,7 +177,10 @@ public partial class StudioTreeTab : VSplitContainer, IStudioTab
         return preview.Release(to.X, to.Y) is { } drop && _ws.Place(drop.Building, drop.Column, drop.Row);
     }
 
+    /// <summary>Форма постройки (проверка без окна).</summary>
+    public StudioBuildingForm Form => _form;
+
     public string Line() =>
         $"граф_узлов={_graph.GetChildren().OfType<GraphNode>().Count()} связей={_graph.GetConnectionList().Count} " +
-        $"страница: ветка={_ws.Preview.Branch} значков={_ws.Preview.Items.Count} нарисовано={_view.Drawn} ошибок_в_панели={_errors.ItemCount}";
+        $"страница: ветка={_ws.Preview.Branch} значков={_ws.Preview.Items.Count} нарисовано={_view.Drawn} ошибок_в_панели={_errors.ItemCount} {_form.Line()}";
 }

@@ -152,9 +152,26 @@ public sealed class StudioSession
             SpellDef s => s.NameText,
             ItemDef i => i.NameText,
             BuildingBranchDef br => br.NameText,
+            RaceDef race => race.NameText,
+            AttackDef attack => attack.NameText,
             _ => null,
         };
         return key is not null && Text(key) is { Length: > 0 } text ? text : id[(id.LastIndexOf('/') + 1)..];
+    }
+
+    /// <summary>Картинка своей сущности-каталога по кадру графики игры (<c>IconBld:TOWERS:BUILDING/SPIRE</c>; оттенок <c>#…</c> не важен) —
+    /// байты из документа: окно Студии показывает и несохранённую картинку. Не своя или картинки нет — null.</summary>
+    public (System.Collections.Immutable.ImmutableArray<byte> Png, EntityArtSlot Slot)? Picture(string frame)
+    {
+        ArgumentNullException.ThrowIfNull(frame);
+        int colon = frame.IndexOf(':'), tint = frame.LastIndexOf('#');
+        if (colon <= 0) return null;
+        string archive = frame[..colon], name = tint > colon ? frame[(colon + 1)..tint] : frame[(colon + 1)..];
+        foreach (var e in History.Current.Entities.Where(e => e.Files.Count > 0))
+            foreach (var slot in EntityArt.Of(e.Kind).Where(s => s.ArchiveName.Equals(archive, StringComparison.OrdinalIgnoreCase)))
+                if (e.Files.TryGetValue(slot.File, out var png) && EntityArt.FrameName(e.Id, slot).Equals(name, StringComparison.OrdinalIgnoreCase))
+                    return (png, slot);
+        return null;
     }
 
     /// <summary>Строка по ключу; нет — null.</summary>

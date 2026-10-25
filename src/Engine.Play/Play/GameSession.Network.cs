@@ -50,15 +50,21 @@ public sealed partial class GameSession
         if (crt) Crt.Reset(random.Crt);
     }
 
-    /// <summary>Хост: вернуть партию к снимку <paramref name="snapshot"/> (<see cref="SnapshotWithoutSummaries"/>) — команда клиента упала
-    /// посреди, а отказ не должен менять ни состояния, ни генераторов. Бой, начатый командой, снимается.</summary>
-    public void Restore(GameState snapshot)
+    /// <summary>Точка отката (<see cref="Restore"/>): состояние, генераторы и бой в ходу — как до команды.</summary>
+    public object Checkpoint() => new SessionCheckpoint(SnapshotWithoutSummaries(), _battle, _ending);
+
+    private sealed record SessionCheckpoint(GameState State, BattleStart? Battle,
+                                            (BattleStart Battle, LastEdict.Rules.Map.MapState Spent, LastEdict.Rules.Map.MapState Map, BattleSummary Summary)? Ending);
+
+    /// <summary>Вернуть партию к точке <paramref name="checkpoint"/> (<see cref="Checkpoint"/>) — команда упала посреди (хост) или хост её
+    /// отклонил (клиент, бой у себя): отказ не меняет ни состояния, ни генераторов, ни боя, открытого до команды.</summary>
+    public void Restore(object checkpoint)
     {
-        ArgumentNullException.ThrowIfNull(snapshot);
-        _state = snapshot with { Random = null };
-        if (snapshot.Random is { } random) RestoreRandom(random);
-        _battle = null;
-        _ending = null;
+        if (checkpoint is not SessionCheckpoint saved) throw new ArgumentException("не точка отката этой сессии", nameof(checkpoint));
+        _state = saved.State with { Random = null };
+        if (saved.State.Random is { } random) RestoreRandom(random);
+        _battle = saved.Battle;
+        _ending = saved.Ending;
         _settled = (State, RngSteps, Crt.State);
     }
 

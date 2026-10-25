@@ -47,6 +47,7 @@ public sealed class NetClient
     private readonly object _gate = new();
     private readonly Dictionary<string, TaskCompletionSource<Receipt>> _waiting = new(StringComparer.Ordinal);
     private readonly string _instance = Guid.NewGuid().ToString("N")[..8];
+    private readonly System.Collections.Concurrent.ConcurrentQueue<NetMessage> _views = new();
     private JsonNode? _view;
     private int _serial;
     private bool _resyncing;
@@ -75,6 +76,10 @@ public sealed class NetClient
 
     /// <summary>Сессия над видом; null — вида ещё нет.</summary>
     public GameSession? Session { get; private set; }
+
+    /// <summary>Вид меняется сразу на потоке сети (проверки без показа). Игра ставит false и меняет вид в <see cref="Pump"/> на своём потоке:
+    /// окна читают партию между кадрами, а не посреди смены.</summary>
+    public bool AutoApply { get; init; } = true;
 
     /// <summary>Отказ входа (<see cref="Refused"/>), если был.</summary>
     public Refused? Refusal { get; private set; }
@@ -113,7 +118,11 @@ public sealed class NetClient
     {
         string? epoch;
         long seq;
-        lock (_gate) (epoch, seq) = (Epoch, Seq);
+        lock (_gate)
+        {
+            (epoch, seq) = (Epoch, Seq);
+            _resyncing = false;   // ответ на вход — недостающие дельты или снимок
+        }
         _send(new Hello(NetJson.ProtocolVersion, _options.Build, _options.Ruleset, _options.Name, Token ?? _options.Token, _options.Seat, epoch, seq));
     }
 
@@ -126,6 +135,7 @@ public sealed class NetClient
         lock (_gate)
         {
             Online = false;
+            _resyncing = false;
             foreach (var waiting in _waiting.Values) waiting.TrySetResult(new Receipt("", NetErrors.Lost, "связь с хостом потеряна"));
             _waiting.Clear();
         }
@@ -144,6 +154,9 @@ public sealed class NetClient
                 Refusal = refused;
                 Rejected?.Invoke(refused);
                 break;
+            case ViewSnapshot or ViewDelta when !AutoApply:
+                _views.Enqueue(message);
+                break;
             case ViewSnapshot snapshot: Apply(snapshot); break;
             case ViewDelta delta: Apply(delta); break;
             case TurnInfo turn:
@@ -159,6 +172,16 @@ public sealed class NetClient
             case BattleRequest request: BattleRequested?.Invoke(request); break;
             case Chat chat: ChatReceived?.Invoke(chat); break;
             default: Log?.Invoke($"net: от хоста — {message.GetType().Name}, не для клиента"); break;
+        }
+    }
+
+    /// <summary>Применить пришедшие виды (при <see cref="AutoApply"/> = false) — на потоке показа, каждый кадр.</summary>
+    public void Pump()
+    {
+        while (_views.TryDequeue(out var message))
+        {
+            if (message is ViewSnapshot snapshot) Apply(snapshot);
+            else if (message is ViewDelta delta) Apply(delta);
         }
     }
 
@@ -244,16 +267,33 @@ public sealed class NetClient
     {
         ArgumentNullException.ThrowIfNull(command);
         var session = Session ?? throw new NetCommandException(NetErrors.Lost, "вида партии ещё нет");
-        var before = NetHost.Mirrored(command) ? session.SnapshotWithoutSummaries() : null;
-        CommandResult? local = before is not null ? session.ExecuteHere(command) : null;
+        object? before = null;
+        CommandResult? local = null;
+        if (NetHost.Mirrored(command))
+            lock (_gate)
+            {
+                before = session.Checkpoint();
+                try
+                {
+                    local = session.ExecuteHere(command);
+                }
+                catch (Exception e) when (e is InvalidOperationException or KeyNotFoundException or ArgumentException or InvalidDataException)
+                {
+                    session.Restore(before);   // бой по виду не собрать (цели нет на виду) — хосту не шлётся
+                    throw new NetCommandException(NetErrors.InvalidCommand, $"команда «{command.GetType().Name}» не исполнена: {e.Message}");
+                }
+            }
         var receipt = Ask(command);
+        Pump();   // виды до ответа — сразу: окно, подавшее команду, видит её итог
         if (!receipt.Ok)
         {
-            if (before is not null) session.Restore(before);   // бой, собранный у себя, — снят: у хоста его нет
+            if (before is not null)
+                lock (_gate) session.Restore(before);   // бой, собранный у себя, — как до команды: у хоста её не было
             if (receipt.Error is NetErrors.StaleView or NetErrors.WrongTurn) Resync($"отказ {receipt.Error}");
             throw new NetCommandException(receipt.Error!, receipt.Text ?? receipt.Error!);
         }
-        if (receipt.Seed is { } seed) session.RestoreRandom(seed);
+        if (receipt.Seed is { } seed)
+            lock (_gate) session.RestoreRandom(seed);
         if (local is not null) return local;
         return new CommandResult(ValueCodec.Decode(receipt.Value), receipt.Report ?? [], [], []);
     }
@@ -288,13 +328,23 @@ public sealed class NetClient
     {
         ArgumentNullException.ThrowIfNull(request);
         var session = Session ?? throw new InvalidOperationException("вида партии ещё нет");
-        foreach (bool duel in new[] { false, true })
-        {
-            var battle = session.BuildBattleHere(request.AttackerGroup, request.DefenderGroup, duel);
-            if (BattleFingerprint.Of(battle) != request.Fingerprint) continue;
-            session.RestoreRandom(request.Seed);
-            return battle;
-        }
+        Pump();
+        lock (_gate)
+            foreach (bool duel in new[] { false, true })
+            {
+                LastEdict.Rules.Battle.BattleState battle;
+                try
+                {
+                    battle = session.BuildBattleHere(request.AttackerGroup, request.DefenderGroup, duel);
+                }
+                catch (Exception e) when (e is KeyNotFoundException or InvalidOperationException or ArgumentException)
+                {
+                    break;   // нападающего нет в виде (невидимый, под туманом) — бой не собрать
+                }
+                if (BattleFingerprint.Of(battle) != request.Fingerprint) continue;
+                session.RestoreRandom(request.Seed);
+                return battle;
+            }
         Resync($"бой {request.Battle} у клиента собирается не так, как у хоста");
         return null;
     }

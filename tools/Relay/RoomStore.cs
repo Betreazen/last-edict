@@ -30,7 +30,7 @@ internal sealed class RoomStore(string dir)
                     room.Add(m["peer"]!.GetValue<string>(), m["nick"]?.GetValue<string>() ?? "", m["seat"]?.GetValue<string>() ?? "",
                              m["keyHash"]!.GetValue<string>());
             }
-            catch (Exception e) when (e is JsonException or InvalidOperationException or NullReferenceException or IOException)
+            catch (Exception e) when (e is JsonException or InvalidOperationException or NullReferenceException or IOException or FormatException)
             {
                 room = null;   // битый файл комнаты — комнаты нет
             }
@@ -53,6 +53,12 @@ internal sealed class RoomStore(string dir)
             })]),
         };
         Write(Path.Combine(dir, room.Code + ".room.json"), node.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+    }
+
+    public long JournalBytes(Room room)
+    {
+        var file = new FileInfo(Path.Combine(dir, room.Code + ".journal.jsonl"));
+        return file.Exists ? file.Length : 0;
     }
 
     public string? ReadState(Room room) => File.Exists(StatePath(room)) ? File.ReadAllText(StatePath(room)) : null;

@@ -52,24 +52,29 @@ public interface IHostRunner
 /// (<see cref="BattleRequest"/>). Транспорт не знает: сообщения приходят в <see cref="Receive"/> (с любого потока) и уходят через
 /// <c>send(получатель, сообщение)</c>; получатель — соединение посредника.
 /// <para>Порядок команды (контракт §4): место и command_id (повтор — прежний ответ), право хода и номер вида, права на объекты команды,
-/// исполнение (сбой — откат партии и генераторов, <see cref="GameSession.Restore"/>), рассылка видов, ответ.</para>
+/// исполнение (сбой — откат партии, генераторов и боя, <see cref="GameSession.Restore"/>), рассылка видов, ответ.</para>
+/// <para>Замки: <c>_gate</c> — исполнение партии (команда, ход ИИ целиком), <c>_seatsLock</c> — места (кто на связи, виды, ответы).
+/// Ожидание ответа клиента на бой идёт под <c>_gate</c>, но уход соединения и ответ на бой его не ждут.</para>
 /// <para>Свои команды хоста (его окна) идут через тот же <see cref="GameSession.Remote"/> — после каждой клиенты получают вид.</para>
 /// </summary>
 public sealed class NetHost : IDisposable
 {
+    /// <summary>Сколько чисел <c>rand()</c> экран боя мог взять до действий и сколько действий в бою — больше от клиента не принимается.</summary>
+    internal const int MaxCrtDraws = 64, MaxBattleActions = 20_000;
+
     private readonly GameSession _session;
     private readonly NetHostOptions _options;
     private readonly Action<string, NetMessage> _send;
     private readonly ConcurrentQueue<(string Peer, NetMessage Message)> _inbox = new();
     private readonly Dictionary<string, Seat> _seats = new(StringComparer.OrdinalIgnoreCase);
-    private readonly ConcurrentDictionary<string, TaskCompletionSource<BattleReply>> _battles = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, PendingBattle> _battles = new(StringComparer.Ordinal);
     private readonly object _gate = new();
-    private bool _busy;
+    private readonly object _seatsLock = new();
+    private volatile bool _busy;
     private string _active = "";
     private string _token = "";
     private int _day = -1;
     private DateTimeOffset? _deadline;
-    private int _battleSerial;
 
     public NetHost(GameSession session, NetHostOptions options, Action<string, NetMessage> send)
     {
@@ -77,7 +82,7 @@ public sealed class NetHost : IDisposable
         _options = options ?? throw new ArgumentNullException(nameof(options));
         _send = send ?? throw new ArgumentNullException(nameof(send));
         _session.Remote = OwnCommand;
-        _session.Observer = new HostObserver(this, _session.Observer);
+        Observe();
     }
 
     public GameSession Session => _session;
@@ -105,7 +110,7 @@ public sealed class NetHost : IDisposable
     {
         ArgumentException.ThrowIfNullOrEmpty(player);
         if (!_session.Map.Players.ContainsKey(player)) throw new ArgumentException($"в партии нет игрока «{player}»", nameof(player));
-        lock (_gate)
+        lock (_seatsLock)
         {
             var seat = new Seat(player, token ?? NewToken());
             _seats[player] = seat;
@@ -118,40 +123,39 @@ public sealed class NetHost : IDisposable
     {
         get
         {
-            lock (_gate) return _seats.ToDictionary(s => s.Key, s => s.Value.Peer is not null, StringComparer.OrdinalIgnoreCase);
+            lock (_seatsLock) return _seats.ToDictionary(s => s.Key, s => s.Value.Peer is not null, StringComparer.OrdinalIgnoreCase);
         }
     }
 
     /// <summary>Игрок — клиент (не хост и не ИИ).</summary>
     public bool IsRemote(string player)
     {
-        lock (_gate) return _seats.ContainsKey(player);
+        lock (_seatsLock) return _seats.ContainsKey(player);
     }
 
-    /// <summary>Сообщение от соединения <paramref name="peer"/> — с любого потока. Ответ клиента на бой будит ждущий ход ИИ сразу; прочее
-    /// ждёт <see cref="Pump"/>.</summary>
+    /// <summary>Сообщение от соединения <paramref name="peer"/> — с любого потока. Ответ клиента на бой будит ждущий ход ИИ сразу (только от
+    /// того, кого спросили); прочее ждёт <see cref="Pump"/>.</summary>
     public void Receive(string peer, NetMessage message)
     {
         ArgumentNullException.ThrowIfNull(peer);
         ArgumentNullException.ThrowIfNull(message);
-        if (message is BattleReply reply && _battles.TryGetValue(reply.Battle, out var waiting))
+        if (message is BattleReply reply)
         {
-            waiting.TrySetResult(reply);
+            if (_battles.TryGetValue(reply.Battle, out var pending) && pending.Peer == peer) pending.Reply.TrySetResult(reply);
             return;
         }
         _inbox.Enqueue((peer, message));
     }
 
-    /// <summary>Соединение ушло: место ждёт возвращения, ход ИИ не ждёт его ответа на бой.</summary>
+    /// <summary>Соединение ушло: место ждёт возвращения, ход ИИ не ждёт его ответа на бой. Замка исполнения не ждёт.</summary>
     public void Disconnected(string peer)
     {
-        lock (_gate)
+        foreach (var pending in _battles.Values.Where(b => b.Peer == peer)) pending.Reply.TrySetCanceled();
+        lock (_seatsLock)
             foreach (var seat in _seats.Values.Where(s => s.Peer == peer))
             {
                 seat.Peer = null;
                 Log?.Invoke($"net: {seat.Player} отключился");
-                foreach (var (id, waiting) in _battles)
-                    if (id.StartsWith(seat.Player + ":", StringComparison.Ordinal)) waiting.TrySetCanceled();
             }
     }
 
@@ -159,12 +163,21 @@ public sealed class NetHost : IDisposable
     /// (ход ИИ на рабочем потоке), сообщения ждут.</summary>
     public void Pump()
     {
-        if (!Monitor.TryEnter(_gate)) return;
+        if (_busy || !Monitor.TryEnter(_gate)) return;
         try
         {
-            if (_busy) return;
             if (_day < 0) AnnounceTurn();
-            while (!_busy && _inbox.TryDequeue(out var item)) Handle(item.Peer, item.Message);
+            while (!_busy && _inbox.TryDequeue(out var item))
+            {
+                try
+                {
+                    Handle(item.Peer, item.Message);
+                }
+                catch (Exception e) when (e is not OutOfMemoryException)
+                {
+                    Log?.Invoke($"net: сообщение {item.Message.GetType().Name} от {item.Peer} не разобрано: {e.GetType().Name}: {e.Message}");
+                }
+            }
             if (!_busy) CheckDeadline();
         }
         finally
@@ -189,10 +202,30 @@ public sealed class NetHost : IDisposable
                 break;
             case Chat chat:
                 if (SeatOf(peer) is { } from)
-                    foreach (var s in _seats.Values.Where(s => s.Peer is not null)) _send(s.Peer!, chat with { From = from.Player });
+                {
+                    var line = chat with { From = from.Player, Text = chat.Text.Length > 500 ? chat.Text[..500] : chat.Text };
+                    foreach (string to in Peers()) Send(to, line);
+                }
                 break;
-            case BattleReply: break;   // бой уже не ждут (автобой по сроку или обрыву)
             default: Log?.Invoke($"net: от {peer} — {message.GetType().Name}, не для хоста"); break;
+        }
+    }
+
+    private IReadOnlyList<string> Peers()
+    {
+        lock (_seatsLock) return [.. _seats.Values.Select(s => s.Peer).OfType<string>()];
+    }
+
+    /// <summary>Отправка, которая не роняет исполнение: обрыв связи — в журнал (вид восстановит возвращение клиента).</summary>
+    private void Send(string peer, NetMessage message)
+    {
+        try
+        {
+            _send(peer, message);
+        }
+        catch (Exception e) when (e is not OutOfMemoryException)
+        {
+            Log?.Invoke($"net: {message.GetType().Name} для {peer} не отправлено: {e.Message}");
         }
     }
 
@@ -202,48 +235,59 @@ public sealed class NetHost : IDisposable
     {
         if (hello.Protocol != NetJson.ProtocolVersion)
         {
-            _send(peer, new Refused(NetErrors.UnsupportedVersion, $"другая версия протокола: у хоста {NetJson.ProtocolVersion}, у вас {hello.Protocol}"));
+            Send(peer, new Refused(NetErrors.UnsupportedVersion, $"другая версия протокола: у хоста {NetJson.ProtocolVersion}, у вас {hello.Protocol}"));
             return;
         }
         if (_options.Build.Length > 0 && hello.Build.Length > 0 && hello.Build != _options.Build)
         {
-            _send(peer, new Refused(NetErrors.UnsupportedVersion, $"другая сборка игры: у хоста {_options.Build}, у вас {hello.Build}"));
+            Send(peer, new Refused(NetErrors.UnsupportedVersion, $"другая сборка игры: у хоста {_options.Build}, у вас {hello.Build}"));
             return;
         }
         var differences = LastEdict.Data.Content.RulesetHash.Differences(_options.Ruleset, hello.Ruleset);
         if (differences.Count > 0)
         {
-            _send(peer, new Refused(NetErrors.RulesetMismatch, "правила не совпадают с хостом: " + string.Join("; ", differences)));
+            Send(peer, new Refused(NetErrors.RulesetMismatch, "правила не совпадают с хостом: " + string.Join("; ", differences)));
             return;
         }
-        var seat = hello.Token is { } token ? _seats.Values.FirstOrDefault(s => s.Token == token) : null;
-        if (hello.Token is not null && seat is null)
+        Seat? seat;
+        lock (_seatsLock)
         {
-            _send(peer, new Refused(NetErrors.UnknownToken, "место по этому ключу не найдено — войдите в комнату заново"));
-            return;
+            seat = hello.Token is { } token ? _seats.Values.FirstOrDefault(s => s.Token == token) : null;
+            if (hello.Token is not null && seat is null)
+            {
+                Send(peer, new Refused(NetErrors.UnknownToken, "место по этому ключу не найдено — войдите в комнату заново"));
+                return;
+            }
+            seat ??= hello.Seat is { } wanted && _seats.TryGetValue(wanted, out var asked) && !asked.Claimed ? asked
+                     : _seats.Values.FirstOrDefault(s => !s.Claimed);
+            if (seat is null)
+            {
+                Send(peer, new Refused(NetErrors.RoomFull, "свободных мест нет"));
+                return;
+            }
+            if (seat.Peer is { } old && old != peer) Log?.Invoke($"net: {seat.Player} вошёл с другого соединения");
+            seat.Peer = peer;
+            seat.Claimed = true;
+            seat.Name = hello.Name.Length > 32 ? hello.Name[..32] : hello.Name;
         }
-        seat ??= hello.Seat is { } wanted && _seats.TryGetValue(wanted, out var asked) && !asked.Claimed ? asked
-                 : _seats.Values.FirstOrDefault(s => !s.Claimed);
-        if (seat is null)
+        Send(peer, new Welcome(seat.Player, seat.Token, _options.Room));
+        bool resumed;
+        lock (_seatsLock)
         {
-            _send(peer, new Refused(NetErrors.RoomFull, "свободных мест нет"));
-            return;
+            resumed = hello.Epoch is not null && hello.Epoch == seat.Epoch && hello.Seq <= seat.Seq
+                      && (hello.Seq == seat.Seq || seat.Deltas.FirstOrDefault()?.BaseSeq <= hello.Seq);
+            if (resumed)
+                foreach (var delta in seat.Deltas.Where(d => d.BaseSeq >= hello.Seq)) Send(peer, delta);
         }
-        if (seat.Peer is { } old && old != peer) Log?.Invoke($"net: {seat.Player} вошёл с другого соединения");
-        seat.Peer = peer;
-        seat.Claimed = true;
-        seat.Name = hello.Name;
-        _send(peer, new Welcome(seat.Player, seat.Token, _options.Room));
-        if (hello.Epoch == seat.Epoch && hello.Seq <= seat.Seq && seat.Deltas.FirstOrDefault()?.BaseSeq <= hello.Seq)
-        {
-            foreach (var delta in seat.Deltas.Where(d => d.BaseSeq >= hello.Seq)) _send(peer, delta);
-            Log?.Invoke($"net: {seat.Player} вернулся, дослано дельт {seat.Seq - hello.Seq}");
-        }
+        if (resumed) Log?.Invoke($"net: {seat.Player} вернулся, дослано дельт {seat.Seq - hello.Seq}");
         else Snapshot(seat);
         SendTurn(seat);
     }
 
-    private Seat? SeatOf(string peer) => _seats.Values.FirstOrDefault(s => s.Peer == peer);
+    private Seat? SeatOf(string peer)
+    {
+        lock (_seatsLock) return _seats.Values.FirstOrDefault(s => s.Peer == peer);
+    }
 
     // ---- команды клиента
 
@@ -251,27 +295,32 @@ public sealed class NetHost : IDisposable
     {
         if (SeatOf(peer) is not { } seat)
         {
-            _send(peer, new Refused(NetErrors.UnknownToken, "сначала войдите в комнату"));
+            Send(peer, new Refused(NetErrors.UnknownToken, "сначала войдите в комнату"));
             return;
         }
         string payload = JsonSerializer.Serialize(request.Command, NetJson.Options);
-        if (seat.Receipts.TryGetValue(request.CommandId, out var done))
+        (string Payload, Receipt Receipt) done;
+        bool repeated;
+        lock (_seatsLock) repeated = seat.Receipts.TryGetValue(request.CommandId, out done);
+        if (repeated)
         {
-            _send(peer, done.Payload == payload ? done.Receipt
+            Send(peer, done.Payload == payload ? done.Receipt
                 : new Receipt(request.CommandId, NetErrors.InvalidCommand, "повтор command_id с другой командой"));
             return;
         }
+        string? notYours = null;
         string? refusal = !seat.Player.Equals(_session.ActiveHuman, StringComparison.OrdinalIgnoreCase) || _session.Over ? NetErrors.WrongTurn
             : request.TurnToken != _token ? NetErrors.WrongTurn
             : request.ExpectedViewSeq != seat.Seq ? NetErrors.StaleView
-            : CommandRights.Check(_session.State, seat.Player, request.Command) is not null ? NetErrors.NotYours
+            : (notYours = CommandRights.Check(_session.State, seat.Player, request.Command) ?? BattleRights(seat.Player, request.Command)) is not null
+                ? NetErrors.NotYours
             : null;
         if (refusal is not null)
         {
             string text = refusal switch
             {
                 NetErrors.StaleView => "вид устарел — нужен свежий",
-                NetErrors.NotYours => CommandRights.Check(_session.State, seat.Player, request.Command)!,
+                NetErrors.NotYours => notYours!,
                 _ => "сейчас не ваш ход",
             };
             Remember(seat, request.CommandId, payload, new Receipt(request.CommandId, refusal, text));
@@ -279,10 +328,36 @@ public sealed class NetHost : IDisposable
         }
         _busy = true;
         var runner = Runner ?? Immediate.Instance;
-        runner.Run(request.Command, () => Execute(seat, request, payload), () =>
+        runner.Run(request.Command, () => Execute(seat, request, payload), () => _busy = false);
+    }
+
+    /// <summary>Бой клиента: собрать — только на видимую цель; кончить и записать — только свой открытый бой; бой экрана — только
+    /// действиями (повтор у хоста), в разумных пределах.</summary>
+    private string? BattleRights(string player, GameCommand command)
+    {
+        const string NotHisBattle = "бой — не ваш или не открыт";
+        switch (command)
         {
-            lock (_gate) _busy = false;
-        });
+            case StartBattleCommand start:
+                var map = _session.Map;
+                var fog = map.Fog.GetValueOrDefault(map.Players[player].FogId);
+                var (x, y) = map.Stacks.TryGetValue(start.Target, out var target) ? (target.X, target.Y)
+                    : map.Sites.FirstOrDefault(s => s.Id.Equals(start.Target, StringComparison.OrdinalIgnoreCase)) is { } site ? (site.X, site.Y)
+                    : (-1, -1);
+                return x < 0 || fog is not null && map.Contains(x, y) && fog[x, y] ? "цели нет на виду" : null;
+            case EndBattleCommand end:
+                if (end.Play is not { } play) return "бой экрана — только действиями";
+                if (play.CrtDraws is < 0 or > MaxCrtDraws || play.Actions.Count > MaxBattleActions || end.Log.Count > MaxBattleActions)
+                    return "бой экрана — слишком длинный";
+                return _session.BattleInProgress is { } open
+                       && (OwnerOf(_session.Map, open.AttackerGroup).Equals(player, StringComparison.OrdinalIgnoreCase)
+                           || OwnerOf(_session.Map, open.DefenderGroup).Equals(player, StringComparison.OrdinalIgnoreCase))
+                    ? null : NotHisBattle;
+            case CommitBattleCommand:
+                return _session.BattleEnding ? null : NotHisBattle;
+            default:
+                return null;
+        }
     }
 
     /// <summary>Исполнить команду клиента: правила, рассылка, ответ. Сбой — откат и отказ без подробностей (их — в журнал хоста).</summary>
@@ -290,7 +365,8 @@ public sealed class NetHost : IDisposable
     {
         lock (_gate)
         {
-            var before = _session.SnapshotWithoutSummaries();
+            Observe();
+            var before = _session.Checkpoint();
             CommandResult result;
             _session.BattlesPlayedElsewhere = true;
             _session.ElsewhereBattleDiverged = false;
@@ -298,8 +374,7 @@ public sealed class NetHost : IDisposable
             {
                 result = _session.ExecuteHere(request.Command);
             }
-            catch (Exception e) when (e is InvalidOperationException or ArgumentException or KeyNotFoundException or InvalidDataException
-                                          or NullReferenceException or IndexOutOfRangeException)
+            catch (Exception e) when (e is not OutOfMemoryException)
             {
                 _session.Restore(before);
                 Log?.Invoke($"net: команда {seat.Player} {request.Command.GetType().Name} не исполнена: {e.GetType().Name}: {e.Message}");
@@ -339,7 +414,9 @@ public sealed class NetHost : IDisposable
         }
     }
 
-    /// <summary>Места генератора боя и CRT сейчас — клиенту для боя на его экране (остальные потоки ему не нужны и не показываются).</summary>
+    /// <summary>Места генератора боя и CRT сейчас — клиенту для боя на его экране (остальные потоки ему не нужны и не показываются).
+    /// Клиент узнаёт броски только этого боя (вперёд — пока поток боя не сдвинет кто-то ещё): принятая цена боя без задержки на удар
+    /// (<c>docs/network.md</c> §2).</summary>
     private RandomStreams BattleSeed()
     {
         var all = _session.RandomNow();
@@ -350,10 +427,15 @@ public sealed class NetHost : IDisposable
 
     private void Remember(Seat seat, string id, string payload, Receipt receipt)
     {
-        seat.Receipts[id] = (payload, receipt);
-        seat.ReceiptOrder.Enqueue(id);
-        while (seat.ReceiptOrder.Count > 256) seat.Receipts.Remove(seat.ReceiptOrder.Dequeue());
-        if (seat.Peer is { } peer) _send(peer, receipt);
+        string? peer;
+        lock (_seatsLock)
+        {
+            seat.Receipts[id] = (payload, receipt);
+            seat.ReceiptOrder.Enqueue(id);
+            while (seat.ReceiptOrder.Count > 256) seat.Receipts.Remove(seat.ReceiptOrder.Dequeue());
+            peer = seat.Peer;
+        }
+        if (peer is not null) Send(peer, receipt);
     }
 
     // ---- свои команды хоста
@@ -362,6 +444,7 @@ public sealed class NetHost : IDisposable
     {
         lock (_gate)
         {
+            Observe();
             var result = _session.ExecuteHere(command);
             Broadcast();
             AnnounceTurn();
@@ -369,18 +452,29 @@ public sealed class NetHost : IDisposable
         }
     }
 
+    /// <summary>Наблюдатель хода хоста — поверх того, что поставил показ (сцена карты меняет его перед ходом ИИ): бои клиентов уходят им.</summary>
+    private void Observe()
+    {
+        if (_session.MainObserver is not HostObserver) _session.MainObserver = new HostObserver(this, _session.MainObserver);
+    }
+
     // ---- вид
 
     /// <summary>Разослать каждому месту его вид (дельтой к прошлому). Зовётся после каждой команды и перед боем клиента в ходе ИИ.</summary>
     public void Broadcast()
     {
-        lock (_gate)
+        List<Seat> seats;
+        lock (_seatsLock) seats = [.. _seats.Values];
+        if (seats.Count == 0) return;
+        var state = _session.SnapshotWithoutSummaries();
+        foreach (var seat in seats)
         {
-            if (_seats.Count == 0) return;
-            var state = _session.SnapshotWithoutSummaries();
-            foreach (var seat in _seats.Values)
+            var view = NetView.Of(state, seat.Player);
+            ViewDelta? delta = null;
+            string? peer;
+            lock (_seatsLock)
             {
-                var view = NetView.Of(state, seat.Player);
+                peer = seat.Peer;
                 if (seat.View is null)
                 {
                     seat.View = view;
@@ -389,24 +483,31 @@ public sealed class NetHost : IDisposable
                 }
                 var ops = ViewPatch.Diff(seat.View, view);
                 if (ops.Count == 0) continue;
-                var delta = new ViewDelta(seat.Epoch!, seat.Seq, seat.Seq + 1, ops, ViewPatch.Hash(view));
+                delta = new ViewDelta(seat.Epoch!, seat.Seq, seat.Seq + 1, ops, ViewPatch.Hash(view));
                 seat.View = view;
                 seat.Seq++;
                 seat.Deltas.Add(delta);
                 if (seat.Deltas.Count > _options.KeepDeltas) seat.Deltas.RemoveAt(0);
-                if (seat.Peer is { } peer) _send(peer, delta);
             }
+            if (peer is not null) Send(peer, delta);
         }
     }
 
     private void Snapshot(Seat seat)
     {
         var view = NetView.Of(_session.SnapshotWithoutSummaries(), seat.Player);
-        seat.View = view;
-        seat.Epoch = NewToken();
-        seat.Seq++;
-        seat.Deltas.Clear();
-        if (seat.Peer is { } peer) _send(peer, new ViewSnapshot(seat.Epoch, seat.Seq, view.DeepClone(), ViewPatch.Hash(view)));
+        ViewSnapshot snapshot;
+        string? peer;
+        lock (_seatsLock)
+        {
+            seat.View = view;
+            seat.Epoch = NewToken();
+            seat.Seq++;
+            seat.Deltas.Clear();
+            snapshot = new ViewSnapshot(seat.Epoch, seat.Seq, view.DeepClone(), ViewPatch.Hash(view));
+            peer = seat.Peer;
+        }
+        if (peer is not null) Send(peer, snapshot);
     }
 
     // ---- ход и таймер
@@ -421,7 +522,9 @@ public sealed class NetHost : IDisposable
         _day = day;
         _token = _session.Over ? "" : NewToken();
         _deadline = _options.TurnSeconds is { } seconds && !_session.Over ? _options.Clock().AddSeconds(seconds) : null;
-        foreach (var seat in _seats.Values) SendTurn(seat);
+        List<Seat> seats;
+        lock (_seatsLock) seats = [.. _seats.Values];
+        foreach (var seat in seats) SendTurn(seat);
         TurnChanged?.Invoke(TurnFor(""));
     }
 
@@ -431,80 +534,98 @@ public sealed class NetHost : IDisposable
 
     private void SendTurn(Seat seat)
     {
-        if (seat.Peer is { } peer && _day >= 0) _send(peer, TurnFor(seat.Player));
+        string? peer;
+        lock (_seatsLock) peer = seat.Peer;
+        if (peer is not null && _day >= 0) Send(peer, TurnFor(seat.Player));
     }
 
     /// <summary>Срок хода клиента вышел (с запасом), а конца хода нет — хост заканчивает его сам: открытый бой — автобоем.</summary>
     private void CheckDeadline()
     {
         if (_deadline is not { } deadline || _options.Clock() < deadline.AddSeconds(_options.GraceSeconds)) return;
-        if (!_seats.ContainsKey(_session.ActiveHuman)) return;   // ход хоста: срок держит его окно
+        if (!IsRemote(_session.ActiveHuman)) return;   // ход хоста: срок держит его окно
         Log?.Invoke($"net: срок хода {_session.ActiveHuman} вышел — конец хода за него");
-        _deadline = null;
         _busy = true;
         var runner = Runner ?? Immediate.Instance;
-        runner.Run(new EndTurnCommand(), ForceEndTurn, () =>
-        {
-            lock (_gate) _busy = false;
-        });
+        runner.Run(new EndTurnCommand(), ForceEndTurn, () => _busy = false);
     }
 
     private CommandResult ForceEndTurn()
     {
         lock (_gate)
         {
-            if (_session.BattleInProgress is { } battle)
+            Observe();
+            var before = _session.Checkpoint();
+            try
             {
-                var rules = _session.Book!.Rules;
-                var auto = new BattleSession(battle, new BattleSim(battle, _session.BattleRng, rules.Constants), rules.Constants) { Auto = true };
-                auto.PlayOut();
-                _session.ExecuteHere(new EndBattleCommand(auto.Log, auto.Played(0)));
+                if (_session.BattleInProgress is { } battle)
+                {
+                    var rules = _session.Book!.Rules;
+                    var auto = new BattleSession(battle, new BattleSim(battle, _session.BattleRng, rules.Constants), rules.Constants) { Auto = true };
+                    auto.PlayOut();
+                    _session.ExecuteHere(new EndBattleCommand(auto.Log, auto.Played(0)));
+                }
+                if (_session.BattleEnding) _session.ExecuteHere(new CommitBattleCommand());
+                var result = _session.ExecuteHere(new EndTurnCommand());
+                Broadcast();
+                AnnounceTurn();
+                Changed?.Invoke();
+                return result;
             }
-            if (_session.BattleEnding) _session.ExecuteHere(new CommitBattleCommand());
-            var result = _session.ExecuteHere(new EndTurnCommand());
-            Broadcast();
-            AnnounceTurn();
-            Changed?.Invoke();
-            return result;
+            catch (Exception e) when (e is not OutOfMemoryException)
+            {
+                _session.Restore(before);
+                _deadline = _options.Clock();   // попробовать снова через запас
+                Log?.Invoke($"net: конец хода за {_session.ActiveHuman} не исполнен: {e.GetType().Name}: {e.Message}");
+                return new CommandResult(null, [], [], []);
+            }
         }
     }
 
     // ---- бой клиента в ходе ИИ
 
     /// <summary>Бой, в котором сторона — клиент: показать ему бой и ждать ответа (<see cref="BattleRequest"/>); бой не его, клиента нет
-    /// или он не ответил в срок — null (автобой ядром). Зовёт наблюдатель хода хоста (<see cref="HostObserver"/>, крючки сцены карты).</summary>
+    /// или он не ответил в срок, ответ не повторяется — null (автобой ядром). Зовёт наблюдатель хода хоста (<see cref="HostObserver"/>).</summary>
     public BattleDecision? RemoteBattle(BattleState state)
     {
         ArgumentNullException.ThrowIfNull(state);
+        var map = _session.Map;
+        string attacker = OwnerOf(map, state.AttackerGroup), defender = OwnerOf(map, state.DefenderGroup);
         Seat? seat;
-        string side;
-        BattleRequest request;
-        string id;
-        lock (_gate)
+        string? peer;
+        lock (_seatsLock)
         {
-            var map = _session.Map;
-            string attacker = OwnerOf(map, state.AttackerGroup), defender = OwnerOf(map, state.DefenderGroup);
             seat = _seats.GetValueOrDefault(defender) ?? _seats.GetValueOrDefault(attacker);
-            if (seat?.Peer is null) return null;
-            side = seat.Player.Equals(defender, StringComparison.OrdinalIgnoreCase) ? "defender" : "attacker";
-            Broadcast();
-            id = $"{seat.Player}:{++_battleSerial}";
-            request = new BattleRequest(id, state.AttackerGroup, state.DefenderGroup, BattleFingerprint.Of(state), BattleSeed(), side);
+            peer = seat?.Peer;
         }
-        var waiting = new TaskCompletionSource<BattleReply>(TaskCreationOptions.RunContinuationsAsynchronously);
-        _battles[id] = waiting;
+        if (seat is null || peer is null) return null;
+        string side = seat.Player.Equals(defender, StringComparison.OrdinalIgnoreCase) ? "defender" : "attacker";
+        Broadcast();
+        string id = NewToken();
+        var request = new BattleRequest(id, state.AttackerGroup, state.DefenderGroup, BattleFingerprint.Of(state), BattleSeed(), side);
+        var pending = new PendingBattle(peer, new TaskCompletionSource<BattleReply>(TaskCreationOptions.RunContinuationsAsynchronously));
+        _battles[id] = pending;
+        var random = _session.RandomNow();
         try
         {
-            _send(seat.Peer!, request);
-            if (!waiting.Task.Wait(TimeSpan.FromSeconds(_options.BattleSeconds))) return null;
-            var reply = waiting.Task.Result;
-            if (reply.Play is null) return null;
-            var log = _session.ReplayBattleHere(reply.Play, state);
-            if (!log.SequenceEqual(reply.Log)) Log?.Invoke($"net: бой {id} у хоста сыгран не так, как у клиента — итог хоста");
-            return new BattleDecision(log, reply.Play);
+            Send(peer, request);
+            if (!pending.Reply.Task.Wait(TimeSpan.FromSeconds(_options.BattleSeconds))) return null;
+            var reply = pending.Reply.Task.Result;
+            if (reply.Play is not { } play) return null;
+            if (play.CrtDraws is < 0 or > MaxCrtDraws || play.Actions.Count > MaxBattleActions) return null;
+            var log = _session.ReplayBattleHere(play, state);
+            if (!log.SequenceEqual(reply.Log)) Log?.Invoke($"net: бой {seat.Player} в ходе ИИ у хоста сыгран не так, как у клиента — итог хоста");
+            return new BattleDecision(log, play);
         }
         catch (AggregateException e) when (e.InnerException is TaskCanceledException)
         {
+            return null;
+        }
+        catch (Exception e) when (e is not OutOfMemoryException)
+        {
+            // Ответ не повторяется на бою хоста: генераторы — как до ответа, бой играет ядро (бой мог сдвинуться — журнал это покажет).
+            _session.RestoreRandom(random);
+            Log?.Invoke($"net: ответ {seat.Player} на бой не повторяется: {e.GetType().Name}: {e.Message} — автобой");
             return null;
         }
         finally
@@ -521,10 +642,12 @@ public sealed class NetHost : IDisposable
 
     public void Dispose()
     {
-        foreach (var waiting in _battles.Values) waiting.TrySetCanceled();
+        foreach (var pending in _battles.Values) pending.Reply.TrySetCanceled();
         _session.Remote = null;
-        if (_session.Observer is HostObserver observer) _session.Observer = observer.Inner;
+        if (_session.MainObserver is HostObserver observer) _session.MainObserver = observer.Inner;
     }
+
+    private sealed record PendingBattle(string Peer, TaskCompletionSource<BattleReply> Reply);
 
     private sealed class Seat(string player, string token)
     {

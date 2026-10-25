@@ -25,8 +25,22 @@ public sealed class RelayOptions
     /// <summary>Сколько держать асинхронную комнату без ходов.</summary>
     public TimeSpan AsyncRoomTtl { get; init; } = TimeSpan.FromDays(60);
 
-    /// <summary>Сколько входов в комнату (по коду) в минуту с одного адреса: код не перебрать.</summary>
+    /// <summary>Сколько входов и созданий комнат в минуту с одного адреса: код не перебрать, комнаты не забить.</summary>
     public int JoinsPerMinute { get; init; } = 30;
+
+    /// <summary>Участников в комнате не больше.</summary>
+    public int MaxMembers { get; init; } = 16;
+
+    /// <summary>Кадров в секунду от соединения (среднее; запас — <see cref="FrameBurst"/>).</summary>
+    public int FramesPerSecond { get; init; } = 100;
+
+    public int FrameBurst { get; init; } = 400;
+
+    /// <summary>Сколько байт может ждать отправки одному соединению: медленный получатель закрывается, а не копит память.</summary>
+    public long MaxQueuedBytes { get; init; } = 96L << 20;
+
+    /// <summary>Журнал асинхронной комнаты на диске не больше (дальше ходы пишутся без журнала).</summary>
+    public long MaxJournalBytes { get; init; } = 64L << 20;
 
     public static RelayOptions FromEnvironment() => new()
     {
@@ -67,7 +81,7 @@ public sealed class RelayHub
     /// <summary>Вести соединение до закрытия.</summary>
     public async Task Serve(WebSocket socket, string address, CancellationToken stop)
     {
-        var connection = new Connection(socket, address);
+        var connection = new Connection(socket, address, _options.MaxQueuedBytes);
         var sender = connection.SendLoop(stop);
         try
         {
@@ -83,7 +97,19 @@ public sealed class RelayHub
                     connection.Send(Error("bad", "кадр — не объект JSON"));
                     continue;
                 }
-                Handle(connection, frame);
+                if (!connection.Admit(_options.FramesPerSecond, _options.FrameBurst))
+                {
+                    connection.Send(Error("rate", "слишком много сообщений — кадр пропущен"));
+                    continue;
+                }
+                try
+                {
+                    Handle(connection, frame);
+                }
+                catch (Exception e) when (e is InvalidOperationException or FormatException or JsonException or ArgumentException)
+                {
+                    connection.Send(Error("bad", "поле кадра не того вида"));
+                }
             }
         }
         catch (WebSocketException)
@@ -146,6 +172,7 @@ public sealed class RelayHub
             connection.Send(Error("busy", "соединение уже в комнате"));
             return;
         }
+        if (!Allowed(connection)) return;
         Sweep();
         if (_rooms.Count >= _options.MaxRooms)
         {
@@ -169,11 +196,21 @@ public sealed class RelayHub
     {
         if (!Allowed(connection)) return;
         if (Find(connection, frame) is not { } room) return;
-        string key = NewKey();
+        string key = NewKey(), seat = Text(frame, "seat", 32);
         Member member;
         lock (room)
         {
-            member = room.Add($"p{room.Members.Count + 1}", Text(frame, "nick", 32), Text(frame, "seat", 32), Hash(key));
+            if (room.Members.Count >= _options.MaxMembers)
+            {
+                connection.Send(Error("full", "в комнате нет места"));
+                return;
+            }
+            if (seat.Length > 0 && room.Members.Any(m => m.Seat == seat))
+            {
+                connection.Send(Error("seat", "это место уже занято — войдите своим ключом"));
+                return;
+            }
+            member = room.Add($"p{room.Members.Count + 1}", Text(frame, "nick", 32), seat, Hash(key));
             if (room.Async) _store.Save(room);
         }
         Attach(connection, room, member);
@@ -194,12 +231,6 @@ public sealed class RelayHub
             connection.Send(Error("key", "место в комнате по этому ключу не найдено"));
             return;
         }
-        if (frame["seat"]?.GetValue<string>() is { Length: > 0 } seat && member.Seat.Length == 0)
-            lock (room)
-            {
-                member.Seat = seat[..Math.Min(seat.Length, 32)];
-                if (room.Async) _store.Save(room);
-            }
         member.Connection?.Close();   // прежнее соединение того же места
         Attach(connection, room, member);
         connection.Send(Joined(room, member, null));
@@ -209,6 +240,11 @@ public sealed class RelayHub
     }
 
     private static JsonObject Joined(Room room, Member member, string? key)
+    {
+        lock (room) return JoinedFrame(room, member, key);
+    }
+
+    private static JsonObject JoinedFrame(Room room, Member member, string? key)
     {
         var joined = new JsonObject
         {
@@ -285,7 +321,7 @@ public sealed class RelayHub
         string to = Text(frame, "to", 16);
         var message = new JsonObject { ["op"] = "msg", ["from"] = from.Peer, ["data"] = frame["data"]?.DeepClone() };
         if (to == "*") room.Broadcast(from.Peer, message);
-        else if (!room.Send(to, message)) connection.Send(Error("offline", $"участника {to} нет на связи") .With("to", to));
+        else room.Send(to, message);   // нет на связи — пропадает: его уход хост уже знает (gone)
     }
 
     // ---- асинхронный режим
@@ -300,7 +336,9 @@ public sealed class RelayHub
             return;
         }
         long rev = frame["rev"]?.GetValue<long>() ?? -1;
-        string next = Text(frame, "next", 32), state = frame["state"]?.GetValue<string>() ?? "";
+        int day = frame["day"]?.GetValue<int>() ?? 0;
+        string next = Text(frame, "next", 32), hash = Text(frame, "hash", 128), state = frame["state"]?.GetValue<string>() ?? "";
+        string? journal = frame["journal"]?.GetValue<string>();
         lock (room)
         {
             bool mayWrite = room.Rev == 0 ? member.Peer == room.Host : member.Seat.Length > 0 && member.Seat == room.Next;
@@ -319,16 +357,25 @@ public sealed class RelayHub
                 connection.Send(Error("bad", "нет партии"));
                 return;
             }
-            room.Rev = rev;
-            room.Next = next;
-            room.Day = frame["day"]?.GetValue<int>() ?? room.Day;
-            room.Hash = Text(frame, "hash", 128);
-            room.Touched = DateTimeOffset.UtcNow;
-            _store.Save(room, state, frame["journal"]?.GetValue<string>());
+            // Сначала диск, потом подтверждение: сбой записи возвращает комнату к прежней ревизии.
+            var (oldRev, oldNext, oldDay, oldHash) = (room.Rev, room.Next, room.Day, room.Hash);
+            (room.Rev, room.Next, room.Day, room.Hash, room.Touched) = (rev, next, day, hash, DateTimeOffset.UtcNow);
+            try
+            {
+                _store.Save(room, state, _store.JournalBytes(room) < _options.MaxJournalBytes ? journal : null);
+            }
+            catch (IOException)
+            {
+                (room.Rev, room.Next, room.Day, room.Hash) = (oldRev, oldNext, oldDay, oldHash);
+                connection.Send(Error("storage", "партия не записана — попробуйте ещё раз"));
+                return;
+            }
         }
         connection.Send(new JsonObject { ["op"] = "stored", ["rev"] = rev });
         Logs.Stored(_log, room.Code, rev, next);
-        foreach (var other in room.Members.Where(m => m.Seat == next)) NotifyTurn(room, other);
+        List<Member> nextUp;
+        lock (room) nextUp = [.. room.Members.Where(m => m.Seat == next)];
+        foreach (var other in nextUp) NotifyTurn(room, other);
     }
 
     private void Load(Connection connection)
@@ -381,6 +428,8 @@ public sealed class RelayHub
     public void Sweep()
     {
         var now = DateTimeOffset.UtcNow;
+        foreach (var (address, joins) in _joins)
+            if (now - joins.Minute > TimeSpan.FromMinutes(2)) _joins.TryRemove(address, out _);
         foreach (var room in _rooms.Values)
         {
             bool old;
@@ -487,15 +536,40 @@ internal sealed class Room(string code, string name, bool async)
 }
 
 /// <summary>Соединение: очередь отправки (кадры уходят по одному — WebSocket не допускает двух отправок сразу).</summary>
-internal sealed class Connection(WebSocket socket, string address)
+internal sealed class Connection(WebSocket socket, string address, long maxQueued)
 {
-    private readonly Channel<string> _out = Channel.CreateBounded<string>(new BoundedChannelOptions(4096) { FullMode = BoundedChannelFullMode.DropWrite });
+    private readonly Channel<string> _out = Channel.CreateUnbounded<string>(new UnboundedChannelOptions { SingleReader = true });
+    private long _queued;
+    private double _tokens = double.NaN;
+    private long _stamp;
 
     public string Address { get; } = address;
     public Room? Room { get; set; }
     public Member? Member { get; set; }
 
-    public void Send(JsonObject message) => _out.Writer.TryWrite(message.ToJsonString());
+    /// <summary>В очередь отправки; ждёт больше <c>maxQueued</c> байт — получатель не читает: соединение закрывается.</summary>
+    public void Send(JsonObject message)
+    {
+        string text = message.ToJsonString();
+        if (Interlocked.Add(ref _queued, text.Length) > maxQueued)
+        {
+            Close();
+            return;
+        }
+        if (!_out.Writer.TryWrite(text)) Interlocked.Add(ref _queued, -text.Length);
+    }
+
+    /// <summary>Ведро кадров: <paramref name="perSecond"/> в секунду, запас <paramref name="burst"/>.</summary>
+    public bool Admit(int perSecond, int burst)
+    {
+        long now = System.Diagnostics.Stopwatch.GetTimestamp();
+        _tokens = double.IsNaN(_tokens) ? burst
+            : Math.Min(burst, _tokens + (now - _stamp) * perSecond / (double)System.Diagnostics.Stopwatch.Frequency);
+        _stamp = now;
+        if (_tokens < 1) return false;
+        _tokens--;
+        return true;
+    }
 
     public void Complete() => _out.Writer.TryComplete();
 
@@ -512,6 +586,7 @@ internal sealed class Connection(WebSocket socket, string address)
         {
             await foreach (string text in _out.Reader.ReadAllAsync(stop).ConfigureAwait(false))
             {
+                Interlocked.Add(ref _queued, -text.Length);
                 if (socket.State != WebSocketState.Open) break;
                 await socket.SendAsync(Encoding.UTF8.GetBytes(text), WebSocketMessageType.Text, true, stop).ConfigureAwait(false);
             }

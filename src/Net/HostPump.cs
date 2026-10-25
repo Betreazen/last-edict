@@ -15,12 +15,22 @@ public sealed class HostPump : IDisposable
         {
             while (!_stop.IsCancellationRequested)
             {
-                host.Pump();
+                try
+                {
+                    host.Pump();
+                }
+                catch (Exception e) when (e is not OutOfMemoryException)
+                {
+                    Failed?.Invoke(e);   // поток хоста живёт: сбой одной команды не роняет процесс
+                }
                 _stop.Token.WaitHandle.WaitOne(period);
             }
         }) { IsBackground = true, Name = "net-host" };
         _thread.Start();
     }
+
+    /// <summary>Сбой разбора почты (поток при этом продолжает).</summary>
+    public event Action<Exception>? Failed;
 
     public void Dispose()
     {

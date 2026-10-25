@@ -35,10 +35,11 @@ public static class PlayerView
         {
             if (Mine(stack.Owner)) stacks[id] = stack;
             else if (Sees(stack.X, stack.Y) && !invisible.Contains(id))
-                stacks[id] = stack with { Order = 0, OrderTarget = "", AiOrder = 0, AiOrderTarget = "", AiIgnore = false };
+                // Видимый чужой отряд: юниты и снаряжение (оно в бою) — да; сумка, приказы — нет.
+                stacks[id] = stack with { Items = [], Order = 0, OrderTarget = "", AiOrder = 0, AiOrderTarget = "", AiIgnore = false };
         }
 
-        var sites = map.Sites.Where(s => s.Kind != SiteKind.Bag || Sees(s.X, s.Y)).Select(s => Sees(s.X, s.Y) ? s : Veiled(s)).ToList();
+        var sites = map.Sites.Where(s => s.Kind != SiteKind.Bag || Sees(s.X, s.Y)).Select(s => Sees(s.X, s.Y) || Mine(s.Owner) ? s : Veiled(s)).ToList();
 
         var units = new Dictionary<string, MapUnit>(StringComparer.OrdinalIgnoreCase);
         void Keep(IEnumerable<string> ids)
@@ -87,8 +88,8 @@ public static class PlayerView
         var shownLooks = new MapLooks
         {
             Map = projected, TreeImage = looks.TreeImage, TreeGroup = looks.TreeGroup,
-            Forts = [.. looks.Forts.Select(f => Sees(f.X, f.Y) ? f : f with { Riot = false, Garrison = "" })],
-            Ruins = looks.Ruins, Sites = looks.Sites, Crystals = looks.Crystals,
+            Forts = [.. looks.Forts.Select(f => Sees(f.X, f.Y) || Mine(f.Owner) ? f : f with { Owner = "", Riot = false, Garrison = "" })],
+            Ruins = [.. looks.Ruins.Select(r => Sees(r.X, r.Y) ? r : r with { Looted = false })], Sites = looks.Sites, Crystals = looks.Crystals,
             Bags = [.. looks.Bags.Where(b => Sees(b.X, b.Y))], Tombs = [.. looks.Tombs.Where(t => Sees(t.X, t.Y))],
             Rods = [.. looks.Rods.Where(r => rods.ContainsKey(r.Id))], Landmarks = looks.Landmarks, Mountains = looks.Mountains,
             Roads = looks.Roads, Stacks = [.. looks.Stacks.Where(s => stacks.ContainsKey(s.Id))], Banners = looks.Banners,
@@ -117,7 +118,8 @@ public static class PlayerView
     private static MapSite Veiled(MapSite s) => s with
     {
         Owner = "", Cash = Bank.Zero, ItemId = "", LooterId = "", Items = [], Guards = [], GuardSlots = [], VisitorId = "", StackId = "",
-        Visitors = [], RiotTurn = null, Morale = null, PreviousOwners = null,
+        Visitors = [], RiotTurn = null, Morale = null, PreviousOwners = null, Stock = [], Buys = null, GrowthTurn = null, RegenBonus = null,
+        ProtectBonus = "", Gone = false,
     };
 
     /// <summary>Чужой туман — вся карта скрыта: что разведал другой, не видно.</summary>

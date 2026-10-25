@@ -330,6 +330,19 @@ public class NetProtocolTests
         hub.FromClient("peer-3")(request);
         hub.FromClient("peer-3")(request with { ExpectedViewSeq = probe.Seq });
         Assert.Equal(entries + 1, game.Journal.Entries.Count);
+        // Бой: цель под туманом — не собрать; конец боя без действий (журнал «как вышло») и без открытого боя — отказ.
+        var map = game.Map;
+        var fog = map.Fog[map.Players[NetTestGame.ClientPlayer].FogId];
+        var hidden = map.Stacks.Values.First(s => s.Owner != NetTestGame.ClientPlayer && fog[s.X, s.Y]);
+        Assert.Throws<NetCommandException>(() => probe.Session.Execute(new StartBattleCommand(own.Id, hidden.Id)));   // и у себя не собрать
+        var forged = new CommandRequest("forged-1", probe.Seq, probe.Turn!.Token!, new StartBattleCommand(own.Id, hidden.Id));
+        hub.FromClient("peer-3")(forged);   // мимо своей сессии — хост отказывает сам
+        hub.FromClient("peer-3")(forged with { CommandId = "forged-2", Command = new EndBattleCommand([]) });
+        hub.FromClient("peer-3")(forged with
+        {
+            CommandId = "forged-3", Command = new EndBattleCommand([], new BattlePlay(new BattleSetup(true), [], 1_000_000)),
+        });
+        Assert.Equal(entries + 1, game.Journal.Entries.Count);
         // Другие правила.
         var other = new Ruleset("f" + new string('0', 63), "x", []);
         var stranger = new NetClient(new NetClientOptions { Ruleset = other }, hub.FromClient("peer-4"),

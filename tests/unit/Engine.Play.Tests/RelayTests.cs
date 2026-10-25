@@ -89,6 +89,11 @@ public sealed class RelayTests : IAsyncLifetime
         var thief = await Link();
         Assert.Equal("key", (await Assert.ThrowsAsync<RelayException>(() => thief.RejoinAsync(joined with { Key = "00" }))).Code);
         Assert.Equal("room", (await Assert.ThrowsAsync<RelayException>(() => thief.JoinAsync("ZZZZZZ", "x"))).Code);
+        // Место занято — второй с тем же местом не входит (а сам выбрать место при возвращении нельзя).
+        var taker = await Link();
+        await taker.JoinAsync(key.Room, "a", "S1");
+        var twin = await Link();
+        Assert.Equal("seat", (await Assert.ThrowsAsync<RelayException>(() => twin.JoinAsync(key.Room, "b", "S1"))).Code);
     }
 
     /// <summary>Партия хоста и клиента через посредника: ходы людей и ИИ, вид клиента = проекция хоста; клиент теряет связь посреди

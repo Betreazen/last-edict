@@ -86,7 +86,7 @@ public static class ViewPatch
             {
                 case PatchOp.Op.Splice:
                     var array = (parent ?? root) as JsonArray ?? throw Bad(op.Path, "не массив");
-                    if (op.At < 0 || op.Count < 0 || op.At + op.Count > array.Count) throw Bad(op.Path, "место вне массива");
+                    if (op.At < 0 || op.Count < 0 || (long)op.At + op.Count > array.Count) throw Bad(op.Path, "место вне массива");
                     for (int i = 0; i < op.Count; i++) array.RemoveAt(op.At);
                     var items = op.Value as JsonArray ?? throw Bad(op.Path, "вставка — не массив");
                     for (int i = 0; i < items.Count; i++) array.Insert(op.At + i, items[i]?.DeepClone());

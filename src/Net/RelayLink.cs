@@ -144,8 +144,19 @@ public sealed class RelayLink : IAsyncDisposable
     public Task SendAsync(string to, NetMessage message) =>
         Send(new JsonObject { ["op"] = "send", ["to"] = to, ["data"] = Pack(NetJson.Write(message)) });
 
-    /// <summary>То же без ожидания (с потока правил хоста): кадры уходят строго по порядку; без связи — пропадают (вид восстановит resync).</summary>
-    public void Post(string to, NetMessage message) => _ = SendAsync(to, message);
+    /// <summary>То же без ожидания (с потока правил хоста): кадры уходят строго по порядку; без связи — пропадают (вид восстановит
+    /// возвращение), исключения наружу не идут.</summary>
+    public void Post(string to, NetMessage message)
+    {
+        try
+        {
+            Enqueue(new JsonObject { ["op"] = "send", ["to"] = to, ["data"] = Pack(NetJson.Write(message)) });
+        }
+        catch (Exception e) when (e is not OutOfMemoryException)
+        {
+            Log?.Invoke($"relay: {message.GetType().Name} не отправлено: {e.Message}");
+        }
+    }
 
     private static string Pack(string text)
     {
@@ -155,13 +166,22 @@ public sealed class RelayLink : IAsyncDisposable
         return "z:" + Convert.ToBase64String(buffer.GetBuffer(), 0, (int)buffer.Length);
     }
 
+    /// <summary>Больше этого сообщение после распаковки не бывает (снимок вида 1024² — десятки МБ): сжатая «бомба» дальше не читается.</summary>
+    internal const int MaxUnpacked = 96 << 20;
+
     private static string Unpack(string data)
     {
         if (!data.StartsWith("z:", StringComparison.Ordinal)) return data;
         using var input = new MemoryStream(Convert.FromBase64String(data[2..]));
         using var brotli = new BrotliStream(input, CompressionMode.Decompress);
         using var output = new MemoryStream();
-        brotli.CopyTo(output);
+        var buffer = new byte[81920];
+        int read;
+        while ((read = brotli.Read(buffer, 0, buffer.Length)) > 0)
+        {
+            if (output.Length + read > MaxUnpacked) throw new InvalidDataException("сообщение после распаковки слишком большое");
+            output.Write(buffer, 0, read);
+        }
         return Encoding.UTF8.GetString(output.GetBuffer(), 0, (int)output.Length);
     }
 
@@ -182,12 +202,18 @@ public sealed class RelayLink : IAsyncDisposable
         }
     }
 
-    /// <summary>Кадр — в очередь отправки соединения (один писатель: порядок кадров — порядок вызовов).</summary>
+    /// <summary>Кадр — в очередь отправки соединения (один писатель: порядок кадров — порядок вызовов); нет связи — исключение.</summary>
     private Task Send(JsonObject frame)
     {
         if (_socket is not { State: WebSocketState.Open }) throw new RelayException("offline", "нет связи с посредником");
-        _out.Writer.TryWrite(Encoding.UTF8.GetBytes(frame.ToJsonString()));
+        Enqueue(frame);
         return Task.CompletedTask;
+    }
+
+    /// <summary>Кадр — в очередь; нет связи — пропадает.</summary>
+    private void Enqueue(JsonObject frame)
+    {
+        if (_socket is { State: WebSocketState.Open }) _out.Writer.TryWrite(Encoding.UTF8.GetBytes(frame.ToJsonString()));
     }
 
     private static Channel<byte[]> NewOutbox() => Channel.CreateUnbounded<byte[]>(new UnboundedChannelOptions { SingleReader = true });
@@ -223,7 +249,15 @@ public sealed class RelayLink : IAsyncDisposable
                 BytesReceived += message.Length;
                 string text = Encoding.UTF8.GetString(message.GetBuffer(), 0, (int)message.Length);
                 message.SetLength(0);
-                Dispatch(text);
+                try
+                {
+                    Dispatch(text);
+                }
+                catch (Exception e) when (e is not OutOfMemoryException)
+                {
+                    // Сбой обработчика (игра, сессия) не глушит соединение: кадр пропущен, следующие читаются.
+                    Log?.Invoke($"relay: кадр не обработан: {e.GetType().Name}: {e.Message}");
+                }
             }
         }
         catch (Exception e) when (e is WebSocketException or OperationCanceledException or ObjectDisposedException)
@@ -256,7 +290,7 @@ public sealed class RelayLink : IAsyncDisposable
                 {
                     message = NetJson.Read(Unpack(frame["data"]?.GetValue<string>() ?? ""));
                 }
-                catch (Exception e) when (e is InvalidDataException or FormatException or InvalidOperationException)
+                catch (Exception e) when (e is InvalidDataException or FormatException or InvalidOperationException or JsonException)
                 {
                     Log?.Invoke($"relay: сообщение от {frame["from"]} не читается: {e.Message}");
                     return;

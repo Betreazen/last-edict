@@ -133,7 +133,7 @@ def assets_dir() -> str:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--case", default="play", choices=["play", "drop", "async"])
+    ap.add_argument("--case", default="play", choices=["play", "drop", "async", "duel"])
     ap.add_argument("--days", type=int, default=3)
     ap.add_argument("--remote", action="store_true", help="клиент — на EliteBook")
     ap.add_argument("--relay", help="готовый посредник (ws://…/ws); без него — свой локальный")
@@ -172,7 +172,7 @@ def main() -> int:
         env = dict(os.environ, D2_ASSETS_DIR=assets_dir(), D2_COMMAND_JOURNAL=str(work / "host.journal"))
         room_file = work / "room.txt"
         host_role = ["--net-host", args.scenario, "--net-seats", args.seats, "--net-seed", str(args.seed), "--net-relay", relay_url,
-                     "--net-room-out", str(room_file), "--net-nick", "host"]
+                     "--net-room-out", str(room_file), "--net-nick", "host", *(["--net-hunt"] if args.case == "duel" else [])]
         started = time.time()
         host = subprocess.Popen([GODOT, *game_args(host_role, args.days, 1)], cwd=REPO, env=env,
                                 stdout=open(work / "host.log", "w", encoding="utf-8"), stderr=subprocess.STDOUT)
@@ -186,6 +186,8 @@ def main() -> int:
         room = room_file.read_text().strip()
         log(f"net-duo: комната {room}, посредник {relay_url}")
         client_role = ["--net-join", room, "--net-nick", "client"]
+        if args.case == "duel":   # бой людей: обе стороны идут к отрядам друг друга
+            client_role += ["--net-hunt"]
         if args.case == "drop":
             client_role += ["--net-drop-at", "2"]
         if args.remote:

@@ -752,6 +752,8 @@ public partial class BattleScreen
                 if (run == _playRun && IsInsideTree()) Guarded(act);
             }
         }
+        StepRemote();   // бой людей по сети: решение другой стороны (BattleScreen.Net.cs)
+        StepScript();   // драйвер двух машин: свои решения сам
         if (SyncButtons()) _panel.Sync();   // конец показа (шаг выше) и начало хода человека — кнопки панели (BattleScreen.Buttons.cs)
     }
 

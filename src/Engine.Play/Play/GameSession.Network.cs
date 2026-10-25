@@ -97,13 +97,13 @@ public sealed partial class GameSession
 
     /// <summary>Клиент: собрать у себя бой хода ИИ по виду — так же, как его собрал хост (<see cref="MapBattle.Build"/>, призванные — по
     /// счётчику карты, выбор призыва — CRT сессии); партия не меняется (очки хода нападающего хост уже списал).</summary>
-    public LastEdict.Rules.Battle.BattleState BuildBattleHere(string attackerGroup, string defenderGroup, bool duel)
+    public LastEdict.Rules.Battle.BattleState BuildBattleHere(string attackerGroup, string defenderGroup, bool duel, CrtRand? crt = null)
     {
         if (Book is null) throw new InvalidOperationException("партия без правил боя");
         var battle = MapBattle.Build(Map, attackerGroup, defenderGroup, Book, State.Info.Difficulty, Map.Stacks[attackerGroup].Move, duel);
         var ids = new BattleIds(Map.IdNext, [.. Map.Units.Keys], attackerGroup);
         battle.NewUnitId = ids.NewUnit;
-        battle.ProcessRand = Crt;
+        battle.ProcessRand = crt ?? Crt;   // хост, бой людей: копия CRT — настоящий возьмёт повтор боя по действиям
         return battle;
     }
 }

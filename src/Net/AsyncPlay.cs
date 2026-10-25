@@ -156,7 +156,13 @@ public sealed class AsyncPlay : INetPlay, IAsyncDisposable
         return false;
     }
 
-    public BattleState? BuildBattle(BattleRequest request) => null;
+    public BattleKit? BuildBattle(BattleRequest request) => null;
+
+    public void SendBattleStep(BattleInput input)
+    {
+    }
+
+    public event Action<BattleInput>? BattleStepReceived { add { } remove { } }
 
     public void ReplyBattle(BattleRequest request, BattlePlay? play, IReadOnlyList<TurnRecord> log)
     {

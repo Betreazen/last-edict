@@ -105,6 +105,8 @@ public sealed class NetSession : IAsyncDisposable, IHostRunner, INetPlay
         NetRelay.Attach(host, link);
         foreach (string seat in seats) host.AddSeat(seat);
         host.Changed += () => net.Changed?.Invoke();
+        host.LockstepRequested += request => net._battles.Enqueue(request);
+        host.StepReceived += step => net.BattleStepReceived?.Invoke(step.Input);
         host.TurnChanged += _ => net.TurnChanged?.Invoke();
         host.Log += text => net.Log?.Invoke(text);
         net.Host = host;
@@ -183,6 +185,7 @@ public sealed class NetSession : IAsyncDisposable, IHostRunner, INetPlay
         };
         client.Joined += () => net.Me = client.Player ?? "";
         client.BattleRequested += request => net._battles.Enqueue(request);
+        client.StepReceived += step => net.BattleStepReceived?.Invoke(step.Input);
         client.ChatReceived += chat => net.Notice?.Invoke($"{chat.From}: {chat.Text}");
         client.Log += text => net.Log?.Invoke(text);
         client.Connect();
@@ -215,7 +218,36 @@ public sealed class NetSession : IAsyncDisposable, IHostRunner, INetPlay
     /// <summary>Клиент: бой хода ИИ, который хост просит сыграть на этом экране.</summary>
     public bool TryTakeBattle(out BattleRequest request) => _battles.TryDequeue(out request!);
 
-    public LastEdict.Rules.Battle.BattleState? BuildBattle(BattleRequest request) => Client?.BuildRequestedBattle(request);
+    /// <summary>Бой по запросу хоста: у клиента — по виду (генератор сессии — копия хоста); у хоста (бой людей, нападает клиент) — по партии,
+    /// но на копиях генератора боя и CRT: настоящие возьмёт повтор боя по действиям, когда клиент кончит бой.</summary>
+    public BattleKit? BuildBattle(BattleRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        bool? remote = request.Lockstep ? request.Side != "attacker" : null;   // моя сторона — Side; другая — у другого человека
+        if (Client is { } client)
+            return client.BuildRequestedBattle(request) is { } state && client.Session is { } view
+                ? new BattleKit(state, view.BattleRng, view.Crt, remote) : null;
+        var session = Session;
+        var crt = new LastEdict.Rules.Rng.CrtRand(request.Seed.Crt);
+        var battle = session.BuildBattleHere(request.AttackerGroup, request.DefenderGroup, duel: false, crt);
+        if (BattleFingerprint.Of(battle) != request.Fingerprint)
+            battle = session.BuildBattleHere(request.AttackerGroup, request.DefenderGroup, duel: true, crt);
+        if (BattleFingerprint.Of(battle) != request.Fingerprint) return null;
+        var at = request.Seed.Of(LastEdict.Rules.Rng.RngStream.Battle);
+        var rng = at is null ? session.BattleRng : LastEdict.Rules.Rng.EngineRng.FromSeed(at.Table, at.Index);
+        return new BattleKit(battle, rng, crt, remote);
+    }
+
+    private int _steps;
+
+    public void SendBattleStep(LastEdict.Data.Battle.BattleInput input)
+    {
+        var step = new BattleStep("", Interlocked.Increment(ref _steps), input);
+        if (Host is { } host) host.SendStep(step);
+        else Client?.SendStep(step);
+    }
+
+    public event Action<LastEdict.Data.Battle.BattleInput>? BattleStepReceived;
 
     public void ReplyBattle(BattleRequest request, LastEdict.Data.Battle.BattlePlay? play, IReadOnlyList<LastEdict.Rules.Battle.TurnRecord> log) =>
         Client?.ReplyBattle(request, play, log);

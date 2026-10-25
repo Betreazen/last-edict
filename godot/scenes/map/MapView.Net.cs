@@ -50,15 +50,16 @@ public partial class MapView
     /// ответить хосту действиями. Не собрался или экран занят — ответ «без боя»: хост играет автобой.</summary>
     private void ClientBattle(INetPlay net, BattleRequest request)
     {
-        var state = net.BuildBattle(request);
-        if (state is null || AiBattleRequested is null)
+        var kit = net.BuildBattle(request);
+        if (kit is null || AiBattleRequested is null)
         {
-            net.ReplyBattle(request, null, []);
+            if (!request.Lockstep) net.ReplyBattle(request, null, []);   // бой хода ИИ без экрана — автобой у хоста
             return;
         }
-        _aiShown = Session.State;   // вид после хода ИИ до боя — пришёл раньше запроса
-        var battle = new AiBattle(state, this);
+        _aiShown = Session.State;   // вид после хода до боя — пришёл раньше запроса
+        var battle = new AiBattle(kit.State, this) { Rng = kit.Rng, Crt = kit.Crt, RemoteSide = kit.RemoteSide };
         AskOnWorker(new AiBattleRequest(battle));
+        if (request.Lockstep) return;   // бой людей записывает экран подавшего, этот экран вёл только свои юниты
         var log = battle.Log ?? (_aiCancel ? battle.ResolveOnce() : null);
         var play = log is null ? null : battle.Played?.Invoke();
         net.ReplyBattle(request, play, log ?? []);

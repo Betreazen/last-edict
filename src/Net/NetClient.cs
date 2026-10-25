@@ -110,6 +110,9 @@ public sealed class NetClient
     public event Action<TurnInfo>? TurnChanged;
     public event Action<Refused>? Rejected;
     public event Action<BattleRequest>? BattleRequested;
+
+    /// <summary>Решение другой стороны в бою людей (<see cref="BattleStep"/>).</summary>
+    public event Action<BattleStep>? StepReceived;
     public event Action<Chat>? ChatReceived;
     public event Action<string>? Log;
 
@@ -170,6 +173,7 @@ public sealed class NetClient
                 waiting?.TrySetResult(receipt);
                 break;
             case BattleRequest request: BattleRequested?.Invoke(request); break;
+            case BattleStep step: StepReceived?.Invoke(step); break;
             case Chat chat: ChatReceived?.Invoke(chat); break;
             default: Log?.Invoke($"net: от хоста — {message.GetType().Name}, не для клиента"); break;
         }
@@ -350,6 +354,9 @@ public sealed class NetClient
         Resync($"бой {request.Battle} у клиента собирается не так, как у хоста");
         return null;
     }
+
+    /// <summary>Своё решение в бою людей — хосту (он перешлёт другой стороне).</summary>
+    public void SendStep(BattleStep step) => _send(step);
 
     /// <summary>Ответ на бой хода ИИ: действия по шагам и журнал.</summary>
     public void ReplyBattle(BattleRequest request, BattlePlay? play, IReadOnlyList<TurnRecord> log)

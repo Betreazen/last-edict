@@ -57,9 +57,9 @@ public sealed record PlayOutAction(int MaxActions) : BattleInput;
 /// <summary>Автобой стороны (<see cref="Attacker"/>) или обеих (null).</summary>
 public sealed record SetAutoAction(bool? Attacker, bool On) : BattleInput;
 
-/// <summary>Как создана сессия боя: чья сторона — игрока, отложенное начало хода (экран). Бой двух людей за одним ПК вырезан вместе с
-/// «горячим стулом» (Р33); поле <c>BothHuman</c> старых журналов при чтении пропускается.</summary>
-public sealed record BattleSetup(bool PlayerIsAttacker, bool HoldTurnStart = false);
+/// <summary>Как создана сессия боя: чья сторона — игрока, отложенное начало хода (экран), обе стороны — люди (бой двух людей по сети, Э7;
+/// за одним ПК — вырезан с «горячим стулом», Р33).</summary>
+public sealed record BattleSetup(bool PlayerIsAttacker, bool HoldTurnStart = false, bool BothHuman = false);
 
 /// <summary>
 /// Бой, сыгранный по шагам: устройство сессии, её действия по порядку и сколько чисел <c>rand()</c> процесса (<c>GameSession.Crt</c>)
@@ -73,7 +73,7 @@ public sealed record BattlePlay(BattleSetup Setup, IReadOnlyList<BattleInput> Ac
     {
         var session = new BattleSession(state, new BattleSim(state, rng, constants), constants, Setup.PlayerIsAttacker)
         {
-            HoldTurnStart = Setup.HoldTurnStart,
+            HoldTurnStart = Setup.HoldTurnStart, BothHuman = Setup.BothHuman,
         };
         foreach (var action in Actions) session.Apply(action);
         return session;

@@ -99,6 +99,15 @@ public sealed class NetHost : IDisposable
     /// <summary>Строка журнала хоста (отказы, расхождения боёв, переподключения).</summary>
     public event Action<string>? Log;
 
+    /// <summary>Бой людей, где другая сторона — человек хоста: собрать у себя и играть (<see cref="BattleRequest"/> с <c>Lockstep</c>).</summary>
+    public event Action<BattleRequest>? LockstepRequested;
+
+    /// <summary>Решение другой стороны в бою людей — человеку хоста.</summary>
+    public event Action<BattleStep>? StepReceived;
+
+    /// <summary>Идущий бой людей: кто его записывает (подал <c>startBattle</c>) и другая сторона — игроки партии.</summary>
+    private (string Recorder, string Other)? _lockstep;
+
     /// <summary>Чей ход сейчас.</summary>
     public string Active => _session.ActiveHuman;
 
@@ -200,6 +209,14 @@ public sealed class NetHost : IDisposable
                     SendTurn(seat);
                 }
                 break;
+            case BattleStep step:
+                if (SeatOf(peer) is { } stepper && _lockstep is { } battle)
+                {
+                    string other = stepper.Player.Equals(battle.Recorder, StringComparison.OrdinalIgnoreCase) ? battle.Other : battle.Recorder;
+                    if (IsRemote(other)) Forward(other, step);
+                    else StepReceived?.Invoke(step);
+                }
+                break;
             case Chat chat:
                 if (SeatOf(peer) is { } from)
                 {
@@ -209,6 +226,40 @@ public sealed class NetHost : IDisposable
                 break;
             default: Log?.Invoke($"net: от {peer} — {message.GetType().Name}, не для хоста"); break;
         }
+    }
+
+    /// <summary>Своё решение человека хоста в бою людей — другой стороне.</summary>
+    public void SendStep(BattleStep step)
+    {
+        if (_lockstep is not { } battle) return;
+        string other = IsRemote(battle.Recorder) ? battle.Recorder : battle.Other;   // человек хоста — сторона боя, другая — клиент
+        if (IsRemote(other)) Forward(other, step);
+    }
+
+    private void Forward(string player, NetMessage message)
+    {
+        string? peer;
+        lock (_seatsLock) peer = _seats.GetValueOrDefault(player)?.Peer;
+        if (peer is not null) Send(peer, message);
+    }
+
+    /// <summary>Бой собран (<c>startBattle</c> игрока <paramref name="issuer"/>): обе стороны — люди разных игроков — бой людей: другая сторона
+    /// собирает тот же бой у себя на копии генератора и играет свои юниты; записывает бой экран подавшего, хост повторит его по действиям.</summary>
+    private void StartLockstep(string issuer, BattleState state)
+    {
+        _lockstep = null;
+        var map = _session.Map;
+        string attacker = OwnerOf(map, state.AttackerGroup), defender = OwnerOf(map, state.DefenderGroup);
+        var humans = _session.State.Info.Humans;
+        if (!humans.Contains(attacker, StringComparer.OrdinalIgnoreCase) || !humans.Contains(defender, StringComparer.OrdinalIgnoreCase)
+            || attacker.Equals(defender, StringComparison.OrdinalIgnoreCase)) return;
+        string other = issuer.Equals(attacker, StringComparison.OrdinalIgnoreCase) ? defender : attacker;
+        _lockstep = (issuer, other);
+        var request = new BattleRequest(NewToken(), state.AttackerGroup, state.DefenderGroup, BattleFingerprint.Of(state), BattleSeed(),
+                                        other.Equals(attacker, StringComparison.OrdinalIgnoreCase) ? "attacker" : "defender", Lockstep: true);
+        Log?.Invoke($"net: бой людей {issuer} и {other}");
+        if (IsRemote(other)) Forward(other, request);
+        else LockstepRequested?.Invoke(request);
     }
 
     private IReadOnlyList<string> Peers()
@@ -392,6 +443,7 @@ public sealed class NetHost : IDisposable
             }
             if (_session.ElsewhereBattleDiverged) Log?.Invoke($"net: бой {seat.Player} у хоста сыгран не так, как у клиента — итог хоста");
             Broadcast();
+            AfterBattleCommand(seat.Player, request.Command, result);
             var receipt = new Receipt(request.CommandId, Value: Mirrored(request.Command) ? null : SafeEncode(result.Value),
                                       Report: result.Report, Seed: request.Command is StartBattleCommand or NextEventBattleCommand ? BattleSeed() : null);
             Remember(seat, request.CommandId, payload, receipt);
@@ -399,6 +451,13 @@ public sealed class NetHost : IDisposable
             Changed?.Invoke();
             return result;
         }
+    }
+
+    /// <summary>Бой собран — может быть боем людей; кончен — бой людей снят.</summary>
+    private void AfterBattleCommand(string issuer, GameCommand command, CommandResult result)
+    {
+        if (command is StartBattleCommand && result.Value is BattleState state) StartLockstep(issuer, state);
+        else if (command is EndBattleCommand) _lockstep = null;
     }
 
     /// <summary>Команды, которые клиент исполняет и у себя (бой на его экране): значение — его, хост шлёт только вид и семя боя.</summary>
@@ -451,6 +510,7 @@ public sealed class NetHost : IDisposable
             Observe();
             var result = _session.ExecuteHere(command);
             Broadcast();
+            AfterBattleCommand(_session.ActiveHuman, command, result);
             AnnounceTurn();
             return result;
         }

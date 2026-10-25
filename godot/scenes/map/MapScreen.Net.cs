@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using System.Linq;
 using LastEdict.Data.Content;
 using LastEdict.Data.Map;
@@ -29,6 +30,9 @@ public partial class MapScreen
 
     private bool _netScriptRunning;
 
+    /// <summary>Драйвер: ход по сценарию идёт к отряду другого человека (<c>--net-hunt</c>) — проверка боя людей.</summary>
+    private bool _netHunt;
+
     /// <summary>Драйвер, сценарий обрыва: в этот день посреди своего хода оборвать связь с посредником (как пропавшая сеть) — дальше
     /// переподключение и resync сами.</summary>
     private int? _netDropAt;
@@ -44,16 +48,31 @@ public partial class MapScreen
             _map.AiSpeed = MapView.CheckAiSpeed;   // ходы ИИ — быстро, как в проверке; бои с человеком — автобоем экрана
         }
         if (MapSource.Arg(args, "--net-days") is { } days) _netDays = int.Parse(days, System.Globalization.CultureInfo.InvariantCulture);
+        _netHunt = args.Contains("--net-hunt");
         if (MapSource.Arg(args, "--net-drop-at") is { } drop) _netDropAt = int.Parse(drop, System.Globalization.CultureInfo.InvariantCulture);
         net.Changed += () => Callable.From(() => { if (IsInsideTree()) _map.NetChanged(); }).CallDeferred();
         net.TurnChanged += () => Callable.From(OnNetTurn).CallDeferred();
         net.Notice += text => Callable.From(() => Chat(text)).CallDeferred();
         net.Log += text => GD.Print(text);
         _map.AiTurnFinished += () => Callable.From(OnNetTurn).CallDeferred();
+        net.BattleStepReceived += input => Callable.From(() => _battle?.PushRemote(input)).CallDeferred();   // бой людей: решение другой стороны
         string role = net is NetSession room ? room.IsHost ? "host" : "client" : "async";
         GD.Print($"net {role} room={net.Room} me={net.Me} day={net.Session.Map.Turn} active={net.Active}");
         Callable.From(OnNetTurn).CallDeferred();
     }
+
+    /// <summary>Бой людей по сети («каждый своих»): сторона боя, которую ведёт другой человек партии; не бой людей или не сеть — null.</summary>
+    private bool? NetRemoteSide(GameSession session, LastEdict.Rules.Battle.BattleState state, bool playerAttacks)
+    {
+        if (Net is null) return null;
+        string other = OwnerOf(session.Map, playerAttacks ? state.DefenderGroup : state.AttackerGroup);
+        return other.Length > 0 && !other.Equals(Net.Me, StringComparison.OrdinalIgnoreCase)
+               && session.State.Info.Humans.Contains(other, StringComparer.OrdinalIgnoreCase) ? !playerAttacks : null;
+    }
+
+    private static string OwnerOf(LastEdict.Rules.Map.MapState map, string group) =>
+        map.Stacks.TryGetValue(group, out var stack) ? stack.Owner
+        : map.Sites.FirstOrDefault(s => s.Id.Equals(group, StringComparison.OrdinalIgnoreCase))?.Owner ?? "";
 
     /// <summary>Каждый кадр: почта сети, свой срок хода, ход по сценарию.</summary>
     private void StepNet()
@@ -94,6 +113,9 @@ public partial class MapScreen
 
     private int _netBlocked, _netBeat;
 
+    /// <summary>Отряды, уже нападавшие по сценарию в этот день (день:отряд) — второй раз ход по сценарию их не водит в бой.</summary>
+    private readonly HashSet<string> _scriptAttacked = [];
+
     /// <summary>Сменился ход: не свой — ждать в режиме хода ИИ; свой — панель команд (её возвращает конец режима хода ИИ); драйвер — конец
     /// партии по дню.</summary>
     private void OnNetTurn()
@@ -126,9 +148,20 @@ public partial class MapScreen
                 (net as NetSession)?.Link.Abort();
                 return;   // ход — когда связь вернётся (StepNet снова позовёт)
             }
-            ScriptedHuman.Turn(session, net.Me, c => session.Execute(c), _netScript!, endTurn: false);
+            // Бой — экраном (бой людей — с решениями другой стороны по сети); ход встаёт до конца боя и продолжается следующим кадром.
+            bool done = ScriptedHuman.Turn(session, net.Me, c => session.Execute(c), _netScript!, endTurn: false, battle: (stack, target) =>
+            {
+                if (!_scriptAttacked.Add($"{session.Map.Turn}:{stack.Id}")) return false;
+                OpenBattle(stack.Id, target.Id);
+                return _battle is not null;
+            }, hunt: _netHunt);
             _map.NetChanged();
-            GD.Print($"net script day={session.Map.Turn} me={net.Me}");
+            if (!done)
+            {
+                GD.Print($"net script day={session.Map.Turn} me={net.Me} бой");
+                return;
+            }
+            GD.Print($"net script day={session.Map.Turn} me={net.Me} отряды={string.Join(",", session.Map.Stacks.Values.Where(st => st.Inside.Length == 0 && session.State.Info.Humans.Contains(st.Owner, StringComparer.OrdinalIgnoreCase)).Select(st => $"{st.Owner[^2..]}@{st.X}:{st.Y}"))}");
             EndTurn();
         }
         catch (NetCommandException e)

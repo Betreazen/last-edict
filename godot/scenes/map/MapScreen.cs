@@ -248,10 +248,13 @@ public partial class MapScreen : Node
     /// <summary>Вариант фона боя, как у движка: при открытии экрана боя два <c>rand()</c> потока CRT — <c>% n</c> вариантов места
     /// (<c>0x5b35ab</c>) и <c>% 1</c>. Журнал зонда 28.09 (passive-002): после <c>ui_open DLG_BATTLE_A</c> — <c>rng_std max 3</c> (r = 1 и 2 —
     /// фоны <c>NEUTRAL_1</c>/<c>NEUTRAL_2</c> на снимках) и <c>rng_std max 1</c> — у каждого боя.</summary>
-    private static int BackgroundDraw(GameSession session, LastEdict.Rules.Battle.BattleState state)
+    private static int BackgroundDraw(GameSession session, LastEdict.Rules.Battle.BattleState state) => BackgroundDraw(session.Crt, session.Map, state);
+
+    /// <summary>То же на своём CRT (сеть: копия CRT хоста у боя по его запросу).</summary>
+    private static int BackgroundDraw(LastEdict.Rules.Rng.CrtRand crt, LastEdict.Rules.Map.MapState map, LastEdict.Rules.Battle.BattleState state)
     {
-        int variant = session.Crt.Next() % BattleScene.BackgroundVariants(GameData.Content.Gfx, MapBattle.PlaceOf(session.Map, state.DefenderGroup));
-        for (int i = 1; i < BackgroundDraws; i++) session.Crt.Next();
+        int variant = crt.Next() % BattleScene.BackgroundVariants(GameData.Content.Gfx, MapBattle.PlaceOf(map, state.DefenderGroup));
+        for (int i = 1; i < BackgroundDraws; i++) crt.Next();
         return variant;
     }
 
@@ -282,6 +285,7 @@ public partial class MapScreen : Node
         // Стороны — по собранному бою: цель-невидимка нападает сама (GameSession.StartBattle, CEffectBattle 0x433a57).
         bool playerAttacks = _map.Viewer is null
             || session.Map.Stacks[state.AttackerGroup].Owner.Equals(_map.Viewer, StringComparison.OrdinalIgnoreCase);
+        bool? remoteSide = NetRemoteSide(session, state, playerAttacks);   // бой людей по сети: другая сторона — у другого человека (MapScreen.Net.cs)
         ShowMap(false);
         _battle = new BattleScreen
         {
@@ -293,11 +297,13 @@ public partial class MapScreen : Node
             QueueStrip = _settings.QueueStrip,   // полоса очереди ходов (своя настройка, MapSettings.QueueStrip)
             Wide = _settings.WideBattle,   // широкий бой (своя настройка, MapSettings.WideBattle)
             OwnName = session.OwnName,   // подпись крупного портрета X100TA0608: у героя — своё имя, у прочих — имя типа (0x5e97dc)
+            RemoteSide = remoteSide, Scripted = _netScript is not null,   // драйвер двух машин: решения своей стороны — сам (BattleScreen.Net.cs)
             BackgroundVariant = variant ?? BackgroundDraw(session, state),
             CardLogic = BattleCard(),   // карточка юнита по правой кнопке — общая с картой
             LevelMarks = BattleLevelMarks(),
         };
         _battleCrtDraws = variant is null ? BackgroundDraws : 0;
+        if (remoteSide is not null) _battle.LocalDecision += input => Net?.SendBattleStep(input);
         _battle.Closed += CloseBattle;
         _battle.EndReached += EndBattleOnScreen;
         AddChild(_battle);

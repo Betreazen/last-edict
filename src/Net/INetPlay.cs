@@ -1,8 +1,13 @@
 using LastEdict.Data.Battle;
 using LastEdict.Data.Play;
 using LastEdict.Rules.Battle;
+using LastEdict.Rules.Rng;
 
 namespace LastEdict.Net;
+
+/// <summary>Бой, собранный у себя по запросу хоста: состояние, генератор боя и CRT экрана (копии генератора хоста) и чья сторона — у
+/// другого человека (бой людей, «каждый своих»; null — бой хода ИИ, другой стороны-человека нет).</summary>
+public sealed record BattleKit(BattleState State, IRng Rng, CrtRand Crt, bool? RemoteSide);
 
 /// <summary>
 /// Сетевая партия для показа (<c>docs/network.md</c> §7): чей ход, работа для рабочего потока карты, бои, о которых просит хост, почта и
@@ -39,7 +44,13 @@ public interface INetPlay
     bool TryTakeBattle(out BattleRequest request);
 
     /// <summary>Собрать у себя бой по запросу хоста; не собрать — null.</summary>
-    BattleState? BuildBattle(BattleRequest request);
+    BattleKit? BuildBattle(BattleRequest request);
+
+    /// <summary>Решение своей стороны в бою людей — другому человеку (через хоста).</summary>
+    void SendBattleStep(BattleInput input);
+
+    /// <summary>Решение другой стороны в бою людей пришло (поток сети).</summary>
+    event Action<BattleInput>? BattleStepReceived;
 
     /// <summary>Ответить хосту боем (null — не сыграли: автобой у хоста).</summary>
     void ReplyBattle(BattleRequest request, BattlePlay? play, IReadOnlyList<TurnRecord> log);

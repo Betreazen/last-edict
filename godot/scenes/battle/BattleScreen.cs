@@ -122,7 +122,8 @@ public partial class BattleScreen : Node
             _checks = MapSource.Arg(args, "--synth") is not null;
             // Начало хода следующего юнита — после показа прежнего действия (NextStep): действие → его анимации и надписи → тики → ход.
             _session = new BattleSession(state, new BattleSim(state, Rng ?? new EngineRng(), rules.Constants), rules.Constants,
-                                         PlayerIsAttacker) { HoldTurnStart = true };
+                                         PlayerIsAttacker) { HoldTurnStart = true, BothHuman = RemoteSide is not null };
+            _session.Recorded += OnRecorded;   // бой людей по сети: свои решения — другой стороне (BattleScreen.Net.cs)
             _scene = new BattleScene(screen, GameData.Content.Gfx, BaseUnit(), DeathRace())
             {
                 OwnArt = GameData.Content.EntityFrames.Contains,   // свои лицо и портрет юнита мода (Студия 2)
@@ -250,14 +251,14 @@ public partial class BattleScreen : Node
         }
         if (_playing || _message is not null) return;   // пока показывается действие или открыто сообщение, ход игрока не начинается
         if (@event is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true } press && _card is null
-            && _session.WaitsPlayer && ItemAt(ToField(press.Position)) is { } slot)
+            && _session.WaitsPlayer && !RemoteTurn && ItemAt(ToField(press.Position)) is { } slot)
         {
             StartItemDrag(slot);
             return;
         }
         if (@event is not InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: false } click) return;
         if (_card is not null) { Card(null); return; }
-        if (!_session.WaitsPlayer) return;
+        if (!_session.WaitsPlayer || RemoteTurn) return;   // ход юнита другого человека — его решение придёт по сети
         var at = ToField(click.Position);
         if (_itemDrag is not null)
         {
@@ -801,6 +802,9 @@ public partial class BattleScreen : Node
             // Пока показывается действие, команды хода ждут (кнопки и так погашены — SyncButtons; это запасная защита); «Быстрый бой»
             // обрывает показ и доигрывает бой.
             if (_playing && e is UiClicked { Element: "BTN_DEFEND" or "BTN_WAIT" or "BTN_RETREAT" }) continue;
+            // Бой людей по сети: в ход юнита другого человека команд хода нет; «Быстрого боя» и автобоя нет вовсе (BattleScreen.Net.cs).
+            if (RemoteTurn && e is UiClicked { Element: "BTN_DEFEND" or "BTN_WAIT" or "BTN_RETREAT" }) continue;
+            if (RemoteSide is not null && e is UiClicked { Element: "BTN_RESOLVE" } or UiToggled { Element: "TOG_AUTOBATTLE" }) continue;
             switch (e)
             {
                 // Запись действия для проверки порядка — только принятого: начало следующего хода отложено (HoldTurnStart), тиков

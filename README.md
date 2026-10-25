@@ -82,7 +82,8 @@ One window with tabs — screen, sound, game, battle, controls, language — wit
 <a href="https://github.com/Betreazen/last-edict/releases/download/media/compare-hd-detail.png"><img src="https://github.com/Betreazen/last-edict/releases/download/media/compare-hd-detail-small.png" alt="A battle detail with the original art and with the upscaled HD layer"></a>
 
 With an upscaled art layer (your own upscale of your own copy — the art never ships with the project) the game draws straight at
-window resolution: units, portraits and the capital at full detail, text in a vector font, an optional sharpening pass. Full-size
+window resolution: units, portraits and the capital at full detail, text in a vector font, an optional sharpening pass. All shots
+here use a ×3 layer at 1920×1080. Full-size
 pairs: [world map](https://github.com/Betreazen/last-edict/releases/download/media/compare-hd-map.png), [battle](https://github.com/Betreazen/last-edict/releases/download/media/compare-hd-battle.png), [hero window](https://github.com/Betreazen/last-edict/releases/download/media/compare-hd-hero.png).
 
 ### Building window and Studio
@@ -147,6 +148,10 @@ Decisions and details: [`docs/own-version-roadmap.md`](docs/own-version-roadmap.
   that map. A mod gets a layer-conflict window and packs into an archive with a file list, checksums and the ruleset hash that
   network games compare. Every change is a command with undo. Rules unchanged: the snapshots are identical
   ([a new unit](https://github.com/Betreazen/last-edict/releases/download/media/studio-units.png), [map objects](https://github.com/Betreazen/last-edict/releases/download/media/studio-map.png)).
+
+- **2026-10-25 — A new ×3 HD layer.** All the art was upscaled again with different settings at ×3 (the earlier ×4 pass looked
+  worse); the gallery and every before / after pair are re-shot at 1920×1080 with it. A new upscale drops in without code changes: the
+  same sheets go through the upscaler and the import picks up the new frames. Oversized cursors are now scaled down to fit.
 
 - **2026-10-24 — Building window and Studio.** The building tree is now data: branches are tabs over the tree, it zooms to the cursor
   and pans with the middle button or a gamepad, and the chosen building opens as a card instead of the old side panel. Mods add

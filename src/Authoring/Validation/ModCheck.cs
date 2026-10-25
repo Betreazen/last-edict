@@ -11,6 +11,10 @@ public enum CheckLevel { Error, Warning, Info }
 /// <summary>Находка проверки: правило (<c>MOD010</c>), уровень, сущность или файл, текст по-русски.</summary>
 public sealed record CheckItem(string Rule, CheckLevel Level, string Target, string Message)
 {
+    /// <summary>Поле сущности, к которому относится находка (путь через точку, <c>requires</c>, <c>research[1].spell</c>); не известно — null.
+    /// Формы Студии показывают ошибку у этого поля.</summary>
+    public string? Field { get; init; }
+
     public override string ToString() => $"{Rule} {Level.ToString().ToLowerInvariant()} {Target}: {Message}";
 }
 
@@ -27,8 +31,11 @@ public sealed record CheckReport(IReadOnlyList<CheckItem> Items, ContentSet? Con
 /// накладывается на базу теми же слоями, что у игры (<see cref="ContentLayers"/>): что не грузится в игре, здесь — ошибка с тем же текстом.
 /// Дальше — правила дерева построек (круги требований, постройка вне списков лордов, два значка в одной клетке) и пометка «исполняет код».
 /// </summary>
-public static class ModCheck
+public static partial class ModCheck
 {
+    [System.Text.RegularExpressions.GeneratedRegex(@"^«(?<id>[^»]+)»[^:]*: (?<path>[A-Za-z][\w.\[\]]*) (→|—)")]
+    private static partial System.Text.RegularExpressions.Regex WhereFrom();
+
     /// <summary>Проверить документ <paramref name="doc"/> мода <paramref name="project"/> поверх базы <paramref name="baseDir"/> и модов
     /// <paramref name="others"/> (зависимости — их слои под этим).</summary>
     public static CheckReport Run(ModDocument doc, ModProject project, string baseDir, IReadOnlyList<ModInfo>? others = null)
@@ -51,7 +58,13 @@ public static class ModCheck
         }
         catch (InvalidDataException e)
         {
-            items.Add(new("MOD001", CheckLevel.Error, project.Id, e.Message.Replace(temp, "", StringComparison.OrdinalIgnoreCase)));
+            string message = e.Message.Replace(temp, "", StringComparison.OrdinalIgnoreCase);
+            // Ошибка ссылки называет сущность и поле: «id» (мод): путь → «значение» — … — её цель и поле, иначе — мод.
+            var at = WhereFrom().Match(message);
+            items.Add(new("MOD001", CheckLevel.Error, at.Success ? at.Groups["id"].Value : project.Id, message)
+            {
+                Field = at.Success ? at.Groups["path"].Value : null,
+            });
         }
         finally
         {

@@ -29,19 +29,19 @@ public partial class StudioUnitCombat : VBoxContainer
     ];
 
     private readonly UnitWorkspace _ws;
-    private readonly OptionButton _which = new(), _effect = new() { FitToLongestItem = false }, _source = new(), _reach = new();
+    private readonly OptionButton _which = new(), _source = new(), _reach = new();
+    private readonly StudioPicker _effect = new(), _wardPick = new(), _summonPick = new();
     private readonly SpinBox _initiative = Spin(0, 200), _accuracy = Spin(0, 100), _damage = Spin(0, 9999), _heal = Spin(0, 9999), _level = Spin(0, 10);
     private readonly CheckBox _infinite = new() { Text = "до конца боя" }, _crit = new() { Text = "критический удар" };
     private readonly LineEdit _attackTitle = new() { PlaceholderText = "название атаки" };
     private readonly Label _wards = new() { AutowrapMode = TextServer.AutowrapMode.WordSmart }, _summons = new() { AutowrapMode = TextServer.AutowrapMode.WordSmart };
-    private readonly OptionButton _wardPick = new() { FitToLongestItem = false }, _summonPick = new() { FitToLongestItem = false };
     private readonly OptionButton[] _sourceImmunity = [.. Enumerable.Range(0, 8).Select(_ => Levels())];
     private readonly Dictionary<AttackClass, OptionButton> _classImmunity = Enum.GetValues<AttackClass>().ToDictionary(c => c, _ => Levels());
     private readonly VBoxContainer _auraRows = new();
     private readonly OptionButton _elementType = new();
     private readonly SpinBox _elementValue = Spin(-999, 999);
     private readonly LineEdit _modifierTitle = new() { PlaceholderText = "название модификатора" };
-    private List<string> _effectIds = [], _modifierIds = [], _unitIds = [];
+    private List<PickItem> _modifierItems = [];
     private List<string> _wardIds = [], _summonIds = [];
     private string? _unit;
 
@@ -139,17 +139,15 @@ public partial class StudioUnitCombat : VBoxContainer
         if (unit is null) return;
         bool second = _which.Selected == 1;
         var a = _ws.AttackFormOf(unit, second);
-        _effectIds = [.. _ws.Effects.Select(e => e.Id)];
-        Fill(_effect, _effectIds, a.Effect, id => _ws.Session.NameOf(id));
+        _effect.SetItems([.. _ws.Effects.Select(e => new PickItem(e.Id, $"{_ws.Session.NameOf(e.Id)} · {e.Behavior}"))], a.Effect);
         _source.Selected = (int)a.Source;
         _reach.Selected = Math.Max(0, Array.FindIndex(Reaches, r => r.Kind == a.Reach));
         (_initiative.Value, _accuracy.Value, _damage.Value, _heal.Value, _level.Value) = (a.Initiative, a.Accuracy, a.Damage ?? 0, a.Heal ?? 0, a.Level ?? 0);
         (_infinite.ButtonPressed, _crit.ButtonPressed, _attackTitle.Text) = (a.Infinite, a.CriticalHit, a.Title);
         (_wardIds, _summonIds) = ([.. a.Wards], [.. a.Units]);
-        _modifierIds = [.. _ws.Modifiers.Select(m => m.Id)];
-        _unitIds = [.. _ws.Units().Select(u => u.Id)];
-        Fill(_wardPick, _modifierIds, null, ModifierName);
-        Fill(_summonPick, _unitIds, null, id => _ws.Session.NameOf(id));
+        _modifierItems = [.. _ws.Modifiers.Select(m => new PickItem(m.Id, ModifierName(m.Id)))];
+        _wardPick.SetItems(_modifierItems, null);
+        _summonPick.SetItems([.. _ws.Units().Select(u => new PickItem(u.Id, $"{u.Name} · {u.Id[(u.Id.LastIndexOf('/') + 1)..]}"))], null);
         ShowLists();
         var def = _ws.Session.Report.Content?.Find(unit) as UnitDef;
         for (int i = 0; i < 8; i++)
@@ -160,12 +158,6 @@ public partial class StudioUnitCombat : VBoxContainer
         foreach (var aura in def?.Auras ?? []) AddAuraRow(aura.Modifier, aura.Reach);
     }
 
-    private static void Fill(OptionButton pick, List<string> ids, string? current, Func<string, string> name)
-    {
-        pick.Clear();
-        foreach (string id in ids) pick.AddItem($"{name(id)} · {id[(id.LastIndexOf('/') + 1)..]}");
-        pick.Selected = Math.Max(0, ids.IndexOf(current ?? ""));
-    }
 
     private void ShowLists()
     {
@@ -175,20 +167,20 @@ public partial class StudioUnitCombat : VBoxContainer
 
     private void AddWard()
     {
-        if (_wardPick.Selected >= 0 && _wardPick.Selected < _modifierIds.Count) _wardIds.Add(_modifierIds[_wardPick.Selected]);
+        if (_wardPick.Selected is { } id) _wardIds.Add(id);
         ShowLists();
     }
 
     private void AddSummon()
     {
-        if (_summonPick.Selected >= 0 && _summonPick.Selected < _unitIds.Count) _summonIds.Add(_unitIds[_summonPick.Selected]);
+        if (_summonPick.Selected is { } id) _summonIds.Add(id);
         ShowLists();
     }
 
     private void AddAuraRow(string? modifier, AuraReach reach)
     {
-        var pick = new OptionButton { FitToLongestItem = false };
-        Fill(pick, _modifierIds, modifier, ModifierName);
+        var pick = new StudioPicker();
+        pick.SetItems(_modifierItems, modifier);
         var to = new OptionButton();
         foreach (var (_, t) in AuraReaches) to.AddItem(t);
         to.Selected = Math.Max(0, Array.FindIndex(AuraReaches, r => r.Kind == reach));
@@ -200,7 +192,7 @@ public partial class StudioUnitCombat : VBoxContainer
     /// <summary>Форма атаки сейчас.</summary>
     public AttackForm CurrentAttack() => new()
     {
-        Title = _attackTitle.Text.Trim(), Effect = _effectIds.ElementAtOrDefault(_effect.Selected), Source = (AttackSource)Math.Max(0, _source.Selected),
+        Title = _attackTitle.Text.Trim(), Effect = _effect.Selected, Source = (AttackSource)Math.Max(0, _source.Selected),
         Reach = Reaches[Math.Max(0, _reach.Selected)].Kind, Initiative = (int)_initiative.Value, Accuracy = (int)_accuracy.Value,
         Damage = _damage.Value > 0 ? (int)_damage.Value : null, Heal = _heal.Value > 0 ? (int)_heal.Value : null,
         Level = _level.Value > 0 ? (int)_level.Value : null, Infinite = _infinite.ButtonPressed, CriticalHit = _crit.ButtonPressed,
@@ -224,9 +216,10 @@ public partial class StudioUnitCombat : VBoxContainer
 
     /// <summary>Ауры по строкам.</summary>
     public IReadOnlyList<UnitAuraDef> CurrentAuras() =>
-        [.. _auraRows.GetChildren().OfType<HBoxContainer>().Select(row => row.GetChildren().OfType<OptionButton>().ToList())
-            .Where(p => p.Count == 2 && p[0].Selected >= 0 && p[0].Selected < _modifierIds.Count)
-            .Select(p => new UnitAuraDef { Modifier = _modifierIds[p[0].Selected], Reach = AuraReaches[Math.Max(0, p[1].Selected)].Kind })];
+        [.. _auraRows.GetChildren().OfType<HBoxContainer>()
+            .Select(row => (Pick: row.GetChildren().OfType<StudioPicker>().FirstOrDefault(), To: row.GetChildren().OfType<OptionButton>().FirstOrDefault()))
+            .Where(r => r.Pick?.Selected is not null && r.To is not null)
+            .Select(r => new UnitAuraDef { Modifier = r.Pick!.Selected!, Reach = AuraReaches[Math.Max(0, r.To!.Selected)].Kind })];
 
     private void ApplyAuras()
     {
@@ -239,7 +232,7 @@ public partial class StudioUnitCombat : VBoxContainer
         string title = _modifierTitle.Text.Trim();
         if (_ws.CreateModifier(title.Length > 0 ? title : _elementType.Text, [UnitWorkspace.Element(type, (int)_elementValue.Value)]) is { } created)
         {
-            _modifierIds = [.. _ws.Modifiers.Select(m => m.Id)];
+            _modifierItems = [.. _ws.Modifiers.Select(m => new PickItem(m.Id, ModifierName(m.Id)))];
             AddAuraRow(created, AuraReach.Group);   // новый — сразу строкой ауры (её можно убрать)
         }
     }
@@ -247,7 +240,7 @@ public partial class StudioUnitCombat : VBoxContainer
     /// <summary>Шаги проверки без окна.</summary>
     public void Check(string? effect, int? damage, string? aura, string? reach, string? immuneSource)
     {
-        if (effect is not null) _effect.Selected = Math.Max(0, _effectIds.IndexOf(effect));
+        if (effect is not null) _effect.Select(effect);
         if (damage is { } d) _damage.Value = d;
         if (aura is not null)
             AddAuraRow(aura, reach is null ? AuraReach.Group : Enum.Parse<AuraReach>(reach, ignoreCase: true));
@@ -260,5 +253,5 @@ public partial class StudioUnitCombat : VBoxContainer
 
     public void PressImmunities() => ApplyImmunities();
 
-    public string Line() => $"бой: атака_эффект={_effectIds.ElementAtOrDefault(_effect.Selected) ?? "-"} ауры={CurrentAuras().Count}";
+    public string Line() => $"бой: атака_эффект={_effect.Selected ?? "-"} ауры={CurrentAuras().Count}";
 }

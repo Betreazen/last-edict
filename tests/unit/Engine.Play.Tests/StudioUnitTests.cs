@@ -151,6 +151,19 @@ public sealed class StudioUnitTests : IDisposable
     }
 
     [Fact]
+    public void BrokenReference_IsReportedAtTheEntityAndField()
+    {
+        var session = Session();
+        var units = new UnitWorkspace(session);
+        Assert.True(units.CreateFrom(Footman, "alebardshchik", "Алебардщик"));
+        Assert.True(session.Do(new LastEdict.Authoring.Commands.SetField(Halberdier, "previousLevel", System.Text.Json.Nodes.JsonValue.Create("towers:unit/ghost"))));
+        var problem = Assert.Single(session.ProblemsOf(Halberdier));
+        Assert.Equal(("MOD001", "previousLevel"), (problem.Rule, problem.Field));
+        Assert.Single(session.ProblemsOf(Halberdier, "previousLevel"));
+        Assert.Empty(session.ProblemsOf(Halberdier, "baseUnit"));
+    }
+
+    [Fact]
     public void OwnFace_WinsOverTheBaseGraphics_RemoveCleansTheRaceList()
     {
         var session = Session();

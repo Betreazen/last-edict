@@ -297,26 +297,26 @@ public sealed class GameContent
         };
     }
 
-    /// <summary>Архивы значков по виду сущности: значок <c>icon.png</c> каталога сущности мода (<see cref="EntityFolders"/>) встаёт в архив
-    /// значков вида под именем графики сущности (<see cref="ArtNames"/>) — так окно построек находит значок постройки мода без описи.</summary>
-    private static readonly IReadOnlyDictionary<string, string> IconArchives = new Dictionary<string, string>(StringComparer.Ordinal)
-    {
-        ["building"] = "IconBld.ff",
-    };
-
-    private static GfxAssets EntityIcons(ModInfo mod) => GfxAssets.Of(EntityFolders.Scan(mod)
-        .Where(f => f.Icon is not null && IconArchives.ContainsKey(f.Kind.Name))
-        .GroupBy(f => IconArchives[f.Kind.Name])
+    /// <summary>Картинки каталогов сущностей мода (<see cref="EntityArt"/>: <c>icon.png</c> постройки…) — в архивы графики под именем графики
+    /// сущности (<see cref="ArtNames"/>): окна находят значок постройки мода без описи. Файл крупнее места в целое число раз — HD
+    /// (<see cref="GfxImage.Scale"/>, размер — логический); иного размера — как есть.</summary>
+    internal static GfxAssets EntityIcons(ModInfo mod) => GfxAssets.Of(EntityFolders.Scan(mod)
+        .SelectMany(f => EntityArt.Of(f.Kind.Name).Select(slot => (Folder: f, Slot: slot, Path: Path.Combine(f.Dir, slot.File))))
+        .Where(a => File.Exists(a.Path))
+        .GroupBy(a => a.Slot.Archive)
         .Select(g => new GfxArchive
         {
             Archive = g.Key,
-            Images = [.. g.Select(f => Icon(f.Id, f.Icon!))],
+            Images = [.. g.Select(a => Icon(a.Folder.Id, a.Slot, a.Path))],
         }));
 
-    private static GfxImage Icon(string id, string path)
+    private static GfxImage Icon(string id, EntityArtSlot slot, string path)
     {
         var (w, h) = PngSize(path);
-        return new GfxImage { Name = ArtNames.Of(id), File = path, W = w, H = h };
+        string name = EntityArt.FrameName(id, slot);
+        return EntityArt.ScaleOf(slot, w, h) is { } k
+            ? new GfxImage { Name = name, File = path, W = slot.W, H = slot.H, Scale = k > 1 ? k : null }
+            : new GfxImage { Name = name, File = path, W = w, H = h };
     }
 
     /// <summary>Размер PNG по заголовку (IHDR); не PNG — 0×0.</summary>
@@ -324,8 +324,7 @@ public sealed class GameContent
     {
         Span<byte> head = stackalloc byte[24];
         using var file = File.OpenRead(path);
-        if (file.Read(head) < 24) return (0, 0);
-        return (System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(head[16..]), System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(head[20..]));
+        return file.Read(head) < 24 ? (0, 0) : EntityArt.PngSize(head);
     }
 
     private static UiFlow? LoadFlow(string path) => File.Exists(path) ? UiFlows.Load(path) : null;

@@ -578,6 +578,7 @@ public partial class MapScreen
         if (top?.ImagesOutside() is { Count: > 0 } outside) missing += $" за_местом={string.Join(",", outside)}";
         if (top?.DropFrameSprites() is { Count: > 0 } frames) missing += $" рамки={frames.Count} {string.Join(",", frames)}";
         if (top?.CutLabels() is { Count: > 0 } cut) missing += $" срезано={string.Join(",", cut)}";   // текст выше места — срезан местом
+        if (top is { TreeDrawn: >= 0 }) missing += $" значков_нарисовано={top.TreeDrawn}";   // окно построек: значки с картинкой (модов тоже)
         return $"окна={stack} {summary} {cards} {missing} {AimLine()}".TrimEnd();
     }
 }

@@ -233,8 +233,10 @@ public partial class Studio : Control
         Status(pid > 0 ? $"игра запущена (процесс {pid}) с модом {ws.Project.Id} — сохранённые правки она подхватит сама" : "игра не запустилась");
     }
 
-    /// <summary>Текстура кадра интерфейса или графики игры (значки построек, в том числе модов).</summary>
-    private static Texture2D? FrameTexture(string frame) => UiScreenView.TextureOf(frame);
+    /// <summary>Текстура кадра интерфейса или графики игры (значки построек, в том числе модов); картинка своей сущности — из документа
+    /// (несохранённая видна сразу).</summary>
+    private Texture2D? FrameTexture(string frame) =>
+        _session?.Picture(frame) is { } own ? StudioPictures.Texture(own.Png, own.Slot) : UiScreenView.TextureOf(frame);
 
     // ---- проверка без окна
 
@@ -255,6 +257,13 @@ public partial class Studio : Control
                     "connect" => ws.Connect(step["from"]!.GetValue<string>(), step["to"]!.GetValue<string>()),
                     "disconnect" => ws.Disconnect(step["to"]!.GetValue<string>()),
                     "drag" => _treeTab!.Drag(step["building"]!.GetValue<string>(), step["column"]!.GetValue<double>(), step["row"]!.GetValue<int>()),
+                    "building-select" => Do(() => ws.Select(step["id"]?.GetValue<string>())),
+                    "building-form" => Do(() => _treeTab!.Form.Fill(step["title"]?.GetValue<string>() ?? "", step["requires"]?.GetValue<string>(),
+                        step["level"]?.GetValue<int>(), step["gold"]?.GetValue<long>())),
+                    "building-picture" => _treeTab!.Form.Picked(GameData.FromProject(step["path"]!.GetValue<string>())),
+                    "building-apply" => Do(() => _treeTab!.Form.Press()),
+                    "building-rename" => ws.RenameBuilding(step["id"]!.GetValue<string>(), step["name"]!.GetValue<string>()),
+                    "building-remove" => ws.RemoveBuilding(step["id"]!.GetValue<string>()),
                     "add-building" => ws.AddBuilding(step["name"]!.GetValue<string>(), step["title"]?.GetValue<string>() ?? "", step["requires"]?.GetValue<string>()),
                     "undo" => session.Undo(),
                     "redo" => session.Redo(),

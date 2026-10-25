@@ -1183,8 +1183,11 @@ def mod_reload(repo: Path) -> tuple[bool, str]:
     cmds = [["new", str(mod), "--id", "towers"],
             ["add", str(mod), "building", "spire", "--json",
              json.dumps({"level": 3, "category": "magic", "requires": "base:building/magic-tower-2", "cost": {"gold": 900}})],
-            ["text", str(mod), "towers:building/spire", "ru", "name", "Шпиль"]]
+            ["text", str(mod), "towers:building/spire", "ru", "name", "Шпиль"],
+            ["file", str(mod), "towers:building/spire", "icon.png", str(mod.parent / "spire.png")]]
     cmds += [["set", str(mod), l["id"], "buildings", json.dumps(l["buildings"] + ["towers:building/spire"])] for l in clans]
+    mod.parent.mkdir(parents=True, exist_ok=True)
+    write_png(mod.parent / "spire.png", 154, 148)   # свой значок ×2 (HD)
     for c in cmds:
         r = subprocess.run([*d2mod, *c], capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=repo)
         if r.returncode != 0:
@@ -1207,6 +1210,10 @@ def mod_reload(repo: Path) -> tuple[bool, str]:
     if code != 0 or "towers:building/spire@" not in before or "rules=1" not in reload:
         return False, f"перезагрузка мода: код {code}, до: {before[:300]}\nперезагрузка: {reload}\n{out[-2000:]}"
     wants = ["ревизия=1 ", "день=30 ", "окна=DLG_BUILD_STRUCTURE ", "ветка=base:building-branch/other ", "towers:building/spire@"]
+    # Все значки открытой ветки нарисованы — и значок постройки мода (icon.png каталога, HD ×2).
+    shown = len(re.findall(r"@\d+,\d+:", after.split(" значки=")[1].split(" ")[0])) if " значки=" in after else -1
+    if f"значков_нарисовано={shown} " not in after + " ":
+        return False, f"перезагрузка мода: нарисованы не все значки ветки ({shown})\n{after}"
     if missing := [w for w in wants if w not in after + " "]:
         return False, f"перезагрузка мода: после перезагрузки нет {missing}\n{after}"
     old = before.split("towers:building/spire@")[1].split(":")[0]
@@ -1224,6 +1231,15 @@ STUDIO_STEPS = [
     {"op": "drag", "building": "towers:building/spire", "column": 2, "row": 1},
     {"op": "undo"},
     {"op": "redo"},
+    {"op": "building-select"},
+    {"op": "building-form", "title": "Башня мага", "requires": "base:building/magic-tower-2", "gold": 900},
+    {"op": "building-picture", "path": "{picture}"},
+    {"op": "building-apply"},
+    {"op": "undo"},
+    {"op": "redo"},
+    {"op": "building-rename", "id": "towers:building/bashnya-maga", "name": "mage-tower"},
+    {"op": "building-form", "title": "Башня магов", "level": 5},
+    {"op": "building-apply"},
     {"op": "content-open", "kind": "unit"},
     {"op": "content-select", "id": "base:unit/axe-thrower"},
     {"op": "content-set", "field": "hitPoints", "text": "200"},
@@ -1244,6 +1260,15 @@ STUDIO_WANTS = [
     ("drag", ["ok=1", "ветка=base:building-branch/other"]),
     ("undo", ["ok=1", "redo=1"]),
     ("redo", ["ok=1", "redo=0"]),
+    ("building-select", ["ok=1", "форма: новая"]),
+    ("building-form", ["ok=1", "имя=bashnya-maga", "требует=base:building/magic-tower-2", "уровень=3"]),
+    ("building-picture", ["ok=1", "картинка=1"]),
+    ("building-apply", ["ok=1", "граф_узлов=26", "форма: постройка=towers:building/bashnya-maga", "errors=0"]),
+    ("undo", ["ok=1", "граф_узлов=25", "форма: новая"]),
+    ("redo", ["ok=1", "граф_узлов=26"]),
+    ("building-rename", ["ok=1", "форма: постройка=towers:building/mage-tower"]),
+    ("building-form", ["ok=1", "уровень=5"]),
+    ("building-apply", ["ok=1", "уровень=5", "errors=0"]),
     ("content-open", ["ok=1", "kind=unit"]),
     ("content-select", ["ok=1", "selected=base:unit/axe-thrower"]),
     ("content-set", ["ok=1", "patched=1"]),
@@ -1256,6 +1281,25 @@ STUDIO_WANTS = [
     ("map-save", ["ok=1", "dirty=0"]),
     ("save", ["ok=1", "dirty=0"]),
 ]
+
+
+def write_png(path: Path, w: int, h: int) -> None:
+    """Свой PNG w×h (градиент RGBA) — картинка мода в проверках без графики игры."""
+    import struct
+    import zlib
+    raw = b"".join(b"\x00" + b"".join(bytes([x * 255 // w, y * 255 // h, 120, 255]) for x in range(w)) for y in range(h))
+
+    def chunk(kind: bytes, data: bytes) -> bytes:
+        return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data) & 0xFFFFFFFF)
+
+    path.write_bytes(b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 6, 0, 0, 0))
+                     + chunk(b"IDAT", zlib.compress(raw)) + chunk(b"IEND", b""))
+
+
+def png_size(path: Path) -> tuple[int, int]:
+    import struct
+    head = path.read_bytes()[:24]
+    return struct.unpack(">II", head[16:24]) if head[:8] == b"\x89PNG\r\n\x1a\n" else (0, 0)
 
 
 def studio(repo: Path) -> tuple[bool, str]:
@@ -1272,7 +1316,10 @@ def studio(repo: Path) -> tuple[bool, str]:
     if r.returncode != 0:
         return False, f"Студия: d2mod new — код {r.returncode}\n{r.stdout}{r.stderr}"
     script = mod.parent / "steps.json"
-    script.write_text(json.dumps(STUDIO_STEPS, ensure_ascii=False), encoding="utf-8")
+    picture = mod.parent / "picture.png"
+    write_png(picture, 300, 300)   # своя картинка (не графика игры): Студия впишет её в значок 77×74 ×3
+    steps = [{k: (str(picture) if v == "{picture}" else v) for k, v in step.items()} for step in STUDIO_STEPS]
+    script.write_text(json.dumps(steps, ensure_ascii=False), encoding="utf-8")
     code, out = godot(repo, ["--open", str(mod), "--check", "--script", str(script)], "res://scenes/studio/Studio.tscn")
     lines = [l for l in out.splitlines() if l.startswith("step ")]
     if code != 0 or len(lines) != len(STUDIO_WANTS):
@@ -1282,8 +1329,11 @@ def studio(repo: Path) -> tuple[bool, str]:
             return False, f"Студия: шаг «{op}» — нет {missing if line.startswith(f'step {op} ') else op}\n{line[:1500]}"
     if not (mod / "content" / "buildings" / "spire" / "entity.json").is_file() or not (mod / "data" / "scenarios" / "big.json").is_file():
         return False, "Студия: запись мода — нет каталога постройки или карты"
+    icon = mod / "content" / "buildings" / "mage-tower" / "icon.png"
+    if not icon.is_file() or (size := png_size(icon)) != (231, 222):
+        return False, f"Студия: значок постройки формой — {icon} {'нет' if not icon.is_file() else size}, ждали 231×222 (77×74 ×3)"
     shutil.rmtree(mod.parent, ignore_errors=True)
-    return True, f"Студия: {len(lines)} шагов — дерево, содержимое, арена, карта 1024², запись мода"
+    return True, f"Студия: {len(lines)} шагов — дерево, постройка формой со значком (HD ×3), содержимое, арена, карта 1024², запись мода"
 
 
 def city_windows(repo: Path) -> tuple[bool, str]:

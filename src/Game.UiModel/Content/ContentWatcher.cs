@@ -112,6 +112,8 @@ public sealed class ContentWatcher : IDisposable
         if (at < 0) return ContentChange.None;
         return parts[at] switch
         {
+            // Картинка сущности-каталога (icon.png…, EntityArt) — графика: кэш кадров с тем же именем сбрасывается.
+            "content" when full.EndsWith(".png", StringComparison.OrdinalIgnoreCase) => ContentChange.Rules | ContentChange.Art,
             "content" => ContentChange.Rules,
             "plugins" => ContentChange.Code,
             "assets" => ContentChange.Art,

@@ -305,6 +305,9 @@ public sealed class MapWorkspace(StudioSession session)
         return true;
     }
 
+    /// <summary>Правка карты одной командой отмены: игроки, события, области (<see cref="MapObjects"/>); отказ — текст в сессии.</summary>
+    public bool Change(string name, Action<MapObjects> change) => Edit(name, change);
+
     public void Select(string? id)
     {
         Selected = id;

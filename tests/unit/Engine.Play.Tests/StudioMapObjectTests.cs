@@ -112,4 +112,47 @@ public sealed class StudioMapObjectTests : IDisposable
         Assert.False(map.Place(MapObjectKind.Bag, x, y, new MapPlacement { Items = ["towers:item/none"] }));
         Assert.False(map.CanUndo);   // отказы в историю не идут
     }
+    [Fact]
+    public void PlayersAndEvents_ByCommands_KindsFromTheRules_MapStillPlays()
+    {
+        var (session, map) = Open();
+        Assert.Equal(17, MapObjects.ConditionKinds.Count);
+        Assert.Equal(24, MapObjects.EffectKinds.Count);
+        // Третий игрок — раса углей: игрок, подраса, отношения ко всем; столица ему — палитрой.
+        string? ember = null;
+        Assert.True(map.Change("игрок", m => ember = m.AddPlayer("test:race/ember", name: "Угли", human: false)));
+        Assert.True(map.Change("золото", m => m.SetPlayer(ember!, gold: 1234)));
+        var (x, y) = Free(map, 5);
+        Assert.True(map.Place(MapObjectKind.Capital, x, y, new MapPlacement { Owner = ember }), session.Refusal);
+        Assert.False(map.Change("убрать", m => m.RemovePlayer(ember!)));   // у него столица
+        // Событие: каждый ход — всплывающий текст; область и условие «отряд в области».
+        string? ev = null, zone = null;
+        Assert.True(map.Change("событие", m =>
+        {
+            ev = m.AddEvent("Приветствие");
+            int c = m.AddPart(ev, "Frequency", effect: false);
+            m.SetPart(ev, c, false, "Frequency", System.Text.Json.Nodes.JsonValue.Create(1));
+            int e = m.AddPart(ev, "Popup", effect: true);
+            m.SetPart(ev, e, true, "Text", System.Text.Json.Nodes.JsonValue.Create("Добро пожаловать"));
+            zone = m.AddZone(10, 10, 2);
+            int z = m.AddPart(ev, "Zone", effect: false);
+            m.SetPart(ev, z, false, "LocationId", System.Text.Json.Nodes.JsonValue.Create(zone));
+            m.SetEvent(ev, "PlayerIds", new System.Text.Json.Nodes.JsonArray(ember));
+        }));
+        Assert.False(map.Change("плохое поле", m => m.SetPart(ev!, 0, false, "Nope", null)));
+        var row = map.Reader!.Events().Single(r => r.Id == ev);
+        Assert.Equal((2, 1), (row.Conditions, row.Effects));
+        Assert.Empty(map.Check());
+        Assert.True(map.Save("События"));
+        var read = ScenarioFile.Read(session.Project.PathOf(Path.Combine("data", "scenarios", "objects.json")));
+        Assert.Equal(4, read.Looks.Map.Players.Count);
+        Assert.Equal(1234, read.Looks.Map.Players[ember!].Bank.Gold);
+        var game = BalanceStand.Start(read, GameBook.Load(session.BaseContent), 1);
+        for (int d = 0; d < 2; d++) game.Execute(new LastEdict.Data.Play.Commands.EndTurnCommand());
+        Assert.True(game.Map.Turn >= 2);
+        // Отмена — игрок и событие уходят вместе со своими правками.
+        while (map.Undo()) { }
+        Assert.Equal(3, map.Reader!.Players().Count);
+        Assert.Empty(map.Reader!.Events());
+    }
 }

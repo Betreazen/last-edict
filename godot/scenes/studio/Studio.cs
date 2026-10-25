@@ -323,6 +323,14 @@ public partial class Studio : Control
                     "map-select" => _mapTab!.SelectAt(step["x"]!.GetValue<int>(), step["y"]!.GetValue<int>()),
                     "map-move" => _mapTab!.MoveSelected(step["x"]!.GetValue<int>(), step["y"]!.GetValue<int>()),
                     "map-remove" => _mapWs!.Selected is { } removing && _mapWs.Remove(removing),
+                    "map-player" => _mapWs!.Change("игрок", m => m.AddPlayer(step["race"]!.GetValue<string>(), human: step["human"]?.GetValue<bool>() ?? false)),
+                    "map-event" => _mapWs!.Change("событие", m =>
+                    {
+                        string ev = m.AddEvent(step["name"]?.GetValue<string>() ?? "");
+                        m.AddPart(ev, step["condition"]?.GetValue<string>() ?? "Frequency", effect: false);
+                        int e = m.AddPart(ev, step["effect"]?.GetValue<string>() ?? "Popup", effect: true);
+                        if (step["text"] is { } text) m.SetPart(ev, e, true, "Text", text.DeepClone());
+                    }),
                     "map-check" => Do(() => GD.Print($"map-check нарушений={_mapWs!.Check().Count} {string.Join(" | ", _mapWs.Check().Take(3))}")),
                     "map-open" => Do(() => _mapTab!.Open(step["id"]!.GetValue<string>())),
                     _ => session.Do(EditCommands.Parse(step)),

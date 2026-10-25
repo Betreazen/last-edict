@@ -31,6 +31,7 @@ public partial class StudioMapTab : HSplitContainer, IStudioTab
     private readonly MapCanvas _canvas;
     private readonly OptionButton _tool = new();
     private readonly StudioMapObjectsPanel _panel;
+    private readonly StudioMapScenarioPanel _scenario;
 
     /// <summary>Инструмент холста: null — кисть, вид объекта — поставить, <see cref="SelectTool"/> — выбор и перенос.</summary>
     private MapObjectKind? _placing;
@@ -77,10 +78,15 @@ public partial class StudioMapTab : HSplitContainer, IStudioTab
             left.AddChild(c);
         AddChild(left);
         _canvas = new MapCanvas(ws, this) { SizeFlagsHorizontal = SizeFlags.ExpandFill, ClipContents = true };
-        _panel = new StudioMapObjectsPanel(ws, texture);
+        _panel = new StudioMapObjectsPanel(ws, texture) { Name = "Объект" };
+        // Справа — вкладки «Объект» (что ставить, свойства выбранного), «Игроки», «События».
+        _scenario = new StudioMapScenarioPanel(ws) { CustomMinimumSize = new Vector2(360, 0) };
+        _scenario.AddChild(_panel);
+        _scenario.MoveChild(_panel, 0);
+        _scenario.CurrentTab = 0;
         var right = new HSplitContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
         right.AddChild(_canvas);
-        right.AddChild(_panel);
+        right.AddChild(_scenario);
         AddChild(right);
     }
 
@@ -185,9 +191,10 @@ public partial class StudioMapTab : HSplitContainer, IStudioTab
         _canvas.Sync();
         _canvas.QueueRedraw();   // метки объектов
         _panel.Sync();
+        _scenario.Sync();
     }
 
-    public string Line() => $"{_ws.Line()} холст={_canvas.Line()}";
+    public string Line() => $"{_ws.Line()} холст={_canvas.Line()} {_scenario.Line()}";
 
     /// <summary>Карта клетка-в-точку: картинка RGBA, вид с зумом, кисть мышью.</summary>
     private sealed partial class MapCanvas(MapWorkspace ws, StudioMapTab tab) : Control

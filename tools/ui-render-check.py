@@ -1274,6 +1274,8 @@ STUDIO_STEPS = [
     {"op": "map-place", "kind": "Bag", "x": 601, "y": 601},
     {"op": "map-select", "x": 605, "y": 615},
     {"op": "map-move", "x": 606, "y": 616},
+    {"op": "map-player", "race": "base:race/undead-hordes"},
+    {"op": "map-event", "name": "Привет", "condition": "Frequency", "effect": "Popup", "text": "Добро пожаловать"},
     {"op": "map-check"},
     {"op": "map-save"},
     {"op": "save"},
@@ -1329,6 +1331,8 @@ STUDIO_WANTS = [
     ("map-place", ["ok=0", "undo=5"]),
     ("map-select", ["ok=1", "selected=S"]),
     ("map-move", ["ok=1", "undo=6"]),
+    ("map-player", ["ok=1", "undo=7"]),
+    ("map-event", ["ok=1", "undo=8", "событий=1"]),
     ("map-check", ["ok=1"]),
     ("map-save", ["ok=1", "dirty=0"]),
     ("save", ["ok=1", "dirty=0"]),
@@ -1398,13 +1402,18 @@ def studio(repo: Path) -> tuple[bool, str]:
     if item.get("equipModifier") != "base:modifier/holy-armor" or item.get("value") != {"gold": 777} \
             or png_size(mod / "content" / "items" / "koltso-strazha" / "icon.png") != (140, 170):
         return False, f"Студия: предмет формой — {item}"
+    # «Играть на карте»: игра открывает карту мода с объектами (1024², город, руина, мешок, отряд, событие).
+    code, played = godot(repo, ["--mods", str(mod), "--scenario", "big", "--check"], "res://scenes/map/MapScreen.tscn")
+    shown = next((l for l in played.splitlines() if l.startswith("mapscreen ")), "")
+    if code != 0 or "ground_ready=True" not in shown:
+        return False, f"Студия: игра на карте мода — код {code}\n{shown or played[-1500:]}"
     icon = mod / "content" / "buildings" / "mage-tower" / "icon.png"
     if not icon.is_file() or (size := png_size(icon)) != (231, 222):
         return False, f"Студия: значок постройки формой — {icon} {'нет' if not icon.is_file() else size}, ждали 231×222 (77×74 ×3)"
     shutil.rmtree(mod.parent, ignore_errors=True)
     return True, (f"Студия: {len(lines)} шагов — дерево, постройка формой со значком (HD ×3), юнит на основе сквайра (своя атака, аура, иммунитет, лицо ×2), предмет со значком, лорд с исследованием, "
                   "содержимое, арена, "
-                  "карта 1024² с объектами (город, руина, мешок, отряд; перенос; нарушений 0), запись мода")
+                  "карта 1024² с объектами (город, руина, мешок, отряд; перенос; игрок и событие; нарушений 0), запись мода, игра на этой карте")
 
 
 def mod_battle(repo: Path) -> tuple[bool, str]:

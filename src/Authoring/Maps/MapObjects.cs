@@ -32,7 +32,7 @@ public sealed record MapPlacement
 /// держит их согласованными (что проверяет <c>MapInvariants</c>). Работает над JSON сценария (как <see cref="MapFactory"/>); id — класс
 /// оригинала с приставкой карты (<c>S9NNKC0003</c>). Отказ — <see cref="InvalidOperationException"/> с текстом.
 /// </summary>
-public sealed class MapObjects(JsonObject root, ContentSet content)
+public sealed partial class MapObjects(JsonObject root, ContentSet content)
 {
     /// <summary>Сторона квадрата объекта: столица 5, город 4, руина и места 3, прочие 1 (ориентир — по размеру из содержимого).</summary>
     public static int SideOf(MapObjectKind kind) => kind switch

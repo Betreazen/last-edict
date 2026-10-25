@@ -525,6 +525,14 @@ public partial class LobbyWindow : Control
         RefreshJoined();
     }
 
+    /// <summary>Esc или B геймпада — «Закрыть», как у окна настроек.</summary>
+    public override void _UnhandledInput(InputEvent @event)
+    {
+        if (!Visible || !@event.IsActionPressed("ui_cancel")) return;
+        GetViewport().SetInputAsHandled();
+        Leave();
+    }
+
     public override void _ExitTree()
     {
         _cancel.Cancel();

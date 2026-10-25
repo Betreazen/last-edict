@@ -25,8 +25,9 @@ public sealed class LobbyLogic : IScreenLogic
 
     public const string Close = "BTN_CLOSE";
 
-    /// <summary>Посредник по умолчанию (сервер пользователя, решение 25.10); переменная <c>LE_RELAY</c> или поле окна — главнее.</summary>
-    public const string DefaultRelay = "";
+    /// <summary>Пример адреса посредника для поля окна. Своего адреса в репозитории нет (он не публикуется): адрес — переменная
+    /// <c>LE_RELAY</c> или последний введённый (<see cref="NetPrefs"/>).</summary>
+    public const string RelayHint = "ws://адрес:8790/ws";
 
     /// <summary>Варианты таймера хода, секунды (0 — без таймера).</summary>
     public static readonly IReadOnlyList<int> Timers = [0, 60, 120, 300, 600];
@@ -48,9 +49,17 @@ public sealed class LobbyLogic : IScreenLogic
 
     public LobbyTab Tab { get; set; } = LobbyTab.Create;
 
-    public string Relay { get; set; } = Environment.GetEnvironmentVariable("LE_RELAY") is { Length: > 0 } relay ? relay : DefaultRelay;
+    public string Relay { get; set; } = Environment.GetEnvironmentVariable("LE_RELAY") ?? "";
 
     public string Nick { get; set; } = Environment.UserName;
+
+    /// <summary>Посредник и имя — из своих настроек сети (последние введённые); переменная <c>LE_RELAY</c> главнее.</summary>
+    public void Adopt(NetPrefs prefs)
+    {
+        ArgumentNullException.ThrowIfNull(prefs);
+        if (Environment.GetEnvironmentVariable("LE_RELAY") is not { Length: > 0 } && prefs.Relay.Length > 0) Relay = prefs.Relay;
+        if (prefs.Nick.Length > 0) Nick = prefs.Nick;
+    }
 
     /// <summary>Сценарии, где играбельных рас хотя бы две.</summary>
     public IReadOnlyList<ScenarioInfo> Scenarios { get; }
@@ -122,6 +131,28 @@ public sealed class LobbyLogic : IScreenLogic
 
     public void Handle(UiEvent e, UiScreenState ui)
     {
+    }
+}
+
+/// <summary>Свои настройки сети игрока (<c>user://net.json</c>, не в репозитории): последний посредник и имя. Битый файл — пустые.</summary>
+public sealed record NetPrefs(string Relay = "", string Nick = "")
+{
+    public static NetPrefs Load(string path)
+    {
+        try
+        {
+            return File.Exists(path) ? JsonSerializer.Deserialize<NetPrefs>(File.ReadAllText(path)) ?? new() : new();
+        }
+        catch (Exception e) when (e is JsonException or IOException or UnauthorizedAccessException)
+        {
+            return new();
+        }
+    }
+
+    public void Save(string path)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
+        File.WriteAllText(path, JsonSerializer.Serialize(this));
     }
 }
 

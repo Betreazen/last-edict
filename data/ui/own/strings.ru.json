@@ -153,5 +153,6 @@
   "LE_NET_ASYNC_SHORT": "асинхронная",
   "LE_NET_SYNC_SHORT": "по сети",
   "LE_NET_DAY": "день {0}",
-  "LE_NET_YOUR_TURN": "ваш ход"
+  "LE_NET_YOUR_TURN": "ваш ход",
+  "LE_NET_NO_RELAY": "Укажите адрес сервера (ws://адрес:8790/ws)."
 }

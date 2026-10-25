@@ -20,6 +20,9 @@ public static class NetGames
     /// <summary>Сессия над видом клиента (правила и графика карты — свои).</summary>
     public static GameSession ViewSession(GameState view) => new(view, GameData.Content.MapArt, GameData.Book);
 
+    /// <summary>Свои настройки сети игрока (<c>user://net.json</c>): посредник и имя.</summary>
+    public static string PrefsPath => global::Godot.ProjectSettings.GlobalizePath("user://net.json");
+
     /// <summary>Свои комнаты игрока (<c>user://net-rooms.json</c>).</summary>
     public static string RoomsPath => global::Godot.ProjectSettings.GlobalizePath("user://net-rooms.json");
 

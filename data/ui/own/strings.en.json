@@ -153,5 +153,6 @@
   "LE_NET_ASYNC_SHORT": "asynchronous",
   "LE_NET_SYNC_SHORT": "online",
   "LE_NET_DAY": "day {0}",
-  "LE_NET_YOUR_TURN": "your turn"
+  "LE_NET_YOUR_TURN": "your turn",
+  "LE_NET_NO_RELAY": "Enter the server address (ws://address:8790/ws)."
 }

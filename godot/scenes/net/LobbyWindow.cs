@@ -66,7 +66,8 @@ public partial class LobbyWindow : Control
         column.AddChild(new Label { Text = T("LE_NET_TITLE"), ThemeTypeVariation = SettingsTheme.Title, HorizontalAlignment = HorizontalAlignment.Center });
         column.AddChild(new TextureRect { Texture = SettingsTheme.Divider(), StretchMode = TextureRect.StretchModeEnum.KeepCentered,
                                           CustomMinimumSize = new Vector2(0, 14) });
-        _relay = new LineEdit { Text = _logic.Relay, SizeFlagsHorizontal = SizeFlags.ExpandFill, Name = "Relay" };
+        _logic.Adopt(NetPrefs.Load(NetGames.PrefsPath));
+        _relay = new LineEdit { Text = _logic.Relay, SizeFlagsHorizontal = SizeFlags.ExpandFill, Name = "Relay", PlaceholderText = LobbyLogic.RelayHint };
         _relay.TextChanged += t => _logic.Relay = t.Trim();
         _nick = new LineEdit { Text = _logic.Nick, CustomMinimumSize = new Vector2(180, 0), MaxLength = 32, Name = "Nick" };
         _nick.TextChanged += t => _logic.Nick = t.Trim();
@@ -411,7 +412,21 @@ public partial class LobbyWindow : Control
 
     // ---- общее
 
-    private Uri Relay() => new(_logic.Relay.Length > 0 ? _logic.Relay : LobbyLogic.DefaultRelay);
+    /// <summary>Посредник из поля окна; удачный вход — посредник и имя запоминаются (<see cref="NetPrefs"/>).</summary>
+    private Uri Relay()
+    {
+        if (_logic.Relay.Length == 0) throw new UriFormatException(T("LE_NET_NO_RELAY"));
+        var uri = new Uri(_logic.Relay);
+        try
+        {
+            new NetPrefs(_logic.Relay, _logic.Nick).Save(NetGames.PrefsPath);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            GD.PrintErr($"lobby: настройки сети не записаны: {e.Message}");
+        }
+        return uri;
+    }
 
     private void Launch(INetPlay play)
     {

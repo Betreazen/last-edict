@@ -106,6 +106,11 @@ public partial class MapScreen
             if (UpgradesPending) _ = AcceptUpgrades();
             return;
         }
+        if (_dialogViews.Count > 0 && _dialogViews[^1] is { Hosted: LastEdict.Data.Ui.Windows.TurnSummaryLogic.Screen } summary && !_dialogsStale)
+        {
+            summary.Step("click BTN_OK", out _);   // итоги хода — «ОК», как человек
+            return;
+        }
         if (_overlay is null && _dialogViews.Count == 0) ScriptTurn(net);
         else if ((_netBlocked += 1) % 120 == 0)
             GD.Print($"net script ждёт: окно={_overlay?.Hosted ?? "-"} окон={_dialogViews.Count} {string.Join(",", _dialogViews.Select(v => v.Hosted))}");

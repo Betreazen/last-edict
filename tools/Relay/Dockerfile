@@ -11,7 +11,7 @@ RUN dotnet publish -c Release -o /out --no-restore
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
 COPY --from=build /out .
-ENV ASPNETCORE_URLS=http://0.0.0.0:8790 RELAY_DATA=/data DOTNET_gcServer=0 DOTNET_GCHeapHardLimit=0x10000000
+ENV ASPNETCORE_URLS=http://0.0.0.0:8790 RELAY_DATA=/data DOTNET_gcServer=0 DOTNET_GCHeapHardLimit=0xA000000
 RUN mkdir -p /data && chown $APP_UID /data
 VOLUME /data
 USER $APP_UID
